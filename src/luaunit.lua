@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-global, unbalanced-assignments, lowercase-global, redundant-parameter
 --[[
         luaunit.lua
 

@@ -1,10 +1,6 @@
--- Here's to the crazy ones. The misfits. The rebels. The troublemakers.
+local FlightCore = require("FlightCore")
+local EngineGroup = require("EngineGroup")
 
--- The code below is just a "Hello World" that dumps the current links and their element classes
-system.print('Debugging Control Unit...')
-for linkName, element in pairs(library.getLinks()) do
-  system.print(string.format('Found link `%s` of type `%s`', linkName, element.getElementClass()))
-end
-
--- Stops execution
-unit.exit()
+local fc = FlightCore(unit)
+fc:ReceiveEvents()
+fc:SetAcceleration( EngineGroup("ALL"), FlightCore.Up, 1.05)

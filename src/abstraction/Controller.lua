@@ -1,35 +1,24 @@
-Controller = {}
+local io = require("io")
+
+local controller = {}
+controller.__index = controller
 
 local function new()
-    return setmetatable(
-        {
-            ctrl = unit
-        }
-    )
+    return setmetatable({}, controller)
 end
 
-function Controller:new()
-    return setmetatable(
-        {
-            new = new
-        },
-        {
-            __call = function(_, ...)
-                return new()
-            end
-        }
-    )
-end
-
-function Controller:SetEngineCommand(tags, direction)
-    --
+function controller:SetEngineCommand(tags, acceleration)
+    io.write("SetEngineCommand: Tags: " .. tostring(tags) .. " acc:" .. tostring(acceleration))
 end
 
 -- the module
 return setmetatable(
-	{
-		new = new
-	}, {
-		__call = function(_, ...) return new(...) end
-	}
+    {
+        new = new
+    },
+    {
+        __call = function(_, ...)
+            return new()
+        end
+    }
 )

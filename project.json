@@ -1,23 +1,11 @@
 {
-  "name": "du-y-flight-core",
-  "description": "Yoarii Flight Core",
+  "name": "Flight Core",
+  "description": "Flight Core",
   "sourcePath": "src",
   "outputPath": "out",
   "builds": {
     "main": {
       "name": "main",
-      "slots": {}
-    },
-    "abstraction/Controller": {
-      "name": "abstraction/Controller.lua",
-      "slots": {}
-    },
-    "YFlightCore": {
-      "name": "YFlightCore",
-      "slots": {}
-    },
-    "EngineGroup": {
-      "name": "EngineGroup",
       "slots": {}
     }
   },

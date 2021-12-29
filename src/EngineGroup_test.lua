@@ -4,7 +4,7 @@ local EngineGroup = require("EngineGroup")
 Test = {}
 
 function Test:testEmptyUnion()
-    local eg = EngineGroup.new()
+    local eg = EngineGroup()
     eg:Add("thrust")
     lu.assertEquals(eg:Union(), "thrust")
 end
