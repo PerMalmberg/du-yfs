@@ -2,6 +2,7 @@
 
 local vec3 = require("builtin/vec3")
 local EngineGroup = require("EngineGroup")
+local Stabilizer = require("Stabilizer")
 
 local flightCore = {}
 flightCore.__index = flightCore
@@ -20,9 +21,11 @@ local function new(controller)
         accelerationGroup = EngineGroup("ALL"),
         rotationGroup = EngineGroup("torque"),
         eventHandlerId = 0,
-        dirty = false
+        dirty = false,
+        stabilizer = nil
     }
 
+    instance.stabilizer = Stabilizer(library.getCoreUnit(), instance)
     setmetatable(instance, flightCore)
 
     return instance
@@ -40,10 +43,10 @@ end
 
 ---@param group EngineGroup The engine group to apply the rotation to
 ---@param rotation vec3 the desired angular rotational acceleration expressed in world coordinates and rad/s2
-function flightCore:SetRotation(group, rotation)
-    self.rotationGroup = group
-    self.desiredAnglularAccelerationX, self.desiredAnglularAccelerationY, self.desiredAnglularAccelerationZ =
+function flightCore:SetRotation(rotation)
+    self.desiredAngularAccelerationX, self.desiredAngularAccelerationY, self.desiredAngularAccelerationZ =
         rotation:unpack()
+
     self.dirty = true
 end
 
@@ -59,7 +62,17 @@ function flightCore:StopEvents()
     self:clearEvent("flush", self.eventHandlerId)
 end
 
+function flightCore:EnableStabilization()
+    self.stabilizer:Enable()
+end
+
+function flightCore:DisableStabilization()
+    self.stabilizer:Disable()
+end
+
 function flightCore:Flush()
+    self.stabilizer:Stabilize()
+
     if self.dirty and self.Ctrl ~= nil then
         self.dirty = false
         self.Ctrl.setEngineCommand(
