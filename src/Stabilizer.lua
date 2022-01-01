@@ -9,10 +9,10 @@ local function new(core, flightcore)
         core = core,
         flightCore = flightcore,
         enabled = false,
-        pidX = Pid(0, 0.005, 15.5),
-        pidY = Pid(0, 0.005, 15.5),
-        pidZ = Pid(0, 0.005, 15.5),
-        baseAngularRotation = 2 * math.pi -- One tenth turn per second.
+        pidX = Pid(0, 0.01, 135.5),
+        pidY = Pid(0, 0.01, 135.5),
+        pidZ = Pid(0, 0.01, 135.5),
+        baseAngularRotation = 2 * math.pi -- One turn per second.
     }
 
     setmetatable(instance, stab)
@@ -39,7 +39,7 @@ function stab:Stabilize()
         self.pidZ:inject(cross.z)
 
         local angularSpeed = vec3(self.pidX:get(), self.pidY:get(), self.pidZ:get())
-        angularSpeed = angularSpeed * self.baseAngularRotation - vec3(self.core.getWorldAngularVelocity())
+        angularSpeed = angularSpeed * self.baseAngularRotation
         system.print(tostring(angularSpeed))
         self.flightCore:SetRotation(angularSpeed)
     end
