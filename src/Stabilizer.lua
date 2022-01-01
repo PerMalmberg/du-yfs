@@ -1,4 +1,5 @@
 local vec3 = require("builtin/vec3")
+local Pid = require("builtin/pid")
 
 local stab = {}
 stab.__index = stab
@@ -7,7 +8,11 @@ local function new(core, flightcore)
     local instance = {
         core = core,
         flightCore = flightcore,
-        enabled = false
+        enabled = false,
+        pidX = Pid(0, 0.005, 15.5),
+        pidY = Pid(0, 0.005, 15.5),
+        pidZ = Pid(0, 0.005, 15.5),
+        baseAngularRotation = 2 * math.pi -- One tenth turn per second.
     }
 
     setmetatable(instance, stab)
@@ -29,7 +34,14 @@ function stab:Stabilize()
         local constructUp = vec3(self.core.getConstructWorldUp())
         local cross = constructUp:cross(worldUp)
 
-        self.flightCore:SetRotation(cross)
+        self.pidX:inject(cross.x)
+        self.pidY:inject(cross.y)
+        self.pidZ:inject(cross.z)
+
+        local angularSpeed = vec3(self.pidX:get(), self.pidY:get(), self.pidZ:get())
+        angularSpeed = angularSpeed * self.baseAngularRotation - vec3(self.core.getWorldAngularVelocity())
+        system.print(tostring(angularSpeed))
+        self.flightCore:SetRotation(angularSpeed)
     end
 end
 
