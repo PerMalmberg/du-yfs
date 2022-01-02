@@ -25,7 +25,7 @@ local function new(controller)
         stabilizer = nil
     }
 
-    instance.stabilizer = Stabilizer(library.getCoreUnit(), instance)
+    instance.stabilizer = Stabilizer(library.getCoreUnit(), controller, instance)
     setmetatable(instance, flightCore)
 
     return instance

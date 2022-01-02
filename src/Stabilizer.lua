@@ -8,9 +8,10 @@ stab.__index = stab
 ---@param core Core The core
 ---@param flightcore The FlightCore
 ---@return table The new Stabilizer
-local function new(core, flightcore)
+local function new(core, controller, flightcore)
     local instance = {
         core = core,
+        controller = controller,
         flightCore = flightcore,
         enabled = false,
         pidX = Pid(0, 0.01, 100),
@@ -18,13 +19,13 @@ local function new(core, flightcore)
         pidZ = Pid(0, 0.01, 100),
         baseAngularRotation = 2 * math.pi, -- One turn per second.
         -- Shall return the reference vector and vector to adjust towards reference.
-        getVectors = nil
+        getVectors = nil,
+        turnTowards = nil
     }
 
     setmetatable(instance, stab)
     return instance
 end
-
 
 function stab:Enable()
     self.enabled = true
@@ -32,8 +33,8 @@ end
 
 function stab:Disable()
     self.enabled = false
+    self.turnTowards = nil
 end
-
 
 function stab:StablilizeUpward()
     self.getVectors = function()
@@ -44,19 +45,27 @@ function stab:StablilizeUpward()
     self:Enable()
 end
 
+function stab:TurnTowards(direction)
+    self.turnTowards = direction
+end
+
 ---Stabilizes the construct based on the two vectors returned by the getVectors member function
 function stab:Stabilize()
     if self.enabled and self.getVectors ~= nil then
         local ref, toAdjust = self:getVectors()
 
-        local cross = toAdjust:cross(ref)
+        local adjustCross = toAdjust:cross(ref)
 
-        self.pidX:inject(cross.x)
-        self.pidY:inject(cross.y)
-        self.pidZ:inject(cross.z)
+        if self.turnTowards ~= nil then
+            local towardsCross = vec3(self.core.getConstructWorldForward()):cross(self.turnTowards)
+            adjustCross = adjustCross + towardsCross
+        end
 
-        local angularSpeed = vec3(self.pidX:get(), self.pidY:get(), self.pidZ:get())
-        angularSpeed = angularSpeed * self.baseAngularRotation
+        self.pidX:inject(adjustCross.x)
+        self.pidY:inject(adjustCross.y)
+        self.pidZ:inject(adjustCross.z)
+
+        local angularSpeed = self.baseAngularRotation * vec3(self.pidX:get(), self.pidY:get(), self.pidZ:get())
         self.flightCore:SetRotation(angularSpeed)
     end
 end
