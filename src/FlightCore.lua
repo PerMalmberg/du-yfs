@@ -31,6 +31,10 @@ local function new(controller)
     return instance
 end
 
+function flightCore:GetStabilizer()
+    return self.stabilizer
+end
+
 ---@param group EngineGroup The engine group to apply the acceleration to
 ---@param direction vec3 direction we want to travel with the given acceleration
 ---@param acceleration number m/s2
