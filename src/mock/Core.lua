@@ -8,11 +8,16 @@ local singelton = nil
 
 CoreVars = {
     worldPos = {-8.00, -8.00, -126303.00}, -- Alioth center
-    currentPlanetId = 2 -- Alioth
+    currentPlanetId = 2, -- Alioth
+    constructWorldOrientationForward = {0, 1, 0}
 }
 
 local function new()
     return setmetatable({}, core)
+end
+
+function core.getConstructWorldOrientationForward()
+    return CoreVars.constructWorldOrientationForward
 end
 
 ---Gets the center of the contruct in world coordinates

@@ -3,6 +3,7 @@
 local vec3 = require("builtin/vec3")
 local EngineGroup = require("EngineGroup")
 local Stabilizer = require("Stabilizer")
+local library = require("abstraction/Library")()
 
 local flightCore = {}
 flightCore.__index = flightCore
