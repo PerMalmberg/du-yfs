@@ -1,7 +1,7 @@
 -- galaxy - utility class to manage the in-game atlas
 
 local Body = require("Body")
-require("Asserts")
+local diag = require("Diagnostics")()
 
 local galaxy = {}
 galaxy.__index = galaxy
@@ -10,22 +10,23 @@ local singelton = nil
 
 local function new()
     local instance = {
-        bodies = {} -- Stellar bodies by id
+        body = {} -- Stellar bodies by id
     }
     setmetatable(instance, galaxy)
 
     return instance
 end
 
---- Gets the information for the closest stellar body
----@return Body The clostest body
-function galaxy:ClosestBody()
-    -- local closest = self.core.getCurrentPlanetId()
-    -- return self.gameAtlas[self:CurrentGalaxyId()][closest]
+function galaxy:BodyById(id)
+    return self.body[id]
 end
 
 function galaxy:Prepare(galaxyAtlas)
-    assert(IsTable(galaxyAtlas), "galaxyAtlas must be a table")
+    diag:AssertIsTable(galaxyAtlas, "galaxyAtlas must be a table")
+
+    for bodyId, bodyData in pairs(galaxyAtlas) do
+        self.body[bodyId] = Body(bodyData)
+    end
 end
 
 return setmetatable(

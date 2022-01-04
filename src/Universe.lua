@@ -1,18 +1,18 @@
 -- Universe - utility class to manage the in-game atlas
 
+local diag = require("Diagnostics")()
+local library = require("abstraction/Library")()
+local Galaxy = require("Galaxy")
+
 local universe = {}
 universe.__index = universe
 
-require("Asserts")
-local diag = require("Diagnostics")()
-
-local Galaxy = require("Galaxy")
 local singelton = nil
 
 local function new()
     local instance = {
         core = library.getCoreUnit(),
-        galaxies = {} -- Galaxies by id
+        galaxy = {} -- Galaxies by id
     }
     setmetatable(instance, universe)
 
@@ -28,16 +28,16 @@ end
 --- Gets the information for the closest stellar body
 ---@return table
 function universe:ClosestBody()
-    -- local closest = self.core.getCurrentPlanetId()
-    -- return self.gameAtlas[self:CurrentGalaxyId()][closest]
+    local closest = self.core.getCurrentPlanetId()
+    return self.galaxy[self:CurrentGalaxyId()]:BodyById(closest)
 end
 
 function universe:Prepare()
-    local ga = require("atlas")
+    local ga = require("builtin/atlas")
     diag:AssertIsTable(ga, "In-game atlas must be a table")
 
     for galaxyId, galaxy in pairs(ga) do
-        diag:Debug()
+        diag:Debug("Building galaxy", galaxyId)
         self.galaxy[galaxyId] = Galaxy(ga[galaxyId])
     end
 end

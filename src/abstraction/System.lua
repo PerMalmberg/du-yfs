@@ -1,14 +1,12 @@
-local io = require("io")
-
-local system = {}
+system = {}
 system.__index = system
 
 local function new()
     return setmetatable({}, system)
 end
 
-function system:print(value)
-    io.write(tostring(value))
+function system.print(value)
+    io.write(tostring(value) .. "\n")
 end
 
 -- the module

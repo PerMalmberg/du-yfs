@@ -12,8 +12,14 @@
   "targets": {
     "development": {
       "name": "development",
-      "handleErrors": false,
+      "handleErrors": true,
       "minify": false
+    },
+    "relase": {
+      "name": "release",
+      "handleErrors": true,
+      "minify": true,
+      "compress": true
     }
   }
 }
