@@ -12,12 +12,11 @@
   "targets": {
     "development": {
       "name": "development",
-      "handleErrors": true,
-      "minify": false
+      "minify": false,
+      "compress": false
     },
     "relase": {
       "name": "release",
-      "handleErrors": true,
       "minify": true,
       "compress": true
     }

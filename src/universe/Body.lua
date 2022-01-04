@@ -18,12 +18,12 @@ function body:Prepare(data)
     diag:AssertIsTable(data, "Body data must be a table")
     self.Name = data.name[ENGLISH]
     self.Type = data.type[ENGLISH]
-    
+
     self.Physics = {
         Gravity = data.gravity
     }
     self.Geography = {
-        Center = vec3(data.name.center),
+        Center = vec3(data.center),
         Radius = data.radius
     }
     self.Atmosphere = {
@@ -36,7 +36,7 @@ function body:Prepare(data)
         MinAltitude = data.surfaceMinAltitude
     }
     self.Pvp = {
-        LocatedInSafeZone = data.isInSafeZone,
+        LocatedInSafeZone = data.isInSafeZone
     }
 
     diag:Debug("Stellar body", self.Name)

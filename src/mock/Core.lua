@@ -37,7 +37,7 @@ function core.getCurrentPlanetId()
 end
 
 function core.setCurrentPlanetId(id)
-    CoreVars.currentPlanetId = 1
+    CoreVars.currentPlanetId = id
 end
 
 

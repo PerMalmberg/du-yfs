@@ -87,10 +87,10 @@ function diag:AssertIsTable(t, msg)
 end
 
 function diag:AssertIsVec3(v, msg)
-    assert(isTable(v) and isNumber(v.x and v.y and v.z) and isTable(v.unit_z), msg)
+    assert(isTable(v) and isNumber(v.x and v.y and v.z) and isFunction(v.trim_inplace), msg)
 end
 
-function diag:AssertNumber(n, msg)
+function diag:AssertIsNumber(n, msg)
     assert(isNumber(n), msg)
 end
 

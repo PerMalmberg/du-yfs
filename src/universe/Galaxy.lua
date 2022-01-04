@@ -1,7 +1,7 @@
 -- galaxy - utility class to manage the in-game atlas
 
-local Body = require("Body")
 local diag = require("Diagnostics")()
+local Body = require("universe/Body")
 
 local galaxy = {}
 galaxy.__index = galaxy
@@ -19,6 +19,25 @@ end
 
 function galaxy:BodyById(id)
     return self.body[id]
+end
+
+---Gets the body closes to the given position
+---@param position vec3|Position
+---@return Body
+function galaxy:GetBodyClosestToPosition(position)
+    diag:AssertIsVec3(position, "position must be a vec3 (or Position)")
+    local closest = nil
+    local smallestDistance = nil
+
+    for _, body in pairs(self.body) do
+        local dist = (body.Geography.Center - position):len()
+        if smallestDistance == nil or dist < smallestDistance then
+            smallestDistance = dist
+            closest = body
+        end
+    end
+
+    return closest
 end
 
 function galaxy:Prepare(galaxyAtlas)
