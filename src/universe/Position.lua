@@ -13,7 +13,6 @@ local function new(galaxyId, bodyRef, x, y, z)
     diag:AssertIsNumber(y, "Y for a position must be a number")
     diag:AssertIsNumber(z, "Z for a position must be a number")
 
-
     local instance = {
         Planet = bodyRef,
         Galaxy = galaxyId
@@ -29,7 +28,12 @@ local function new(galaxyId, bodyRef, x, y, z)
 end
 
 function position:__tostring()
-    return "foo"
+    -- If the point is within the atmospehere, then make body based position string
+    if self.Planet.Atmosphere.Radius > (self.Planet.Geography.Center - self):len() then
+        return string.format("::pos{0,0,%.4f,%.4f,%.4f}", self.x, self.y, self.z)
+    else
+        return string.format("::pos{0,0,%.4f,%.4f,%.4f}", self.x, self.y, self.z)
+    end
 end
 
 return setmetatable(

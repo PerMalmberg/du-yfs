@@ -27,12 +27,16 @@ end
 
 function Test:testParsePosition()
     local positionOnAlioth = u:ParsePosition("::pos{0,2,7.7093,78.0806,34.7991}")
+    local positionAboveMarket6 = u:ParsePosition("::pos{0,2,35.9160,101.2832,132000.2500}")
     local positionNearJago = u:ParsePosition("::pos{0,0,-102232240.0000,36433324.0000,11837611.0000}")
     local positionNearTalemai = u:ParsePosition("::pos{0,0,-10126823.0000,53124664.0000,-14922930.0000}")
     local positionNearThades = u:ParsePosition("::pos{0,0,37979880.0000,17169778.0000,-2641396.2500}")
 
-    local s = tostring(positionOnAlioth)
-    lu.assertEquals(s, "foo")
+    lu.assertEquals(tostring(positionOnAlioth), "::pos{0,2,7.7093,78.0806,34.7991}")
+    lu.assertEquals(tostring(positionAboveMarket6), "::pos{0,2,35.9160,101.2832,132000.2500}")
+    lu.assertEquals(tostring(positionNearJago), "::pos{0,0,-102232240.0000,36433324.0000,11837611.0000}")
+    lu.assertEquals(tostring(positionNearTalemai), "::pos{0,0,-10126823.0000,53124664.0000,-14922930.0000}")
+    lu.assertEquals(tostring(positionNearThades), "::pos{0,0,37979880.0000,17169778.0000,-2641396.2500}")
 end
 
 local runner = lu.LuaUnit.new()

@@ -36,7 +36,7 @@ end
 
 ---Parses a position string
 ---@param pos string
----@return Position A position in space or planet
+---@return Position A position in space or on a planet
 function universe:ParsePosition(pos)
     local x, y, z, bodyRef
     local galaxyId, bodyId, latitude, longitude, altitude = stringMatch(pos, posPattern)
@@ -56,7 +56,7 @@ function universe:ParsePosition(pos)
             -- Positions on a body have lat, long in degrees and altitude in meters
             latitude = math.rad(latitude)
             longitude = math.rad(longitude)
-            local body = self.galaxy[tonumber(galaxyId)]:BodyById(tonumber(bodyId))
+            local body = self.galaxy[galaxyId]:BodyById(bodyId)
             local xProjection = math.cos(latitude)
             local bodyX = xProjection * math.cos(longitude)
             local bodyY = xProjection * math.sin(latitude)
