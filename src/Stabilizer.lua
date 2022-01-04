@@ -1,23 +1,24 @@
 local vec3 = require("builtin/vec3")
 local Pid = require("builtin/pid")
+local library = require("abstraction/Library")()
 
 local stab = {}
 stab.__index = stab
 
 ---Creates a new Stabilizer that alignes the construct to a reference direction
 ---@param core Core The core
----@param flightcore The FlightCore
----@return table The new Stabilizer
-local function new(core, controller, flightcore)
+---@param flightcore FlightCore The FlightCore
+---@return table Stabilizer The new Stabilizer
+local function new(flightcore)
     local instance = {
-        core = core,
-        controller = controller,
+        core = library.getCoreUnit(),
+        controller = library.getController(),
         flightCore = flightcore,
         enabled = false,
-        pidX = Pid(0, 0.01, 100),
-        pidY = Pid(0, 0.01, 100),
-        pidZ = Pid(0, 0.01, 100),
-        baseAngularRotation = 2 * math.pi, -- One turn per second.
+        pidX = Pid(0, 0.01, 70),
+        pidY = Pid(0, 0.01, 70),
+        pidZ = Pid(0, 0.01, 70),
+        baseAngularRotationAcceleration = 2 * math.pi, -- One turn per second.
         -- Shall return the reference vector and vector to adjust towards reference.
         getVectors = nil,
         turnTowards = nil
@@ -65,8 +66,8 @@ function stab:Stabilize()
         self.pidY:inject(adjustCross.y)
         self.pidZ:inject(adjustCross.z)
 
-        local angularSpeed = self.baseAngularRotation * vec3(self.pidX:get(), self.pidY:get(), self.pidZ:get())
-        self.flightCore:SetRotation(angularSpeed)
+        local angularAcceleration = self.baseAngularRotationAcceleration * vec3(self.pidX:get(), self.pidY:get(), self.pidZ:get())
+        self.flightCore:SetRotation(angularAcceleration)
     end
 end
 

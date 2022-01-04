@@ -8,10 +8,10 @@ local library = require("abstraction/Library")()
 local flightCore = {}
 flightCore.__index = flightCore
 
-local function new(controller)
+local function new()
     local instance = {
         Core = library.getCoreUnit(),
-        Ctrl = controller,
+        Ctrl = library.getController(),
         desiredDirection = vec3(),
         desiredAccelerationX = 0,
         desiredAccelerationY = 0,
@@ -26,8 +26,8 @@ local function new(controller)
         stabilizer = nil
     }
 
-    instance.stabilizer = Stabilizer(library.getCoreUnit(), controller, instance)
     setmetatable(instance, flightCore)
+    instance.stabilizer = Stabilizer(instance)
 
     return instance
 end
@@ -112,7 +112,7 @@ return setmetatable(
     },
     {
         __call = function(_, ...)
-            return new(...)
+            return new()
         end
     }
 )

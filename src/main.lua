@@ -2,9 +2,11 @@ local FlightCore = require("FlightCore")
 local EngineGroup = require("EngineGroup")
 local vec3 = require("builtin/vec3")
 local Universe = require("Universe")
+local library = require("abstraction/Library")()
 
-local fc = FlightCore(unit)
 local core = library.getCoreUnit()
+local fc = FlightCore()
+
 fc:ReceiveEvents()
 local stab = fc:GetStabilizer():StablilizeUpward()
 local stab = fc:GetStabilizer():TurnTowards(vec3(core.getConstructWorldOrientationForward()))

@@ -1,5 +1,3 @@
-local io = require("io")
-
 local controller = {}
 controller.__index = controller
 
@@ -7,7 +5,7 @@ local function new()
     return setmetatable({}, controller)
 end
 
-function controller:SetEngineCommand(tags, acceleration, angularAcceleration)
+function controller.setEngineCommand(tags, acceleration, angularAcceleration)
     io.write("SetEngineCommand: Tags: " .. tostring(tags) .. " acc:" .. tostring(acceleration) .. tostring(angularAcceleration))
 end
 

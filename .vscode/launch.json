@@ -7,8 +7,15 @@
         {
             "type": "lua",
             "request": "launch",
-            "name": "Debug",
+            "name": "Universe",
             "program": "${workspaceFolder}/src/Universe_test.lua",
+            "path": "${workspaceFolder}/src/?.lua;${workspaceFolder}/src/abstraction/?.lua"
+        },
+        {
+            "type": "lua",
+            "request": "launch",
+            "name": "FlightCore",
+            "program": "${workspaceFolder}/src/FlightCore_test.lua",
             "path": "${workspaceFolder}/src/?.lua;${workspaceFolder}/src/abstraction/?.lua"
         }
     ]

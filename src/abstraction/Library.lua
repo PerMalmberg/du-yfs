@@ -10,11 +10,7 @@ libraryProxy.__index = libraryProxy
 local singelton = nil
 
 local function new()
- return setmetatable(
-        {            
-        },
-        libraryProxy
-    )
+    return setmetatable({}, libraryProxy)
 end
 
 function libraryProxy.getCoreUnit()
@@ -24,6 +20,14 @@ function libraryProxy.getCoreUnit()
     else
         -- In test, return a mock
         return require("mock/Core")()
+    end
+end
+
+function libraryProxy.getController()
+    if library then
+        return unit -- Return the global unit
+    else
+        return require("mock/Controller")()
     end
 end
 

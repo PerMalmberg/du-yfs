@@ -1,6 +1,7 @@
 {
     "Lua.diagnostics.globals": [
         "system",
-        "library"
+        "library",
+        "unit"
     ]
 }
