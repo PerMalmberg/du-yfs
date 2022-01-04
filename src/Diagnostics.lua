@@ -79,27 +79,19 @@ local function formatValues(...)
 end
 
 function diag:AssertIsString(s, msg)
-    if self.level >= DiagLevel.OFF then
-        assert(isString(s) == "string", msg)
-    end
+    assert(isString(s) == "string", msg)
 end
 
 function diag:AssertIsTable(t, msg)
-    if self.level >= DiagLevel.OFF then
-        assert(isTable(t), msg)
-    end
+    assert(isTable(t), msg)
 end
 
 function diag:AssertIsVec3(v, msg)
-    if self.level >= DiagLevel.OFF then
-        assert(isTable(v) and isNumber(v.x and v.y and v.z) and isTable(v.unit_z), msg)
-    end
+    assert(isTable(v) and isNumber(v.x and v.y and v.z) and isTable(v.unit_z), msg)
 end
 
 function diag:AssertNumber(n, msg)
-    if self.level >= DiagLevel.OFF then
-        assert(isNumber(n), msg)
-    end
+    assert(isNumber(n), msg)
 end
 
 local function getLevelStr(lvl)
