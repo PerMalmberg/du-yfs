@@ -14,8 +14,12 @@ local function new()
     return instance
 end
 
-function body:Prepare(data)
+function body:Prepare(galaxy, data)
+    diag:AssertIsTable(galaxy, "galayx data must be a table")
     diag:AssertIsTable(data, "Body data must be a table")
+
+    self.Galaxy = galaxy
+    self.Id = data.id
     self.Name = data.name[ENGLISH]
     self.Type = data.type[ENGLISH]
 

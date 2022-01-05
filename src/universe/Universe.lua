@@ -4,8 +4,9 @@ local library = require("abstraction/Library")()
 local diag = require("Diagnostics")()
 local Galaxy = require("universe/Galaxy")
 local Position = require("universe/Position")
-local Body = require("universe/Body")
 local vec3 = require("builtin/vec3")
+local cos = math.cos
+local sin = math.sin
 
 local stringMatch = string.match
 local numberPattern = " *([+-]?%d+%.?%d*e?[+-]?%d*)"
@@ -29,13 +30,19 @@ local function new()
 end
 
 ---Gets the current galaxy id
----@return integer The id of the galaxy
+---@return integer The id of the current galaxy
 function universe:CurrentGalaxyId()
     return 0 -- Until there are more than one galaxy in the game.
 end
 
+---Gets the current galaxy
+---@return Galaxy The current galaxy
+function universe:CurrentGalaxy()
+    return self.galaxy[self:CurrentGalaxyId()]
+end
+
 ---Parses a position string
----@param pos string
+---@param pos string The "::pos{...}" string
 ---@return Position A position in space or on a planet
 function universe:ParsePosition(pos)
     local x, y, z, bodyRef
@@ -51,18 +58,24 @@ function universe:ParsePosition(pos)
             y = tonumber(longitude)
             z = tonumber(altitude)
             bodyRef = self:ClosestBodyByDistance(galaxyId, vec3(x, y, z))
-            return Position(galaxyId, bodyRef, x, y, z)
+            return Position(self.galaxy[galaxyId], bodyRef, x, y, z)
         else
+            -- https://stackoverflow.com/questions/1185408/converting-from-longitude-latitude-to-cartesian-coordinates
+            -- The x-axis goes through long,lat (0,0), so longitude 0 meets the equator
+            -- The y-axis goes through (0,90)
+            -- and the z-axis goes through the poles.
             -- Positions on a body have lat, long in degrees and altitude in meters
             latitude = math.rad(latitude)
             longitude = math.rad(longitude)
             local body = self.galaxy[galaxyId]:BodyById(bodyId)
-            local xProjection = math.cos(latitude)
-            local bodyX = xProjection * math.cos(longitude)
-            local bodyY = xProjection * math.sin(latitude)
-            local bodyZ = math.sin(latitude)
-            local position = body.Geography.Center + (body.Geography.Radius + altitude) * vec3(bodyX, bodyY, bodyZ)
-            return Position(galaxyId, body, position.x, position.y, position.z)
+
+            local radius = body.Geography.Radius + altitude
+            local cosLat = cos(latitude)
+            local position =
+                vec3(radius * cosLat * cos(longitude), radius * cosLat * sin(longitude), radius * sin(latitude))
+            position = position + body.Geography.Center
+
+            return Position(self.galaxy[galaxyId], body, position.x, position.y, position.z)
         end
     end
 
@@ -88,7 +101,7 @@ function universe:Prepare()
 
     for galaxyId, galaxy in pairs(ga) do
         diag:Debug("Building galaxy", galaxyId)
-        self.galaxy[galaxyId] = Galaxy(ga[galaxyId])
+        self.galaxy[galaxyId] = Galaxy(galaxyId, ga[galaxyId])
     end
 end
 

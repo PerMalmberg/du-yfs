@@ -8,8 +8,10 @@ galaxy.__index = galaxy
 
 local singelton = nil
 
-local function new()
+local function new(galaxyId)
+    diag:AssertIsNumber(galaxyId, "galaxyId must be a number")
     local instance = {
+        Id = galaxyId,
         body = {} -- Stellar bodies by id
     }
     setmetatable(instance, galaxy)
@@ -22,10 +24,10 @@ function galaxy:BodyById(id)
 end
 
 ---Gets the body closes to the given position
----@param position vec3|Position
+---@param position vec3
 ---@return Body
 function galaxy:GetBodyClosestToPosition(position)
-    diag:AssertIsVec3(position, "position must be a vec3 (or Position)")
+    diag:AssertIsVec3(position, "position must be a vec3")
     local closest = nil
     local smallestDistance = nil
 
@@ -44,7 +46,7 @@ function galaxy:Prepare(galaxyAtlas)
     diag:AssertIsTable(galaxyAtlas, "galaxyAtlas must be a table")
 
     for bodyId, bodyData in pairs(galaxyAtlas) do
-        self.body[bodyId] = Body(bodyData)
+        self.body[bodyId] = Body(self, bodyData)
     end
 end
 
@@ -55,8 +57,9 @@ return setmetatable(
     {
         __call = function(_, ...)
             if singelton == nil then
-                singelton = new()
-                singelton:Prepare(...)
+                local galaxyId, galaxyAtlas = table.unpack({...})
+                singelton = new(galaxyId)
+                singelton:Prepare(galaxyAtlas)
             end
             return singelton
         end

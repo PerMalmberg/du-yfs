@@ -2,12 +2,12 @@
 
 local diag = require("Diagnostics")()
 local vec3 = require("builtin/vec3")
+local stringFormat = string.format
 
-local position = vec3() -- Inherit from vec3
-position.__index = position
+local position = vec3()
 
-local function new(galaxyId, bodyRef, x, y, z)
-    diag:AssertIsNumber(galaxyId, "galaxyId for a position must be a number")
+local function new(galaxy, bodyRef, x, y, z)
+    diag:AssertIsTable(galaxy, "galaxy for a position must be a table")
     diag:AssertIsTable(bodyRef, "bodyRef for a position must be a table")
     diag:AssertIsNumber(x, "X for a position must be a number")
     diag:AssertIsNumber(y, "Y for a position must be a number")
@@ -15,24 +15,31 @@ local function new(galaxyId, bodyRef, x, y, z)
 
     local instance = {
         Planet = bodyRef,
-        Galaxy = galaxyId
+        Galaxy = galaxy,
+        Coords = vec3(x, y, z)
     }
 
     setmetatable(instance, position)
-
-    instance.x = x
-    instance.y = y
-    instance.z = z
 
     return instance
 end
 
 function position:__tostring()
-    -- If the point is within the atmospehere, then make body based position string
-    if self.Planet.Atmosphere.Radius > (self.Planet.Geography.Center - self):len() then
-        return string.format("::pos{0,0,%.4f,%.4f,%.4f}", self.x, self.y, self.z)
+    -- The game starts giving space coordinates at an altitude of 70km above
+    -- the planets radius on Alioth so we're mimicing that behaviour.
+    local altitude = (self.Coords - self.Planet.Geography.Center):len() - self.Planet.Geography.Radius
+    if altitude < self.Planet.Geography.Radius + 70000 then
+        -- Use a radius that includes the altitude
+        local radius = self.Planet.Geography.Radius + altitude
+        -- Calculate around origo; planet center is added in Universe:ParsePosition
+        -- and we're reversing that calculation.
+        local calcPos = self.Coords - self.Planet.Geography.Center
+        local lat = math.asin(calcPos.z / radius)
+        local lon = math.atan(calcPos.y, calcPos.x)
+
+        return stringFormat("::pos{%d,%d,%.4f,%.4f,%.4f}", self.Galaxy.Id, self.Planet.Id, math.deg(lat), math.deg(lon), altitude)
     else
-        return string.format("::pos{0,0,%.4f,%.4f,%.4f}", self.x, self.y, self.z)
+        return stringFormat("::pos{%d,0,%.4f,%.4f,%.4f}", self.Galaxy.Id, self.Coords.x, self.Coords.y, self.Coords.z)
     end
 end
 
