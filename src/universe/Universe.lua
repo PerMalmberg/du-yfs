@@ -52,7 +52,11 @@ function universe:ParsePosition(pos)
         galaxyId = tonumber(galaxyId)
         bodyId = tonumber(bodyId)
 
-        -- Positions in space, such as asteroids have no bodyId id. In this case latitude, longitude, altitude are x, y, z in meters.
+        --[[Positions in space, such as asteroids have no bodyId id. In this case
+            latitude, longitude, altitude are x, y, z in meters.
+
+            In either case, the closest stellar body is set as the positions body.
+        ]]
         if bodyId == 0 then
             x = tonumber(latitude)
             y = tonumber(longitude)

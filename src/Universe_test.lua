@@ -21,7 +21,7 @@ function Test:testPosition()
     local p = Position(u:CurrentGalaxy(), u:ClosestBody(), 1, 2, 3)
     local p2 = Position(u:CurrentGalaxy(), u:ClosestBody(), 3, 4, 5)
     lu.assertEquals(p.Coords:len(), vec3(1, 2, 3):len())
-    lu.assertEquals(p.Planet.Name, "Alioth")
+    lu.assertEquals(p.Body.Name, "Alioth")
     lu.assertEquals(p2.Coords:len(), vec3(3, 4, 5):len())
 end
 
