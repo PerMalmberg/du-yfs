@@ -9,6 +9,10 @@ function controller.setEngineCommand(tags, acceleration, angularAcceleration)
     io.write("SetEngineCommand: Tags: " .. tostring(tags) .. " acc:" .. tostring(acceleration) .. tostring(angularAcceleration))
 end
 
+function controller.getClosestPlanetInfluence()
+    return 1 -- On ground
+end
+
 -- the module
 return setmetatable(
     {

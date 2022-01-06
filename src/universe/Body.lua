@@ -43,7 +43,7 @@ function body:Prepare(galaxy, data)
         LocatedInSafeZone = data.isInSafeZone
     }
 
-    diag:Debug("Stellar body", self.Name)
+    --diag:Debug("Stellar body", self.Name)
 end
 
 return setmetatable(

@@ -1,15 +1,14 @@
 local FlightCore = require("FlightCore")
 local EngineGroup = require("EngineGroup")
-local vec3 = require("builtin/vec3")
-local Universe = require("Universe")
+local universe = require("universe/Universe")()
 local library = require("abstraction/Library")()
 
 local core = library.getCoreUnit()
 local fc = FlightCore()
 
-fc:ReceiveEvents()
-local stab = fc:GetStabilizer():StablilizeUpward()
-local stab = fc:GetStabilizer():TurnTowards(vec3(core.getConstructWorldOrientationForward()))
-fc:SetAcceleration(EngineGroup("ALL"), -vec3(core.getWorldVertical()), core.g()*1.005)
+local m6 = universe:ParsePosition("::pos{0,2,36.0242,101.2872,231.3857}")
 
-local u = Universe()
+
+fc:ReceiveEvents()
+--fc:SetAcceleration(EngineGroup("ALL"), -vec3(core.getWorldVertical()), core.g()*1.001)
+fc:PointTowards(m6.Coords)

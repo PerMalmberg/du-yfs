@@ -104,7 +104,7 @@ function universe:Prepare()
     diag:AssertIsTable(ga, "In-game atlas must be a table")
 
     for galaxyId, galaxy in pairs(ga) do
-        diag:Debug("Building galaxy", galaxyId)
+        --diag:Debug("Building galaxy", galaxyId)
         self.galaxy[galaxyId] = Galaxy(galaxyId, ga[galaxyId])
     end
 end
