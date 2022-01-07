@@ -1,6 +1,6 @@
 local lu = require("luaunit")
 local diag = require("Diagnostics")()
-local vec3 = require("builtin/vec3")
+local vec3 = require("builtin/cpml/vec3")
 
 Test = {}
 local result = ""

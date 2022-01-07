@@ -2,7 +2,7 @@ local lu = require("luaunit")
 local Universe = require("universe/Universe")
 local library = require("abstraction/Library")()
 local Position = require("universe/Position")
-local vec3 = require("builtin/vec3")
+local vec3 = require("builtin/cpml/vec3")
 
 local core = library.getCoreUnit()
 

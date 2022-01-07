@@ -4,7 +4,7 @@ local library = require("abstraction/Library")()
 local diag = require("Diagnostics")()
 local Galaxy = require("universe/Galaxy")
 local Position = require("universe/Position")
-local vec3 = require("builtin/vec3")
+local vec3 = require("builtin/cpml/vec3")
 local cos = math.cos
 local sin = math.sin
 
