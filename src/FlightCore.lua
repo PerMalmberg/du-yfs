@@ -35,7 +35,7 @@ local function new()
         rotationAcceleration = vec3(),
         accelerationGroup = EngineGroup("thrust"),
         rotationGroup = EngineGroup("torque"),
-        autoTurning = nil,
+        autoStabilization = nil,
         eventHandlerId = 0,
         dirty = false,
         orientation = {
@@ -54,6 +54,11 @@ local function new()
             AlongGravity = function()
                 -- This points towards the center of the planet, i.e. downwards
                 return vec3(core.getWorldVertical())
+            end
+        },
+        velocity = {
+            Angular = function()
+                return vec3(core.getWorldAngularVelocity())
             end
         }
     }
@@ -104,9 +109,10 @@ end
 ---@param target vec3 The target point
 function flightCore:TurnTowards(target)
     diag:AssertIsVec3(target, "target in PointTowards must be a vec3")
-    self.autoTurning = {
+    self.autoStabilization = {
         rollPid = Pid(0.5, 0, 10),
         pitchPid = Pid(0.5, 0, 10),
+        yawPid = Pid(10, 0, 10),
         target = target
     }
     self.dirty = true
@@ -132,23 +138,29 @@ function flightCore:StopEvents()
     self:clearEvent("flush", self.eventHandlerId)
 end
 
-function flightCore:autoLevel()
-    if self.autoTurning ~= nil then
+function flightCore:autoStabilize()
+    if self.autoStabilization ~= nil then
         local rollAngle = self:CalculateRoll()
-        self.autoTurning.rollPid:inject(-rollAngle) -- We're passing in the error (as we want to be at 0)
-        local rollAcceleration = self.autoTurning.rollPid:get() * self.orientation.Forward()
+        self.autoStabilization.rollPid:inject(-rollAngle) -- We're passing in the error (as we want to be at 0)
+        local rollAcceleration = self.autoStabilization.rollPid:get() * self.orientation.Forward()
 
         local pitchAngle = self:CalculatePitch()
-        self.autoTurning.pitchPid:inject(-pitchAngle) -- We're passing in the error (as we want to be at 0)
-        local pitchAcceleration = self.autoTurning.pitchPid:get() * self.orientation.Right()
+        self.autoStabilization.pitchPid:inject(-pitchAngle) -- We're passing in the error (as we want to be at 0)
+        local pitchAcceleration = self.autoStabilization.pitchPid:get() * self.orientation.Right()
 
-        self.rotationAcceleration = rollAcceleration + pitchAcceleration
+        local yawVelocity = self.velocity.Angular() * self.orientation.Up()
+        self.autoStabilization.yawPid:inject(-yawVelocity)
+        local yawAcceleration = self.autoStabilization.yawPid:get() * self.orientation.Up()
+
+        self.rotationAcceleration = rollAcceleration + pitchAcceleration + yawAcceleration
+
         self.dirty = true
     end
 end
 
 function flightCore:Flush()
-    self:autoLevel()
+    self:autoStabilize()
+
     if self.dirty then
         self.dirty = false
 

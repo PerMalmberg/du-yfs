@@ -12,4 +12,4 @@ local m6 = universe:ParsePosition("::pos{0,2,36.0242,101.2872,231.3857}")
 
 fc:ReceiveEvents()
 fc:TurnTowards(m6.Coords)
-fc:SetAcceleration(EngineGroup("ALL"), -vec3(core.getWorldVertical()), core.g()*1.005)
+fc:SetAcceleration(EngineGroup("ALL"), -vec3(core.getWorldVertical()), core.g()*1.015)
