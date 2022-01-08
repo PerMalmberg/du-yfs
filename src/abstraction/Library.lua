@@ -1,6 +1,6 @@
 --[[
     Library abstraction. This is assumes the project is being compiled with du-LuaC (https://github.com/wolfe-labs/DU-LuaC/) which provides
-    a getCoreUnit() function via the global 'library'.
+    a GetCoreUnit() function via the global 'library'.
 ]]
 require("abstraction/System") -- Make system available
 
@@ -13,7 +13,7 @@ local function new()
     return setmetatable({}, libraryProxy)
 end
 
-function libraryProxy.getCoreUnit()
+function libraryProxy.GetCoreUnit()
     -- Are we running live?
     if library then
         return library.getCoreUnit()
@@ -23,7 +23,7 @@ function libraryProxy.getCoreUnit()
     end
 end
 
-function libraryProxy.getController()
+function libraryProxy.GetController()
     if library then
         return unit -- Return the global unit
     else

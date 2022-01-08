@@ -27,10 +27,10 @@ flightCore.__index = flightCore
 local singelton = nil
 
 local function new()
-    local core = library.getCoreUnit()
+    local core = library.GetCoreUnit()
     local instance = {
         core = core,
-        ctrl = library.getController(),
+        ctrl = library.GetController(),
         desiredDirection = vec3(),
         acceleration = vec3(),
         rotationAcceleration = vec3(),

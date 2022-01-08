@@ -4,7 +4,7 @@ local library = require("abstraction/Library")()
 local Position = require("universe/Position")
 local vec3 = require("builtin/cpml/vec3")
 
-local core = library.getCoreUnit()
+local core = library.GetCoreUnit()
 
 Test = {}
 local u = Universe()

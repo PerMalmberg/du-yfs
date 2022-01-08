@@ -21,7 +21,7 @@ local singelton = nil
 
 local function new()
     local instance = {
-        core = library.getCoreUnit(),
+        core = library.GetCoreUnit(),
         galaxy = {} -- Galaxies by id
     }
     setmetatable(instance, universe)
