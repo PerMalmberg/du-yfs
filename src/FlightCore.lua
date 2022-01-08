@@ -105,8 +105,8 @@ end
 function flightCore:TurnTowards(target)
     diag:AssertIsVec3(target, "target in PointTowards must be a vec3")
     self.autoTurning = {
-        rollPid = Pid(0.2, 0, 10),
-        pitchPid = Pid(0.2, 0, 10),
+        rollPid = Pid(0.5, 0, 10),
+        pitchPid = Pid(0.5, 0, 10),
         target = target
     }
     self.dirty = true
@@ -135,11 +135,11 @@ end
 function flightCore:autoLevel()
     if self.autoTurning ~= nil then
         local rollAngle = self:CalculateRoll()
-        self.autoTurning.rollPid:inject(-rollAngle)
+        self.autoTurning.rollPid:inject(-rollAngle) -- We're passing in the error (as we want to be at 0)
         local rollAcceleration = self.autoTurning.rollPid:get() * self.orientation.Forward()
 
         local pitchAngle = self:CalculatePitch()
-        self.autoTurning.pitchPid:inject(-pitchAngle)
+        self.autoTurning.pitchPid:inject(-pitchAngle) -- We're passing in the error (as we want to be at 0)
         local pitchAcceleration = self.autoTurning.pitchPid:get() * self.orientation.Right()
 
         self.rotationAcceleration = rollAcceleration + pitchAcceleration

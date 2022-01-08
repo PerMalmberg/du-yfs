@@ -40,6 +40,9 @@ function core.setCurrentPlanetId(id)
     CoreVars.currentPlanetId = id
 end
 
+function core.getTime()
+    return os.time(os.date("!*t"))
+end
 
 -- The module
 return setmetatable(

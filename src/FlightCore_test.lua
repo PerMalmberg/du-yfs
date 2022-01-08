@@ -15,7 +15,7 @@ function Test:testAcceleration()
 end
 
 function Test:testPid()
-    local pid = Pid(0, 0, 1)
+    local pid = Pid(0.2, 0, 10)
 
     for i = 1, 100, .1 do
         local input = math.sin(i)
