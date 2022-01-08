@@ -11,6 +11,7 @@
     axb = 0 when vectors are parallel
 
 ]]
+
 local vec3 = require("builtin/cpml/vec3")
 local EngineGroup = require("EngineGroup")
 local library = require("abstraction/Library")()
@@ -36,7 +37,8 @@ local function new()
         accelerationGroup = EngineGroup("thrust"),
         rotationGroup = EngineGroup("torque"),
         autoStabilization = nil,
-        eventHandlerId = 0,
+        flushHandlerId = 0,
+        keyActionStartHandler = nil,
         dirty = false,
         orientation = {
             Up = function()
@@ -59,6 +61,14 @@ local function new()
         velocity = {
             Angular = function()
                 return vec3(core.getWorldAngularVelocity())
+            end,
+            Movement = function()
+                return vec3(core.getWorldVelocity())
+            end
+        },
+        position = {
+            Current = function()
+                return vec3(core.getConstructWorldPos())
             end
         }
     }
@@ -105,17 +115,39 @@ function flightCore:CalculatePitch()
     return self:angleFromPlane(self.orientation.Right(), -self.orientation.Forward())
 end
 
----Initiates yaw and roll towards a point
----@param target vec3 The target point
-function flightCore:TurnTowards(target)
-    diag:AssertIsVec3(target, "target in PointTowards must be a vec3")
+---Initiates yaw, roll and pitch stabilization
+function flightCore:EnableStabilization()
     self.autoStabilization = {
         rollPid = Pid(0.5, 0, 10),
         pitchPid = Pid(0.5, 0, 10),
-        yawPid = Pid(10, 0, 10),
-        target = target
+        yawPid = Pid(10, 0, 10)
     }
     self.dirty = true
+end
+
+function flightCore:DisableStabilization()
+    self.autoStabilization = nil
+end
+
+---Enables hold position
+---@param position vec3 The position to hold
+---@param deadZone number If close than this distance (in m) then consider position reached
+function flightCore:EnableHoldPosition(position, deadZone)
+    if position ~= nil then
+        diag:AssertIsVec3(position, "position in EnableHoldPosition must be a vec3")
+    end
+
+    self.holdPosition = {
+        targetPos = position or self.position.Current(),
+        deadZone = deadZone or 1,
+        xPid = Pid(0.2, 0, 10),
+        yPid = Pid(0.8, 0, 10),
+        zPid = Pid(0.2, 0, 10)
+    }
+end
+
+function flightCore:DisableHoldPosition()
+    self.holdPosition = nil
 end
 
 ---@param group EngineGroup The engine group to apply the acceleration to
@@ -131,11 +163,11 @@ function flightCore:SetAcceleration(group, direction, acceleration)
 end
 
 function flightCore:ReceiveEvents()
-    self.eventHandlerId = system:onEvent("flush", self.Flush, self)
+    self.flushHandlerId = system:onEvent("flush", self.Flush, self)
 end
 
 function flightCore:StopEvents()
-    self:clearEvent("flush", self.eventHandlerId)
+    self:clearEvent("flush", self.flushHandlerId)
 end
 
 function flightCore:autoStabilize()
@@ -158,8 +190,33 @@ function flightCore:autoStabilize()
     end
 end
 
+function flightCore:autoHoldPosition()
+    local h = self.holdPosition
+    if h ~= nil then
+        local diff = (h.targetPos - self.position.Current())
+
+        h.xPid:inject(diff.x)
+        h.yPid:inject(diff.y)
+        h.zPid:inject(diff.z)
+
+        local direction = vec3(h.xPid:get(), h.yPid:get(), h.zPid:get())
+
+        if direction:len() < h.deadZone then
+            --diag:Info("At target", diff:len())
+            self:SetAcceleration(EngineGroup("ALL"), -self.orientation.AlongGravity(), 0)
+        else
+            --diag:Info("Moving", diff:len(), direction)
+            local force = -self.orientation.AlongGravity() * self.core.g() -- Start at 1 g to hold us floating
+            force = force + direction * self.core.g() * 0.1
+
+            self:SetAcceleration(EngineGroup("ALL"), direction:normalize_inplace(), force:len())
+        end
+    end
+end
+
 function flightCore:Flush()
     self:autoStabilize()
+    self:autoHoldPosition()
 
     if self.dirty then
         self.dirty = false
