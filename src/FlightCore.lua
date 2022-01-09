@@ -11,7 +11,6 @@
     axb = 0 when vectors are parallel
 
 ]]
-
 local vec3 = require("builtin/cpml/vec3")
 local EngineGroup = require("EngineGroup")
 local library = require("abstraction/Library")()
@@ -32,10 +31,12 @@ local function new()
         core = core,
         ctrl = library.GetController(),
         desiredDirection = vec3(),
+        accelerationGroup = EngineGroup("none"),
         acceleration = vec3(),
-        rotationAcceleration = vec3(),
-        accelerationGroup = EngineGroup("thrust"),
         rotationGroup = EngineGroup("torque"),
+        rotationAcceleration = vec3(),
+        brakeGroup = EngineGroup("brake"),
+        brakeAcceleration = 0,
         autoStabilization = nil,
         flushHandlerId = 0,
         keyActionStartHandler = nil,
@@ -63,7 +64,7 @@ local function new()
                 return vec3(core.getWorldAngularVelocity())
             end,
             Movement = function()
-                return vec3(core.getWorldVelocity())
+                return vec3(core.getWorldAbsoluteVelocity())
             end
         },
         position = {
@@ -140,9 +141,7 @@ function flightCore:EnableHoldPosition(position, deadZone)
     self.holdPosition = {
         targetPos = position or self.position.Current(),
         deadZone = deadZone or 1,
-        xPid = Pid(0.2, 0, 10),
-        yPid = Pid(0.8, 0, 10),
-        zPid = Pid(0.2, 0, 10)
+        forcePid = Pid(0.2, 0, 10)
     }
 end
 
@@ -151,15 +150,20 @@ function flightCore:DisableHoldPosition()
 end
 
 ---@param group EngineGroup The engine group to apply the acceleration to
----@param direction vec3 direction we want to travel with the given acceleration
----@param acceleration number m/s2
-function flightCore:SetAcceleration(group, direction, acceleration)
+---@param acceleration vec3 Acceleration in m/s2, in world coordinates
+function flightCore:SetAcceleration(group, acceleration)
     diag:AssertIsTable(group, "group in SetAcceleration must be a table")
-    diag:AssertIsVec3(direction, "direction in SetAcceleration must be a vec3")
-    diag:AssertIsNumber(acceleration, "acceleration in SetAcceleration must be a number")
+    diag:AssertIsVec3(acceleration, "acceleration in SetAcceleration must be a vec3")
     self.accelerationGroup = group
-    self.acceleration = direction * acceleration
+    self.acceleration = acceleration
     self.dirty = true
+end
+
+---Sets the brakes to the given force
+---@param brakeAcceleration number The force, in
+function flightCore:SetBrakes(brakeAcceleration)
+    diag:AssertIsNumber(brakeAcceleration, "brakeAcceleration in SetBrakes must be a number")
+    self.brakeAcceleration = brakeAcceleration
 end
 
 function flightCore:ReceiveEvents()
@@ -193,23 +197,30 @@ end
 function flightCore:autoHoldPosition()
     local h = self.holdPosition
     if h ~= nil then
-        local diff = (h.targetPos - self.position.Current())
 
-        h.xPid:inject(diff.x)
-        h.yPid:inject(diff.y)
-        h.zPid:inject(diff.z)
+        local movementDirection = self.velocity.Movement():normalize_inplace()
+        local distanceToTarget = h.targetPos - self.position.Current()
+        local directionToTarget = distanceToTarget:normalize()
+        local movingTowardsTarget = movementDirection:dot(directionToTarget) > 0
 
-        local direction = vec3(h.xPid:get(), h.yPid:get(), h.zPid:get())
-
-        if direction:len() < h.deadZone then
-            --diag:Info("At target", diff:len())
-            self:SetAcceleration(EngineGroup("ALL"), -self.orientation.AlongGravity(), 0)
+        if movingTowardsTarget then
+            self:SetBrakes(0)
         else
-            --diag:Info("Moving", diff:len(), direction)
-            local force = -self.orientation.AlongGravity() * self.core.g() -- Start at 1 g to hold us floating
-            force = force + direction * self.core.g() * 0.1
+            -- Moving away from the target, apply brakes
+            self:SetBrakes(self.core.g() * 10)
+        end
 
-            self:SetAcceleration(EngineGroup("ALL"), direction:normalize_inplace(), force:len())
+        if distanceToTarget:len() < h.deadZone then
+            self:SetBrakes(self.core.g() * 10)
+            self:SetAcceleration(EngineGroup("thrust"), -self.orientation.AlongGravity() * self.core.g())
+        else
+            local acceleration = directionToTarget:normalize() * self.core.g() * 0.1
+            -- If target point is above, add the extra acceleration upwards to counter gravity
+            if directionToTarget:dot(self.orientation.AlongGravity()) <= 0 then
+                acceleration = acceleration - self.orientation.AlongGravity():normalize_inplace() * self.core.g()
+            end
+
+            self:SetAcceleration(EngineGroup("thrust"), acceleration)
         end
     end
 end
@@ -221,8 +232,15 @@ function flightCore:Flush()
     if self.dirty then
         self.dirty = false
 
+        -- Calculate brake vector and set brake value
+        -- The brake vector must point against the direction of travel, so negate it.
+        local brakeVector = -self.velocity.Movement():normalize() * self.brakeAcceleration
+        self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
+
+        -- Set acceleration values of engines
         self.ctrl.setEngineCommand(self.accelerationGroup:Union(), {self.acceleration:unpack()})
 
+        -- Set rotational values on adjsutors
         self.ctrl.setEngineCommand(self.rotationGroup:Union(), {0, 0, 0}, {self.rotationAcceleration:unpack()})
     end
 end

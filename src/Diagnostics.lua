@@ -48,6 +48,10 @@ local function isFunction(f)
     return type(f) == "function"
 end
 
+local function isBoolean(b)
+    return type(b) == "boolean"
+end
+
 local function isVector(v)
     return diag.IsTable(v) and diag.IsNumber(v.x and v.y and v.z)
 end
@@ -68,8 +72,14 @@ local function formatValues(...)
             s = string.format("%s", tonumber(v))
         elseif isVec3(v) then
             s = string.format("vec3(%s, %s, %s)", v.x, v.y, v.z)
+        elseif isBoolean(v) then
+            if v then
+                s = "true"
+            else
+                s = "false"
+            end
         else
-            s = "Unsupported table type"
+            s = "Unsupported table type:" .. type(v)
         end
 
         table.insert(parts, pos, string.format(" %s", s))

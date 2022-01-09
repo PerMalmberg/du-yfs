@@ -1,7 +1,7 @@
 local engineGroup = {}
 engineGroup.__index = engineGroup
 
-local function new(name)
+local function new(...)
     local e = {
         tags = {},
         dirty = true,
@@ -9,8 +9,10 @@ local function new(name)
     }
     local t = setmetatable(e, engineGroup)
 
-    if name ~= nil then
-        t:Add(name)
+    for _, name in ipairs({...}) do
+        if name ~= nil then
+            t:Add(name)
+        end
     end
 
     return t
