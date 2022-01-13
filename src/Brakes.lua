@@ -3,9 +3,9 @@ local json = require("builtin/dkjson")
 local utils = require("builtin/cpml/utils")
 local vec3 = require("builtin/cpml/vec3")
 local Constants = require("Constants")
+local calc = require("Calc")
 local clamp = utils.clamp
 local jdecode = json.decode
-local round = utils.round
 
 local brakes = {}
 brakes.__index = brakes
@@ -23,7 +23,6 @@ local function new()
         AtmoDensity = ctrl.getAtmosphereDensity,
         G = core.g,
         lastUpdateAtmoDensity = nil,
-        lastUpdateG = 0,
         currentAtmoForce = 0,
         currentSpaceForce = 0,
         Speed = function()
@@ -44,12 +43,10 @@ function brakes:calculateBreakForce()
         - Speed affects break force such that it increases from 10% to 100% at <=10m/s to >=100m/s
         - Atmospheric density affects break force in a linearly.
     ]]
-    local gNow = round(self.G(), 5) -- g changes frequently so avoid frequent updates.
-    local atmoNow = self.AtmoDensity()
+    local atmoNow = calc.Round(self.AtmoDensity(), 5) -- Reduce noice to reduce how often we have to recalculate
 
-    if self.lastUpdateAtmoDensity == nil or (atmoNow ~= self.lastUpdateAtmoDensity or gNow ~= self.lastUpdateG) then
+    if self.lastUpdateAtmoDensity == nil or atmoNow ~= self.lastUpdateAtmoDensity then
         self.lastUpdateAtmoDensity = atmoNow
-        self.lastUpdateG = gNow
 
         local force = jdecode(self.GetData()).maxBrake
 

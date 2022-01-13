@@ -1,8 +1,5 @@
 local FlightCore = require("FlightCore")
-local EngineGroup = require("EngineGroup")
 local universe = require("universe/Universe")()
-local library = require("abstraction/Library")()
-local calc = require("Calc")()
 
 local fc = FlightCore()
 

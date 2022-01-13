@@ -236,8 +236,6 @@ function flightCore:autoHoldPosition()
     end
 end
 
-
-
 function flightCore:Flush()
     self:autoStabilize()
     self:autoHoldPosition()
@@ -259,7 +257,6 @@ function flightCore:Flush()
 end
 
 function flightCore:Update()
-    system.print("FC: " .. self.brakes:MaxAtmoForce())
 end
 
 -- The module
