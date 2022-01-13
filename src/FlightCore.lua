@@ -17,6 +17,9 @@ local library = require("abstraction/Library")()
 local diag = require("Diagnostics")()
 local utils = require("builtin/cpml/utils")
 local Pid = require("builtin/cpml/pid")
+local Brakes = require("Brakes")
+local Constants = require("Constants")
+
 local radToDeg = math.deg
 local acos = math.acos
 local clamp = utils.clamp
@@ -32,6 +35,7 @@ local function new()
         ctrl = library.GetController(),
         desiredDirection = vec3(),
         accelerationGroup = EngineGroup("none"),
+        brakes = Brakes(),
         acceleration = vec3(),
         rotationGroup = EngineGroup("torque"),
         rotationAcceleration = vec3(),
@@ -39,7 +43,7 @@ local function new()
         brakeAcceleration = 0,
         autoStabilization = nil,
         flushHandlerId = 0,
-        keyActionStartHandler = nil,
+        updateHandlerId = 0,
         dirty = false,
         orientation = {
             Up = function()
@@ -70,6 +74,12 @@ local function new()
         position = {
             Current = function()
                 return vec3(core.getConstructWorldPos())
+            end
+        },
+        world = {
+            AtmoDensity = core.getAtmosphereDensity,
+            IsInAtmo = function()
+                return core.getAtmosphereDensity() > Constants.atmoToSpaceDensityLimit
             end
         }
     }
@@ -168,10 +178,12 @@ end
 
 function flightCore:ReceiveEvents()
     self.flushHandlerId = system:onEvent("flush", self.Flush, self)
+    self.updateHandlerId = system:onEvent("update", self.Update, self)
 end
 
 function flightCore:StopEvents()
     self:clearEvent("flush", self.flushHandlerId)
+    self:clearEvent("flush", self.updateHandlerId)
 end
 
 function flightCore:autoStabilize()
@@ -197,7 +209,6 @@ end
 function flightCore:autoHoldPosition()
     local h = self.holdPosition
     if h ~= nil then
-
         local movementDirection = self.velocity.Movement():normalize_inplace()
         local distanceToTarget = h.targetPos - self.position.Current()
         local directionToTarget = distanceToTarget:normalize()
@@ -225,6 +236,8 @@ function flightCore:autoHoldPosition()
     end
 end
 
+
+
 function flightCore:Flush()
     self:autoStabilize()
     self:autoHoldPosition()
@@ -240,9 +253,13 @@ function flightCore:Flush()
         -- Set acceleration values of engines
         self.ctrl.setEngineCommand(self.accelerationGroup:Union(), {self.acceleration:unpack()})
 
-        -- Set rotational values on adjsutors
+        -- Set rotational values on adjustors
         self.ctrl.setEngineCommand(self.rotationGroup:Union(), {0, 0, 0}, {self.rotationAcceleration:unpack()})
     end
+end
+
+function flightCore:Update()
+    system.print("FC: " .. self.brakes:MaxAtmoForce())
 end
 
 -- The module
