@@ -92,38 +92,24 @@ end
 ---Calculates the constructs angle (roll/pitch) based on the two vectors passed in that are used to construct the plane.
 ---@param forward vec3 The vector that is considered forward in the plane (the axis the plane rotates around).
 ---@param right vec3 The vector that is considered right in the plane.
+---@param downReference vec3 The vector that is used as a reference for where 'down' is. For example, in atmo this is AlongGravity
 ---@return number Angle, in degrees, clock-wise reference
-function flightCore:angleFromPlane(forward, right)
+function flightCore:angleFromPlane(forward, right, downReference)
     diag:AssertIsVec3(forward, "forward in angleFromPlane must be a vec3")
     diag:AssertIsVec3(right, "right in angleFromPlane must be a vec3")
-    if self.ctrl.getClosestPlanetInfluence() > 0 then
-        local o = self.orientation
-        -- Create a horizontal plane orthogonal to the gravity.
-        local plane = o.AlongGravity():cross(forward):normalize_inplace()
-        -- Now calculate the angle between the plane and construct-right (as if rotated around forward axis).
-        local dot = clamp(plane:dot(right), -1, 1) -- Add a clamp here to ensure floating point math doesn't fuck us up. ()
-        local angle = radToDeg(acos(dot))
-        -- The angle doesn't tell us which way we are rolled so determine that.
-        local negate = plane:cross(right):dot(forward)
-        if negate < 0 then
-            angle = -angle
-        end
-        return angle
-    else
-        return 0
+    diag:AssertIsVec3(downReference, "downReference in angleFromPlane must be a vec3")
+
+    -- Create a horizontal plane orthogonal to the gravity.
+    local plane = downReference:cross(forward):normalize_inplace()
+    -- Now calculate the angle between the plane and construct-right (as if rotated around forward axis).
+    local dot = clamp(plane:dot(right), -1, 1) -- Add a clamp here to ensure floating point math doesn't fuck us up. ()
+    local angle = radToDeg(acos(dot))
+    -- The angle doesn't tell us which way we are rolled so determine that.
+    local negate = plane:cross(right):dot(forward)
+    if negate < 0 then
+        angle = -angle
     end
-end
-
---- Calculate roll against the horizontal plane. If in space this will be 0
----@return number The roll, in degrees,clock-wise, i.e. left roll away from plane gives negative roll.
-function flightCore:CalculateRoll()
-    return self:angleFromPlane(self.orientation.Forward(), self.orientation.Right())
-end
-
---- Calculate pitch against the horizontal plane. If in space this will be 0.
---- Negative pitch means tipped forward, down towards planet
-function flightCore:CalculatePitch()
-    return self:angleFromPlane(self.orientation.Right(), -self.orientation.Forward())
+    return angle
 end
 
 ---Initiates yaw, roll and pitch stabilization
@@ -140,12 +126,20 @@ function flightCore:DisableStabilization()
     self.autoStabilization = nil
 end
 
+function flightCore:HoldCurrentPosition(deadZone)
+    if deadZone ~= nil then
+        diag:AssertIsNumber(deadZone, "deadZone in HoldCurrentPosition must be a number")
+    end
+    self:EnableHoldPosition(self.position.Current(), deadZone)
+end
+
 ---Enables hold position
 ---@param position vec3 The position to hold
 ---@param deadZone number If close than this distance (in m) then consider position reached
 function flightCore:EnableHoldPosition(position, deadZone)
-    if position ~= nil then
-        diag:AssertIsVec3(position, "position in EnableHoldPosition must be a vec3")
+    diag:AssertIsVec3(position, "position in EnableHoldPosition must be a vec3")
+    if deadZone ~= nil then
+        diag:AssertIsNumber(deadZone, "deadZone in EnableHoldPosition must be a number")
     end
 
     self.holdPosition = {
@@ -183,16 +177,21 @@ end
 
 function flightCore:StopEvents()
     self:clearEvent("flush", self.flushHandlerId)
-    self:clearEvent("flush", self.updateHandlerId)
+    self:clearEvent("update", self.updateHandlerId)
 end
 
 function flightCore:autoStabilize()
-    if self.autoStabilization ~= nil then
-        local rollAngle = self:CalculateRoll()
+    if self.autoStabilization ~= nil and self.ctrl.getClosestPlanetInfluence() > 0 then
+        local downDirection = self.orientation.AlongGravity()
+
+        -- Calculate roll against the horizontal plane
+        local rollAngle = self:angleFromPlane(self.orientation.Forward(), self.orientation.Right(), downDirection)
         self.autoStabilization.rollPid:inject(-rollAngle) -- We're passing in the error (as we want to be at 0)
         local rollAcceleration = self.autoStabilization.rollPid:get() * self.orientation.Forward()
 
-        local pitchAngle = self:CalculatePitch()
+        -- Calculate pitch against horizontal plane
+        -- Negative pitch means tipped forward, down towards the plane
+        local pitchAngle = self:angleFromPlane(self.orientation.Right(), -self.orientation.Forward(), downDirection)
         self.autoStabilization.pitchPid:inject(-pitchAngle) -- We're passing in the error (as we want to be at 0)
         local pitchAcceleration = self.autoStabilization.pitchPid:get() * self.orientation.Right()
 
