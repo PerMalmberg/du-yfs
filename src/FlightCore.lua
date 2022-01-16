@@ -215,25 +215,6 @@ function flightCore:autoStabilize()
         self.autoStabilization.yawPid:inject(-yawAngle)
         local yawAcceleration = self.autoStabilization.yawPid:get() * self.orientation.Up()
 
-
-
-
-        --local yawVelocity = self.velocity.Angular() * self.orientation.Up()
-        --self.autoStabilization.yawPid:inject(-yawVelocity)
-        --local yawAcceleration = self.autoStabilization.yawPid:get() * self.orientation.Up()
-        --[[local directionToPlayer = self.player.position.Current() - self.position.Current()
-        local dirOnForward = directionToPlayer:project_on(self.orientation.Forward()).x
-        local dirOnRight = directionToPlayer:project_on(self.orientation.Right()).z
-        local yawAngleToPlayer
-        if dirOnRight == 0 then -- Protect against div by zero
-            yawAngleToPlayer = 0
-        else
-            yawAngleToPlayer = atan(dirOnForward, dirOnRight)
-        end
-        self.autoStabilization.yawPid:inject(-yawAngleToPlayer)
-        system.print(radToDeg(yawAngleToPlayer) .. " " .. radToDeg(self.autoStabilization.yawPid:get()) )
-        local yawAcceleration = self.autoStabilization.yawPid:get() * self.orientation.Up()
-]]
         self.rotationAcceleration = rollAcceleration + pitchAcceleration + yawAcceleration
 
         self.dirty = true
