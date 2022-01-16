@@ -6,9 +6,9 @@
     * Curl fingers in direction of second.
     * Thumb now point in dirction of the resulting third arrow.
 
-    a.b = 0 when vectors are perpendicular.
-    a.b = 1 when vectors are orthogonal
-    axb = 0 when vectors are parallel
+    a.b = 0 when vectors are orthogonal.
+    a.b = 1 when vectors are parallel.
+    axb = 0 when vectors are parallel.
 
 ]]
 local vec3 = require("builtin/cpml/vec3")
@@ -19,10 +19,12 @@ local utils = require("builtin/cpml/utils")
 local Pid = require("builtin/cpml/pid")
 local Brakes = require("Brakes")
 local Constants = require("Constants")
+local calc = require("Calc")
 
 local radToDeg = math.deg
 local acos = math.acos
 local clamp = utils.clamp
+local atan = math.atan
 
 local flightCore = {}
 flightCore.__index = flightCore
@@ -30,9 +32,10 @@ local singelton = nil
 
 local function new()
     local core = library.GetCoreUnit()
+    local ctrl = library.GetController()
     local instance = {
         core = core,
-        ctrl = library.GetController(),
+        ctrl = ctrl,
         desiredDirection = vec3(),
         accelerationGroup = EngineGroup("none"),
         brakes = Brakes(),
@@ -45,6 +48,7 @@ local function new()
         flushHandlerId = 0,
         updateHandlerId = 0,
         dirty = false,
+        enginesOn = true,
         orientation = {
             Up = function()
                 -- This points in the current up direction of the construct
@@ -81,6 +85,13 @@ local function new()
             IsInAtmo = function()
                 return core.getAtmosphereDensity() > Constants.atmoToSpaceDensityLimit
             end
+        },
+        player = {
+            position = {
+                Current = function()
+                    return vec3(ctrl.getMasterPlayerWorldPosition())
+                end
+            }
         }
     }
 
@@ -112,12 +123,16 @@ function flightCore:angleFromPlane(forward, right, downReference)
     return angle
 end
 
+function flightCore:SetEngines(on)
+    self.enginesOn = on
+end
+
 ---Initiates yaw, roll and pitch stabilization
 function flightCore:EnableStabilization()
     self.autoStabilization = {
         rollPid = Pid(0.5, 0, 10),
         pitchPid = Pid(0.5, 0, 10),
-        yawPid = Pid(10, 0, 10)
+        yawPid = Pid(0.5, 0, 10)
     }
     self.dirty = true
 end
@@ -195,10 +210,30 @@ function flightCore:autoStabilize()
         self.autoStabilization.pitchPid:inject(-pitchAngle) -- We're passing in the error (as we want to be at 0)
         local pitchAcceleration = self.autoStabilization.pitchPid:get() * self.orientation.Right()
 
-        local yawVelocity = self.velocity.Angular() * self.orientation.Up()
-        self.autoStabilization.yawPid:inject(-yawVelocity)
+        local directionToPlayer = self.player.position.Current() - self.position.Current()
+        local yawAngle = self:angleFromPlane(self.orientation.Up(), self.orientation.Right(), directionToPlayer)
+        self.autoStabilization.yawPid:inject(-yawAngle)
         local yawAcceleration = self.autoStabilization.yawPid:get() * self.orientation.Up()
 
+
+
+
+        --local yawVelocity = self.velocity.Angular() * self.orientation.Up()
+        --self.autoStabilization.yawPid:inject(-yawVelocity)
+        --local yawAcceleration = self.autoStabilization.yawPid:get() * self.orientation.Up()
+        --[[local directionToPlayer = self.player.position.Current() - self.position.Current()
+        local dirOnForward = directionToPlayer:project_on(self.orientation.Forward()).x
+        local dirOnRight = directionToPlayer:project_on(self.orientation.Right()).z
+        local yawAngleToPlayer
+        if dirOnRight == 0 then -- Protect against div by zero
+            yawAngleToPlayer = 0
+        else
+            yawAngleToPlayer = atan(dirOnForward, dirOnRight)
+        end
+        self.autoStabilization.yawPid:inject(-yawAngleToPlayer)
+        system.print(radToDeg(yawAngleToPlayer) .. " " .. radToDeg(self.autoStabilization.yawPid:get()) )
+        local yawAcceleration = self.autoStabilization.yawPid:get() * self.orientation.Up()
+]]
         self.rotationAcceleration = rollAcceleration + pitchAcceleration + yawAcceleration
 
         self.dirty = true
@@ -247,8 +282,12 @@ function flightCore:Flush()
         local brakeVector = -self.velocity.Movement():normalize() * self.brakeAcceleration
         self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
 
-        -- Set acceleration values of engines
-        self.ctrl.setEngineCommand(self.accelerationGroup:Union(), {self.acceleration:unpack()})
+        if self.enginesOn then
+            -- Set acceleration values of engines
+            self.ctrl.setEngineCommand(self.accelerationGroup:Union(), {self.acceleration:unpack()})
+        else
+            self.ctrl.setEngineCommand(self.accelerationGroup:Union(), {0,0,0})
+        end
 
         -- Set rotational values on adjustors
         self.ctrl.setEngineCommand(self.rotationGroup:Union(), {0, 0, 0}, {self.rotationAcceleration:unpack()})
