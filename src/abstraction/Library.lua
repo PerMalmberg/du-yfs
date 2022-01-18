@@ -31,6 +31,10 @@ function libraryProxy.GetController()
     end
 end
 
+function libraryProxy.GetSolver3()
+    return library.systemResolution3
+end
+
 -- The module
 return setmetatable(
     {

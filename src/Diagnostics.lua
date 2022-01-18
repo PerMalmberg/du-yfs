@@ -1,6 +1,8 @@
 -- Diagnostic functions
 
 require("Enum")
+local library = require("abstraction/Library")()
+local Number = require("DiagShape")
 
 system =
     system or
@@ -25,7 +27,9 @@ local singelton = nil
 
 local function new()
     local instance = {
-        level = DiagLevel.DEBUG
+        core = library.GetCoreUnit(),
+        level = DiagLevel.DEBUG,
+        shapes = {}
     }
 
     setmetatable(instance, diag)
@@ -139,6 +143,30 @@ end
 
 function diag:Debug(msg, ...)
     self:print(DiagLevel.DEBUG, msg, ...)
+end
+
+---Draws a number
+---@param number number
+---@param worldPos vec3
+function diag:DrawNumber(number, worldPos)
+    local s = self.shapes[number]
+    if s ~= nil then
+        s.worldPos = worldPos
+    else
+        self.shapes[number] = Number(library.GetCoreUnit(), number, worldPos)
+    end
+end
+
+function diag:RemoveNumber(number)
+    local s = self.shapes[number]
+    if s then
+        s:Remove()
+        self.shapes[number] = nil
+    end
+end
+
+function diag:Update()
+
 end
 
 return setmetatable(

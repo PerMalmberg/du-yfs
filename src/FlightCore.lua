@@ -191,8 +191,8 @@ function flightCore:ReceiveEvents()
 end
 
 function flightCore:StopEvents()
-    self:clearEvent("flush", self.flushHandlerId)
-    self:clearEvent("update", self.updateHandlerId)
+    system:clearEvent("flush", self.flushHandlerId)
+    system:clearEvent("update", self.updateHandlerId)
 end
 
 function flightCore:autoStabilize()
@@ -206,9 +206,14 @@ function flightCore:autoStabilize()
 
         -- Calculate pitch against horizontal plane
         -- Negative pitch means tipped forward, down towards the plane
-        local pitchAngle = self:angleFromPlane(self.orientation.Right(), -self.orientation.Forward(), downDirection)
+        --local angleToPlayer = downDirection:angle_between(directionToPlayer)
+        local angleToPoint = self:getPitchAngleToPoint(self.player.position.Current())
+        local pitchDown = downDirection:rotate(angleToPoint, self.orientation.Right())
+        local pitchAngle = self:angleFromPlane(self.orientation.Right(), -self.orientation.Forward(), pitchDown)
         self.autoStabilization.pitchPid:inject(-pitchAngle) -- We're passing in the error (as we want to be at 0)
         local pitchAcceleration = self.autoStabilization.pitchPid:get() * self.orientation.Right()
+
+        --Only working with one axis at a time and pid goes to zeros so add the desired angle?
 
         local directionToPlayer = self.player.position.Current() - self.position.Current()
         local yawAngle = self:angleFromPlane(self.orientation.Up(), self.orientation.Right(), directionToPlayer)
@@ -219,6 +224,30 @@ function flightCore:autoStabilize()
 
         self.dirty = true
     end
+end
+
+function flightCore:getPitchAngleToPoint(point)
+    diag:AssertIsVec3(point, "point in getPitchAngleToPoint must be a vec3")
+    local constructForward = self.orientation.Forward():normalize_inplace()
+    local worldForward = vec3(1, 0, 0):normalize_inplace()
+    local worldUp = vec3(0, 1, 0):normalize_inplace()
+
+    -- Determine if they are pointing in the same general direction
+    if constructForward:dot(worldForward) < 0 then
+        -- Pointing in opposite directions, change it
+        worldForward = -worldForward
+    end
+
+    local directionToPoint = point - self.position.Current()
+
+    -- Project onto world axis so we can calculate the angle to the point in the x/y plane.
+    local onX = directionToPoint:project_on(worldForward)
+    local onY = directionToPoint:project_on(worldUp)
+
+    local res = atan(onY.y, onX.x)
+   -- diag:Info("res", math.deg(res), worldForward)
+
+    return res
 end
 
 function flightCore:autoHoldPosition()
@@ -267,7 +296,7 @@ function flightCore:Flush()
             -- Set acceleration values of engines
             self.ctrl.setEngineCommand(self.accelerationGroup:Union(), {self.acceleration:unpack()})
         else
-            self.ctrl.setEngineCommand(self.accelerationGroup:Union(), {0,0,0})
+            self.ctrl.setEngineCommand(self.accelerationGroup:Union(), {0, 0, 0})
         end
 
         -- Set rotational values on adjustors
@@ -275,7 +304,9 @@ function flightCore:Flush()
     end
 end
 
+
 function flightCore:Update()
+    diag:DrawNumber(4, self.position.Current() + 4 * self.orientation.Forward())
 end
 
 -- The module
