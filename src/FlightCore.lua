@@ -205,13 +205,14 @@ function flightCore:autoStabilize()
         local rollAcceleration = self.autoStabilization.rollPid:get() * self.orientation.Forward()
 
         -- Calculate pitch against horizontal plane
-        -- Negative pitch means tipped forward, down towards the plane
+        -- Positive pitch means tipped forward, down towards the plane
         --local angleToPlayer = downDirection:angle_between(directionToPlayer)
         local angleToPoint = self:getPitchAngleToPoint(self.player.position.Current())
-        local pitchDown = downDirection:rotate(angleToPoint, self.orientation.Right())
-        local pitchAngle = self:angleFromPlane(self.orientation.Right(), -self.orientation.Forward(), pitchDown)
+        --diag:Info("angelToPoint", math.deg(angleToPoint))
+        --math.deg(angleToPoint) +
+        local pitchAngle = self:angleFromPlane(self.orientation.Right(), -self.orientation.Forward(), downDirection)
         self.autoStabilization.pitchPid:inject(-pitchAngle) -- We're passing in the error (as we want to be at 0)
-        local pitchAcceleration = self.autoStabilization.pitchPid:get() * self.orientation.Right()
+        local pitchAcceleration = (self.autoStabilization.pitchPid:get()) * self.orientation.Right()
 
         --Only working with one axis at a time and pid goes to zeros so add the desired angle?
 
@@ -226,26 +227,22 @@ function flightCore:autoStabilize()
     end
 end
 
+---Gets the pitch angle to the given point
+---@param point vec3
+---@return number The angle in radians
 function flightCore:getPitchAngleToPoint(point)
     diag:AssertIsVec3(point, "point in getPitchAngleToPoint must be a vec3")
-    local constructForward = self.orientation.Forward():normalize_inplace()
-    local worldForward = vec3(1, 0, 0):normalize_inplace()
-    local worldUp = vec3(0, 1, 0):normalize_inplace()
-
-    -- Determine if they are pointing in the same general direction
-    if constructForward:dot(worldForward) < 0 then
-        -- Pointing in opposite directions, change it
-        worldForward = -worldForward
-    end
 
     local directionToPoint = point - self.position.Current()
+    diag:DrawNumber(1, point - self.orientation.Forward() * 4 + self.orientation.Up() * 1)
 
-    -- Project onto world axis so we can calculate the angle to the point in the x/y plane.
-    local onX = directionToPoint:project_on(worldForward)
-    local onY = directionToPoint:project_on(worldUp)
+    local onX = directionToPoint:project_on(self.orientation.Forward())
+    local onY = directionToPoint:project_on(self.orientation.Up())
 
-    local res = atan(onY.y, onX.x)
-   -- diag:Info("res", math.deg(res), worldForward)
+    diag:DrawNumber(2, self.position.Current() + onX - self.orientation.Forward() * 2)
+    diag:DrawNumber(3, self.position.Current() + onY)
+    local res = atan(math.abs(onY.y), math.abs(onX.x))
+    diag:Info("L", directionToPoint:len(), "X", onX.x, "Y", onY.y, "A", math.deg(res))
 
     return res
 end
@@ -304,9 +301,7 @@ function flightCore:Flush()
     end
 end
 
-
 function flightCore:Update()
-    diag:DrawNumber(4, self.position.Current() + 4 * self.orientation.Forward())
 end
 
 -- The module

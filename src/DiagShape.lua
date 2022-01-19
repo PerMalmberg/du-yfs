@@ -6,7 +6,6 @@ shape.__index = shape
 
 function shape:Draw()
     local constructLocal = calc.WorldToLocal(self.worldPos)
-    system.print(constructLocal.x .. " " .. constructLocal.y .. " " .. constructLocal.z)
     if self.index == -1 then
         self.index = self.core.spawnNumberSticker(self.number, constructLocal.x, constructLocal.y, constructLocal.z, "front")
     else
