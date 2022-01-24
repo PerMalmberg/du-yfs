@@ -12,6 +12,7 @@
 
 ]]
 local vec3 = require("builtin/cpml/vec3")
+local vec2 = require("builtin/cpml/vec2")
 local EngineGroup = require("EngineGroup")
 local library = require("abstraction/Library")()
 local diag = require("Diagnostics")()
@@ -25,6 +26,7 @@ local radToDeg = math.deg
 local acos = math.acos
 local clamp = utils.clamp
 local atan = math.atan
+local abs = math.abs
 
 local flightCore = {}
 flightCore.__index = flightCore
@@ -195,34 +197,90 @@ function flightCore:StopEvents()
     system:clearEvent("update", self.updateHandlerId)
 end
 
+---Returns the alignment offset (-1...0...1) between the construct reference and the target on the plane given by the up and right vectors.
+---@param target vec3 The target from which to determine the offset
+---@param forward vec3 The vector for which we want to know the offset. Also makes up the plane together with 'right'.
+---@param right vec3 The vector that, with 'forward', makes up the plane on which to determine the offset.
+---@return number The offset from the direction of the target on the plane. Positive values means it is within the same 180 degree arc. Negative means we're pointing in the opposite direction. 1 means it is perfectly aligned.
+function flightCore:alignmentOffset(target, forward, right)
+    -- Create the vector pointing to the target
+    local toTarget = target - self.position.Current()
+    toTarget:normalize_inplace()
+
+    -- Create a plane, based on the reference and right vectors.
+    -- Negate right to get a normal pointing up (right hand rule for cross product)
+    local planeNormal = forward:cross(-right):normalize_inplace()
+    -- Project the target vector onto the plane
+    local projection = toTarget:project_on_plane(planeNormal)
+
+    local diff = projection:dot(forward)
+
+    -- Determine the direction compared to the target
+    if planeNormal:cross(right):dot(forward) < 0 then
+        -- Opposite direction
+        diff = -diff
+    end
+
+    if diff > 0 then
+        -- Same half-circle
+        
+        local rightOfForward = planeNormal:cross(toTarget):dot(forward) <= 0
+        if not rightOfForward then
+            diag:Info("Left")
+            diff = 1 - diff
+        else
+            diff = diff - 1
+        end
+
+        diff = -diff
+    end
+
+    -- Which side of the target is it?
+    --if  and diff >= 0 then diff = -diff end
+
+    return diff
+end
+
 function flightCore:autoStabilize()
     if self.autoStabilization ~= nil and self.ctrl.getClosestPlanetInfluence() > 0 then
         local downDirection = self.orientation.AlongGravity()
 
-        -- Calculate roll against the horizontal plane
-        local rollAngle = self:angleFromPlane(self.orientation.Forward(), self.orientation.Right(), downDirection)
-        self.autoStabilization.rollPid:inject(-rollAngle) -- We're passing in the error (as we want to be at 0)
-        local rollAcceleration = self.autoStabilization.rollPid:get() * self.orientation.Forward()
+        local focusPoint = self.player.position.Current()
+        --toTarget:normalize_inplace()
+        --local multiplier = 1
 
-        -- Calculate pitch against horizontal plane
-        -- Positive pitch means tipped forward, down towards the plane
-        --local angleToPlayer = downDirection:angle_between(directionToPlayer)
-        local angleToPoint = self:getPitchAngleToPoint(self.player.position.Current())
-        --diag:Info("angelToPoint", math.deg(angleToPoint))
-        --math.deg(angleToPoint) +
-        local pitchAngle = self:angleFromPlane(self.orientation.Right(), -self.orientation.Forward(), downDirection)
-        self.autoStabilization.pitchPid:inject(-pitchAngle) -- We're passing in the error (as we want to be at 0)
-        local pitchAcceleration = (self.autoStabilization.pitchPid:get()) * self.orientation.Right()
+        -- Project the target onto the three planes
+        --[[
+        local upNormal = self.orientation.Forward():cross(-self.orientation.Right())
+        local yawProjection = toTarget:project_on_plane(upNormal)
+        local yawDiff = yawProjection:dot(self.orientation.Forward())
+]]
+        local yawDiff = self:alignmentOffset(focusPoint, self.orientation.Forward(), self.orientation.Right())
 
-        --Only working with one axis at a time and pid goes to zeros so add the desired angle?
+        
+        -- These tell us how close the toTargetVector is in the respective axis
+        -- When fully aligned, these values will be:
+        --- diffForward = 1
+        --- diffUp = 0
+        --- diffRight = 0
+        --[[        local diffForward = toTarget:dot(self.orientation.Forward()) * multiplier
+        local diffUp = toTarget:dot(-downDirection) * multiplier
+        local diffRight = toTarget:dot(self.orientation.Right()) * multiplier
 
-        local directionToPlayer = self.player.position.Current() - self.position.Current()
-        local yawAngle = self:angleFromPlane(self.orientation.Up(), self.orientation.Right(), directionToPlayer)
-        self.autoStabilization.yawPid:inject(-yawAngle)
+        diag:Info(diffForward, diffUp)
+
+        self.autoStabilization.yawPid:inject(diffForward - 1)
+        self.autoStabilization.pitchPid:inject(diffUp)
+        --self.autoStabilization.rollPid:inject(diffRight)
+
+        --local rollAcceleration = self.autoStabilization.rollPid:get() * self.orientation.Right()
+        local pitchAcceleration = self.autoStabilization.pitchPid:get() * self.orientation.Right()]]
+        self.autoStabilization.yawPid:inject(yawDiff)
         local yawAcceleration = self.autoStabilization.yawPid:get() * self.orientation.Up()
-
-        self.rotationAcceleration = rollAcceleration + pitchAcceleration + yawAcceleration
-
+        self.rotationAcceleration = yawAcceleration
+        diag:Info("yawDiff", yawDiff)
+        
+        --[[self.rotationAcceleration = rollAcceleration + pitchAcceleration + yawAcceleration ]]
         self.dirty = true
     end
 end
@@ -302,6 +360,28 @@ function flightCore:Flush()
 end
 
 function flightCore:Update()
+    --[[
+    diag:DrawNumber(0, self.position.Current())
+    diag:DrawNumber(1, self.position.Current() + self.orientation.Forward() * 3)
+    diag:DrawNumber(2, self.position.Current() + self.orientation.Up() * 3)
+    diag:DrawNumber(3, self.position.Current() + self.orientation.Right() * 3)
+    local focusPoint = self.player.position.Current()
+    local toTarget = focusPoint - self.position.Current()
+    toTarget:normalize_inplace()
+
+    -- These tell us how close the toTargetVector is in the respective axis
+    -- When fully aligned, these values will be:
+    --- diffForward = 1
+    --- diffUp = 0
+    --- diffRight = 0
+    local diffForward = toTarget:dot(self.orientation.Forward())
+    local diffUp = toTarget:dot(self.orientation.Up())
+    local diffRight = toTarget:dot(self.orientation.Right())
+
+
+
+    diag:Info(diffForward, diffUp, diffRight)
+]]
 end
 
 -- The module

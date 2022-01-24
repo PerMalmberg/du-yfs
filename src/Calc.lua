@@ -2,6 +2,7 @@ local library = require("abstraction/Library")()
 local vec3 = require("builtin/cpml/vec3")
 
 local atan = math.atan
+local sqrt = math.sqrt
 local core = library.GetCoreUnit()
 local solve3 = library.GetSolver3()
 
@@ -17,7 +18,14 @@ local calc = {
     end,
     WorldToLocal = function(coordinate)
         local localized = coordinate - vec3(core.getConstructWorldPos())
-        return vec3(solve3(core.getConstructWorldRight(), core.getConstructWorldForward(), core.getConstructWorldUp(), {localized:unpack()}))
+        return vec3(
+            solve3(
+                core.getConstructWorldRight(),
+                core.getConstructWorldForward(),
+                core.getConstructWorldUp(),
+                {localized:unpack()}
+            )
+        )
     end
 }
 
