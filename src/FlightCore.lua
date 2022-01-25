@@ -132,9 +132,9 @@ end
 ---Initiates yaw, roll and pitch stabilization
 function flightCore:EnableStabilization()
     self.autoStabilization = {
-        rollPid = Pid(0.5, 0, 10),
-        pitchPid = Pid(0.5, 0, 10),
-        yawPid = Pid(0.5, 0, 10)
+        rollPid = Pid(0.2, 0, 10),
+        pitchPid = Pid(0.2, 0, 10),
+        yawPid = Pid(0.2, 0, 10)
     }
     self.dirty = true
 end
@@ -243,40 +243,24 @@ function flightCore:autoStabilize()
         local downDirection = self.orientation.AlongGravity()
 
         local focusPoint = self.player.position.Current()
-        --toTarget:normalize_inplace()
-        --local multiplier = 1
+        local mul = 10
 
-        -- Project the target onto the three planes
-        --[[
-        local upNormal = self.orientation.Forward():cross(-self.orientation.Right())
-        local yawProjection = toTarget:project_on_plane(upNormal)
-        local yawDiff = yawProjection:dot(self.orientation.Forward())
-]]
         local yawDiff = self:alignmentOffset(focusPoint, self.orientation.Forward(), self.orientation.Right())
-
-        -- These tell us how close the toTargetVector is in the respective axis
-        -- When fully aligned, these values will be:
-        --- diffForward = 1
-        --- diffUp = 0
-        --- diffRight = 0
-        --[[        local diffForward = toTarget:dot(self.orientation.Forward()) * multiplier
-        local diffUp = toTarget:dot(-downDirection) * multiplier
-        local diffRight = toTarget:dot(self.orientation.Right()) * multiplier
-
-        diag:Info(diffForward, diffUp)
-
-        self.autoStabilization.yawPid:inject(diffForward - 1)
-        self.autoStabilization.pitchPid:inject(diffUp)
-        --self.autoStabilization.rollPid:inject(diffRight)
-
-        --local rollAcceleration = self.autoStabilization.rollPid:get() * self.orientation.Right()
-        local pitchAcceleration = self.autoStabilization.pitchPid:get() * self.orientation.Right()]]
-        self.autoStabilization.yawPid:inject(yawDiff)
+        self.autoStabilization.yawPid:inject(yawDiff * mul)
         local yawAcceleration = self.autoStabilization.yawPid:get() * self.orientation.Up()
-        self.rotationAcceleration = yawAcceleration
-        diag:Info("yawDiff", yawDiff)
 
-        --[[self.rotationAcceleration = rollAcceleration + pitchAcceleration + yawAcceleration ]]
+        local pitchDiff = self:alignmentOffset(focusPoint, self.orientation.Forward(), self.orientation.Up())
+        self.autoStabilization.pitchPid:inject(-pitchDiff * mul)
+        local pitchAcceleration = self.autoStabilization.pitchPid:get() * self.orientation.Right()
+
+        self.rotationAcceleration = yawAcceleration + pitchAcceleration
+
+        local pointAbove = self.position.Current() + downDirection * 10 -- A point above, opposite the down direction
+        local rollDiff = self:alignmentOffset(pointAbove, self.orientation.Up(), self.orientation.Right())
+        self.autoStabilization.rollPid:inject(-rollDiff * mul)
+        local rollAcceleration = self.autoStabilization.rollPid:get() * self.orientation.Forward()
+        self.rotationAcceleration = self.rotationAcceleration + rollAcceleration
+
         self.dirty = true
     end
 end
