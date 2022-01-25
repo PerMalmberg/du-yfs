@@ -201,7 +201,7 @@ end
 ---@param target vec3 The target from which to determine the offset
 ---@param forward vec3 The vector for which we want to know the offset. Also makes up the plane together with 'right'.
 ---@param right vec3 The vector that, with 'forward', makes up the plane on which to determine the offset.
----@return number The offset from the direction of the target on the plane. Positive values means it is within the same 180 degree arc. Negative means we're pointing in the opposite direction. 1 means it is perfectly aligned.
+---@return number The offset from the direction of the target on the plane. 0 means it is perfectly aligned.
 function flightCore:alignmentOffset(target, forward, right)
     -- Create the vector pointing to the target
     local toTarget = target - self.position.Current()
@@ -213,30 +213,27 @@ function flightCore:alignmentOffset(target, forward, right)
     -- Project the target vector onto the plane
     local projection = toTarget:project_on_plane(planeNormal)
 
+    -- Determine how far off we are from the forward vector
     local diff = projection:dot(forward)
 
     -- Determine the direction compared to the target
-    if planeNormal:cross(right):dot(forward) < 0 then
-        -- Opposite direction
-        diff = -diff
+    local opposite = planeNormal:cross(right):dot(forward) < 0
+    local rightOfForward
+    -- https://math.stackexchange.com/questions/2584451/how-to-get-the-direction-of-the-angle-from-a-dot-product-of-two-vectors
+    if opposite then
+        -- Other half-circle than target
+        rightOfForward = planeNormal:cross(toTarget):dot(-forward) <= 0
+    else
+        -- Same half-circle as target
+        rightOfForward = planeNormal:cross(toTarget):dot(forward) <= 0
     end
 
-    if diff > 0 then
-        -- Same half-circle
-        
-        local rightOfForward = planeNormal:cross(toTarget):dot(forward) <= 0
-        if not rightOfForward then
-            diag:Info("Left")
-            diff = 1 - diff
-        else
-            diff = diff - 1
-        end
-
-        diff = -diff
+    -- Adjust diff such that 0 means fully aligned and we turn the shortest way towards target.
+    if rightOfForward then
+        diff = 1 - diff
+    else
+        diff = diff - 1
     end
-
-    -- Which side of the target is it?
-    --if  and diff >= 0 then diff = -diff end
 
     return diff
 end
@@ -257,7 +254,6 @@ function flightCore:autoStabilize()
 ]]
         local yawDiff = self:alignmentOffset(focusPoint, self.orientation.Forward(), self.orientation.Right())
 
-        
         -- These tell us how close the toTargetVector is in the respective axis
         -- When fully aligned, these values will be:
         --- diffForward = 1
@@ -279,7 +275,7 @@ function flightCore:autoStabilize()
         local yawAcceleration = self.autoStabilization.yawPid:get() * self.orientation.Up()
         self.rotationAcceleration = yawAcceleration
         diag:Info("yawDiff", yawDiff)
-        
+
         --[[self.rotationAcceleration = rollAcceleration + pitchAcceleration + yawAcceleration ]]
         self.dirty = true
     end
