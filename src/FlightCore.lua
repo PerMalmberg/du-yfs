@@ -265,29 +265,11 @@ function flightCore:autoStabilize()
     end
 end
 
----Gets the pitch angle to the given point
----@param point vec3
----@return number The angle in radians
-function flightCore:getPitchAngleToPoint(point)
-    diag:AssertIsVec3(point, "point in getPitchAngleToPoint must be a vec3")
-
-    local directionToPoint = point - self.position.Current()
-    diag:DrawNumber(1, point - self.orientation.Forward() * 4 + self.orientation.Up() * 1)
-
-    local onX = directionToPoint:project_on(self.orientation.Forward())
-    local onY = directionToPoint:project_on(self.orientation.Up())
-
-    diag:DrawNumber(2, self.position.Current() + onX - self.orientation.Forward() * 2)
-    diag:DrawNumber(3, self.position.Current() + onY)
-    local res = atan(math.abs(onY.y), math.abs(onX.x))
-    diag:Info("L", directionToPoint:len(), "X", onX.x, "Y", onY.y, "A", math.deg(res))
-
-    return res
-end
-
 function flightCore:autoHoldPosition()
     local h = self.holdPosition
     if h ~= nil then
+        h.targetPos = self.player.position.Current() - self.orientation.AlongGravity() * 10 + vec3(self.ctrl.getMasterPlayerWorldForward()) * 10
+
         local movementDirection = self.velocity.Movement():normalize_inplace()
         local distanceToTarget = h.targetPos - self.position.Current()
         local directionToTarget = distanceToTarget:normalize()
@@ -302,7 +284,7 @@ function flightCore:autoHoldPosition()
 
         if distanceToTarget:len() < h.deadZone then
             self:SetBrakes(self.core.g() * 10)
-            self:SetAcceleration(EngineGroup("thrust"), -self.orientation.AlongGravity() * self.core.g())
+            self:SetAcceleration(EngineGroup("ALL"), -self.orientation.AlongGravity() * self.core.g())
         else
             local acceleration = directionToTarget:normalize() * self.core.g() * 0.1
             -- If target point is above, add the extra acceleration upwards to counter gravity
@@ -310,7 +292,7 @@ function flightCore:autoHoldPosition()
                 acceleration = acceleration - self.orientation.AlongGravity():normalize_inplace() * self.core.g()
             end
 
-            self:SetAcceleration(EngineGroup("thrust"), acceleration)
+            self:SetAcceleration(EngineGroup("ALL"), acceleration)
         end
     end
 end
