@@ -17,7 +17,7 @@ local EngineGroup = require("EngineGroup")
 local library = require("abstraction/Library")()
 local diag = require("Diagnostics")()
 local utils = require("builtin/cpml/utils")
-local Pid = require("builtin/cpml/pid")
+local PID = require("PID")
 local Brakes = require("Brakes")
 local Constants = require("Constants")
 local calc = require("Calc")
@@ -27,6 +27,8 @@ local acos = math.acos
 local clamp = utils.clamp
 local atan = math.atan
 local abs = math.abs
+
+local flushFrequency = 1/60.0
 
 local flightCore = {}
 flightCore.__index = flightCore
@@ -102,39 +104,17 @@ local function new()
     return instance
 end
 
----Calculates the constructs angle (roll/pitch) based on the two vectors passed in that are used to construct the plane.
----@param forward vec3 The vector that is considered forward in the plane (the axis the plane rotates around).
----@param right vec3 The vector that is considered right in the plane.
----@param downReference vec3 The vector that is used as a reference for where 'down' is. For example, in atmo this is AlongGravity
----@return number Angle, in degrees, clock-wise reference
-function flightCore:angleFromPlane(forward, right, downReference)
-    diag:AssertIsVec3(forward, "forward in angleFromPlane must be a vec3")
-    diag:AssertIsVec3(right, "right in angleFromPlane must be a vec3")
-    diag:AssertIsVec3(downReference, "downReference in angleFromPlane must be a vec3")
-
-    -- Create a horizontal plane orthogonal to the gravity.
-    local plane = downReference:cross(forward):normalize_inplace()
-    -- Now calculate the angle between the plane and construct-right (as if rotated around forward axis).
-    local dot = clamp(plane:dot(right), -1, 1) -- Add a clamp here to ensure floating point math doesn't fuck us up. ()
-    local angle = radToDeg(acos(dot))
-    -- The angle doesn't tell us which way we are rolled so determine that.
-    local negate = plane:cross(right):dot(forward)
-    if negate < 0 then
-        angle = -angle
-    end
-    return angle
-end
-
 function flightCore:SetEngines(on)
     self.enginesOn = on
 end
 
 ---Initiates yaw, roll and pitch stabilization
-function flightCore:EnableStabilization()
+function flightCore:EnableStabilization(focusPoint)
     self.autoStabilization = {
-        rollPid = Pid(0.2, 0, 10),
-        pitchPid = Pid(0.2, 0, 10),
-        yawPid = Pid(0.2, 0, 10)
+        rollPid = PID(7.5, 0.01, 3, -25, 25),
+        pitchPid = PID(7.5, 0.01, 3, -25, 25),
+        yawPid = PID(7.5, 0.01, 3, -25, 25),
+        focusPoint = focusPoint
     }
     self.dirty = true
 end
@@ -162,7 +142,7 @@ function flightCore:EnableHoldPosition(position, deadZone)
     self.holdPosition = {
         targetPos = position or self.position.Current(),
         deadZone = deadZone or 1,
-        forcePid = Pid(0.2, 0, 10)
+        forcePid = PID(0.2, 0, 10, -10, 10)
     }
 end
 
@@ -238,28 +218,29 @@ function flightCore:alignmentOffset(target, forward, right)
     return diff
 end
 
+function flightCore:deadZone(value, zone)
+    if abs(value) < abs(zone) then
+        return 0
+    end
+
+    return value
+end
+
 function flightCore:autoStabilize()
     if self.autoStabilization ~= nil and self.ctrl.getClosestPlanetInfluence() > 0 then
         local downDirection = self.orientation.AlongGravity()
 
-        local focusPoint = self.player.position.Current()
-        local mul = 10
+        local yawDiff = self:alignmentOffset(self.autoStabilization.focusPoint, self.orientation.Forward(), self.orientation.Right())
+        local yawAcceleration = self.autoStabilization.yawPid:Feed(flushFrequency, 0, -yawDiff) * self.orientation.Up()
 
-        local yawDiff = self:alignmentOffset(focusPoint, self.orientation.Forward(), self.orientation.Right())
-        self.autoStabilization.yawPid:inject(yawDiff * mul)
-        local yawAcceleration = self.autoStabilization.yawPid:get() * self.orientation.Up()
+        local pitchDiff = self:alignmentOffset(self.autoStabilization.focusPoint, self.orientation.Forward(), self.orientation.Up())
+        local pitchAcceleration = self.autoStabilization.pitchPid:Feed(flushFrequency, 0, pitchDiff) * self.orientation.Right()
 
-        local pitchDiff = self:alignmentOffset(focusPoint, self.orientation.Forward(), self.orientation.Up())
-        self.autoStabilization.pitchPid:inject(-pitchDiff * mul)
-        local pitchAcceleration = self.autoStabilization.pitchPid:get() * self.orientation.Right()
-
-        self.rotationAcceleration = yawAcceleration + pitchAcceleration
-
-        local pointAbove = self.position.Current() + downDirection * 10 -- A point above, opposite the down direction
+        local pointAbove = self.position.Current() - downDirection * 10 -- A point above, opposite the down direction
         local rollDiff = self:alignmentOffset(pointAbove, self.orientation.Up(), self.orientation.Right())
-        self.autoStabilization.rollPid:inject(-rollDiff * mul)
-        local rollAcceleration = self.autoStabilization.rollPid:get() * self.orientation.Forward()
-        self.rotationAcceleration = self.rotationAcceleration + rollAcceleration
+        local rollAcceleration = self.autoStabilization.rollPid:Feed(flushFrequency, 0, rollDiff) * self.orientation.Forward()
+
+        self.rotationAcceleration = yawAcceleration + pitchAcceleration + rollAcceleration
 
         self.dirty = true
     end
@@ -268,8 +249,6 @@ end
 function flightCore:autoHoldPosition()
     local h = self.holdPosition
     if h ~= nil then
-        h.targetPos = self.player.position.Current() - self.orientation.AlongGravity() * 10 + vec3(self.ctrl.getMasterPlayerWorldForward()) * 10
-
         local movementDirection = self.velocity.Movement():normalize_inplace()
         local distanceToTarget = h.targetPos - self.position.Current()
         local directionToTarget = distanceToTarget:normalize()
@@ -284,7 +263,7 @@ function flightCore:autoHoldPosition()
 
         if distanceToTarget:len() < h.deadZone then
             self:SetBrakes(self.core.g() * 10)
-            self:SetAcceleration(EngineGroup("ALL"), -self.orientation.AlongGravity() * self.core.g())
+            self:SetAcceleration(EngineGroup("thrust"), -self.orientation.AlongGravity() * self.core.g() * 1.01)
         else
             local acceleration = directionToTarget:normalize() * self.core.g() * 0.1
             -- If target point is above, add the extra acceleration upwards to counter gravity
@@ -292,7 +271,7 @@ function flightCore:autoHoldPosition()
                 acceleration = acceleration - self.orientation.AlongGravity():normalize_inplace() * self.core.g()
             end
 
-            self:SetAcceleration(EngineGroup("ALL"), acceleration)
+            self:SetAcceleration(EngineGroup("thrust"), acceleration)
         end
     end
 end
