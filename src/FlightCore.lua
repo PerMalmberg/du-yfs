@@ -30,6 +30,8 @@ local abs = math.abs
 
 local flushFrequency = 1/60.0
 
+local panel = require("panel/Panel")("FlightCore")
+
 local flightCore = {}
 flightCore.__index = flightCore
 local singelton = nil
@@ -96,6 +98,16 @@ local function new()
                     return vec3(ctrl.getMasterPlayerWorldPosition())
                 end
             }
+        },
+        widgets = {
+            rollDiff = panel:CreateValue("Roll", "dot"),
+            pitchDiff = panel:CreateValue("Pitch", "dot"),
+            yawDiff = panel:CreateValue("Yaw", "dot"),
+        },
+        currentStatus = {
+            rollDiff = 0,
+            pitchDiff = 0,
+            yawDiff = 0,
         }
     }
 
@@ -111,9 +123,9 @@ end
 ---Initiates yaw, roll and pitch stabilization
 function flightCore:EnableStabilization(focusPoint)
     self.autoStabilization = {
-        rollPid = PID(7.5, 0.01, 3, -25, 25),
-        pitchPid = PID(7.5, 0.01, 3, -25, 25),
-        yawPid = PID(7.5, 0.01, 3, -25, 25),
+        rollPid = PID(5, 0.05, 4, -25, 25),
+        pitchPid = PID(10, 0.15, 4, -25, 25),
+        yawPid = PID(10, 0.15, 4, -25, 25),
         focusPoint = focusPoint
     }
     self.dirty = true
@@ -215,7 +227,7 @@ function flightCore:alignmentOffset(target, forward, right)
         diff = diff - 1
     end
 
-    return diff
+    return diff / 2 -- Scale down from 0-2 to to 0-1
 end
 
 function flightCore:deadZone(value, zone)
@@ -230,15 +242,20 @@ function flightCore:autoStabilize()
     if self.autoStabilization ~= nil and self.ctrl.getClosestPlanetInfluence() > 0 then
         local downDirection = self.orientation.AlongGravity()
 
-        local yawDiff = self:alignmentOffset(self.autoStabilization.focusPoint, self.orientation.Forward(), self.orientation.Right())
-        local yawAcceleration = self.autoStabilization.yawPid:Feed(flushFrequency, 0, -yawDiff) * self.orientation.Up()
+        self.autoStabilization.focusPoint = self.player.position.Current() -- QQQ
 
-        local pitchDiff = self:alignmentOffset(self.autoStabilization.focusPoint, self.orientation.Forward(), self.orientation.Up())
-        local pitchAcceleration = self.autoStabilization.pitchPid:Feed(flushFrequency, 0, pitchDiff) * self.orientation.Right()
+        local c = self.currentStatus
+
+        c.yawDiff = self:alignmentOffset(self.autoStabilization.focusPoint, self.orientation.Forward(), self.orientation.Right())
+        diag:Info("yawDiff", self.yawDiff)
+        local yawAcceleration = self.autoStabilization.yawPid:Feed(flushFrequency, 0, -c.yawDiff) * self.orientation.Up()
+
+        c.pitchDiff = self:alignmentOffset(self.autoStabilization.focusPoint, self.orientation.Forward(), self.orientation.Up())
+        local pitchAcceleration = self.autoStabilization.pitchPid:Feed(flushFrequency, 0, c.pitchDiff) * self.orientation.Right()
 
         local pointAbove = self.position.Current() - downDirection * 10 -- A point above, opposite the down direction
-        local rollDiff = self:alignmentOffset(pointAbove, self.orientation.Up(), self.orientation.Right())
-        local rollAcceleration = self.autoStabilization.rollPid:Feed(flushFrequency, 0, rollDiff) * self.orientation.Forward()
+        c.rollDiff = self:alignmentOffset(pointAbove, self.orientation.Up(), self.orientation.Right())
+        local rollAcceleration = self.autoStabilization.rollPid:Feed(flushFrequency, 0, c.rollDiff) * self.orientation.Forward()
 
         self.rotationAcceleration = yawAcceleration + pitchAcceleration + rollAcceleration
 
@@ -301,28 +318,9 @@ function flightCore:Flush()
 end
 
 function flightCore:Update()
-    --[[
-    diag:DrawNumber(0, self.position.Current())
-    diag:DrawNumber(1, self.position.Current() + self.orientation.Forward() * 3)
-    diag:DrawNumber(2, self.position.Current() + self.orientation.Up() * 3)
-    diag:DrawNumber(3, self.position.Current() + self.orientation.Right() * 3)
-    local focusPoint = self.player.position.Current()
-    local toTarget = focusPoint - self.position.Current()
-    toTarget:normalize_inplace()
-
-    -- These tell us how close the toTargetVector is in the respective axis
-    -- When fully aligned, these values will be:
-    --- diffForward = 1
-    --- diffUp = 0
-    --- diffRight = 0
-    local diffForward = toTarget:dot(self.orientation.Forward())
-    local diffUp = toTarget:dot(self.orientation.Up())
-    local diffRight = toTarget:dot(self.orientation.Right())
-
-
-
-    diag:Info(diffForward, diffUp, diffRight)
-]]
+   self.widgets.rollDiff:Set(self.currentStatus.rollDiff)
+   self.widgets.pitchDiff:Set(self.currentStatus.pitchDiff)
+   self.widgets.yawDiff:Set(self.currentStatus.yawDiff)
 end
 
 -- The module
