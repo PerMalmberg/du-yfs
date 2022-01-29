@@ -42,19 +42,20 @@ local function new()
     local instance = {
         core = core,
         ctrl = ctrl,
-        desiredDirection = vec3(),
-        accelerationGroup = EngineGroup("none"),
         brakes = Brakes(),
-        acceleration = vec3(),
         rotationGroup = EngineGroup("torque"),
-        rotationAcceleration = vec3(),
         brakeGroup = EngineGroup("brake"),
-        brakeAcceleration = 0,
         autoStabilization = nil,
         flushHandlerId = 0,
         updateHandlerId = 0,
         dirty = false,
-        enginesOn = true,
+        controlValue = {
+            acceleration = vec3(),
+            accelerationGroup = EngineGroup("none"),
+            desiredDirection = vec3(),
+            engineOn = true,
+            brakeAcceleration = vec3()
+        },
         orientation = {
             Up = function()
                 -- This points in the current up direction of the construct
@@ -117,13 +118,13 @@ local function new()
 end
 
 function flightCore:SetEngines(on)
-    self.enginesOn = on
+    self.controlValue.engineOn = on
 end
 
 ---Initiates yaw, roll and pitch stabilization
 function flightCore:EnableStabilization(focusPoint)
     self.autoStabilization = {
-        rollPid = PID(5, 0.05, 4, -25, 25),
+        rollPid = PID(10, 0.05, 4, -25, 25),
         pitchPid = PID(10, 0.15, 4, -25, 25),
         yawPid = PID(10, 0.15, 4, -25, 25),
         focusPoint = focusPoint
@@ -166,17 +167,18 @@ end
 ---@param acceleration vec3 Acceleration in m/s2, in world coordinates
 function flightCore:SetAcceleration(group, acceleration)
     diag:AssertIsTable(group, "group in SetAcceleration must be a table")
-    diag:AssertIsVec3(acceleration, "acceleration in SetAcceleration must be a vec3")
-    self.accelerationGroup = group
-    self.acceleration = acceleration
+    diag:AssertIsVec3(acceleration, "acceleration in acceleration must be a vec3")
+    local cv = self.controlValue
+    cv.accelerationGroup = group
+    cv.acceleration = acceleration
     self.dirty = true
 end
 
 ---Sets the brakes to the given force
----@param brakeAcceleration number The force, in
+---@param acceleration number The force, in
 function flightCore:SetBrakes(brakeAcceleration)
-    diag:AssertIsNumber(brakeAcceleration, "brakeAcceleration in SetBrakes must be a number")
-    self.brakeAcceleration = brakeAcceleration
+    diag:AssertIsNumber(brakeAcceleration, "acceleration in SetBrakes must be a number")
+    self.controlValue.brakeAcceleration = brakeAcceleration
 end
 
 function flightCore:ReceiveEvents()
@@ -239,25 +241,26 @@ function flightCore:deadZone(value, zone)
 end
 
 function flightCore:autoStabilize()
-    if self.autoStabilization ~= nil and self.ctrl.getClosestPlanetInfluence() > 0 then
+    local as = self.autoStabilization
+
+    if as ~= nil and self.ctrl.getClosestPlanetInfluence() > 0 then
         local downDirection = self.orientation.AlongGravity()
 
-        self.autoStabilization.focusPoint = self.player.position.Current() -- QQQ
+        --as.focusPoint = self.player.position.Current() -- QQQ
 
         local c = self.currentStatus
 
-        c.yawDiff = self:alignmentOffset(self.autoStabilization.focusPoint, self.orientation.Forward(), self.orientation.Right())
-        diag:Info("yawDiff", self.yawDiff)
-        local yawAcceleration = self.autoStabilization.yawPid:Feed(flushFrequency, 0, -c.yawDiff) * self.orientation.Up()
+        c.yawDiff = self:alignmentOffset(as.focusPoint, self.orientation.Forward(), self.orientation.Right())
+        local yawAcceleration = as.yawPid:Feed(flushFrequency, 0, -c.yawDiff) * self.orientation.Up()
 
         c.pitchDiff = self:alignmentOffset(self.autoStabilization.focusPoint, self.orientation.Forward(), self.orientation.Up())
-        local pitchAcceleration = self.autoStabilization.pitchPid:Feed(flushFrequency, 0, c.pitchDiff) * self.orientation.Right()
+        local pitchAcceleration = as.pitchPid:Feed(flushFrequency, 0, c.pitchDiff) * self.orientation.Right()
 
         local pointAbove = self.position.Current() - downDirection * 10 -- A point above, opposite the down direction
         c.rollDiff = self:alignmentOffset(pointAbove, self.orientation.Up(), self.orientation.Right())
-        local rollAcceleration = self.autoStabilization.rollPid:Feed(flushFrequency, 0, c.rollDiff) * self.orientation.Forward()
+        local rollAcceleration = as.rollPid:Feed(flushFrequency, 0, c.rollDiff) * self.orientation.Forward()
 
-        self.rotationAcceleration = yawAcceleration + pitchAcceleration + rollAcceleration
+        self.controlValue.rotationAcceleration = yawAcceleration + pitchAcceleration + rollAcceleration
 
         self.dirty = true
     end
@@ -285,7 +288,7 @@ function flightCore:autoHoldPosition()
             local acceleration = directionToTarget:normalize() * self.core.g() * 0.1
             -- If target point is above, add the extra acceleration upwards to counter gravity
             if directionToTarget:dot(self.orientation.AlongGravity()) <= 0 then
-                acceleration = acceleration - self.orientation.AlongGravity():normalize_inplace() * self.core.g()
+               acceleration = acceleration - self.orientation.AlongGravity():normalize_inplace() * self.core.g()
             end
 
             self:SetAcceleration(EngineGroup("thrust"), acceleration)
@@ -302,18 +305,18 @@ function flightCore:Flush()
 
         -- Calculate brake vector and set brake value
         -- The brake vector must point against the direction of travel, so negate it.
-        local brakeVector = -self.velocity.Movement():normalize() * self.brakeAcceleration
+        local brakeVector = -self.velocity.Movement():normalize() * self.controlValue.brakeAcceleration
         self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
 
-        if self.enginesOn then
-            -- Set acceleration values of engines
-            self.ctrl.setEngineCommand(self.accelerationGroup:Union(), {self.acceleration:unpack()})
+        if self.controlValue.engineOn then
+            -- Set controlValue.acceleration values of engines
+            self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {self.controlValue.acceleration:unpack()})
         else
-            self.ctrl.setEngineCommand(self.accelerationGroup:Union(), {0, 0, 0})
+            self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {0, 0, 0})
         end
 
         -- Set rotational values on adjustors
-        self.ctrl.setEngineCommand(self.rotationGroup:Union(), {0, 0, 0}, {self.rotationAcceleration:unpack()})
+        self.ctrl.setEngineCommand(self.rotationGroup:Union(), {0, 0, 0}, {self.controlValue.rotationAcceleration:unpack()})
     end
 end
 
