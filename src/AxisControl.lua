@@ -19,6 +19,9 @@ local function new(maxAcceleration)
     return instance
 end
 
+function control:SetTarget(targetCoordinate)
+    
+end
 
 return setmetatable(
     {
