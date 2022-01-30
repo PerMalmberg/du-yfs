@@ -11,28 +11,26 @@ local calc = {
         local mult = 10 ^ (decimalPlaces or 0)
         return math.floor(number * mult + 0.5) / mult
     end,
-    RotationFrom = function(normal, a, b)
-        a = a:project_on_plane(normal)
-        b = b:project_on_plane(normal)
-        return atan(a:cross(b):dot(normal), a:dot(b))
+    Sign = function(v)
+        if v > 0 then
+            return 1
+        elseif v < 0 then
+            return -1
+        else
+            return 0
+        end
     end,
     WorldToLocal = function(coordinate)
         local localized = coordinate - vec3(core.getConstructWorldPos())
-        return vec3(
-            solve3(
-                core.getConstructWorldRight(),
-                core.getConstructWorldForward(),
-                core.getConstructWorldUp(),
-                {localized:unpack()}
-            )
-        )
+        return vec3(solve3(core.getConstructWorldRight(), core.getConstructWorldForward(), core.getConstructWorldUp(), {localized:unpack()}))
     end,
     ---Returns the alignment offset (-1...0...1) between the construct reference and the target on the plane given by the up and right vectors.
     ---@param referencePosition vec3 The position to base calculations from, i.e. the postion the construct is at.
     ---@param target vec3 The target from which to determine the offset
     ---@param forward vec3 The vector for which we want to know the offset. Also makes up the plane together with 'right'.
     ---@param right vec3 The vector that, with 'forward', makes up the plane on which to determine the offset.
-    ---@return number The offset from the direction of the target on the plane. 0 means it is perfectly aligned.
+    ---@return number The offset from the direction of the target on the plane. 0 means it is perfectly aligned. > 0 if past target, clockwise. < 0 if before target, clockwise.
+    ---In other words. If 12 a'clock is forward. And we point to 11, we'd get a negative value. If pointing at 1, we'd get a postive value.
     AlignmentOffset = function(referencePosition, target, forward, right)
         -- Create the vector pointing to the target
         local toTarget = target - referencePosition

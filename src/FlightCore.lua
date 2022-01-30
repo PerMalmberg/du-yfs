@@ -39,9 +39,9 @@ local function new()
         updateHandlerId = 0,
         dirty = false,
         controllers = {
-            pitch = AxisControl(math.pi * 2 / 5, AxisControlPitch),
-            roll = AxisControl(math.pi * 2 / 5, AxisControlRoll),
-            yaw = AxisControl(math.pi * 2 / 5, AxisControlYaw)
+            pitch = AxisControl(math.deg(math.pi * 2 / 5), AxisControlPitch),
+            roll = AxisControl(math.deg(math.pi * 2 / 5), AxisControlRoll),
+            yaw = AxisControl(math.deg(math.pi * 2 / 5), AxisControlYaw)
         },
         controlValue = {
             acceleration = vec3(),
@@ -202,10 +202,7 @@ function flightCore:Flush()
 
         if self.controlValue.engineOn then
             -- Set controlValue.acceleration values of engines
-            self.ctrl.setEngineCommand(
-                self.controlValue.accelerationGroup:Union(),
-                {self.controlValue.acceleration:unpack()}
-            )
+            self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {self.controlValue.acceleration:unpack()})
         else
             self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {0, 0, 0})
         end

@@ -5,8 +5,11 @@ local calc = require("Calc")
 local sharedPanel = require("panel/SharedPanel")()
 local EngineGroup = require("EngineGroup")
 local constants = require("Constants")
+local vec3 = require("builtin/cpml/vec3")
 
 local abs = math.abs
+local max = math.max
+local deg = math.deg
 
 local control = {}
 control.__index = control
@@ -14,6 +17,11 @@ control.__index = control
 AxisControlPitch = 1
 AxisControlRoll = 2
 AxisControlYaw = 3
+
+local finalAcceleration = {}
+finalAcceleration[AxisControlPitch] = vec3()
+finalAcceleration[AxisControlRoll] = vec3()
+finalAcceleration[AxisControlYaw] = vec3()
 
 ---Creates a new AxisControl
 ---@param maxAngluarVelocity number Max angular velocity in radians/s2
@@ -33,9 +41,17 @@ local function new(maxAngluarVelocity, axis)
         updateHandlerId = nil,
         offsetWidget = nil,
         velocityWidget = nil,
+        accelerationWidget = nil,
+        operationWidget = nil,
+        operationText = "",
         currentOffsetAngle = 0,
+        currentAcceleration = 0,
         torqueGroup = EngineGroup("torque"),
-        c = 0
+        maxMeasuredAcceleration = 1, -- start value, degrees per second
+        adjustment = {
+            accelerationTimeRemaining = 0,
+            targetSpeed = 0
+        }
     }
 
     local shared = sharedPanel:Get("AxisControl")
@@ -43,16 +59,25 @@ local function new(maxAngluarVelocity, axis)
 
     if axis == AxisControlPitch then
         instance.offsetWidget = shared:CreateValue("Pitch", "°")
+        instance.velocityWidget = shared:CreateValue("P.Vel", "°/s")
+        instance.accelerationWidget = shared:CreateValue("P.Acc", "°/s2")
+        instance.operationWidget = shared:CreateValue("P.Op", "")
         instance.Forward = o.Forward
         instance.Right = o.Up
         instance.RotationAxis = o.Right
     elseif axis == AxisControlRoll then
         instance.offsetWidget = shared:CreateValue("Roll", "°")
+        instance.velocityWidget = shared:CreateValue("R.Vel", "°/s")
+        instance.accelerationWidget = shared:CreateValue("R.Acc", "°/s2")
+        instance.operationWidget = shared:CreateValue("R.Op", "")
         instance.Forward = o.Up
         instance.Right = o.Right
         instance.RotationAxis = o.Forward
     elseif axis == AxisControlYaw then
         instance.offsetWidget = shared:CreateValue("Yaw", "°")
+        instance.velocityWidget = shared:CreateValue("Y.Vel", "°/s")
+        instance.accelerationWidget = shared:CreateValue("Y.Acc", "°/s2")
+        instance.operationWidget = shared:CreateValue("Y.Op", "")
         instance.Forward = o.Forward
         instance.Right = o.Right
         instance.RotationAxis = o.Up
@@ -60,15 +85,9 @@ local function new(maxAngluarVelocity, axis)
         diag:Fail("Invalid axis: " .. axis)
     end
 
-    instance.velocityWidget = shared:CreateValue("Velocity", "°/s")
-
     setmetatable(instance, control)
 
     return instance
-end
-
-function control:CurrentAngluarVelocity()
-    return math.deg((construct.velocity.Angular() * self.RotationAxis()):len())
 end
 
 function control:ReceiveEvents()
@@ -85,25 +104,82 @@ function control:SetTarget(targetCoordinate)
     self.targetCoordinate = targetCoordinate
 end
 
-function control:Flush()
-    if self.targetCoordinate ~= nil then
-        self.c = self.c + constants.flushTick
+function control:CurrentAngluarVelocity()
+    return abs(deg((construct.velocity.Angular() * self.RotationAxis()):len()))
+end
 
-        self.currentOffsetAngle =
-            calc.AlignmentOffset(construct.position.Current(), self.targetCoordinate, self.Forward(), self.Right()) *
-            180
-    --[[
-        if self.controlledAxis == AxisControlYaw and self.c > 15 and self.c < 16 then
-            system.print("qqqqqqqqqqqqqq")
-            local acc = math.pi / 4 * self.RotationAxis()
-            self.ctrl.setEngineCommand(self.torqueGroup:Union(), {0, 0, 0}, {acc:unpack()})
-        end ]]
+function control:MeasureMaxAcceleration()
+    local acc = deg((construct.acceleration.Angular() * self.RotationAxis()):len())
+    self.maxMeasuredAcceleration = max(self.maxMeasuredAcceleration, abs(acc))
+end
+
+function control:TimeToTarget()
+    local timeToTarget = 1
+    local angVel = self:CurrentAngluarVelocity()
+
+    if angVel ~= 0 then
+        timeToTarget = self.currentOffsetAngle / angVel
     end
+
+    return timeToTarget
+end
+
+function control:BrakeTime()
+    local time = self:CurrentAngluarVelocity() / self.maxMeasuredAcceleration
+    return time
+end
+
+function control:AdjustSpeed(newVelocity)
+    local currVel = self:CurrentAngluarVelocity()
+
+    -- V = V0 + a * t => t = (V - V0) / a
+    self.adjustment.accelerationTimeRemaining = (newVelocity - currVel) / self.maxMeasuredAcceleration
+    self.adjustment.targetSpeed = newVelocity
+end
+
+function control:Flush()
+    --self:MeasureMaxAcceleration()
+
+    if self.targetCoordinate ~= nil then
+        if self.adjustment.accelerationTimeRemaining > 0 then
+            self.operationText = "Adjusting"
+            self.adjustment.accelerationTimeRemaining = self.adjustment.accelerationTimeRemaining - constants.flushTick
+
+            if self:CurrentAngluarVelocity() < self.adjustment.targetSpeed then
+                self.currentAcceleration = self.maxMeasuredAcceleration
+            else
+                self.currentAcceleration = -self.maxMeasuredAcceleration
+            end
+
+            if self.controlledAxis == AxisControlYaw then
+                finalAcceleration[self.controlledAxis] = self.RotationAxis() * self.currentAcceleration
+            end
+        else
+            self.operationText = "Control"
+            local offset = calc.AlignmentOffset(construct.position.Current(), self.targetCoordinate, self.Forward(), self.Right())
+
+            -- To turn towards the target, we want to apply an accelecation with the same sign as the offset.
+            local direction = calc.Sign(self.currentOffsetAngle)
+
+            self:AdjustSpeed(abs(offset) * self.maxVel * direction)
+
+            self.currentOffsetAngle = offset * 180
+        end
+
+        self:Apply()
+    end
+end
+
+function control:Apply()
+    local acc = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] + finalAcceleration[AxisControlYaw]
+    self.ctrl.setEngineCommand(self.torqueGroup:Union(), {0, 0, 0}, {acc:unpack()})
 end
 
 function control:Update()
     self.offsetWidget:Set(self.currentOffsetAngle)
     self.velocityWidget:Set(self:CurrentAngluarVelocity())
+    self.accelerationWidget:Set(self.currentAcceleration)
+    self.operationWidget:Set(self.operationText)
 end
 
 return setmetatable(

@@ -39,6 +39,14 @@ local function new()
                 return vec3(core.getWorldAbsoluteVelocity())
             end
         },
+        acceleration = {
+            Angular = function()
+                return vec3(core.getWorldAngularAcceleration())
+            end,
+            Movement = function()
+                return vec3(core.getWorldAcceleration())
+            end
+        },
         position = {
             Current = function()
                 return vec3(core.getConstructWorldPos())
@@ -49,7 +57,7 @@ local function new()
             IsInAtmo = function()
                 return core.getAtmosphereDensity() > Constants.atmoToSpaceDensityLimit
             end,
-            G = core.g,
+            G = core.g
         },
         player = {
             position = {
@@ -63,8 +71,6 @@ local function new()
     setmetatable(instance, coreUnit)
     return instance
 end
-
-
 
 return setmetatable(
     {
