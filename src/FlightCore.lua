@@ -12,26 +12,17 @@
 
 ]]
 local vec3 = require("builtin/cpml/vec3")
-local vec2 = require("builtin/cpml/vec2")
 local EngineGroup = require("EngineGroup")
 local library = require("abstraction/Library")()
 local diag = require("Diagnostics")()
 local utils = require("builtin/cpml/utils")
 local PID = require("PID")
 local Brakes = require("Brakes")
-local Constants = require("Constants")
 local construct = require("abstraction/Construct")()
+local AxisControl = require("AxisControl")
 local calc = require("Calc")
 
-local radToDeg = math.deg
-local acos = math.acos
-local clamp = utils.clamp
-local atan = math.atan
-local abs = math.abs
-
 local flushFrequency = 1 / 60.0
-
-local panel = require("panel/Panel")("FlightCore")
 
 local flightCore = {}
 flightCore.__index = flightCore
@@ -40,7 +31,6 @@ local singelton = nil
 local function new()
     local ctrl = library.GetController()
     local instance = {
-        core = core,
         ctrl = ctrl,
         brakes = Brakes(),
         rotationGroup = EngineGroup("torque"),
@@ -49,17 +39,18 @@ local function new()
         flushHandlerId = 0,
         updateHandlerId = 0,
         dirty = false,
+        controllers = {
+            pitch = AxisControl(math.pi * 2/5, AxisControlPitch),
+            roll = AxisControl(math.pi * 2/5, AxisControlRoll),
+            yaw = AxisControl(math.pi * 2/5, AxisControlYaw)
+        },
         controlValue = {
             acceleration = vec3(),
             accelerationGroup = EngineGroup("none"),
             desiredDirection = vec3(),
             engineOn = true,
-            brakeAcceleration = vec3()
-        },
-        widgets = {
-            rollDiff = panel:CreateValue("Roll", "dot"),
-            pitchDiff = panel:CreateValue("Pitch", "dot"),
-            yawDiff = panel:CreateValue("Yaw", "dot")
+            brakeAcceleration = vec3(),
+            rotationAcceleration = vec3()
         },
         currentStatus = {
             rollDiff = 0,
@@ -80,9 +71,6 @@ end
 ---Initiates yaw, roll and pitch stabilization
 function flightCore:EnableStabilization(focusPoint)
     self.autoStabilization = {
-        rollPid = PID(10, 0.05, 4, -25, 25),
-        pitchPid = PID(10, 0.15, 4, -25, 25),
-        yawPid = PID(10, 0.15, 4, -25, 25),
         focusPoint = focusPoint
     }
     self.dirty = true
@@ -140,43 +128,36 @@ end
 function flightCore:ReceiveEvents()
     self.flushHandlerId = system:onEvent("flush", self.Flush, self)
     self.updateHandlerId = system:onEvent("update", self.Update, self)
+    self.controllers.pitch:ReceiveEvents()
+    self.controllers.roll:ReceiveEvents()
+    self.controllers.yaw:ReceiveEvents()
 end
 
 function flightCore:StopEvents()
     system:clearEvent("flush", self.flushHandlerId)
     system:clearEvent("update", self.updateHandlerId)
+    self.controllers.pitch:StopEvents()
+    self.controllers.roll:StopEvents()
+    self.controllers.yaw:StopEvents()
 end
 
-function flightCore:deadZone(value, zone)
-    if abs(value) < abs(zone) then
-        return 0
-    end
-
-    return value
-end
-
-function flightCore:autoStabilize()
+function flightCore:autoStabilize()    
     local as = self.autoStabilization
 
     if as ~= nil and self.ctrl.getClosestPlanetInfluence() > 0 then
-        local downDirection = construct.orientation.AlongGravity()
+        local upDirection = -construct.orientation.AlongGravity()
 
-        --as.focusPoint = self.player.position.Current() -- QQQ
+        as.focusPoint = construct.player.position.Current()
 
         local c = self.currentStatus
         local ownPos = construct.position.Current()
+        
+        self.controllers.pitch:SetTarget(as.focusPoint)
 
-        c.yawDiff = calc.AlignmentOffset(ownPos, as.focusPoint, construct.orientation.Forward(), construct.orientation.Right())
-        local yawAcceleration = as.yawPid:Feed(flushFrequency, 0, -c.yawDiff) * construct.orientation.Up()
+        local pointAbove = ownPos + upDirection * 10
+        self.controllers.roll:SetTarget(pointAbove)
 
-        c.pitchDiff = calc.AlignmentOffset(ownPos, as.focusPoint, construct.orientation.Forward(), construct.orientation.Up())
-        local pitchAcceleration = as.pitchPid:Feed(flushFrequency, 0, c.pitchDiff) * construct.orientation.Right()
-
-        local pointAbove = ownPos - downDirection * 10 -- A point above, opposite the down direction
-        c.rollDiff = calc.AlignmentOffset(ownPos, pointAbove, construct.orientation.Up(), construct.orientation.Right())
-        local rollAcceleration = as.rollPid:Feed(flushFrequency, 0, c.rollDiff) * construct.orientation.Forward()
-
-        self.controlValue.rotationAcceleration = yawAcceleration + pitchAcceleration + rollAcceleration
+        self.controllers.yaw:SetTarget(as.focusPoint)
 
         self.dirty = true
     end
@@ -215,7 +196,6 @@ function flightCore:autoHoldPosition()
 end
 
 function flightCore:Flush()
-    self:autoStabilize()
     self:autoHoldPosition()
 
     if self.dirty then
@@ -246,9 +226,7 @@ function flightCore:Flush()
 end
 
 function flightCore:Update()
-    self.widgets.rollDiff:Set(self.currentStatus.rollDiff)
-    self.widgets.pitchDiff:Set(self.currentStatus.pitchDiff)
-    self.widgets.yawDiff:Set(self.currentStatus.yawDiff)
+    self:autoStabilize()
 end
 
 -- The module

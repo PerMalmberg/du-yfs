@@ -1,6 +1,7 @@
 local vec3 = require("builtin/cpml/vec3")
 
 local constants = {
+    flushtick = 1/60,
     atmoToSpaceDensityLimit = 0, -- At what density level we consider space to begin. Densities higher than this is atmo.
     universe = {
         up = vec3(0, 1, 0),

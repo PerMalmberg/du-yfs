@@ -108,6 +108,14 @@ function diag:AssertIsNumber(n, msg)
     assert(isNumber(n), msg)
 end
 
+function diag:AssertIsFunction(f, msg)
+    assert(isFunction(f), msg)
+end
+
+function diag:Fail(msg)
+    assert(false, msg)
+end
+
 local function getLevelStr(lvl)
     if lvl == DiagLevel.DEBUG then
         return "D"
