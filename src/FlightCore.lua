@@ -175,7 +175,7 @@ function flightCore:SetAcceleration(group, acceleration)
 end
 
 ---Sets the brakes to the given force
----@param acceleration number The force, in
+---@param brakeAcceleration number The force, in
 function flightCore:SetBrakes(brakeAcceleration)
     diag:AssertIsNumber(brakeAcceleration, "acceleration in SetBrakes must be a number")
     self.controlValue.brakeAcceleration = brakeAcceleration
@@ -189,47 +189,6 @@ end
 function flightCore:StopEvents()
     system:clearEvent("flush", self.flushHandlerId)
     system:clearEvent("update", self.updateHandlerId)
-end
-
----Returns the alignment offset (-1...0...1) between the construct reference and the target on the plane given by the up and right vectors.
----@param target vec3 The target from which to determine the offset
----@param forward vec3 The vector for which we want to know the offset. Also makes up the plane together with 'right'.
----@param right vec3 The vector that, with 'forward', makes up the plane on which to determine the offset.
----@return number The offset from the direction of the target on the plane. 0 means it is perfectly aligned.
-function flightCore:alignmentOffset(target, forward, right)
-    -- Create the vector pointing to the target
-    local toTarget = target - self.position.Current()
-    toTarget:normalize_inplace()
-
-    -- Create a plane, based on the reference and right vectors.
-    -- Negate right to get a normal pointing up (right hand rule for cross product)
-    local planeNormal = forward:cross(-right):normalize_inplace()
-    -- Project the target vector onto the plane
-    local projection = toTarget:project_on_plane(planeNormal)
-
-    -- Determine how far off we are from the forward vector
-    local diff = projection:dot(forward)
-
-    -- Determine the direction compared to the target
-    local opposite = planeNormal:cross(right):dot(forward) < 0
-    local rightOfForward
-    -- https://math.stackexchange.com/questions/2584451/how-to-get-the-direction-of-the-angle-from-a-dot-product-of-two-vectors
-    if opposite then
-        -- Other half-circle than target
-        rightOfForward = planeNormal:cross(toTarget):dot(-forward) <= 0
-    else
-        -- Same half-circle as target
-        rightOfForward = planeNormal:cross(toTarget):dot(forward) <= 0
-    end
-
-    -- Adjust diff such that 0 means fully aligned and we turn the shortest way towards target.
-    if rightOfForward then
-        diff = 1 - diff
-    else
-        diff = diff - 1
-    end
-
-    return diff / 2 -- Scale down from 0-2 to to 0-1
 end
 
 function flightCore:deadZone(value, zone)
@@ -249,15 +208,16 @@ function flightCore:autoStabilize()
         --as.focusPoint = self.player.position.Current() -- QQQ
 
         local c = self.currentStatus
+        local ownPos = self.position.Current()
 
-        c.yawDiff = self:alignmentOffset(as.focusPoint, self.orientation.Forward(), self.orientation.Right())
+        c.yawDiff = calc.AlignmentOffset(ownPos, as.focusPoint, self.orientation.Forward(), self.orientation.Right())
         local yawAcceleration = as.yawPid:Feed(flushFrequency, 0, -c.yawDiff) * self.orientation.Up()
 
-        c.pitchDiff = self:alignmentOffset(self.autoStabilization.focusPoint, self.orientation.Forward(), self.orientation.Up())
+        c.pitchDiff = calc.AlignmentOffset(ownPos, as.focusPoint, self.orientation.Forward(), self.orientation.Up())
         local pitchAcceleration = as.pitchPid:Feed(flushFrequency, 0, c.pitchDiff) * self.orientation.Right()
 
-        local pointAbove = self.position.Current() - downDirection * 10 -- A point above, opposite the down direction
-        c.rollDiff = self:alignmentOffset(pointAbove, self.orientation.Up(), self.orientation.Right())
+        local pointAbove = ownPos - downDirection * 10 -- A point above, opposite the down direction
+        c.rollDiff = calc.AlignmentOffset(ownPos, pointAbove, self.orientation.Up(), self.orientation.Right())
         local rollAcceleration = as.rollPid:Feed(flushFrequency, 0, c.rollDiff) * self.orientation.Forward()
 
         self.controlValue.rotationAcceleration = yawAcceleration + pitchAcceleration + rollAcceleration
