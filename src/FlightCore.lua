@@ -33,24 +33,22 @@ local function new()
     local instance = {
         ctrl = ctrl,
         brakes = Brakes(),
-        rotationGroup = EngineGroup("torque"),
         brakeGroup = EngineGroup("brake"),
         autoStabilization = nil,
         flushHandlerId = 0,
         updateHandlerId = 0,
         dirty = false,
         controllers = {
-            pitch = AxisControl(math.pi * 2/5, AxisControlPitch),
-            roll = AxisControl(math.pi * 2/5, AxisControlRoll),
-            yaw = AxisControl(math.pi * 2/5, AxisControlYaw)
+            pitch = AxisControl(math.pi * 2 / 5, AxisControlPitch),
+            roll = AxisControl(math.pi * 2 / 5, AxisControlRoll),
+            yaw = AxisControl(math.pi * 2 / 5, AxisControlYaw)
         },
         controlValue = {
             acceleration = vec3(),
             accelerationGroup = EngineGroup("none"),
             desiredDirection = vec3(),
             engineOn = true,
-            brakeAcceleration = vec3(),
-            rotationAcceleration = vec3()
+            brakeAcceleration = vec3()
         },
         currentStatus = {
             rollDiff = 0,
@@ -141,25 +139,21 @@ function flightCore:StopEvents()
     self.controllers.yaw:StopEvents()
 end
 
-function flightCore:autoStabilize()    
+function flightCore:autoStabilize()
     local as = self.autoStabilization
 
     if as ~= nil and self.ctrl.getClosestPlanetInfluence() > 0 then
         local upDirection = -construct.orientation.AlongGravity()
+        local ownPos = construct.position.Current()
+        local c = self.currentStatus
 
         as.focusPoint = construct.player.position.Current()
 
-        local c = self.currentStatus
-        local ownPos = construct.position.Current()
-        
         self.controllers.pitch:SetTarget(as.focusPoint)
+        self.controllers.yaw:SetTarget(as.focusPoint)
 
         local pointAbove = ownPos + upDirection * 10
         self.controllers.roll:SetTarget(pointAbove)
-
-        self.controllers.yaw:SetTarget(as.focusPoint)
-
-        self.dirty = true
     end
 end
 
@@ -215,13 +209,6 @@ function flightCore:Flush()
         else
             self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {0, 0, 0})
         end
-
-        -- Set rotational values on adjustors
-        self.ctrl.setEngineCommand(
-            self.rotationGroup:Union(),
-            {0, 0, 0},
-            {self.controlValue.rotationAcceleration:unpack()}
-        )
     end
 end
 
