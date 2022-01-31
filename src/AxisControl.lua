@@ -12,6 +12,7 @@ local max = math.max
 local deg = math.deg
 
 local rad2deg = math.pi * 180
+local deg2rad = math.pi / 180
 
 local control = {}
 control.__index = control
@@ -47,7 +48,7 @@ local function new(maxAngluarVelocity, axis)
         operationWidget = nil,
         operationText = "",
         torqueGroup = EngineGroup("torque"),
-        maxMeasuredAcceleration = 1 -- start value, degrees per second
+        maxMeasuredAcceleration = 360 -- start value, degrees per second
     }
 
     local shared = sharedPanel:Get("AxisControl")
@@ -126,9 +127,11 @@ function control:CurrentAngularAcceleration()
     end
 end
 
+---Measures the maximum acceleration we've achieved, in deg/s2
 function control:MeasureMaxAcceleration()
-    local acc = deg((construct.acceleration.Angular() * self.RotationAxis()):len())
+    local acc = (construct.acceleration.Angular() * self.RotationAxis()):len() * rad2deg
     self.maxMeasuredAcceleration = max(self.maxMeasuredAcceleration, abs(acc))
+    system.print(self.maxMeasuredAcceleration)
 end
 
 function control:Flush()
@@ -137,21 +140,52 @@ function control:Flush()
     if self.targetCoordinate ~= nil then
         -- To turn towards the target, we want to apply an accelecation with the same sign as the offset.
         local offset = calc.AlignmentOffset(construct.position.Current(), self.targetCoordinate, self.Forward(), self.Right())
-        self.offsetWidget:Set(offset * 180)
-        local direction = calc.Sign(offset)
+        local offsetDegrees = offset * 180
+        self.offsetWidget:Set(offsetDegrees)
 
         -- Positive offset means we're right of target, clock-wise
         -- Postive acceleration turns counter-clockwise
+        -- Positive velocity means we're turning counter-clockwise
 
-        if self.controlledAxis == AxisControlYaw and self:CurrentAngluarVelocity() < 7 then
-            finalAcceleration[self.controlledAxis] = self.RotationAxis() * math.rad(1)
-            self.operationWidget:Set("Acc" .. tostring(construct.world.AngularAirFrictionAcceleration()))
+        local angVel = self:CurrentAngluarVelocity()
+        local velSign = calc.Sign(angVel)
+        local isLeft = offset < 0
+        local isRight = offset > 0
+        local movingLeft = velSign == 1
+        local movingRight = velSign == -1
+        local isStandStillOutOfAlignment = (velSign == 0) and (isLeft or isRight)
+
+        local direction
+        if isLeft then
+            direction = -1
+        elseif isRight then
+            direction = 1
         else
-            self.operationWidget:Set("Wait" .. tostring(construct.world.AngularAirFrictionAcceleration()))
+            direction = 0
+        end
+
+        local acceleration = 0
+
+        if (isLeft and movingLeft) or (isRight and movingRight) then
+            -- Moving away from target, need to brake, so add current velocity to our acceleration
+            acceleration = self.maxMeasuredAcceleration + angVel
+            self.operationWidget:Set("Away" .. acceleration)
+        elseif isStandStillOutOfAlignment or (isLeft and movingRight) or (isRight and movingLeft) then
+            -- Standing still, or moving towards target, reduce as we get closer
+            acceleration = self.maxMeasuredAcceleration * abs(max(offset, 0.1))
+            self.operationWidget:Set("Towards" .. acceleration)
+        end
+
+        if self.controlledAxis == AxisControlYaw then
+            self:SetAcceleration(acceleration * direction)
         end
 
         self:Apply()
     end
+end
+
+function control:SetAcceleration(degreesPerS2)
+    finalAcceleration[self.controlledAxis] = self:RotationAxis() * degreesPerS2 * deg2rad
 end
 
 function control:Apply()

@@ -29,8 +29,12 @@ local calc = {
     ---@param target vec3 The target from which to determine the offset
     ---@param forward vec3 The vector for which we want to know the offset. Also makes up the plane together with 'right'.
     ---@param right vec3 The vector that, with 'forward', makes up the plane on which to determine the offset.
-    ---@return number The offset from the direction of the target on the plane. 0 means it is perfectly aligned. > 0 if past target, clockwise. < 0 if before target, clockwise.
-    ---In other words. If 12 a'clock is forward. And we point to 11, we'd get a negative value. If pointing at 1, we'd get a postive value.
+    ---@return number The offset from the direction of the target on the plane.
+    --- The range is -1 ... 0 .. 1
+    --- 0 means it is perfectly aligned.
+    --- > 0 if past target, clockwise.
+    --- < 0 if before target, clockwise.
+    --- In other words. If 12 a'clock is forward. And we point to 11, we'd get a negative value. If pointing at 1, we'd get a postive value.
     AlignmentOffset = function(referencePosition, target, forward, right)
         -- Create the vector pointing to the target
         local toTarget = target - referencePosition
