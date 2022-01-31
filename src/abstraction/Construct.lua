@@ -57,7 +57,10 @@ local function new()
             IsInAtmo = function()
                 return core.getAtmosphereDensity() > Constants.atmoToSpaceDensityLimit
             end,
-            G = core.g
+            G = core.g,
+            AngularAirFrictionAcceleration = function()
+                return vec3(core.getWorldAirFrictionAcceleration())
+            end
         },
         player = {
             position = {

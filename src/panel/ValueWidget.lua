@@ -10,7 +10,8 @@ local function new(panelId, title, unit)
         title = title,
         unit = unit,
         widgetId = system.createWidget(panelId, "value"),
-        dataId = nil
+        dataId = nil,
+        newValue = nil
     }
 
     setmetatable(instance, widget)
@@ -24,14 +25,22 @@ function widget:Close()
 end
 
 function widget:Set(value)
-    local s = '{ "label":"' .. self.title .. '", "value": "' .. value .. '", "unit": "' .. self.unit .. '"}'
+    self.newValue = value
+end
 
-    if self.dataId == nil then
-        system.destroyData(self.dataId)
-        self.dataId = system.createData(s)
-        system.addDataToWidget(self.dataId, self.widgetId)
-    else
-        system.updateData(self.dataId, s)
+function widget:Update()
+    if self.newValue ~= nil then
+        local s = '{ "label":"' .. self.title .. '", "value": "' .. self.newValue .. '", "unit": "' .. self.unit .. '"}'
+
+        if self.dataId == nil then
+            system.destroyData(self.dataId)
+            self.dataId = system.createData(s)
+            system.addDataToWidget(self.dataId, self.widgetId)
+        else
+            system.updateData(self.dataId, s)
+        end
+
+        self.newValue = nil
     end
 end
 

@@ -11,15 +11,21 @@ local function new(title)
         core = core,
         title = title,
         panelId = system.createWidgetPanel(title),
-        widgets = {}
+        widgets = {},
+        updateHandlerId = nil
     }
 
     setmetatable(instance, panel)
+
+    instance.updateHandlerId = system:onEvent("update", instance.Update, instance)
+
     return instance
 end
 
 function panel:Close()
-    for _, widget in ipairs(self.widgets) do
+    system:clearEvent("update", self.updateHandlerId)
+
+    for _, widget in pairs(self.widgets) do
         widget:Close()
     end
 
@@ -30,6 +36,12 @@ function panel:CreateValue(title, unit)
     local w = ValueWidget(self.panelId, title, unit)
     self.widgets[w.widgetId] = w
     return w
+end
+
+function panel:Update()
+    for _, widget in pairs(self.widgets) do
+        widget:Update()
+    end
 end
 
 return setmetatable(
