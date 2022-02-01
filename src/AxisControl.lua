@@ -150,15 +150,12 @@ function control:TimeToTarget(offsetInDegrees, angleVel)
     return time
 end
 
----Calculates the
----@param angleVel number The angle velocity
----@param timeToTarget number Time, in seconds, until we reach the target position
-function control:CalculateBrakeAcceleration(angleVel, timeToTarget)
-    return angleVel / timeToTarget
+function control:BrakeAcceleration(angVel, deltaVel, offsetInDegrees)
+    return angVel * deltaVel / offsetInDegrees
 end
 
-function control:BrakeForce(angVel, deltaVel, offsetInDegrees)
-    return angVel * deltaVel / offsetInDegrees
+function control:BrakeAngle(angVel, deltaVel, angularDistance)
+    return angVel * deltaVel / angularDistance
 end
 
 function control:Flush()
@@ -180,7 +177,8 @@ function control:Flush()
         local isRight = offset > 0
         local movingLeft = velSign == 1
         local movingRight = velSign == -1
-        local isStandStillOutOfAlignment = abs(angVel) < 0.001 and (isLeft or isRight)
+        local slowZone = 0.5 -- degrees
+        local isStandStillOutOfAlignment = abs(angVel) < slowZone and (isLeft or isRight)
 
         local direction
 
@@ -195,21 +193,21 @@ function control:Flush()
         local acceleration = 0
 
         if (isLeft and movingLeft) or (isRight and movingRight) or isStandStillOutOfAlignment then
-            --self.operationWidget:Set("Away" .. calc.Round(acceleration, 2))
             -- Moving away from target
             acceleration = self.maxMeasuredAcceleration
         elseif (isLeft and movingRight) or (isRight and movingLeft) then
             -- moving towards target, reduce as we get closer
-            local brakeAcc = self:BrakeForce(abs(angVel), abs(angVel), abs(offsetDegrees))
+            local brakeAcc = self:BrakeAcceleration(abs(angVel), abs(angVel), abs(offsetDegrees))
+            local brakeAngle = self:BrakeAngle(abs(angVel), abs(angVel), self.maxMeasuredAcceleration)
 
-            if brakeAcc >= self.maxMeasuredAcceleration * 0.85 then
-                acceleration = brakeAcc * abs(offset)
+            if brakeAngle >= abs(offsetDegrees) then
+                acceleration = brakeAcc
                 direction = -direction -- Decelleration
             else
-                acceleration = self.maxMeasuredAcceleration * abs(offset)
+                acceleration = self.maxMeasuredAcceleration
             end
 
-            self.operationWidget:Set(self.maxMeasuredAcceleration .. " " .. calc.Round(brakeAcc, 2))
+            self.operationWidget:Set(calc.Round(brakeAngle, 2) .. " " .. abs(offsetDegrees))
         end
 
         if self.controlledAxis == AxisControlYaw then
