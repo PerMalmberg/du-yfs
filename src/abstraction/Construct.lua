@@ -29,7 +29,18 @@ local function new()
             AlongGravity = function()
                 -- This points towards the center of the planet, i.e. downwards
                 return vec3(core.getWorldVertical())
-            end
+            end,
+            localized = {
+                Up = function()
+                    return vec3(core.getConstructOrientationUp())
+                end,
+                Right = function()
+                    return vec3(core.getConstructOrientationRight())
+                end,
+                Forward = function()
+                    return vec3(core.getConstructOrientationForward())
+                end
+            }
         },
         velocity = {
             Angular = function()
@@ -37,7 +48,12 @@ local function new()
             end,
             Movement = function()
                 return vec3(core.getWorldAbsoluteVelocity())
-            end
+            end,
+            localized = {
+                Angular = function()
+                    return vec3(core.getAngularVelocity())
+                end
+            }
         },
         acceleration = {
             Angular = function()
@@ -45,7 +61,12 @@ local function new()
             end,
             Movement = function()
                 return vec3(core.getWorldAcceleration())
-            end
+            end,
+            localized = {
+                Angular = function()
+                    return vec3(core.getAngularAcceleration())
+                end
+            }
         },
         position = {
             Current = function()

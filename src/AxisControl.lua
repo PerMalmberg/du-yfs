@@ -11,7 +11,7 @@ local abs = math.abs
 local max = math.max
 local deg = math.deg
 
-local rad2deg = math.pi * 180
+local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
 
 local control = {}
@@ -48,7 +48,7 @@ local function new(maxAngluarVelocity, axis)
         operationWidget = nil,
         operationText = "",
         torqueGroup = EngineGroup("torque"),
-        maxMeasuredAcceleration = 360 -- start value, degrees per second
+        maxMeasuredAcceleration = 360 / 4 -- start value, degrees per second
     }
 
     local shared = sharedPanel:Get("AxisControl")
@@ -62,6 +62,7 @@ local function new(maxAngluarVelocity, axis)
         instance.Forward = o.Forward
         instance.Right = o.Up
         instance.RotationAxis = o.Right
+        instance.LocalizedRotationAxis = o.localized.Right
     elseif axis == AxisControlRoll then
         instance.offsetWidget = shared:CreateValue("Roll", "°")
         instance.velocityWidget = shared:CreateValue("R.Vel", "°/s")
@@ -70,6 +71,7 @@ local function new(maxAngluarVelocity, axis)
         instance.Forward = o.Up
         instance.Right = o.Right
         instance.RotationAxis = o.Forward
+        instance.LocalizedRotationAxis = o.localized.Forward
     elseif axis == AxisControlYaw then
         instance.offsetWidget = shared:CreateValue("Yaw", "°")
         instance.velocityWidget = shared:CreateValue("Y.Vel", "°/s")
@@ -78,6 +80,7 @@ local function new(maxAngluarVelocity, axis)
         instance.Forward = o.Forward
         instance.Right = o.Right
         instance.RotationAxis = o.Up
+        instance.LocalizedRotationAxis = o.localized.Up
     else
         diag:Fail("Invalid axis: " .. axis)
     end
@@ -103,8 +106,8 @@ end
 
 ---Returns the current signed angular velocity, in degrees per seconds.
 ---@return number
-function control:CurrentAngluarVelocity()
-    local vel = construct.velocity.Angular() * self.RotationAxis()
+function control:CurrentAngularVelocity()
+    local vel = construct.velocity.localized.Angular()
 
     if self.controlledAxis == AxisControlPitch then
         return vel.x * rad2deg
@@ -116,7 +119,7 @@ function control:CurrentAngluarVelocity()
 end
 
 function control:CurrentAngularAcceleration()
-    local vel = construct.acceleration.Angular() * self.RotationAxis()
+    local vel = construct.acceleration.localized.Angular()
 
     if self.controlledAxis == AxisControlPitch then
         return vel.x * rad2deg
@@ -129,9 +132,33 @@ end
 
 ---Measures the maximum acceleration we've achieved, in deg/s2
 function control:MeasureMaxAcceleration()
-    local acc = (construct.acceleration.Angular() * self.RotationAxis()):len() * rad2deg
+    local acc = self:CurrentAngularAcceleration()
     self.maxMeasuredAcceleration = max(self.maxMeasuredAcceleration, abs(acc))
-    system.print(self.maxMeasuredAcceleration)
+end
+
+---Returns the time it takes to reach the target, in seconds
+---@param offsetInDegrees number of degrees we're off alignment
+---@param angleVel number Angular velocity
+function control:TimeToTarget(offsetInDegrees, angleVel)
+    local time
+    if angleVel > 0 then
+        time = offsetInDegrees / angleVel
+    else
+        time = 1
+    end
+
+    return time
+end
+
+---Calculates the
+---@param angleVel number The angle velocity
+---@param timeToTarget number Time, in seconds, until we reach the target position
+function control:CalculateBrakeAcceleration(angleVel, timeToTarget)
+    return angleVel / timeToTarget
+end
+
+function control:BrakeForce(angVel, deltaVel, offsetInDegrees)
+    return angVel * deltaVel / offsetInDegrees
 end
 
 function control:Flush()
@@ -147,15 +174,16 @@ function control:Flush()
         -- Postive acceleration turns counter-clockwise
         -- Positive velocity means we're turning counter-clockwise
 
-        local angVel = self:CurrentAngluarVelocity()
+        local angVel = self:CurrentAngularVelocity()
         local velSign = calc.Sign(angVel)
         local isLeft = offset < 0
         local isRight = offset > 0
         local movingLeft = velSign == 1
         local movingRight = velSign == -1
-        local isStandStillOutOfAlignment = (velSign == 0) and (isLeft or isRight)
+        local isStandStillOutOfAlignment = abs(angVel) < 0.001 and (isLeft or isRight)
 
         local direction
+
         if isLeft then
             direction = -1
         elseif isRight then
@@ -166,14 +194,22 @@ function control:Flush()
 
         local acceleration = 0
 
-        if (isLeft and movingLeft) or (isRight and movingRight) then
-            -- Moving away from target, need to brake, so add current velocity to our acceleration
-            acceleration = self.maxMeasuredAcceleration + angVel
-            self.operationWidget:Set("Away" .. acceleration)
-        elseif isStandStillOutOfAlignment or (isLeft and movingRight) or (isRight and movingLeft) then
-            -- Standing still, or moving towards target, reduce as we get closer
-            acceleration = self.maxMeasuredAcceleration * abs(max(offset, 0.1))
-            self.operationWidget:Set("Towards" .. acceleration)
+        if (isLeft and movingLeft) or (isRight and movingRight) or isStandStillOutOfAlignment then
+            --self.operationWidget:Set("Away" .. calc.Round(acceleration, 2))
+            -- Moving away from target
+            acceleration = self.maxMeasuredAcceleration
+        elseif (isLeft and movingRight) or (isRight and movingLeft) then
+            -- moving towards target, reduce as we get closer
+            local brakeAcc = self:BrakeForce(abs(angVel), abs(angVel), abs(offsetDegrees))
+
+            if brakeAcc >= self.maxMeasuredAcceleration * 0.85 then
+                acceleration = brakeAcc * abs(offset)
+                direction = -direction -- Decelleration
+            else
+                acceleration = self.maxMeasuredAcceleration * abs(offset)
+            end
+
+            self.operationWidget:Set(self.maxMeasuredAcceleration .. " " .. calc.Round(brakeAcc, 2))
         end
 
         if self.controlledAxis == AxisControlYaw then
@@ -194,7 +230,7 @@ function control:Apply()
 end
 
 function control:Update()
-    self.velocityWidget:Set(self:CurrentAngluarVelocity())
+    self.velocityWidget:Set(self:CurrentAngularVelocity())
     self.accelerationWidget:Set(self:CurrentAngularAcceleration())
 end
 
