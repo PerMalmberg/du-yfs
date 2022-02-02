@@ -5,8 +5,6 @@ function Enum(tbl)
         tbl[v] = i
     end
 
-    setmetatable(tbl, enum)
-
     return tbl
 end
 

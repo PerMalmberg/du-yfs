@@ -3,10 +3,21 @@ local vec3 = require("builtin/cpml/vec3")
 
 local atan = math.atan
 local sqrt = math.sqrt
+local max = math.max
+local min = math.min
+local abs = math.abs
 local core = library.GetCoreUnit()
 local solve3 = library.GetSolver3()
 
 local calc = {
+    ---Returns the absolute difference between a and b
+    ---@param a any Value a to compare
+    ---@param b any Value b to compare
+    ---@return any Absolute difference between the two numbers.
+    AbsDiff = function(a, b)
+        a, b = abs(a), abs(b)
+        return max(a, b) - min(a, b)
+    end,
     Round = function(number, decimalPlaces)
         local mult = 10 ^ (decimalPlaces or 0)
         return math.floor(number * mult + 0.5) / mult

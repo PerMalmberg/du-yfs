@@ -6,6 +6,7 @@ local sharedPanel = require("panel/SharedPanel")()
 local EngineGroup = require("EngineGroup")
 local constants = require("Constants")
 local vec3 = require("builtin/cpml/vec3")
+local Accelerator = require("Accelerator")
 
 local abs = math.abs
 local max = math.max
@@ -48,7 +49,8 @@ local function new(maxAngluarVelocity, axis)
         operationWidget = nil,
         operationText = "",
         torqueGroup = EngineGroup("torque"),
-        maxMeasuredAcceleration = 360 / 4 -- start value, degrees per second
+        accelerator = Accelerator(),
+        maxAcceleration = 360 / 4 -- start value, degrees per second
     }
 
     local shared = sharedPanel:Get("AxisControl")
@@ -106,7 +108,7 @@ end
 
 ---Returns the current signed angular velocity, in degrees per seconds.
 ---@return number
-function control:CurrentAngularVelocity()
+function control:Speed()
     local vel = construct.velocity.localized.Angular()
 
     if self.controlledAxis == AxisControlPitch then
@@ -118,7 +120,7 @@ function control:CurrentAngularVelocity()
     end
 end
 
-function control:CurrentAngularAcceleration()
+function control:Acceleration()
     local vel = construct.acceleration.localized.Angular()
 
     if self.controlledAxis == AxisControlPitch then
@@ -128,12 +130,6 @@ function control:CurrentAngularAcceleration()
     else
         return vel.z * rad2deg
     end
-end
-
----Measures the maximum acceleration we've achieved, in deg/s2
-function control:MeasureMaxAcceleration()
-    local acc = self:CurrentAngularAcceleration()
-    self.maxMeasuredAcceleration = max(self.maxMeasuredAcceleration, abs(acc))
 end
 
 ---Returns the time it takes to reach the target, in seconds
@@ -150,35 +146,34 @@ function control:TimeToTarget(offsetInDegrees, angleVel)
     return time
 end
 
-function control:BrakeAcceleration(angVel, deltaVel, offsetInDegrees)
-    return angVel * deltaVel / offsetInDegrees
+function control:BrakeAcceleration(speed, offsetInDegrees)
+    return speed * speed / offsetInDegrees
 end
 
-function control:BrakeAngle(angVel, deltaVel, angularDistance)
-    return angVel * deltaVel / angularDistance
+function control:BrakeAngle(speed, angularDistance)
+    return speed * speed / angularDistance
 end
 
 function control:Flush()
-    --self:MeasureMaxAcceleration()
-
     if self.targetCoordinate ~= nil then
         -- To turn towards the target, we want to apply an accelecation with the same sign as the offset.
         local offset = calc.AlignmentOffset(construct.position.Current(), self.targetCoordinate, self.Forward(), self.Right())
         local offsetDegrees = offset * 180
+        local absOffsetDegrees = abs(offsetDegrees)
         self.offsetWidget:Set(offsetDegrees)
 
         -- Positive offset means we're right of target, clock-wise
         -- Postive acceleration turns counter-clockwise
         -- Positive velocity means we're turning counter-clockwise
 
-        local angVel = self:CurrentAngularVelocity()
+        local angVel = self:Speed()
+        local absVel = abs(angVel)
         local velSign = calc.Sign(angVel)
         local isLeft = offset < 0
         local isRight = offset > 0
         local movingLeft = velSign == 1
         local movingRight = velSign == -1
-        local slowZone = 0.5 -- degrees
-        local isStandStillOutOfAlignment = abs(angVel) < slowZone and (isLeft or isRight)
+        local isStandStillOutOfAlignment = abs(angVel) < 0.3 and (isLeft or isRight)
 
         local direction
 
@@ -190,38 +185,20 @@ function control:Flush()
             direction = 0
         end
 
-        local acceleration = 0
-
-        if (isLeft and movingLeft) or (isRight and movingRight) or isStandStillOutOfAlignment then
-            -- Moving away from target
-            self.operationWidget:Set(1)
-            local timeToTarget = self:TimeToTarget(abs(offsetDegrees), abs(angVel))
-            if timeToTarget > constants.flushTick * 2 then
-                acceleration = self.maxMeasuredAcceleration
-            else
-                acceleration = self.maxMeasuredAcceleration * abs(offset)
-            end
-        elseif (isLeft and movingRight) or (isRight and movingLeft) then
-            -- moving towards target, reduce as we get closer
-            local brakeAcc = self:BrakeAcceleration(abs(angVel), abs(angVel), abs(offsetDegrees))
-            local brakeAngle = self:BrakeAngle(abs(angVel), abs(angVel), self.maxMeasuredAcceleration)
-
-            if brakeAngle >= abs(offsetDegrees) then
-                acceleration = brakeAcc
-                direction = -direction -- Deceleration
-                self.operationWidget:Set(2)
-            else
-                -- Will we pass the target within the next tick?
-                local timeToTarget = abs(offsetDegrees) / abs(angVel)
-                if timeToTarget > constants.flushTick * 2 then
-                    acceleration = self.maxMeasuredAcceleration
-                    self.operationWidget:Set(3)
-                end
-            end
-        end
-
         if self.controlledAxis == AxisControlYaw then
-            self:SetAcceleration(acceleration * direction)
+            local s = self:Speed()
+            if abs(s) >= 14 then
+                self.accelerator:AccelerateTo(s, 0, 5, -1)
+                self.operationWidget:Set("STOP")
+            elseif abs(s) <= 0.1 then
+                self.accelerator:AccelerateTo(s, 15, 5, -1)
+                self.operationWidget:Set("START")
+            end
+
+            local acc = self.accelerator:Feed(s)
+            system.print(acc)
+
+            self:SetAcceleration(acc)
         end
 
         self:Apply()
@@ -238,8 +215,8 @@ function control:Apply()
 end
 
 function control:Update()
-    self.velocityWidget:Set(self:CurrentAngularVelocity())
-    self.accelerationWidget:Set(self:CurrentAngularAcceleration())
+    self.velocityWidget:Set(self:Speed())
+    self.accelerationWidget:Set(self:Acceleration())
 end
 
 return setmetatable(
