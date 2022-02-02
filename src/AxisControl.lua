@@ -141,10 +141,10 @@ end
 ---@param angleVel number Angular velocity
 function control:TimeToTarget(offsetInDegrees, angleVel)
     local time
-    if angleVel > 0 then
+    if angleVel ~= 0 then
         time = offsetInDegrees / angleVel
     else
-        time = 1
+        time = constants.flushTick
     end
 
     return time
@@ -194,7 +194,13 @@ function control:Flush()
 
         if (isLeft and movingLeft) or (isRight and movingRight) or isStandStillOutOfAlignment then
             -- Moving away from target
-            acceleration = self.maxMeasuredAcceleration
+            self.operationWidget:Set(1)
+            local timeToTarget = self:TimeToTarget(abs(offsetDegrees), abs(angVel))
+            if timeToTarget > constants.flushTick * 2 then
+                acceleration = self.maxMeasuredAcceleration
+            else
+                acceleration = self.maxMeasuredAcceleration * abs(offset)
+            end
         elseif (isLeft and movingRight) or (isRight and movingLeft) then
             -- moving towards target, reduce as we get closer
             local brakeAcc = self:BrakeAcceleration(abs(angVel), abs(angVel), abs(offsetDegrees))
@@ -202,12 +208,16 @@ function control:Flush()
 
             if brakeAngle >= abs(offsetDegrees) then
                 acceleration = brakeAcc
-                direction = -direction -- Decelleration
+                direction = -direction -- Deceleration
+                self.operationWidget:Set(2)
             else
-                acceleration = self.maxMeasuredAcceleration
+                -- Will we pass the target within the next tick?
+                local timeToTarget = abs(offsetDegrees) / abs(angVel)
+                if timeToTarget > constants.flushTick * 2 then
+                    acceleration = self.maxMeasuredAcceleration
+                    self.operationWidget:Set(3)
+                end
             end
-
-            self.operationWidget:Set(calc.Round(brakeAngle, 2) .. " " .. abs(offsetDegrees))
         end
 
         if self.controlledAxis == AxisControlYaw then
