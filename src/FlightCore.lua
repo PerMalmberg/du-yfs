@@ -145,7 +145,6 @@ function flightCore:autoStabilize()
     if as ~= nil and self.ctrl.getClosestPlanetInfluence() > 0 then
         local upDirection = -construct.orientation.AlongGravity()
         local ownPos = construct.position.Current()
-        local c = self.currentStatus
 
         as.focusPoint = construct.player.position.Current()
 

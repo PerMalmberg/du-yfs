@@ -155,72 +155,45 @@ function control:BrakeAngle(speed, angularDistance)
 end
 
 function control:Flush()
-    xpcall(
-        function()
-            if self.targetCoordinate ~= nil then
-                -- To turn towards the target, we want to apply an accelecation with the same sign as the offset.
-                local offset = calc.AlignmentOffset(construct.position.Current(), self.targetCoordinate, self.Forward(), self.Right())
-                local offsetDegrees = offset * 180
-                local absOffsetDegrees = abs(offsetDegrees)
-                self.offsetWidget:Set(offsetDegrees)
+    if self.targetCoordinate ~= nil then
+        -- To turn towards the target, we want to apply an accelecation with the same sign as the offset.
+        local offset = calc.AlignmentOffset(construct.position.Current(), self.targetCoordinate, self.Forward(), self.Right())
+        local offsetDegrees = offset * 180
+        self.offsetWidget:Set(offsetDegrees)
 
-                -- Positive offset means we're right of target, clock-wise
-                -- Postive acceleration turns counter-clockwise
-                -- Positive velocity means we're turning counter-clockwise
+        -- Positive offset means we're right of target, clock-wise
+        -- Postive acceleration turns counter-clockwise
+        -- Positive velocity means we're turning counter-clockwise
 
-                local angVel = self:Speed()
-                local absVel = abs(angVel)
-                local velSign = calc.Sign(angVel)
-                local isLeft = offset < 0
-                local isRight = offset > 0
-                local movingLeft = velSign == 1
-                local movingRight = velSign == -1
-                local isStandStillOutOfAlignment = abs(angVel) < 0.3 and (isLeft or isRight)
+        local angVel = self:Speed()
+        local velSign = calc.Sign(angVel)
+        local isLeft = offset < 0
+        local isRight = offset > 0
+        local movingLeft = velSign == 1
+        local movingRight = velSign == -1
+        local isStandStillOutOfAlignment = abs(angVel) < 0.3 and (isLeft or isRight)
 
-                local direction
+        local directionToTarget
 
-                if isLeft then
-                    direction = -1
-                elseif isRight then
-                    direction = 1
-                else
-                    direction = 0
-                end
+        if isLeft then
+            directionToTarget = -1
+        elseif isRight then
+            directionToTarget = 1
+        else
+            directionToTarget = 0
+        end
 
-                local function MovingAway()
-                    return (isLeft and movingLeft) or (isRight and movingLeft)
-                end
+        if self.controlledAxis == AxisControlYaw then
+            --if not self.accelerator:IsMoving() then
+            self.accelerator:MoveDistance(self:Speed(), offsetDegrees, 5, directionToTarget)
+            --end
 
-                local function MoveTowardsTarget(speed, seconds)
-                    self.accelerator:AccelerateTo(self:Speed(), speed, seconds, direction)
-                end
+            local acc = self.accelerator:Feed(self:Speed())
+            self:SetAcceleration(acc)
+        end
 
-                local function TurnDegrees(degrees)
-                end
-
-                if self.controlledAxis == AxisControlYaw then
-                    local s = self:Speed()
-                    --[[
-            if abs(s) >= 14 then
-                self.accelerator:AccelerateTo(s, 0, 5, -1)
-                self.operationWidget:Set("STOP")
-            elseif abs(s) <= 0.1 then
-                self.accelerator:AccelerateTo(s, 15, 5, -1)
-                self.operationWidget:Set("START")
-            end]]
-                    if self.foo == nil or self.foo == false then
-                        self.foo = true
-                        self.accelerator:MoveDistance(s, 2 * 360, 5, -1)
-                    end
-
-                    self:SetAcceleration(self.accelerator:Feed(self:Speed()))
-                end
-
-                self:Apply()
-            end
-        end,
-        traceback
-    )
+        self:Apply()
+    end
 end
 
 function control:SetAcceleration(degreesPerS2)
