@@ -185,20 +185,36 @@ function control:Flush()
             direction = 0
         end
 
+        local function MovingAway()
+            return (isLeft and movingLeft) or (isRight and movingLeft)
+        end
+
+        local function MoveTowardsTarget(speed, seconds)
+            self.accelerator:AccelerateTo(self:Speed(), speed, seconds, direction)
+        end
+
+        local function TurnDegrees(degrees)
+        end
+
         if self.controlledAxis == AxisControlYaw then
             local s = self:Speed()
+            --[[
             if abs(s) >= 14 then
                 self.accelerator:AccelerateTo(s, 0, 5, -1)
                 self.operationWidget:Set("STOP")
             elseif abs(s) <= 0.1 then
                 self.accelerator:AccelerateTo(s, 15, 5, -1)
                 self.operationWidget:Set("START")
+            end]]
+            if self.foo == nil or self.foo == false then
+                self.foo = true
+                self.accelerator:MoveDistance(s, 90, 5, -1)
             end
 
             local acc = self.accelerator:Feed(s)
             system.print(acc)
 
-            self:SetAcceleration(acc)
+            self:SetAcceleration(self.accelerator:Feed(self:Speed()))
         end
 
         self:Apply()
