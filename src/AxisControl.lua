@@ -171,7 +171,6 @@ function control:Flush()
         local isRight = offset > 0
         local movingLeft = velSign == 1
         local movingRight = velSign == -1
-        local isStandStillOutOfAlignment = abs(angVel) < 0.3 and (isLeft or isRight)
 
         local directionToTarget
 
@@ -184,9 +183,12 @@ function control:Flush()
         end
 
         if self.controlledAxis == AxisControlYaw then
-            --if not self.accelerator:IsMoving() then
-            self.accelerator:MoveDistance(self:Speed(), offsetDegrees, 5, directionToTarget)
+            if self.foo == nil or not self.foo then
+                self.foo = true
+                --if self.accelerator:IsIdle() then
+                self.accelerator:MoveDistance(self:Speed(), offsetDegrees, 1, directionToTarget)
             --end
+            end
 
             local acc = self.accelerator:Feed(self:Speed())
             self:SetAcceleration(acc)

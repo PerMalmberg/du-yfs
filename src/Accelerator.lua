@@ -96,8 +96,8 @@ function acc:Feed(currentSpeed)
     return resAcc
 end
 
-function acc:IsMoving()
-    return self.mode ~= Mode.IDLE
+function acc:IsIdle()
+    return self.mode == Mode.IDLE
 end
 
 return setmetatable(
