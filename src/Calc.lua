@@ -45,7 +45,7 @@ local calc = {
     --- 0 means it is perfectly aligned.
     --- > 0 if past target, clockwise.
     --- < 0 if before target, clockwise.
-    --- In other words. If 12 a'clock is forward. And we point to 11, we'd get a negative value. If pointing at 1, we'd get a postive value.
+    --- In other words. If 12 a'clock is forward and we point to 11, we'd get a negative value. If pointing at 1, we'd get a postive value.
     AlignmentOffset = function(referencePosition, target, forward, right)
         -- Create the vector pointing to the target
         local toTarget = target - referencePosition

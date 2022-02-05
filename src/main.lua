@@ -9,4 +9,4 @@ local focusPoint = universe:ParsePosition("::pos{0,2,7.6916,78.0944,40}")
 
 fc:ReceiveEvents()
 fc:EnableStabilization(focusPoint.Coords)
-fc:EnableHoldPosition(testPos.Coords)
+--fc:EnableHoldPosition(testPos.Coords)
