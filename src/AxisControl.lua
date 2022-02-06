@@ -7,6 +7,7 @@ local EngineGroup = require("EngineGroup")
 local constants = require("Constants")
 local vec3 = require("builtin/cpml/vec3")
 local Accelerator = require("Accelerator")
+local PID = require("PID")
 
 local abs = math.abs
 local max = math.max
@@ -50,12 +51,9 @@ local function new(maxAngluarVelocity, axis)
         torqueGroup = EngineGroup("torque"),
         accelerator = Accelerator(),
         maxAcceleration = 360 / 4, -- start value, degrees per second,
+        pid = PID(0.02, 0.03, 0.3, -1, 1),
         target = {
-            speed = 0,
-            currentOffset = 0,
-            lastOffset = 0,
-            coordinate = nil,
-            tickUntilUpdate = offsetUpdateInterval
+            coordinate = nil
         }
     }
 
@@ -160,71 +158,6 @@ function control:BrakeAngle(speed, angularDistance)
     return speed * speed / angularDistance
 end
 
-function control:CalculateTargetSpeed()
-    -- In what direction is the target moving?
-    local dir = self:RelativeTargetMovementDirection(self.target.lastOffset, self.target.currentOffset)
-end
-
-function control:RelativeTargetMovementDirection(lastOffset, newOffset)
-    -- Round these to handle the fact that things are moving in the world, even though they appear static
-    lastOffset = calc.Round(lastOffset, 5)
-    newOffset = calc.Round(newOffset, 5)
-
-    local lSign = calc.Sign(lastOffset)
-    local nSign = calc.Sign(newOffset)
-
-    local dirs = constants.direction
-
-    local n = abs(newOffset)
-    local l = abs(lastOffset)
-
-    -- Assume standstill
-    local res = dirs.still
-
-    if lSign == nSign then
-        -- Same side
-        if lastOffset > 0 then
-            -- Left side
-            if l > n then
-                res = dirs.clockwise
-            elseif l < n then
-                res = dirs.counterClockwise
-            end
-        elseif lastOffset < 0 then
-            -- Right side
-            if l > n then
-                res = dirs.counterClockwise
-            elseif l < n then
-                res = dirs.clockwise
-            end
-        end
-    else
-        -- Different sides, need to detect if passing infront or behind ourselves as the sign change is reversed
-        local reverse = -1
-        if l > 0.5 and n > 0.5 then
-            reverse = 1
-        end
-
-        if lSign == dirs.rightOf and nSign == dirs.leftOf then
-            res = constants.direction.counterClockwise
-        elseif lSign == dirs.leftOf and nSign == dirs.rightOf then
-            res = dirs.clockwise
-        end
-
-        res = res * reverse
-    end
-    --[[
-    if res == dirs.clockwise then
-        self.operationWidget:Set("C")
-    elseif res == dirs.counterClockwise then
-        self.operationWidget:Set("CC")
-    else
-        self.operationWidget:Set("S")
-    end
-]]
-    return res
-end
-
 function control:Flush()
     if self.target.coordinate ~= nil then
         --self:CalculateTargetSpeed()
@@ -238,40 +171,27 @@ function control:Flush()
 
         local angVel = self:Speed()
         local velSign = calc.Sign(angVel)
-        --local isLeft = offset < 0
-        --local isRight = offset > 0
+        local offset = calc.AlignmentOffset(construct.position.Current(), self.target.coordinate, self.Forward(), self.Right())
+        local isLeft = offset < 0
+        local isRight = offset > 0
         local movingLeft = velSign == 1
         local movingRight = velSign == -1
 
-        --[[
-            local directionToTarget
-        if isLeft then
-            directionToTarget = -1
-        elseif isRight then
-            directionToTarget = 1
-        else
-            directionToTarget = 0
+        local dir = 1
+        if self.controlledAxis == AxisControlYaw then
+            dir = -1
         end
-]]
-        --[[if self.controlledAxis == AxisControlYaw then
-            if self.foo == nil or not self.foo then
-                self.foo = true
-                --if self.accelerator:IsIdle() then
-                self.accelerator:MoveDistance(self:Speed(), offsetDegrees, 1, directionToTarget)
-            --end
-            end
 
-            local acc = self.accelerator:Feed(self:Speed())
-            self:SetAcceleration(acc)
-        end]]
-        system.print(self:RelativeTargetMovementDirection(self.target.lastOffset, self.target.currentOffset))
-
+        self.operationWidget:Set("Offset " .. offset)
+        --if self.controlledAxis == AxisControlYaw then
+        self:SetAcceleration(self.pid:Feed(constants.flushTick, 0, dir * offset * 180))
+        --end
         self:Apply()
     end
 end
 
-function control:SetAcceleration(degreesPerS2)
-    finalAcceleration[self.controlledAxis] = self:RotationAxis() * degreesPerS2 * deg2rad
+function control:SetAcceleration(v)
+    finalAcceleration[self.controlledAxis] = self:RotationAxis() * v
 end
 
 function control:Apply()
@@ -280,14 +200,6 @@ function control:Apply()
 end
 
 function control:Update()
-    local target = self.target
-    target.tickUntilUpdate = target.tickUntilUpdate - 1
-    if target.tickUntilUpdate <= 0 then
-        target.lastOffset = target.currentOffset
-        target.currentOffset = calc.AlignmentOffset(construct.position.Current(), self.target.coordinate, self.Forward(), self.Right())
-        target.tickUntilUpdate = offsetUpdateInterval
-    end
-
     self.velocityWidget:Set(self:Speed())
     self.accelerationWidget:Set(self:Acceleration())
 end
