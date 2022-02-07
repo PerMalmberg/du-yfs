@@ -7,7 +7,6 @@ local EngineGroup = require("EngineGroup")
 local constants = require("Constants")
 local vec3 = require("builtin/cpml/vec3")
 local Accelerator = require("Accelerator")
-local PID = require("PID")
 
 local abs = math.abs
 local max = math.max
@@ -15,7 +14,6 @@ local deg = math.deg
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
-local offsetUpdateInterval = 0.5 / constants.flushTick -- 0.5 seconds
 
 local control = {}
 control.__index = control
@@ -51,9 +49,9 @@ local function new(maxAngluarVelocity, axis)
         torqueGroup = EngineGroup("torque"),
         accelerator = Accelerator(),
         maxAcceleration = 360 / 4, -- start value, degrees per second,
-        pid = PID(0.02, 0.03, 0.3, -1, 1),
         target = {
-            coordinate = nil
+            coordinate = nil,
+            lastCoordinate = nil
         }
     }
 
@@ -169,13 +167,14 @@ function control:Flush()
         -- Postive acceleration turns counter-clockwise
         -- Positive velocity means we're turning counter-clockwise
 
-        local angVel = self:Speed()
-        local velSign = calc.Sign(angVel)
         local offset = calc.AlignmentOffset(construct.position.Current(), self.target.coordinate, self.Forward(), self.Right())
-        local isLeft = offset < 0
-        local isRight = offset > 0
-        local movingLeft = velSign == 1
-        local movingRight = velSign == -1
+        local newTarget = false
+
+        local target = self.target
+        if target.lastCoordinate == nil or abs((target.coordinate - target.lastCoordinate):len()) > 0.5 then
+            target.lastCoordinate = target.coordinate
+            newTarget = true
+        end
 
         local dir = 1
         if self.controlledAxis == AxisControlYaw then
@@ -183,15 +182,29 @@ function control:Flush()
         end
 
         self.operationWidget:Set("Offset " .. offset)
-        --if self.controlledAxis == AxisControlYaw then
-        self:SetAcceleration(self.pid:Feed(constants.flushTick, 0, dir * offset * 180))
-        --end
+
+        if self.controlledAxis == AxisControlYaw then
+            if newTarget then
+                self.accelerator:MoveDistance(self:Speed(), offset * 180, 1, dir)
+            end
+
+            self:SetAcceleration(self.accelerator:Feed(self:Speed()))
+        end
+
         self:Apply()
+
+    --[[
+            local isLeft = offset < 0
+        local isRight = offset > 0
+        local movingLeft = velSign == 1
+        local movingRight = velSign == -1
+        local movingAway = (isLeft and movingRight) or (isRight and movingLeft)
+        ]]
     end
 end
 
-function control:SetAcceleration(v)
-    finalAcceleration[self.controlledAxis] = self:RotationAxis() * v
+function control:SetAcceleration(degreesPerS2)
+    finalAcceleration[self.controlledAxis] = self:RotationAxis() * degreesPerS2 * deg2rad
 end
 
 function control:Apply()

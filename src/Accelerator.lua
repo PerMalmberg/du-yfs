@@ -93,6 +93,8 @@ function acc:Feed(currentSpeed)
         resAcc = 0
     end
 
+    system.print(tostring(self.mode))
+
     return resAcc
 end
 

@@ -4,7 +4,6 @@
     Library abstraction. This is assumes the project is being compiled with du-LuaC (https://github.com/wolfe-labs/DU-LuaC/) which provides
     a GetCoreUnit() function via the global 'library'.
 ]]
-
 local utils = require("builtin/cpml/utils")
 
 local clamp = utils.clamp
@@ -29,14 +28,14 @@ end
 
 function pid:Feed(deltaT, setPoint, currentValue)
     local err = (setPoint - currentValue)
-	local pOut = (self.kp * err)
-	self.integral = self.integral + (err * deltaT)
-	local iOut = (self.ki * self.integral)
-	local deriv = ((err - self.preError) / deltaT)
-	local dOut = (self.kd * deriv)
-	self.output = clamp((pOut + iOut + dOut), self.min, self.max)
-	self.preError = err
-	return self.output
+    local pOut = (self.kp * err)
+    self.integral = self.integral + (err * deltaT)
+    local iOut = (self.ki * self.integral)
+    local deriv = ((err - self.preError) / deltaT)
+    local dOut = (self.kd * deriv)
+    self.output = clamp((pOut + iOut + dOut), self.min, self.max)
+    self.preError = err
+    return self.output
 end
 
 function pid:Get()
