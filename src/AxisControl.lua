@@ -6,7 +6,6 @@ local sharedPanel = require("panel/SharedPanel")()
 local EngineGroup = require("EngineGroup")
 local constants = require("Constants")
 local vec3 = require("builtin/cpml/vec3")
-local Accelerator = require("Accelerator")
 
 local abs = math.abs
 local max = math.max
@@ -47,11 +46,9 @@ local function new(maxAngluarVelocity, axis)
         accelerationWidget = nil,
         operationWidget = nil,
         torqueGroup = EngineGroup("torque"),
-        accelerator = Accelerator(),
         maxAcceleration = 360 / 4, -- start value, degrees per second,
         target = {
-            coordinate = nil,
-            lastCoordinate = nil
+            coordinate = nil
         }
     }
 
@@ -67,6 +64,7 @@ local function new(maxAngluarVelocity, axis)
         instance.Right = o.Up
         instance.RotationAxis = o.Right
         instance.LocalizedRotationAxis = o.localized.Right
+        instance.offsetDirectionChanger = -1
     elseif axis == AxisControlRoll then
         instance.offsetWidget = shared:CreateValue("Roll", "°")
         instance.velocityWidget = shared:CreateValue("R.Vel", "°/s")
@@ -76,6 +74,7 @@ local function new(maxAngluarVelocity, axis)
         instance.Right = o.Right
         instance.RotationAxis = o.Forward
         instance.LocalizedRotationAxis = o.localized.Forward
+        instance.offsetDirectionChanger = -1
     elseif axis == AxisControlYaw then
         instance.offsetWidget = shared:CreateValue("Yaw", "°")
         instance.velocityWidget = shared:CreateValue("Y.Vel", "°/s")
@@ -85,6 +84,7 @@ local function new(maxAngluarVelocity, axis)
         instance.Right = o.Right
         instance.RotationAxis = o.Up
         instance.LocalizedRotationAxis = o.localized.Up
+        instance.offsetDirectionChanger = 1
     else
         diag:Fail("Invalid axis: " .. axis)
     end
@@ -152,55 +152,53 @@ function control:BrakeAcceleration(speed, offsetInDegrees)
     return speed * speed / offsetInDegrees
 end
 
-function control:BrakeAngle(speed, angularDistance)
+function control:BrakeDistance(speed, angularDistance)
     return speed * speed / angularDistance
 end
 
 function control:Flush()
     if self.target.coordinate ~= nil then
-        --self:CalculateTargetSpeed()
-        -- To turn towards the target, we want to apply an accelecation with the same sign as the offset.
-        --local offsetDegrees = offset * 180
-        --self.offsetWidget:Set(offsetDegrees)
-
         -- Positive offset means we're right of target, clock-wise
         -- Postive acceleration turns counter-clockwise
         -- Positive velocity means we're turning counter-clockwise
 
         local offset = calc.AlignmentOffset(construct.position.Current(), self.target.coordinate, self.Forward(), self.Right())
-        local newTarget = false
-
-        local target = self.target
-        if target.lastCoordinate == nil or abs((target.coordinate - target.lastCoordinate):len()) > 0.5 then
-            target.lastCoordinate = target.coordinate
-            newTarget = true
-        end
-
-        local dir = 1
-        if self.controlledAxis == AxisControlYaw then
-            dir = -1
-        end
-
-        self.operationWidget:Set("Offset " .. offset)
-
-        if self.controlledAxis == AxisControlYaw then
-            if newTarget then
-                self.accelerator:MoveDistance(self:Speed(), offset * 180, 1, dir)
-            end
-
-            self:SetAcceleration(self.accelerator:Feed(self:Speed()))
-        end
-
-        self:Apply()
-
-    --[[
-            local isLeft = offset < 0
+        local speed = self:Speed()
+        local absSpeed = abs(speed)
+        local velSign = calc.Sign(speed)
+        local isLeft = offset < 0
         local isRight = offset > 0
         local movingLeft = velSign == 1
         local movingRight = velSign == -1
         local movingAway = (isLeft and movingRight) or (isRight and movingLeft)
-        ]]
+
+        local towardsTaget = calc.Sign(offset) * self.offsetDirectionChanger
+
+        self.operationWidget:Set("Offset " .. offset)
+
+        local accelerationConstant = 10
+
+        -- if self.controlledAxis == AxisControlPitch then
+        local absOffset = abs(offset)
+        local absDegreeOffset = absOffset * 180
+        local acc = 0
+        local brakeAcc = 0
+
+        if absDegreeOffset > 0.5 then
+            -- Accelerate towards target
+            acc = accelerationConstant * towardsTaget
+
+            if movingAway then
+                brakeAcc = self:BrakeAcceleration(absSpeed, absDegreeOffset) * -calc.Sign(offset)
+            end
+
+            acc = acc + brakeAcc
+            self:SetAcceleration(acc)
+        end
     end
+
+    self:Apply()
+    --end
 end
 
 function control:SetAcceleration(degreesPerS2)
