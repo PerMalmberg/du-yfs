@@ -165,18 +165,18 @@ function control:Flush()
         local offset = calc.AlignmentOffset(construct.position.Current(), self.target.coordinate, self.Forward(), self.Right())
         local speed = self:Speed()
         local absSpeed = abs(speed)
-        local velSign = calc.Sign(speed)
+        local speedSign = calc.Sign(speed)
         local isLeft = offset < 0
         local isRight = offset > 0
-        local movingLeft = velSign == 1
-        local movingRight = velSign == -1
+        local movingLeft = speedSign == 1
+        local movingRight = speedSign == -1
         local movingAway = (isLeft and movingRight) or (isRight and movingLeft)
 
-        local towardsTaget = calc.Sign(offset) * self.offsetDirectionChanger
+        local towardsTarget = calc.Sign(offset) * self.offsetDirectionChanger
 
         self.operationWidget:Set("Offset " .. offset)
 
-        local accelerationConstant = 10
+        local accelerationConstant = 20
 
         -- if self.controlledAxis == AxisControlPitch then
         local absOffset = abs(offset)
@@ -184,17 +184,17 @@ function control:Flush()
         local acc = 0
         local brakeAcc = 0
 
-        if absDegreeOffset > 0.5 then
-            -- Accelerate towards target
-            acc = accelerationConstant * towardsTaget
+        --if absDegreeOffset > 0.1 then
+        -- Accelerate towards target
+        acc = accelerationConstant * towardsTarget
 
-            if movingAway then
-                brakeAcc = self:BrakeAcceleration(absSpeed, absDegreeOffset) * -calc.Sign(offset)
-            end
-
-            acc = acc + brakeAcc
-            self:SetAcceleration(acc)
+        if movingAway then
+            brakeAcc = self:BrakeAcceleration(absSpeed, absDegreeOffset) * -calc.Sign(offset)
         end
+
+        acc = acc + brakeAcc
+        self:SetAcceleration(acc)
+    --end
     end
 
     self:Apply()
