@@ -152,8 +152,12 @@ function control:BrakeAcceleration(speed, offsetInDegrees)
     return speed * speed / offsetInDegrees
 end
 
-function control:BrakeDistance(speed, angularDistance)
-    return speed * speed / angularDistance
+function control:BrakeDistance(speed, acceleration)
+    return speed * speed / acceleration
+end
+
+function control:SpeedOnNextTick()
+    return self:Speed() + self:Acceleration() * constants.flushTick
 end
 
 function control:Flush()
@@ -168,31 +172,37 @@ function control:Flush()
         local speedSign = calc.Sign(speed)
         local isLeft = offset < 0
         local isRight = offset > 0
-        local movingLeft = speedSign == 1
-        local movingRight = speedSign == -1
-        local movingAway = (isLeft and movingRight) or (isRight and movingLeft)
+        local movingLeft = speedSign == 1 * self.offsetDirectionChanger
+        local movingRight = speedSign == -1 * self.offsetDirectionChanger
+        local movingAway = (isLeft and movingLeft) or (isRight and movingRight)
 
         local towardsTarget = calc.Sign(offset) * self.offsetDirectionChanger
 
-        self.operationWidget:Set("Offset " .. offset)
+        self.operationWidget:Set("Offset " .. calc.Round(offset, 4))
 
-        local accelerationConstant = 20
+        local accelerationConstant = 50
 
-        -- if self.controlledAxis == AxisControlPitch then
         local absOffset = abs(offset)
         local absDegreeOffset = absOffset * 180
         local acc = 0
-        local brakeAcc = 0
 
-        --if absDegreeOffset > 0.1 then
-        -- Accelerate towards target
-        acc = accelerationConstant * towardsTarget
-
-        if movingAway then
-            brakeAcc = self:BrakeAcceleration(absSpeed, absDegreeOffset) * -calc.Sign(offset)
+        --if self.controlledAxis == AxisControlRoll then
+        if absDegreeOffset > 0 then
+            if movingAway then
+                acc = 2 * accelerationConstant * towardsTarget
+                system.print("away")
+            elseif self:SpeedOnNextTick() < self.maxVel then
+                if absDegreeOffset <= self:BrakeDistance(absSpeed, accelerationConstant) then
+                    system.print("braking")
+                    acc = accelerationConstant * -calc.Sign(offset)
+                else
+                    system.print("acc")
+                    acc = accelerationConstant * towardsTarget
+                end
+            end
         end
+        --end
 
-        acc = acc + brakeAcc
         self:SetAcceleration(acc)
     --end
     end
