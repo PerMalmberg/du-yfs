@@ -22,8 +22,6 @@ local construct = require("abstraction/Construct")()
 local AxisControl = require("AxisControl")
 local calc = require("Calc")
 
-local flushFrequency = 1 / 60.0
-
 local flightCore = {}
 flightCore.__index = flightCore
 local singelton = nil
@@ -148,6 +146,9 @@ function flightCore:autoStabilize()
 
         as.focusPoint = construct.player.position.Current()
 
+        --[[local strightAhead = (-construct.orientation.AlongGravity()):cross(construct.orientation.Right())
+
+        as.focusPoint = construct.position.Current() + strightAhead * 5]]
         self.controllers.pitch:SetTarget(as.focusPoint)
         self.controllers.yaw:SetTarget(as.focusPoint)
 
@@ -159,6 +160,8 @@ end
 function flightCore:autoHoldPosition()
     local h = self.holdPosition
     if h ~= nil then
+        h.targetPos = vec3(system.getCameraWorldPos()) + vec3(system.getCameraWorldForward()) * 10
+
         local movementDirection = construct.velocity.Movement():normalize_inplace()
         local distanceToTarget = h.targetPos - construct.position.Current()
         local directionToTarget = distanceToTarget:normalize()
@@ -177,10 +180,12 @@ function flightCore:autoHoldPosition()
             self:SetBrakes(g * 10)
             self:SetAcceleration(EngineGroup("thrust"), -construct.orientation.AlongGravity() * g * 1.01)
         else
-            local acceleration = directionToTarget:normalize() * g * 0.1
-            -- If target point is above, add the extra acceleration upwards to counter gravity
-            if directionToTarget:dot(construct.orientation.AlongGravity()) <= 0 then
-                acceleration = acceleration - construct.orientation.AlongGravity():normalize_inplace() * g
+            -- Start with countering gravity
+            local acceleration = -construct.orientation.AlongGravity():normalize_inplace() * g
+            acceleration = acceleration + directionToTarget:normalize() * g * 0.1
+            -- If target point is below, remove a slight bit of force
+            if directionToTarget:dot(construct.orientation.AlongGravity()) > 0 then
+                acceleration = acceleration * 0.99
             end
 
             self:SetAcceleration(EngineGroup("thrust"), acceleration)

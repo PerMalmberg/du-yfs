@@ -172,13 +172,11 @@ function control:Flush()
         local speedSign = calc.Sign(speed)
         local isLeft = offset < 0
         local isRight = offset > 0
-        local movingLeft = speedSign == 1 * self.offsetDirectionChanger
-        local movingRight = speedSign == -1 * self.offsetDirectionChanger
+        local movingLeft = speedSign == self.offsetDirectionChanger
+        local movingRight = speedSign == -self.offsetDirectionChanger
         local movingAway = (isLeft and movingLeft) or (isRight and movingRight)
 
         local towardsTarget = calc.Sign(offset) * self.offsetDirectionChanger
-
-        self.operationWidget:Set("Offset " .. calc.Round(offset, 4))
 
         local accelerationConstant = 50
 
@@ -186,25 +184,18 @@ function control:Flush()
         local absDegreeOffset = absOffset * 180
         local acc = 0
 
-        --if self.controlledAxis == AxisControlRoll then
-        if absDegreeOffset > 0 then
-            if movingAway then
-                acc = 2 * accelerationConstant * towardsTarget
-                system.print("away")
-            elseif self:SpeedOnNextTick() < self.maxVel then
-                if absDegreeOffset <= self:BrakeDistance(absSpeed, accelerationConstant) then
-                    system.print("braking")
-                    acc = accelerationConstant * -calc.Sign(offset)
-                else
-                    system.print("acc")
-                    acc = accelerationConstant * towardsTarget
-                end
+        self.operationWidget:Set("Offset " .. calc.Round(absDegreeOffset, 4))
+        if movingAway then
+            acc = 2 * accelerationConstant * towardsTarget
+        elseif self:SpeedOnNextTick() < self.maxVel then
+            if absDegreeOffset <= self:BrakeDistance(absSpeed, accelerationConstant) then
+                acc = accelerationConstant * -calc.Sign(offset)
+            else
+                acc = accelerationConstant * towardsTarget
             end
         end
-        --end
 
         self:SetAcceleration(acc)
-    --end
     end
 
     self:Apply()

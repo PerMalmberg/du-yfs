@@ -88,6 +88,11 @@ local function new()
                 Current = function()
                     return vec3(ctrl.getMasterPlayerWorldPosition())
                 end
+            },
+            orientation = {
+                Up = function()
+                    return vec3(ctrl.getMasterPlayerWorldUp())
+                end
             }
         }
     }
