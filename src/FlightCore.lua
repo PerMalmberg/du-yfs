@@ -194,6 +194,10 @@ function flightCore:autoHoldPosition()
 end
 
 function flightCore:Flush()
+    local c = self.controllers
+    c.pitch:Flush(false)
+    c.roll:Flush(false)
+    c.yaw:Flush(true)
     self:autoHoldPosition()
 
     if self.dirty then

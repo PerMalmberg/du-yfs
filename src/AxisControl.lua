@@ -39,7 +39,6 @@ local function new(maxAngluarVelocity, axis)
         ctrl = library.GetController(),
         Forward = nil,
         Right = nil,
-        flushHandlerId = nil,
         updateHandlerId = nil,
         offsetWidget = nil,
         velocityWidget = nil,
@@ -49,7 +48,8 @@ local function new(maxAngluarVelocity, axis)
         maxAcceleration = 360 / 4, -- start value, degrees per second,
         target = {
             coordinate = nil
-        }
+        },
+        setAcceleration = vec3()
     }
 
     local shared = sharedPanel:Get("AxisControl")
@@ -95,12 +95,10 @@ local function new(maxAngluarVelocity, axis)
 end
 
 function control:ReceiveEvents()
-    self.flushHandlerId = system:onEvent("flush", self.Flush, self)
     self.updateHandlerId = system:onEvent("update", self.Update, self)
 end
 
 function control:StopEvents()
-    system:clearEvent("flush", self.flushHandlerId)
     system:clearEvent("update", self.updateHandlerId)
 end
 
@@ -160,7 +158,7 @@ function control:SpeedOnNextTick()
     return self:Speed() + self:Acceleration() * constants.flushTick
 end
 
-function control:Flush()
+function control:Flush(apply)
     if self.target.coordinate ~= nil then
         -- Positive offset means we're right of target, clock-wise
         -- Postive acceleration turns counter-clockwise
@@ -198,8 +196,9 @@ function control:Flush()
         self:SetAcceleration(acc)
     end
 
-    self:Apply()
-    --end
+    if apply then
+        self:Apply()
+    end
 end
 
 function control:SetAcceleration(degreesPerS2)
@@ -207,8 +206,8 @@ function control:SetAcceleration(degreesPerS2)
 end
 
 function control:Apply()
-    local acc = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] + finalAcceleration[AxisControlYaw]
-    self.ctrl.setEngineCommand(self.torqueGroup:Union(), {0, 0, 0}, {acc:unpack()})
+    self.setAcceleration = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] + finalAcceleration[AxisControlYaw]
+    self.ctrl.setEngineCommand(self.torqueGroup:Union(), {0, 0, 0}, {self.setAcceleration:unpack()})
 end
 
 function control:Update()
