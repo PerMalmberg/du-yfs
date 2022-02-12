@@ -154,8 +154,8 @@ function control:BrakeDistance(speed, acceleration)
     return speed * speed / acceleration
 end
 
-function control:SpeedOnNextTick()
-    return self:Speed() + self:Acceleration() * constants.flushTick
+function control:SpeedInTicks(ticks)
+    return self:Speed() + self:Acceleration() * constants.flushTick * ticks
 end
 
 function control:Flush(apply)
@@ -185,7 +185,7 @@ function control:Flush(apply)
         self.operationWidget:Set("Offset " .. calc.Round(absDegreeOffset, 4))
         if movingAway then
             acc = 2 * accelerationConstant * towardsTarget
-        elseif self:SpeedOnNextTick() < self.maxVel then
+        elseif self:SpeedInTicks(1) < self.maxVel then
             if absDegreeOffset <= self:BrakeDistance(absSpeed, accelerationConstant) then
                 acc = accelerationConstant * -calc.Sign(offset)
             else
