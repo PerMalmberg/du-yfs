@@ -15,12 +15,10 @@ local vec3 = require("builtin/cpml/vec3")
 local EngineGroup = require("EngineGroup")
 local library = require("abstraction/Library")()
 local diag = require("Diagnostics")()
-local utils = require("builtin/cpml/utils")
 local PID = require("PID")
 local Brakes = require("Brakes")
 local construct = require("abstraction/Construct")()
 local AxisControl = require("AxisControl")
-local calc = require("Calc")
 
 local flightCore = {}
 flightCore.__index = flightCore
@@ -32,6 +30,7 @@ local function new()
         ctrl = ctrl,
         brakes = Brakes(),
         brakeGroup = EngineGroup("brake"),
+        thrustGroup = EngineGroup("thrust"),
         autoStabilization = nil,
         flushHandlerId = 0,
         updateHandlerId = 0,
@@ -94,8 +93,7 @@ function flightCore:EnableHoldPosition(position, deadZone)
 
     self.holdPosition = {
         targetPos = position or construct.position.Current(),
-        deadZone = deadZone or 1,
-        forcePid = PID(0.2, 0, 10, -10, 10)
+        deadZone = deadZone or 1
     }
 end
 
@@ -178,7 +176,7 @@ function flightCore:autoHoldPosition()
 
         if distanceToTarget:len() < h.deadZone then
             self:SetBrakes(g * 10)
-            self:SetAcceleration(EngineGroup("thrust"), -construct.orientation.AlongGravity() * g * 1.01)
+            self:SetAcceleration(self.thrustGroup, -construct.orientation.AlongGravity() * g * 1.01)
         else
             -- Start with countering gravity
             local acceleration = -construct.orientation.AlongGravity():normalize_inplace() * g
@@ -188,7 +186,7 @@ function flightCore:autoHoldPosition()
                 acceleration = acceleration * 0.99
             end
 
-            self:SetAcceleration(EngineGroup("thrust"), acceleration)
+            self:SetAcceleration(self.thrustGroup, acceleration)
         end
     end
 end
