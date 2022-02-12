@@ -193,16 +193,12 @@ function control:Flush(apply)
             end
         end
 
-        self:SetAcceleration(acc)
+        finalAcceleration[self.controlledAxis] = self:RotationAxis() * acc * deg2rad
     end
 
     if apply then
         self:Apply()
     end
-end
-
-function control:SetAcceleration(degreesPerS2)
-    finalAcceleration[self.controlledAxis] = self:RotationAxis() * degreesPerS2 * deg2rad
 end
 
 function control:Apply()
