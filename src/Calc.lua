@@ -42,6 +42,9 @@ local calc = {
         vecA = vecA:project_on_plane(normal)
         vecB = vecB:project_on_plane(normal)
         return atan(vecA:cross(vecB):dot(normal), vecA:dot(vecB))
+    end,
+    StraightForward = function(up, right)
+        return up:cross(right)
     end
 }
 
