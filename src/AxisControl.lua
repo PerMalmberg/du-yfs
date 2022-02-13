@@ -46,7 +46,7 @@ local function new(axis)
             coordinate = nil
         },
         setAcceleration = vec3(),
-        pid = PID(1.2 * 20, 0.8 * 20, 80 * 20, 0.5)
+        pid = PID(24, 16, 160, 0.5) -- 0.5 amortization makes it alot smoother
     }
 
     local shared = sharedPanel:Get("AxisControl")
@@ -162,6 +162,7 @@ function control:Flush(apply)
         if movingTowardsTarget then
             offset = offset * 0.5
         end
+
         self.pid:inject(offset)
         acc = self.pid:get()
 
