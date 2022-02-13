@@ -64,9 +64,10 @@ function flightCore:SetEngines(on)
 end
 
 ---Initiates yaw, roll and pitch stabilization
-function flightCore:EnableStabilization(focusPoint)
+function flightCore:EnableStabilization(focusPointGetter)
+    diag:AssertIsFunction(focusPointGetter)
     self.autoStabilization = {
-        focusPoint = focusPoint
+        focusPoint = focusPointGetter
     }
     self.dirty = true
 end
@@ -79,20 +80,25 @@ function flightCore:HoldCurrentPosition(deadZone)
     if deadZone ~= nil then
         diag:AssertIsNumber(deadZone, "deadZone in HoldCurrentPosition must be a number")
     end
-    self:EnableHoldPosition(construct.position.Current(), deadZone)
+    self:EnableHoldPosition(
+        function()
+            return construct.position.Current()
+        end,
+        deadZone
+    )
 end
 
 ---Enables hold position
----@param position vec3 The position to hold
+---@param positionGetter vec3 A function that returns the position to hold
 ---@param deadZone number If close than this distance (in m) then consider position reached
-function flightCore:EnableHoldPosition(position, deadZone)
-    diag:AssertIsVec3(position, "position in EnableHoldPosition must be a vec3")
+function flightCore:EnableHoldPosition(positionGetter, deadZone)
+    diag:AssertIsFunction(positionGetter, "position in EnableHoldPosition must be a function")
     if deadZone ~= nil then
         diag:AssertIsNumber(deadZone, "deadZone in EnableHoldPosition must be a number")
     end
 
     self.holdPosition = {
-        targetPos = position or construct.position.Current(),
+        targetPos = positionGetter,
         deadZone = deadZone or 1
     }
 end
@@ -139,17 +145,14 @@ function flightCore:autoStabilize()
     local as = self.autoStabilization
 
     if as ~= nil and self.ctrl.getClosestPlanetInfluence() > 0 then
-        local upDirection = -construct.orientation.AlongGravity()
         local ownPos = construct.position.Current()
 
-        as.focusPoint = construct.player.position.Current()
+        local focus = as.focusPoint()
 
-        --local strightAhead = (-construct.orientation.AlongGravity()):cross(construct.orientation.Right())
-        --as.focusPoint = construct.position.Current() + strightAhead * 5
-        self.controllers.pitch:SetTarget(as.focusPoint)
-        self.controllers.yaw:SetTarget(as.focusPoint)
+        self.controllers.yaw:SetTarget(focus)
+        self.controllers.pitch:SetTarget(focus)
 
-        local pointAbove = ownPos + upDirection * 10
+        local pointAbove = ownPos + -construct.orientation.AlongGravity() * 10
         self.controllers.roll:SetTarget(pointAbove)
     end
 end
@@ -157,10 +160,8 @@ end
 function flightCore:autoHoldPosition()
     local h = self.holdPosition
     if h ~= nil then
-        --h.targetPos = vec3(system.getCameraWorldPos()) + vec3(system.getCameraWorldForward()) * 10
-
         local movementDirection = construct.velocity.Movement():normalize_inplace()
-        local distanceToTarget = h.targetPos - construct.position.Current()
+        local distanceToTarget = h.targetPos() - construct.position.Current()
         local directionToTarget = distanceToTarget:normalize()
         local movingTowardsTarget = movementDirection:dot(directionToTarget) > 0
 
