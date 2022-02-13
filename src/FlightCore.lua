@@ -36,9 +36,9 @@ local function new()
         updateHandlerId = 0,
         dirty = false,
         controllers = {
-            pitch = AxisControl(math.deg(math.pi * 2 / 5), AxisControlPitch),
-            roll = AxisControl(math.deg(math.pi * 2 / 5), AxisControlRoll),
-            yaw = AxisControl(math.deg(math.pi * 2 / 5), AxisControlYaw)
+            pitch = AxisControl(AxisControlPitch),
+            roll = AxisControl(AxisControlRoll),
+            yaw = AxisControl(AxisControlYaw)
         },
         controlValue = {
             acceleration = vec3(),
@@ -144,9 +144,8 @@ function flightCore:autoStabilize()
 
         as.focusPoint = construct.player.position.Current()
 
-        --[[local strightAhead = (-construct.orientation.AlongGravity()):cross(construct.orientation.Right())
-
-        as.focusPoint = construct.position.Current() + strightAhead * 5]]
+        --local strightAhead = (-construct.orientation.AlongGravity()):cross(construct.orientation.Right())
+        --as.focusPoint = construct.position.Current() + strightAhead * 5
         self.controllers.pitch:SetTarget(as.focusPoint)
         self.controllers.yaw:SetTarget(as.focusPoint)
 
@@ -158,7 +157,7 @@ end
 function flightCore:autoHoldPosition()
     local h = self.holdPosition
     if h ~= nil then
-        h.targetPos = vec3(system.getCameraWorldPos()) + vec3(system.getCameraWorldForward()) * 10
+        --h.targetPos = vec3(system.getCameraWorldPos()) + vec3(system.getCameraWorldForward()) * 10
 
         local movementDirection = construct.velocity.Movement():normalize_inplace()
         local distanceToTarget = h.targetPos - construct.position.Current()

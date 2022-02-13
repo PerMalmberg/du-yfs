@@ -6,6 +6,7 @@ local sharedPanel = require("panel/SharedPanel")()
 local EngineGroup = require("EngineGroup")
 local constants = require("Constants")
 local vec3 = require("builtin/cpml/vec3")
+local PID = require("builtin/cpml/PID")
 
 local abs = math.abs
 local max = math.max
@@ -27,18 +28,13 @@ finalAcceleration[AxisControlRoll] = vec3()
 finalAcceleration[AxisControlYaw] = vec3()
 
 ---Creates a new AxisControl
----@param maxAngluarVelocity number Max angular velocity in radians/s2
 ---@return table A new AxisControl
-local function new(maxAngluarVelocity, axis)
-    diag:AssertIsNumber(maxAngluarVelocity, "maxAcceleration in AxisControl constructor must be a number")
+local function new(axis)
     diag:AssertIsNumber(axis, "axis in AxisControl constructor must be a number")
 
     local instance = {
         controlledAxis = axis,
-        maxVel = maxAngluarVelocity,
         ctrl = library.GetController(),
-        Forward = nil,
-        Right = nil,
         updateHandlerId = nil,
         offsetWidget = nil,
         velocityWidget = nil,
@@ -49,7 +45,8 @@ local function new(maxAngluarVelocity, axis)
         target = {
             coordinate = nil
         },
-        setAcceleration = vec3()
+        setAcceleration = vec3(),
+        pid = PID(1.2 * 20, 0.8 * 20, 80 * 20, 0.5)
     }
 
     local shared = sharedPanel:Get("AxisControl")
@@ -60,31 +57,25 @@ local function new(maxAngluarVelocity, axis)
         instance.velocityWidget = shared:CreateValue("P.Vel", "°/s")
         instance.accelerationWidget = shared:CreateValue("P.Acc", "°/s2")
         instance.operationWidget = shared:CreateValue("P.Op", "")
-        instance.Forward = o.Forward
-        instance.Right = o.Up
-        instance.RotationAxis = o.Right
-        instance.LocalizedRotationAxis = o.localized.Right
-        instance.offsetDirectionChanger = -1
+        instance.Reference = o.Forward
+        instance.Normal = o.Right
+        instance.LocalNormal = construct.orientation.localized.Right
     elseif axis == AxisControlRoll then
         instance.offsetWidget = shared:CreateValue("Roll", "°")
         instance.velocityWidget = shared:CreateValue("R.Vel", "°/s")
         instance.accelerationWidget = shared:CreateValue("R.Acc", "°/s2")
         instance.operationWidget = shared:CreateValue("R.Op", "")
-        instance.Forward = o.Up
-        instance.Right = o.Right
-        instance.RotationAxis = o.Forward
-        instance.LocalizedRotationAxis = o.localized.Forward
-        instance.offsetDirectionChanger = -1
+        instance.Reference = o.Up
+        instance.Normal = o.Forward
+        instance.LocalNormal = construct.orientation.localized.Forward
     elseif axis == AxisControlYaw then
         instance.offsetWidget = shared:CreateValue("Yaw", "°")
         instance.velocityWidget = shared:CreateValue("Y.Vel", "°/s")
         instance.accelerationWidget = shared:CreateValue("Y.Acc", "°/s2")
         instance.operationWidget = shared:CreateValue("Y.Op", "")
-        instance.Forward = o.Forward
-        instance.Right = o.Right
-        instance.RotationAxis = o.Up
-        instance.LocalizedRotationAxis = o.localized.Up
-        instance.offsetDirectionChanger = 1
+        instance.Reference = o.Forward
+        instance.Normal = o.Up
+        instance.LocalNormal = construct.orientation.localized.Up
     else
         diag:Fail("Invalid axis: " .. axis)
     end
@@ -110,26 +101,12 @@ end
 ---@return number
 function control:Speed()
     local vel = construct.velocity.localized.Angular()
-
-    if self.controlledAxis == AxisControlPitch then
-        return vel.x * rad2deg
-    elseif self.controlledAxis == AxisControlRoll then
-        return vel.y * rad2deg
-    else
-        return vel.z * rad2deg
-    end
+    return (vel * self.LocalNormal()):len() * rad2deg
 end
 
 function control:Acceleration()
     local vel = construct.acceleration.localized.Angular()
-
-    if self.controlledAxis == AxisControlPitch then
-        return vel.x * rad2deg
-    elseif self.controlledAxis == AxisControlRoll then
-        return vel.y * rad2deg
-    else
-        return vel.z * rad2deg
-    end
+    return (vel * self.LocalNormal()):len() * rad2deg
 end
 
 ---Returns the time it takes to reach the target, in seconds
@@ -164,36 +141,31 @@ function control:Flush(apply)
         -- Postive acceleration turns counter-clockwise
         -- Positive velocity means we're turning counter-clockwise
 
-        local offset = calc.AlignmentOffset(construct.position.Current(), self.target.coordinate, self.Forward(), self.Right())
-        local speed = self:Speed()
-        local absSpeed = abs(speed)
-        local speedSign = calc.Sign(speed)
-        local isLeft = offset < 0
-        local isRight = offset > 0
-        local movingLeft = speedSign == self.offsetDirectionChanger
-        local movingRight = speedSign == -self.offsetDirectionChanger
-        local movingAway = (isLeft and movingLeft) or (isRight and movingRight)
+        local vecToTarget = self.target.coordinate - construct.position.Current()
+        local offset = calc.SignedRotationAngle(self.Normal(), self.Reference(), vecToTarget) * rad2deg
 
-        local towardsTarget = calc.Sign(offset) * self.offsetDirectionChanger
+        self.operationWidget:Set("Offset " .. calc.Round(offset, 4))
 
-        local accelerationConstant = 50
+        local isLeftOf = calc.Sign(offset) == -1
+        local isRightOf = calc.Sign(offset) == 1
+        local movingLeft = calc.Sign(self:Speed()) == 1
+        local movingRight = calc.Sign(self:Speed()) == -1
+        local standStill = movingLeft == 0 and movingRight == 0
 
-        local absOffset = abs(offset)
-        local absDegreeOffset = absOffset * 180
+        local movingTowardsTarget = (isLeftOf and movingRight) or (isRightOf and movingLeft)
+        local towardsTarget = calc.Sign(offset)
+
         local acc = 0
+        local maxVel = 5 -- degreees/s
+        local brakeAcceleration = 5
 
-        self.operationWidget:Set("Offset " .. calc.Round(absDegreeOffset, 4))
-        if movingAway then
-            acc = 2 * accelerationConstant * towardsTarget
-        elseif self:SpeedInTicks(1) < self.maxVel then
-            if absDegreeOffset <= self:BrakeDistance(absSpeed, accelerationConstant) then
-                acc = accelerationConstant * -calc.Sign(offset)
-            else
-                acc = accelerationConstant * towardsTarget
-            end
+        if movingTowardsTarget then
+            offset = offset * 0.5
         end
+        self.pid:inject(offset)
+        acc = self.pid:get()
 
-        finalAcceleration[self.controlledAxis] = self:RotationAxis() * acc * deg2rad
+        finalAcceleration[self.controlledAxis] = self:Normal() * acc * deg2rad
     end
 
     if apply then
