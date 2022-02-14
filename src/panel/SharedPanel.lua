@@ -1,5 +1,7 @@
 local Panel = require("panel/Panel")
 
+local singleton = nil
+
 local panel = {}
 panel.__index = panel
 
@@ -34,7 +36,10 @@ return setmetatable(
     },
     {
         __call = function(_, ...)
-            return new()
+            if singleton == nil then
+                singleton = new()
+            end
+            return singleton
         end
     }
 )

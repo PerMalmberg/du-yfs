@@ -28,7 +28,6 @@ local function new()
     local instance = {
         ctrl = ctrl,
         brakes = Brakes(),
-        brakeGroup = EngineGroup("brake"),
         thrustGroup = EngineGroup("thrust"),
         autoStabilization = nil,
         flushHandlerId = 0,
@@ -43,8 +42,7 @@ local function new()
             acceleration = vec3(),
             accelerationGroup = EngineGroup("none"),
             desiredDirection = vec3(),
-            engineOn = true,
-            brakeAcceleration = vec3()
+            engineOn = true
         },
         currentStatus = {
             rollDiff = 0,
@@ -117,13 +115,6 @@ function flightCore:SetAcceleration(group, acceleration)
     self.dirty = true
 end
 
----Sets the brakes to the given force
----@param brakeAcceleration number The force, in
-function flightCore:SetBrakes(brakeAcceleration)
-    diag:AssertIsNumber(brakeAcceleration, "acceleration in SetBrakes must be a number")
-    self.controlValue.brakeAcceleration = brakeAcceleration
-end
-
 function flightCore:ReceiveEvents()
     self.flushHandlerId = system:onEvent("flush", self.Flush, self)
     self.updateHandlerId = system:onEvent("update", self.Update, self)
@@ -167,14 +158,14 @@ function flightCore:autoHoldPosition()
         local g = construct.world.G()
 
         if movingTowardsTarget then
-            self:SetBrakes(0)
+            self.brakes:Set(0)
         else
             -- Moving away from the target, apply brakes
-            self:SetBrakes(g * 10)
+            self.brakes:Set()
         end
 
         if distanceToTarget:len() < h.deadZone then
-            self:SetBrakes(g * 10)
+            self.brakes:Set()
             self:SetAcceleration(self.thrustGroup, -construct.orientation.AlongGravity() * g * 1.01)
         else
             -- Start with countering gravity
@@ -195,15 +186,11 @@ function flightCore:Flush()
     c.pitch:Flush(false)
     c.roll:Flush(false)
     c.yaw:Flush(true)
+    self.brakes:Flush()
     self:autoHoldPosition()
 
     if self.dirty then
         self.dirty = false
-
-        -- Calculate brake vector and set brake value
-        -- The brake vector must point against the direction of travel, so negate it.
-        local brakeVector = -construct.velocity.Movement():normalize() * self.controlValue.brakeAcceleration
-        self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
 
         if self.controlValue.engineOn then
             -- Set controlValue.acceleration values of engines
@@ -213,6 +200,7 @@ function flightCore:Flush()
 end
 
 function flightCore:Update()
+    self.brakes:Update()
     self:autoStabilize()
 end
 

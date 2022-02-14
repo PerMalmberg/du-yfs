@@ -1,10 +1,11 @@
 local library = require("abstraction/Library")()
 local vec3 = require("builtin/cpml/vec3")
-local Constants = require("Constants")
 
-local coreUnit = {}
-coreUnit.__index = coreUnit
+local construct = {}
+construct.__index = construct
 local singelton = nil
+
+local atmoToSpaceDensityLimit = 0 -- At what density level we consider space to begin. Densities higher than this is atmo.
 
 ---Creates a new Core
 ---@return table A new AxisControl
@@ -27,7 +28,7 @@ local function new()
                 return vec3(core.getConstructWorldOrientationForward())
             end,
             AlongGravity = function()
-                -- This points towards the center of the planet, i.e. downwards
+                -- This points towards the center of the planet, i.e. downwards. Is zero when in space.
                 return vec3(core.getWorldVertical())
             end,
             localized = {
@@ -41,6 +42,30 @@ local function new()
                     return vec3(core.getConstructOrientationForward())
                 end
             }
+        },
+        mass = {
+            Own = function()
+                return core.getConstructMass()
+            end,
+            Total = function()
+                local m = singelton.mass
+                return m.Own() + m.MassOfDockedConstructs() + m.MassOfPlayers()
+            end,
+            MassOfDockedConstructs = function()
+                local mass = 0
+                for _, id in ipairs(core.getDockedConstructs()) do
+                    mass = mass + core.getDockedConstructMass(id)
+                end
+
+                return mass
+            end,
+            MassOfPlayers = function()
+                local mass = 0
+                for _, id in ipairs(core.getPlayersOnBoard()) do
+                    mass = mass + core.getBoardedPlayerMass(id)
+                end
+                return mass
+            end
         },
         velocity = {
             Angular = function()
@@ -74,13 +99,19 @@ local function new()
             end
         },
         world = {
-            AtmoDensity = core.getAtmosphereDensity,
+            AtmoDensity = ctrl.getAtmosphereDensity,
             IsInAtmo = function()
-                return core.getAtmosphereDensity() > Constants.atmoToSpaceDensityLimit
+                return ctrl.getAtmosphereDensity() > atmoToSpaceDensityLimit
+            end,
+            IsInSpace = function()
+                return ctrl.getAtmosphereDensity() <= atmoToSpaceDensityLimit
             end,
             G = core.g,
             AngularAirFrictionAcceleration = function()
                 return vec3(core.getWorldAirFrictionAcceleration())
+            end,
+            GAlongGravity = function()
+                return vec3(core.getWorldGravity())
             end
         },
         player = {
@@ -93,11 +124,30 @@ local function new()
                 Up = function()
                     return vec3(ctrl.getMasterPlayerWorldUp())
                 end
+            },
+            camera = {
+                position = {
+                    Current = function()
+                        return vec3(system.getCameraWorldPos())
+                    end
+                },
+                orientation = {
+                    Forward = function()
+                        return vec3(system.getCameraWorldForward())
+                    end,
+                    Up = function()
+                        return vec3(system.getCameraWorldUp())
+                    end,
+                    Right = function()
+                        return vec3(system.getCameraWorldRight())
+                    end,
+                    IsFirstPerson = system.isFirstPerson
+                }
             }
         }
     }
 
-    setmetatable(instance, coreUnit)
+    setmetatable(instance, construct)
     return instance
 end
 

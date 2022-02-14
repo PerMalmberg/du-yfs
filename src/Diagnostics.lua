@@ -56,10 +56,6 @@ local function isBoolean(b)
     return type(b) == "boolean"
 end
 
-local function isVector(v)
-    return diag.IsTable(v) and diag.IsNumber(v.x and v.y and v.z)
-end
-
 local function isVec3(v)
     return isTable(v) and isNumber(v.x and v.y and v.z) and isFunction(v.trim_inplace)
 end
@@ -171,10 +167,6 @@ function diag:RemoveNumber(number)
         s:Remove()
         self.shapes[number] = nil
     end
-end
-
-function diag:Update()
-
 end
 
 return setmetatable(

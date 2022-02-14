@@ -9,16 +9,19 @@ local calc = require("Calc")
 
 local start = construct.position.Current()
 local travelPath = -construct.orientation.AlongGravity()
+local camera = construct.player.camera
 
 fc:ReceiveEvents()
 fc:EnableStabilization(
     function()
-        local upDirection = -construct.orientation.AlongGravity()
-        return calc.StraightForward(upDirection, construct.orientation.Right()) * 10 + construct.position.Current()
+        return construct.player.position.Current()
+        --local upDirection = -construct.orientation.AlongGravity()
+        --return calc.StraightForward(upDirection, construct.orientation.Right()) * 10 + construct.position.Current()
     end
 )
 fc:EnableHoldPosition(
     function()
-        return start - construct.orientation.AlongGravity() * 50
+        return camera.position.Current() + camera.orientation.Forward() * 15
+        --return start - construct.orientation.AlongGravity() * 50
     end
 )
