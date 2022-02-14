@@ -15,7 +15,6 @@ local vec3 = require("builtin/cpml/vec3")
 local EngineGroup = require("EngineGroup")
 local library = require("abstraction/Library")()
 local diag = require("Diagnostics")()
-local PID = require("PID")
 local Brakes = require("Brakes")
 local construct = require("abstraction/Construct")()
 local AxisControl = require("AxisControl")
@@ -209,8 +208,6 @@ function flightCore:Flush()
         if self.controlValue.engineOn then
             -- Set controlValue.acceleration values of engines
             self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {self.controlValue.acceleration:unpack()})
-        else
-            self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {0, 0, 0})
         end
     end
 end
