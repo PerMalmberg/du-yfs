@@ -5,8 +5,10 @@ local construct = require("abstraction/Construct")()
 local sharedPanel = require("panel/SharedPanel")()
 local EngineGroup = require("EngineGroup")
 local calc = require("Calc")
+local vec3 = require("builtin/cpml/vec3")
 local clamp = utils.clamp
 local jdecode = json.decode
+local abs = math.abs
 
 local brakes = {}
 brakes.__index = brakes
@@ -105,7 +107,25 @@ function brakes:BreakDistance()
     local V0 = velocity.Movement():len()
     local a = self:Deceleration()
 
-    -- QQQ Take gravity into consideration
+    -- When gravity is present, it reduces the available brake force in directions towards the planet and increases it when going out from the planet.
+    -- Determine how much the gravity affects us by checking the alignment between our movement vector and the gravity.
+    local gravity = world.GAlongGravity()
+
+    if gravity:len2() > 0 then
+        local travelDir = velocity.Movement():normalize()
+        local absGrav = abs(gravity:len())
+        local dot = travelDir:dot(gravity)
+
+        a = a - dot * absGrav
+
+    --[[if dot > 0 then
+            -- Traveling in the same direction - we're infuenced such that the break force is reduced
+            a = a - abs(dot) * absGrav:len()
+        elseif dot < 0 then
+            -- Traveling against gravity - break force is increased
+            a = a + abs(dot) * absGrav:len()
+        end]]
+    end
 
     return (V0 * V0) / (2 * a)
 end

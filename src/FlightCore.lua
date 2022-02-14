@@ -164,7 +164,8 @@ function flightCore:autoHoldPosition()
             self.brakes:Set()
         end
 
-        if distanceToTarget:len() < h.deadZone then
+        local dist = distanceToTarget:len()
+        if dist < h.deadZone or self.brakes:BreakDistance() >= dist then
             self.brakes:Set()
             self:SetAcceleration(self.thrustGroup, -construct.orientation.AlongGravity() * g * 1.01)
         else
@@ -173,7 +174,7 @@ function flightCore:autoHoldPosition()
             acceleration = acceleration + directionToTarget:normalize() * g * 0.1
             -- If target point is below, remove a slight bit of force
             if directionToTarget:dot(construct.orientation.AlongGravity()) > 0 then
-                acceleration = acceleration * 0.99
+                acceleration = acceleration * 0.98
             end
 
             self:SetAcceleration(self.thrustGroup, acceleration)
