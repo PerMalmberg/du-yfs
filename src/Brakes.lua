@@ -1,11 +1,11 @@
 local library = require("abstraction/Library")()
 local json = require("builtin/dkjson")
 local utils = require("builtin/cpml/utils")
+local diag = require("Diagnostics")()
 local construct = require("abstraction/Construct")()
 local sharedPanel = require("panel/SharedPanel")()
 local EngineGroup = require("EngineGroup")
 local calc = require("Calc")
-local vec3 = require("builtin/cpml/vec3")
 local clamp = utils.clamp
 local jdecode = json.decode
 local abs = math.abs
@@ -32,8 +32,11 @@ local function new()
         currentSpaceForce = 0,
         totalMass = 1,
         brakeGroup = EngineGroup("brake"),
-        wDistance = sharedPanel:Get("Breaks"):CreateValue("Dist.", "m"),
-        wDeceleration = sharedPanel:Get("Breaks"):CreateValue("Deceleration.", "m/s2")
+        wPercentage = sharedPanel:Get("Breaks"):CreateValue("Percentage", "%"),
+        wDistance = sharedPanel:Get("Breaks"):CreateValue("Brake dist.", "m"),
+        wDeceleration = sharedPanel:Get("Breaks"):CreateValue("Deceleration", "m/s2"),
+        wGravInfluence = sharedPanel:Get("Breaks"):CreateValue("Grav. Influence", "m/s2"),
+        wBrakeAcc = sharedPanel:Get("Breaks"):CreateValue("Brake Acc.", "m/s2")
     }
 
     setmetatable(instance, brakes)
@@ -46,6 +49,7 @@ end
 
 function brakes:Update()
     self:calculateBreakForce()
+    self.wPercentage:Set(self.percentage)
     self.wDistance:Set(calc.Round(self:BreakDistance(), 2))
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
 end
@@ -99,35 +103,43 @@ function brakes:Deceleration()
     end
 end
 
-function brakes:BreakDistance()
-    -- https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas
-    -- distance = (v^2 - V0^2) / 2*a
-    -- Resulting force, gravity -
-
-    local V0 = velocity.Movement():len()
-    local a = self:Deceleration()
+function brakes:GravityInfluence(velocity)
+    diag:AssertIsVec3(velocity, "velocity must be a vec3 in brakes:GravityInfluence")
 
     -- When gravity is present, it reduces the available brake force in directions towards the planet and increases it when going out from the planet.
     -- Determine how much the gravity affects us by checking the alignment between our movement vector and the gravity.
     local gravity = world.GAlongGravity()
 
-    if gravity:len2() > 0 then
-        local travelDir = velocity.Movement():normalize()
-        local absGrav = abs(gravity:len())
-        local dot = travelDir:dot(gravity)
+    local gravity2 = gravity:len2()
+    local influence = 0
 
-        a = a - dot * absGrav
+    if gravity2 > 0 then
+        local dot = gravity:dot(velocity)
 
-    --[[if dot > 0 then
+        if dot > 0 then
             -- Traveling in the same direction - we're infuenced such that the break force is reduced
-            a = a - abs(dot) * absGrav:len()
+            influence = -gravity:project_on(velocity):len()
         elseif dot < 0 then
             -- Traveling against gravity - break force is increased
-            a = a + abs(dot) * absGrav:len()
-        end]]
+            influence = gravity:project_on(velocity):len()
+        end
     end
 
-    return (V0 * V0) / (2 * a)
+    self.wGravInfluence:Set(calc.Round(influence, 4))
+    return influence
+end
+
+function brakes:BreakDistance()
+    -- https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas
+    -- distance = (v^2 - V0^2) / 2*a
+
+    local vel = velocity.Movement()
+    local breakAcceleration = self:Deceleration() + self:GravityInfluence(vel)
+
+    self.wBrakeAcc:Set(calc.Round(breakAcceleration, 4))
+
+    local V0 = vel:len()
+    return (V0 * V0) / (2 * abs(breakAcceleration))
 end
 
 return setmetatable(
