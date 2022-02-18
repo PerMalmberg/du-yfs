@@ -18,6 +18,7 @@ local diag = require("Diagnostics")()
 local Brakes = require("Brakes")
 local construct = require("abstraction/Construct")()
 local AxisControl = require("AxisControl")
+local nullVec = vec3()
 
 local flightCore = {}
 flightCore.__index = flightCore
@@ -32,7 +33,6 @@ local function new()
         autoStabilization = nil,
         flushHandlerId = 0,
         updateHandlerId = 0,
-        dirty = false,
         controllers = {
             pitch = AxisControl(AxisControlPitch),
             roll = AxisControl(AxisControlRoll),
@@ -41,8 +41,7 @@ local function new()
         controlValue = {
             acceleration = vec3(),
             accelerationGroup = EngineGroup("none"),
-            desiredDirection = vec3(),
-            engineOn = true
+            desiredDirection = vec3()
         },
         currentStatus = {
             rollDiff = 0,
@@ -56,33 +55,16 @@ local function new()
     return instance
 end
 
-function flightCore:SetEngines(on)
-    self.controlValue.engineOn = on
-end
-
 ---Initiates yaw, roll and pitch stabilization
 function flightCore:EnableStabilization(focusPointGetter)
     diag:AssertIsFunction(focusPointGetter)
     self.autoStabilization = {
         focusPoint = focusPointGetter
     }
-    self.dirty = true
 end
 
 function flightCore:DisableStabilization()
     self.autoStabilization = nil
-end
-
-function flightCore:HoldCurrentPosition(deadZone)
-    if deadZone ~= nil then
-        diag:AssertIsNumber(deadZone, "deadZone in HoldCurrentPosition must be a number")
-    end
-    self:EnableHoldPosition(
-        function()
-            return construct.position.Current()
-        end,
-        deadZone
-    )
 end
 
 ---Enables hold position
@@ -112,7 +94,10 @@ function flightCore:SetAcceleration(group, acceleration)
     local cv = self.controlValue
     cv.accelerationGroup = group
     cv.acceleration = acceleration
-    self.dirty = true
+end
+
+function flightCore:DisableEngines()
+    self.controlValue.acceleration = nullVec
 end
 
 function flightCore:ReceiveEvents()
@@ -153,33 +138,35 @@ function flightCore:autoHoldPosition()
         local movementDirection = construct.velocity.Movement():normalize_inplace()
         local distanceToTarget = h.targetPos() - construct.position.Current()
         local directionToTarget = distanceToTarget:normalize()
-        local movingTowardsTarget = movementDirection:dot(directionToTarget) > 0
+        local movingAwayFromTarget = movementDirection:dot(directionToTarget) < 0
 
         local g = construct.world.G()
 
-        if movingTowardsTarget then
-            self.brakes:Set(0)
-        else
-            -- Moving away from the target, apply brakes
-            self.brakes:Set()
-        end
-
         local dist = distanceToTarget:len()
-        if dist < h.deadZone or self.brakes:BreakDistance() >= dist then
+
+        -- Start with countering gravity
+        local acceleration = -construct.world.GAlongGravity()
+
+        if dist > 0 and movingAwayFromTarget then
             self.brakes:Set()
-            self:SetAcceleration(self.thrustGroup, -construct.orientation.AlongGravity() * g * 1.01)
+        elseif dist < h.deadZone or self.brakes:BreakDistance() >= dist then
+            self.brakes:Set()
         else
-            -- Start with countering gravity
-            local acceleration = -construct.orientation.AlongGravity():normalize_inplace() * g
-            acceleration = acceleration + directionToTarget:normalize() * g * 0.1
+            self.brakes:Set(0)
+            acceleration = acceleration + directionToTarget * g * 0.1
             -- If target point is below, remove a slight bit of force
             if directionToTarget:dot(construct.orientation.AlongGravity()) > 0 then
                 acceleration = acceleration * 0.98
             end
-
-            self:SetAcceleration(self.thrustGroup, acceleration)
         end
+
+        self:SetAcceleration(self.thrustGroup, acceleration)
     end
+end
+
+function flightCore:Update()
+    self.brakes:Update()
+    self:autoStabilize()
 end
 
 function flightCore:Flush()
@@ -190,19 +177,8 @@ function flightCore:Flush()
     self.brakes:Flush()
     self:autoHoldPosition()
 
-    if self.dirty then
-        self.dirty = false
-
-        if self.controlValue.engineOn then
-            -- Set controlValue.acceleration values of engines
-            self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {self.controlValue.acceleration:unpack()})
-        end
-    end
-end
-
-function flightCore:Update()
-    self.brakes:Update()
-    self:autoStabilize()
+    -- Set controlValue.acceleration values of engines
+    self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {self.controlValue.acceleration:unpack()})
 end
 
 -- The module
