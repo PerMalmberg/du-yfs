@@ -97,6 +97,10 @@ function control:SetTarget(targetCoordinate)
     self.target.coordinate = targetCoordinate
 end
 
+function control:Disable()
+    self.target.coordinate = nil
+end
+
 ---Returns the current signed angular velocity, in degrees per seconds.
 ---@return number
 function control:Speed()
@@ -107,24 +111,6 @@ end
 function control:Acceleration()
     local vel = construct.acceleration.localized.Angular()
     return (vel * self.LocalNormal()):len() * rad2deg
-end
-
----Returns the time it takes to reach the target, in seconds
----@param offsetInDegrees number of degrees we're off alignment
----@param angleVel number Angular velocity
-function control:TimeToTarget(offsetInDegrees, angleVel)
-    local time
-    if angleVel ~= 0 then
-        time = offsetInDegrees / angleVel
-    else
-        time = constants.flushTick
-    end
-
-    return time
-end
-
-function control:BrakeAcceleration(speed, offsetInDegrees)
-    return speed * speed / offsetInDegrees
 end
 
 function control:BrakeDistance(speed, acceleration)
@@ -150,14 +136,10 @@ function control:Flush(apply)
         local isRightOf = calc.Sign(offset) == 1
         local movingLeft = calc.Sign(self:Speed()) == 1
         local movingRight = calc.Sign(self:Speed()) == -1
-        local standStill = movingLeft == 0 and movingRight == 0
 
         local movingTowardsTarget = (isLeftOf and movingRight) or (isRightOf and movingLeft)
-        local towardsTarget = calc.Sign(offset)
 
         local acc = 0
-        local maxVel = 5 -- degreees/s
-        local brakeAcceleration = 5
 
         if movingTowardsTarget then
             offset = offset * 0.5

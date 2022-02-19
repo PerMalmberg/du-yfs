@@ -1,0 +1,54 @@
+local diag = require("Diagnostics")
+local construct = require("abstraction/Construct")()
+
+local movementBehaviour = {}
+movementBehaviour.__index = movementBehaviour
+
+---Creates a new behaviour that instructs the flight core how to behave
+---@param destination vec3 The destination point to travel to
+---@param alignTo vec3 The point towards which pitch/way should point towards
+---@param topSideAlignment vec3 The point towards which the underbelly shall point
+---@param margin number The distance, in meters, the construct must be within the destination for it to be considered reached.
+---@param maxSpeed number The maximum speed to travel towards the point
+---@return table A MovementBehaviour
+local function new(destination, alignTo, topSideAlignment, margin, maxSpeed)
+    diag:AssertIsVec3(destination, "destination", "movementBehaviour:new")
+    diag:AssertIsFunction(alignTo, "alignTo", "movementBehaviour:new")
+    diag:AssertIsFunction(topSideAlignment, "topSideAlignment", "movementBehaviour:new")
+    diag:AssertIsNumber(margin, "margin", "movementBehaviour:new")
+    diag:AssertIsNumber(maxSpeed, "maxSpeed", "movementBehaviour:new")
+
+    local instance = {
+        destination = destination,
+        margin = margin,
+        AlignTo = alignTo or function()
+                return nil
+            end, -- Expected to return the current alignment point, or nil
+        TopSideAlignment = topSideAlignment or function()
+                return nil
+            end,
+        maxSpeed = maxSpeed
+    }
+
+    setmetatable(instance, movementBehaviour)
+
+    return instance
+end
+
+function movementBehaviour:IsReached()
+    local currentPos = construct.position.Current()
+    local diff = (self.destination - currentPos):len()
+    return diff <= self.margin
+end
+
+-- The module
+return setmetatable(
+    {
+        new = new
+    },
+    {
+        __call = function(_, ...)
+            return new(...)
+        end
+    }
+)

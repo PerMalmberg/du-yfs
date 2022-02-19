@@ -64,7 +64,6 @@ local function formatValues(...)
     local parts = {}
 
     for _, v in ipairs({...}) do
-        local pos = #parts + 1
         local s = {}
         if isString(v) then
             s = string.format("%s", v)
@@ -82,7 +81,7 @@ local function formatValues(...)
             s = "Unsupported table type:" .. type(v)
         end
 
-        table.insert(parts, pos, string.format(" %s", s))
+        table.insert(parts, #parts + 1, string.format(" %s", s))
     end
 
     return table.concat(parts)

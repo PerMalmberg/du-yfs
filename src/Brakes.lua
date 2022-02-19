@@ -134,12 +134,18 @@ function brakes:BreakDistance()
     -- distance = (v^2 - V0^2) / 2*a
 
     local vel = velocity.Movement()
-    local breakAcceleration = self:Deceleration() + self:GravityInfluence(vel)
+    local brakeAcceleration = self:Deceleration() + self:GravityInfluence(vel)
 
-    self.wBrakeAcc:Set(calc.Round(breakAcceleration, 4))
+    self.wBrakeAcc:Set(calc.Round(brakeAcceleration, 4))
 
     local V0 = vel:len()
-    return (V0 * V0) / (2 * abs(breakAcceleration))
+
+    -- If gravity is larger than the brake acceleration then we return a realy long brake distance.
+    if brakeAcceleration <= 0 then
+        return 9999999
+    else
+        return (V0 * V0) / (2 * brakeAcceleration)
+    end
 end
 
 return setmetatable(

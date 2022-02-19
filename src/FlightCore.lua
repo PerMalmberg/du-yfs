@@ -18,7 +18,7 @@ local diag = require("Diagnostics")()
 local Brakes = require("Brakes")
 local construct = require("abstraction/Construct")()
 local AxisControl = require("AxisControl")
-local nullVec = vec3()
+local MoveControl = require("movement/MoveControl")
 
 local flightCore = {}
 flightCore.__index = flightCore
@@ -33,33 +33,15 @@ local function new()
         autoStabilization = nil,
         flushHandlerId = 0,
         updateHandlerId = 0,
-        controllers = {
-            pitch = AxisControl(AxisControlPitch),
-            roll = AxisControl(AxisControlRoll),
-            yaw = AxisControl(AxisControlYaw)
-        },
-        controlValue = {
-            acceleration = vec3(),
-            accelerationGroup = EngineGroup("none"),
-            desiredDirection = vec3()
-        }
+        pitch = AxisControl(AxisControlPitch),
+        roll = AxisControl(AxisControlRoll),
+        yaw = AxisControl(AxisControlYaw),
+        movement = MoveControl()
     }
 
     setmetatable(instance, flightCore)
 
     return instance
-end
-
----Initiates yaw, roll and pitch stabilization
-function flightCore:EnableStabilization(focusPointGetter)
-    diag:AssertIsFunction(focusPointGetter, "focusPointGetter", "flightCore:EnableStabilization")
-    self.autoStabilization = {
-        focusPoint = focusPointGetter
-    }
-end
-
-function flightCore:DisableStabilization()
-    self.autoStabilization = nil
 end
 
 ---Enables hold position
@@ -84,46 +66,55 @@ end
 function flightCore:ReceiveEvents()
     self.flushHandlerId = system:onEvent("flush", self.Flush, self)
     self.updateHandlerId = system:onEvent("update", self.Update, self)
-    self.controllers.pitch:ReceiveEvents()
-    self.controllers.roll:ReceiveEvents()
-    self.controllers.yaw:ReceiveEvents()
+    self.pitch:ReceiveEvents()
+    self.roll:ReceiveEvents()
+    self.yaw:ReceiveEvents()
 end
 
 function flightCore:StopEvents()
     system:clearEvent("flush", self.flushHandlerId)
     system:clearEvent("update", self.updateHandlerId)
-    self.controllers.pitch:StopEvents()
-    self.controllers.roll:StopEvents()
-    self.controllers.yaw:StopEvents()
+    self.pitch:StopEvents()
+    self.roll:StopEvents()
+    self.yaw:StopEvents()
 end
 
-function flightCore:autoStabilize()
-    local as = self.autoStabilization
+function flightCore:Align()
+    local behaviour = self.movement:Current()
 
-    if as ~= nil and self.ctrl.getClosestPlanetInfluence() > 0 then
-        local ownPos = construct.position.Current()
+    local target
+    local topSideAlignment
+    if behaviour ~= nil then
+        target = behaviour.AlignTo()
+        topSideAlignment = behaviour.TopSideAlignment()
+    end
 
-        local focus = as.focusPoint()
+    if target ~= nil then
+        self.yaw:SetTarget(target)
+        self.pitch:SetTarget(target)
+    else
+        self.yaw:Disable()
+        self.pitch:Disable()
+    end
 
-        self.controllers.yaw:SetTarget(focus)
-        self.controllers.pitch:SetTarget(focus)
-
-        local pointAbove = ownPos + -construct.orientation.AlongGravity() * 10
-        self.controllers.roll:SetTarget(pointAbove)
+    if topSideAlignment ~= nil then
+        self.roll:SetTarget(topSideAlignment)
+    else
+        self.roll:Disable()
     end
 end
 
 function flightCore:Update()
     self.brakes:Update()
-    self:autoStabilize()
+    self:Align()
 end
 
 function flightCore:Flush()
-    local c = self.controllers
-    c.pitch:Flush(false)
-    c.roll:Flush(false)
-    c.yaw:Flush(true)
+    self.pitch:Flush(false)
+    self.roll:Flush(false)
+    self.yaw:Flush(true)
     self.brakes:Flush()
+    self.movement:Flush()
 
     -- Set controlValue.acceleration values of engines
     --self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {self.controlValue.acceleration:unpack()})
