@@ -10,9 +10,7 @@ local sin = math.sin
 
 local stringMatch = string.match
 local numberPattern = " *([+-]?%d+%.?%d*e?[+-]?%d*)"
-local posPattern =
-    "::pos{" ..
-    numberPattern .. "," .. numberPattern .. "," .. numberPattern .. "," .. numberPattern .. "," .. numberPattern .. "}"
+local posPattern = "::pos{" .. numberPattern .. "," .. numberPattern .. "," .. numberPattern .. "," .. numberPattern .. "," .. numberPattern .. "}"
 
 local universe = {}
 universe.__index = universe
@@ -75,8 +73,7 @@ function universe:ParsePosition(pos)
 
             local radius = body.Geography.Radius + altitude
             local cosLat = cos(latitude)
-            local position =
-                vec3(radius * cosLat * cos(longitude), radius * cosLat * sin(longitude), radius * sin(latitude))
+            local position = vec3(radius * cosLat * cos(longitude), radius * cosLat * sin(longitude), radius * sin(latitude))
             position = position + body.Geography.Center
 
             return Position(self.galaxy[galaxyId], body, position.x, position.y, position.z)
@@ -101,7 +98,7 @@ end
 
 function universe:Prepare()
     local ga = require("builtin/atlas")
-    diag:AssertIsTable(ga, "In-game atlas must be a table")
+    diag:AssertIsTable(ga, "ga", "Universe:Prepare")
 
     for galaxyId, galaxy in pairs(ga) do
         --diag:Debug("Building galaxy", galaxyId)

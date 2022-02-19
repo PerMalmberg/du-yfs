@@ -7,11 +7,11 @@ local stringFormat = string.format
 local position = vec3()
 
 local function new(galaxy, bodyRef, x, y, z)
-    diag:AssertIsTable(galaxy, "galaxy for a position must be a table")
-    diag:AssertIsTable(bodyRef, "bodyRef for a position must be a table")
-    diag:AssertIsNumber(x, "X for a position must be a number")
-    diag:AssertIsNumber(y, "Y for a position must be a number")
-    diag:AssertIsNumber(z, "Z for a position must be a number")
+    diag:AssertIsTable(galaxy, "galaxy", "Position:new")
+    diag:AssertIsTable(bodyRef, "bodyRef", "Position:new")
+    diag:AssertIsNumber(x, "X", "Position:new")
+    diag:AssertIsNumber(y, "Y", "Position:new")
+    diag:AssertIsNumber(z, "Z", "Position:new")
 
     local instance = {
         Body = bodyRef,
@@ -37,14 +37,7 @@ function position:__tostring()
         local lat = math.asin(calcPos.z / radius)
         local lon = math.atan(calcPos.y, calcPos.x)
 
-        return stringFormat(
-            "::pos{%d,%d,%.4f,%.4f,%.4f}",
-            self.Galaxy.Id,
-            self.Body.Id,
-            math.deg(lat),
-            math.deg(lon),
-            altitude
-        )
+        return stringFormat("::pos{%d,%d,%.4f,%.4f,%.4f}", self.Galaxy.Id, self.Body.Id, math.deg(lat), math.deg(lon), altitude)
     else
         return stringFormat("::pos{%d,0,%.4f,%.4f,%.4f}", self.Galaxy.Id, self.Coords.x, self.Coords.y, self.Coords.z)
     end

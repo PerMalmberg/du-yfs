@@ -1,11 +1,10 @@
-local keyboardController = {}
-keyboardController.__index = keyboardController
+local destBehaviour = {}
+destBehaviour.__index = destBehaviour
 
 local function new(controller)
     local instance = {}
 
-
-    setmetatable(instance, keyboardController)
+    setmetatable(instance, destBehaviour)
 
     return instance
 end

@@ -88,24 +88,28 @@ local function formatValues(...)
     return table.concat(parts)
 end
 
-function diag:AssertIsString(s, msg)
-    assert(isString(s) == "string", msg)
+local function formatTypeMessage(parameterName, parameter, wantedTypeName, functionName)
+    return string.format("%s in %s must be %s, got %s", parameterName, functionName, wantedTypeName, type(parameter))
 end
 
-function diag:AssertIsTable(t, msg)
-    assert(isTable(t), msg)
+function diag:AssertIsString(s, parameterName, functionName)
+    assert(isString(s) == "string", formatTypeMessage(parameterName, s, "string", functionName))
 end
 
-function diag:AssertIsVec3(v, msg)
-    assert(isTable(v) and isNumber(v.x and v.y and v.z) and isFunction(v.trim_inplace), msg)
+function diag:AssertIsTable(t, parameterName, functionName)
+    assert(isTable(t), formatTypeMessage(parameterName, t, "table", functionName))
 end
 
-function diag:AssertIsNumber(n, msg)
-    assert(isNumber(n), msg)
+function diag:AssertIsVec3(v, parameterName, functionName)
+    assert(isTable(v) and isNumber(v.x and v.y and v.z) and isFunction(v.trim_inplace), formatTypeMessage(parameterName, v, "vec3", functionName))
 end
 
-function diag:AssertIsFunction(f, msg)
-    assert(isFunction(f), msg)
+function diag:AssertIsNumber(n, parameterName, functionName)
+    assert(isNumber(n), formatTypeMessage(parameterName, n, "number", functionName))
+end
+
+function diag:AssertIsFunction(f, parameterName, functionName)
+    assert(isFunction(f), formatTypeMessage(parameterName, f, "function", functionName))
 end
 
 function diag:Fail(msg)

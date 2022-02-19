@@ -30,7 +30,7 @@ finalAcceleration[AxisControlYaw] = vec3()
 ---Creates a new AxisControl
 ---@return table A new AxisControl
 local function new(axis)
-    diag:AssertIsNumber(axis, "axis in AxisControl constructor must be a number")
+    diag:AssertIsNumber(axis, "axis", "AxisControl:new")
 
     local instance = {
         controlledAxis = axis,

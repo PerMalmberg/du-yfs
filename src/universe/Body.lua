@@ -15,8 +15,8 @@ local function new()
 end
 
 function body:Prepare(galaxy, data)
-    diag:AssertIsTable(galaxy, "galayx data must be a table")
-    diag:AssertIsTable(data, "Body data must be a table")
+    diag:AssertIsTable(galaxy, "galayx", "body:Prepare")
+    diag:AssertIsTable(data, "data", "body:Prepare")
 
     self.Galaxy = galaxy
     self.Id = data.id

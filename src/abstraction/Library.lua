@@ -32,7 +32,10 @@ function libraryProxy.GetController()
 end
 
 function libraryProxy.GetSolver3()
-    return library.systemResolution3
+    if library then
+        return library.systemResolution3
+    end
+    return nil
 end
 
 -- The module

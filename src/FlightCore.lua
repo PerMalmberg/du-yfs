@@ -42,11 +42,6 @@ local function new()
             acceleration = vec3(),
             accelerationGroup = EngineGroup("none"),
             desiredDirection = vec3()
-        },
-        currentStatus = {
-            rollDiff = 0,
-            pitchDiff = 0,
-            yawDiff = 0
         }
     }
 
@@ -57,7 +52,7 @@ end
 
 ---Initiates yaw, roll and pitch stabilization
 function flightCore:EnableStabilization(focusPointGetter)
-    diag:AssertIsFunction(focusPointGetter)
+    diag:AssertIsFunction(focusPointGetter, "focusPointGetter", "flightCore:EnableStabilization")
     self.autoStabilization = {
         focusPoint = focusPointGetter
     }
@@ -71,9 +66,9 @@ end
 ---@param positionGetter vec3 A function that returns the position to hold
 ---@param deadZone number If close than this distance (in m) then consider position reached
 function flightCore:EnableHoldPosition(positionGetter, deadZone)
-    diag:AssertIsFunction(positionGetter, "position in EnableHoldPosition must be a function")
+    diag:AssertIsFunction(positionGetter, "position", "flightCore:EnableHoldPosition")
     if deadZone ~= nil then
-        diag:AssertIsNumber(deadZone, "deadZone in EnableHoldPosition must be a number")
+        diag:AssertIsNumber(deadZone, "deadZone", "flightCore:EnableHoldPosition")
     end
 
     self.holdPosition = {
@@ -84,20 +79,6 @@ end
 
 function flightCore:DisableHoldPosition()
     self.holdPosition = nil
-end
-
----@param group EngineGroup The engine group to apply the acceleration to
----@param acceleration vec3 Acceleration in m/s2, in world coordinates
-function flightCore:SetAcceleration(group, acceleration)
-    diag:AssertIsTable(group, "group in SetAcceleration must be a table")
-    diag:AssertIsVec3(acceleration, "acceleration in acceleration must be a vec3")
-    local cv = self.controlValue
-    cv.accelerationGroup = group
-    cv.acceleration = acceleration
-end
-
-function flightCore:DisableEngines()
-    self.controlValue.acceleration = nullVec
 end
 
 function flightCore:ReceiveEvents()
@@ -132,38 +113,6 @@ function flightCore:autoStabilize()
     end
 end
 
-function flightCore:autoHoldPosition()
-    local h = self.holdPosition
-    if h ~= nil then
-        local movementDirection = construct.velocity.Movement():normalize_inplace()
-        local distanceToTarget = h.targetPos() - construct.position.Current()
-        local directionToTarget = distanceToTarget:normalize()
-        local movingAwayFromTarget = movementDirection:dot(directionToTarget) < 0
-
-        local g = construct.world.G()
-
-        local dist = distanceToTarget:len()
-
-        -- Start with countering gravity
-        local acceleration = -construct.world.GAlongGravity()
-
-        if dist > 0 and movingAwayFromTarget then
-            self.brakes:Set()
-        elseif dist < h.deadZone or self.brakes:BreakDistance() >= dist then
-            self.brakes:Set()
-        else
-            self.brakes:Set(0)
-            acceleration = acceleration + directionToTarget * g * 0.1
-            -- If target point is below, remove a slight bit of force
-            if directionToTarget:dot(construct.orientation.AlongGravity()) > 0 then
-                acceleration = acceleration * 0.98
-            end
-        end
-
-        self:SetAcceleration(self.thrustGroup, acceleration)
-    end
-end
-
 function flightCore:Update()
     self.brakes:Update()
     self:autoStabilize()
@@ -175,10 +124,9 @@ function flightCore:Flush()
     c.roll:Flush(false)
     c.yaw:Flush(true)
     self.brakes:Flush()
-    self:autoHoldPosition()
 
     -- Set controlValue.acceleration values of engines
-    self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {self.controlValue.acceleration:unpack()})
+    --self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {self.controlValue.acceleration:unpack()})
 end
 
 -- The module

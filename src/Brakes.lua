@@ -104,7 +104,7 @@ function brakes:Deceleration()
 end
 
 function brakes:GravityInfluence(velocity)
-    diag:AssertIsVec3(velocity, "velocity must be a vec3 in brakes:GravityInfluence")
+    diag:AssertIsVec3(velocity, "velocity", "bakes:GravityInfluence")
 
     -- When gravity is present, it reduces the available brake force in directions towards the planet and increases it when going out from the planet.
     -- Determine how much the gravity affects us by checking the alignment between our movement vector and the gravity.
