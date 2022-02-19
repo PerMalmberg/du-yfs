@@ -6,6 +6,7 @@ local construct = require("abstraction/Construct")()
 local calc = require("Calc")
 local ctrl = library.GetController()
 local engine = require("abstraction/Engine")()
+local sharedPanel = require("panel/SharedPanel")()
 
 local nullVec = vec3()
 
@@ -16,7 +17,9 @@ local singelton = nil
 local function new()
     local instance = {
         behaviour = {}, -- The positions we want to move to
-        last = nil -- The last position, to return when there are no more to move to.
+        last = nil, -- The last position, to return when there are no more to move to.
+        wAcc = sharedPanel:Get("Move Control"):CreateValue("Acc.", "m/s2"),
+        wDist = sharedPanel:Get("Move Control"):CreateValue("Dist.", "m")
     }
 
     setmetatable(instance, moveControl)
@@ -60,22 +63,26 @@ function moveControl:Flush()
     local acc = nullVec
 
     if behaviour ~= nil then
-        local distanceToDestination = behaviour.destination - construct.position.Current()
-        local direction = distanceToDestination:normalize()
+        local toDest = behaviour.destination - construct.position.Current()
+        local direction = toDest:normalize()
+        local distanceToDestination = toDest:len()
         local brakeDistance = brakes:BrakeDistance()
         local velocity = construct.velocity.Movement()
         local reached = behaviour:IsReached()
 
+        self.wDist:Set(distanceToDestination)
+
         local enableBrakes = false
 
-        if not calc.SameishDirection(direction, velocity) or distanceToDestination:len() < brakeDistance then
+        if not calc.SameishDirection(direction, velocity) or distanceToDestination < brakeDistance then
             enableBrakes = true
         end
 
+        -- Start with an acceleration that counters gravity, if any.
         acc = -construct.world.GAlongGravity()
 
         if (velocity:len() < behaviour.maxSpeed) and not reached then
-            acc = acc + direction * 10
+            acc = acc + direction * construct.world.G() * 1.01
         end
 
         if enableBrakes or reached then
@@ -86,6 +93,8 @@ function moveControl:Flush()
     else
         brakes:Set()
     end
+
+    self.wAcc:Set(acc:len())
 
     ctrl.setEngineCommand(ThrustEngines:Union(), {acc:unpack()})
 end

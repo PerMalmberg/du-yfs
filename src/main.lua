@@ -27,10 +27,10 @@ end
 function ActionStart(system, key)
     if key == "option1" then
         moveControl:Clear()
-        moveControl:Append(MovementBehaviour(startPos, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(5)))
+        moveControl:Append(MovementBehaviour(startPos, PointAlongParallelLine, AboveSelfAlignedToGravity, 1, calc.Kph2Mps(5)))
     elseif key == "option2" then
         moveControl:Clear()
-        moveControl:Append(MovementBehaviour(startPos + upDirection * 80, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(100)))
+        moveControl:Append(MovementBehaviour(startPos + upDirection * 80, PointAlongParallelLine, AboveSelfAlignedToGravity, 1, calc.Kph2Mps(100)))
     end
 end
 
