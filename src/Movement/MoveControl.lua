@@ -1,6 +1,7 @@
 local diag = require("Diagnostics")
-local Brakes = require("Brakes")
-local construct = require("abstraction/Construct")
+local brakes = require("Brakes")()
+local construct = require("abstraction/Construct")()
+local engine = require("abstraction/Engine")()
 
 local moveControl = {}
 moveControl.__index = moveControl
@@ -53,6 +54,8 @@ function moveControl:Flush()
     if behaviour ~= nil then
         local distanceToDestination = behaviour.destination - construct.position.Current()
         local direction = distanceToDestination:normalize()
+        local brakeDistance = brakes:BrakeDistance()
+        local velocity = construct.velocity.Movement()
     end
 end
 

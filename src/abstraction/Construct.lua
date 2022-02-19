@@ -7,12 +7,12 @@ local singelton = nil
 
 local atmoToSpaceDensityLimit = 0 -- At what density level we consider space to begin. Densities higher than this is atmo.
 
+local core = library.GetCoreUnit()
+local ctrl = library.GetController()
+
 ---Creates a new Core
 ---@return table A new AxisControl
 local function new()
-    local core = library.GetCoreUnit()
-    local ctrl = library.GetController()
-
     local instance = {
         orientation = {
             Up = function()
@@ -104,7 +104,7 @@ local function new()
                 return ctrl.getAtmosphereDensity() > atmoToSpaceDensityLimit
             end,
             IsInSpace = function()
-                return ctrl.getAtmosphereDensity() <= atmoToSpaceDensityLimit
+                return not singelton.world.IsInAtmo()
             end,
             G = core.g,
             AngularAirFrictionAcceleration = function()
