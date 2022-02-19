@@ -50,7 +50,7 @@ end
 function brakes:Update()
     self:calculateBreakForce()
     self.wPercentage:Set(self.percentage)
-    self.wDistance:Set(calc.Round(self:BreakDistance(), 2))
+    self.wDistance:Set(calc.Round(self:BrakeDistance(), 2))
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
 end
 
@@ -129,7 +129,7 @@ function brakes:GravityInfluence(velocity)
     return influence
 end
 
-function brakes:BreakDistance()
+function brakes:BrakeDistance()
     -- https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas
     -- distance = (v^2 - V0^2) / 2*a
 

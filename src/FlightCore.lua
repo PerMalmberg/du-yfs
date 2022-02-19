@@ -115,9 +115,6 @@ function flightCore:Flush()
     self.yaw:Flush(true)
     self.brakes:Flush()
     self.movement:Flush()
-
-    -- Set controlValue.acceleration values of engines
-    --self.ctrl.setEngineCommand(self.controlValue.accelerationGroup:Union(), {self.controlValue.acceleration:unpack()})
 end
 
 -- The module

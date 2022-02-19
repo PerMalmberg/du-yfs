@@ -88,7 +88,7 @@ local function formatValues(...)
 end
 
 local function formatTypeMessage(parameterName, parameter, wantedTypeName, functionName)
-    return string.format("%s in %s must be %s, got %s", parameterName, functionName, wantedTypeName, type(parameter))
+    return string.format("'%s' in '%s' must be '%s', got '%s'", parameterName, functionName, wantedTypeName, type(parameter))
 end
 
 function diag:AssertIsString(s, parameterName, functionName)
@@ -100,7 +100,7 @@ function diag:AssertIsTable(t, parameterName, functionName)
 end
 
 function diag:AssertIsVec3(v, parameterName, functionName)
-    assert(isTable(v) and isNumber(v.x and v.y and v.z) and isFunction(v.trim_inplace), formatTypeMessage(parameterName, v, "vec3", functionName))
+    assert(isTable(v) and isNumber(v.x and v.y and v.z) and isFunction(v.project_on), formatTypeMessage(parameterName, v, "vec3", functionName))
 end
 
 function diag:AssertIsNumber(n, parameterName, functionName)

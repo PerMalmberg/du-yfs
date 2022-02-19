@@ -3,14 +3,15 @@ local construct = require("abstraction/Construct")()
 local mass = construct.mass
 local EngineGroup = require("EngineGroup")
 
-local longitudalEngines = EngineGroup("longitudal")
-local lateralEngines = EngineGroup("lateral")
-local verticalEngines = EngineGroup("vertical")
+LongitudalEngines = EngineGroup("longitudal")
+LateralEngines = EngineGroup("lateral")
+VerticalEngines = EngineGroup("vertical")
+ThrustEngines = EngineGroup("thrust")
 local core = library.GetCoreUnit()
 
-local longitudalForce = core.getMaxKinematicsParametersAlongAxis(longitudalEngines:Union(), {construct.orientation.localized.Forward():unpack()})
-local lateralForce = core.getMaxKinematicsParametersAlongAxis(lateralEngines:Union(), {construct.orientation.localized.Right():unpack()})
-local verticalForce = core.getMaxKinematicsParametersAlongAxis(verticalEngines:Union(), {construct.orientation.localized.Up():unpack()})
+local longitudalForce = core.getMaxKinematicsParametersAlongAxis(LongitudalEngines:Union(), {construct.orientation.localized.Forward():unpack()})
+local lateralForce = core.getMaxKinematicsParametersAlongAxis(LateralEngines:Union(), {construct.orientation.localized.Right():unpack()})
+local verticalForce = core.getMaxKinematicsParametersAlongAxis(VerticalEngines:Union(), {construct.orientation.localized.Up():unpack()})
 
 local engine = {}
 engine.__index = engine

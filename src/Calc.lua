@@ -45,6 +45,15 @@ local calc = {
     end,
     StraightForward = function(up, right)
         return up:cross(right)
+    end,
+    SameishDirection = function(v1, v2)
+        return v1:dot(v2) > 0
+    end,
+    Mps2Kph = function(mps)
+        return mps * 3.6
+    end,
+    Kph2Mps = function(kph)
+        return kph / 3.6
     end
 }
 
