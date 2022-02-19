@@ -7,6 +7,8 @@ local calc = require("Calc")
 local ctrl = library.GetController()
 local engine = require("abstraction/Engine")()
 local sharedPanel = require("panel/SharedPanel")()
+local PID = require("builtin/cpml/PID")
+local min = math.min
 
 local nullVec = vec3()
 
@@ -16,10 +18,14 @@ local singelton = nil
 
 local function new()
     local instance = {
-        behaviour = {}, -- The positions we want to move to
+        pid = PID(0.001, 0.50, 8000, 0.6),
+        queue = {}, -- The positions we want to move to
         last = nil, -- The last position, to return when there are no more to move to.
+        minDiff = 0, -- Minimum distance to current point
         wAcc = sharedPanel:Get("Move Control"):CreateValue("Acc.", "m/s2"),
-        wDist = sharedPanel:Get("Move Control"):CreateValue("Dist.", "m")
+        wDist = sharedPanel:Get("Move Control"):CreateValue("Dist.", "m"),
+        wPid = sharedPanel:Get("Move Control"):CreateValue("PID", "m/s"),
+        wQueue = sharedPanel:Get("Move Control"):CreateValue("Points", "")
     }
 
     setmetatable(instance, moveControl)
@@ -28,26 +34,35 @@ local function new()
 end
 
 function moveControl:Current()
-    return self.behaviour[1] or self.last
+    return self.queue[1] or self.last
 end
 
 function moveControl:Next()
-    if #self > 0 then
-        table.remove(self.behaviour, 1)
+    local switched = false
+    if #self.queue > 0 then
+        table.remove(self.queue, 1)
+        switched = true
     end
 
-    return self:Current()
+    return self:Current(), switched
 end
 
 function moveControl:Clear()
-    while #self.behaviour > 0 do
-        table.remove(self.behaviour, 1)
+    while #self.queue > 0 do
+        table.remove(self.queue, 1)
     end
 end
 
 function moveControl:Append(behaviour)
     diag:AssertIsTable(behaviour, "behaviour", "moveControl:Append")
-    table.insert(self.behaviour, #self.behaviour + 1, behaviour)
+
+    local curr = self:Current()
+
+    table.insert(self.queue, #self.queue + 1, behaviour)
+    if #self.queue == 1 then
+        self.minDiff = behaviour.margin
+    end
+
     self.last = behaviour
 end
 
@@ -56,9 +71,15 @@ function moveControl:Flush()
 
     if behaviour ~= nil then
         if behaviour:IsReached() then
-            behaviour = self:Next()
+            local switched
+            behaviour, switched = self:Next()
+            if switched then
+                self.minDiff = behaviour.margin
+            end
         end
     end
+
+    self.wQueue:Set(#self.queue)
 
     local acc = nullVec
 
@@ -70,7 +91,15 @@ function moveControl:Flush()
         local velocity = construct.velocity.Movement()
         local reached = behaviour:IsReached()
 
-        self.wDist:Set(distanceToDestination)
+        self.minDiff = min(distanceToDestination, self.minDiff)
+        self.wDist:Set(calc.Round(distanceToDestination, 3) .. " " .. calc.Round(self.minDiff, 3))
+
+        diag:DrawNumber(1, behaviour.destination)
+
+        self.pid:inject(distanceToDestination)
+        local pidValue = self.pid:get()
+        local maxSpeed = min(pidValue, behaviour.maxSpeed)
+        self.wPid:Set(pidValue .. " (" .. maxSpeed .. ")")
 
         local enableBrakes = false
 
@@ -81,7 +110,7 @@ function moveControl:Flush()
         -- Start with an acceleration that counters gravity, if any.
         acc = -construct.world.GAlongGravity()
 
-        if (velocity:len() < behaviour.maxSpeed) and not reached then
+        if velocity:len() < maxSpeed then
             acc = acc + direction * construct.world.G() * 1.01
         end
 

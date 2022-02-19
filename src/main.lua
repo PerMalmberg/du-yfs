@@ -10,7 +10,7 @@ local fc = FlightCore()
 --local testPos = universe:ParsePosition("::pos{0,2,7.6926,78.1056,60}")
 
 local upDirection = -construct.orientation.AlongGravity()
-local startPos = construct.position.Current() + upDirection * 10
+local startPos = construct.position.Current()
 local parallelPathStart = startPos + calc.StraightForward(upDirection, construct.orientation.Right()) * 10 -- 10m infront
 
 fc:ReceiveEvents()
@@ -30,7 +30,10 @@ function ActionStart(system, key)
         moveControl:Append(MovementBehaviour(startPos, PointAlongParallelLine, AboveSelfAlignedToGravity, 1, calc.Kph2Mps(5)))
     elseif key == "option2" then
         moveControl:Clear()
-        moveControl:Append(MovementBehaviour(startPos + upDirection * 80, PointAlongParallelLine, AboveSelfAlignedToGravity, 1, calc.Kph2Mps(100)))
+        moveControl:Append(MovementBehaviour(startPos + upDirection * 10, PointAlongParallelLine, AboveSelfAlignedToGravity, 1, calc.Kph2Mps(5)))
+    elseif key == "option3" then
+        moveControl:Clear()
+        moveControl:Append(MovementBehaviour(startPos + upDirection * 30, PointAlongParallelLine, AboveSelfAlignedToGravity, 1, calc.Kph2Mps(100)))
     end
 end
 
