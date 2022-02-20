@@ -18,13 +18,14 @@ local singelton = nil
 
 local function new()
     local instance = {
-        deviationPid = PID(0.01, 0.05, 8000),
-        distancePid = PID(0.0, 0.00, 0, 0.6),
+        deviationPid = PID(0.01, 0.01, 10),
+        distancePid = PID(0.01, 0.01, 10),
         queue = {}, -- The positions we want to move to
         minDiff = 0, -- Minimum distance to current point
         wDist = sharedPanel:Get("Move Control"):CreateValue("Dist.", "m"),
-        wPid = sharedPanel:Get("Move Control"):CreateValue("PID", "m/s"),
+        wDistPid = sharedPanel:Get("Move Control"):CreateValue("Dist. Pid.", ""),
         wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
+        wDevPid = sharedPanel:Get("Move Control"):CreateValue("Dev. Pid", ""),
         wQueue = sharedPanel:Get("Move Control"):CreateValue("Points", "")
     }
 
@@ -92,30 +93,32 @@ function moveControl:Flush()
         local dev = deviationVec:len()
         self.deviationPid:inject(dev)
         self.wDeviation:Set(dev)
+        self.wDevPid:Set(calc.Round(self.deviationPid:get(), 4))
         local deviationAcceleration = self.deviationPid:get() * deviationVec:normalize()
-
         ctrl.setEngineCommand(LongLatEngines:Union(), {deviationAcceleration:unpack()})
+        diag:DrawNumber(0, ownPos + deviationVec:normalize() * 5)
 
         -- How far from the end point are we?
-        local distanceAlongTravelVector = behaviour.destination - closestPoint
-        local distance = distanceAlongTravelVector:len()
-        self.distancePid:inject(distance)
+        local distanceVec = behaviour.destination - ownPos
+        local distance = distanceVec:len()
         self.minDiff = min(distance, self.minDiff)
         self.wDist:Set(calc.Round(distance, 3) .. " " .. calc.Round(self.minDiff, 3))
+        self.distancePid:inject(distance)
+        self.wDistPid:Set(calc.Round(self.distancePid:get(), 4))
 
         -- Start with an acceleration that counters gravity, if any.
         local acc = -construct.world.GAlongGravity()
-        acc = acc + direction * self.distancePid:get()
-        if velocity:len() < behaviour.maxSpeed then
+        acc = acc + self.distancePid:get() * direction
+
+        if velocity:len() < behaviour.maxSpeed or not calc.SameishDirection(direction, velocity) then
             ctrl.setEngineCommand(VerticalEngines:Union(), {acc:unpack()})
         end
 
         diag:DrawNumber(1, behaviour.start)
         diag:DrawNumber(2, behaviour.start + (behaviour.destination - behaviour.start) / 2)
         diag:DrawNumber(3, behaviour.destination)
-        diag:DrawNumber(0, closestPoint)
 
-        if not calc.SameishDirection(direction, velocity) or distance < brakeDistance or reached then
+        if not calc.SameishDirection(direction, velocity) or distance < brakeDistance then
             brakes:Set()
         else
             brakes:Set(0)
@@ -125,20 +128,20 @@ function moveControl:Flush()
     end
 end
 
-local p = 0.01
-local i = 0.001
-local d = 100
-local mul = 1
+local p = 0.1
+local i = 0.1
+local d = 10
 local a = 0.5
+local mul = 1
 
 function moveControl:ActionStart(key)
     if key == "brake" then
         mul = mul * -1
         diag:Info("Mul", mul)
     elseif key == "option4" then
-        p = p + 0.01 * mul
+        p = p + 0.1 * mul
     elseif key == "option5" then
-        i = i + 0.01 * mul
+        i = i + 0.1 * mul
     elseif key == "option6" then
         d = d + 10 * mul
     elseif key == "option7" then
