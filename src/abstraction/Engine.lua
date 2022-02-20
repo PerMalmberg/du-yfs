@@ -5,6 +5,7 @@ local EngineGroup = require("EngineGroup")
 
 LongitudalEngines = EngineGroup("longitudal")
 LateralEngines = EngineGroup("lateral")
+LongLatEngines = EngineGroup("longitudal lateral")
 VerticalEngines = EngineGroup("vertical")
 ThrustEngines = EngineGroup("thrust")
 local core = library.GetCoreUnit()

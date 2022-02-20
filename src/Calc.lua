@@ -54,6 +54,16 @@ local calc = {
     end,
     Kph2Mps = function(kph)
         return kph / 3.6
+    end,
+    NearestPointOnLine = function(lineStart, lineDirection, pointAwayFromLine)
+        --local v = pointAwayFromLine - lineStart
+        --return v:project_on(lineDirection:normalize())
+
+        -- https://forum.unity.com/threads/how-do-i-find-the-closest-point-on-a-line.340058/
+        local lineDir = lineDirection:normalize()
+        local v = pointAwayFromLine - lineStart
+        local d = v:dot(lineDir)
+        return lineStart + lineDir * d
     end
 }
 

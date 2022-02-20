@@ -18,13 +18,13 @@ local singelton = nil
 
 local function new()
     local instance = {
-        pid = PID(0.001, 0.50, 8000, 0.6),
+        deviationPid = PID(0.01, 0.05, 8000),
+        distancePid = PID(0.0, 0.00, 0, 0.6),
         queue = {}, -- The positions we want to move to
-        last = nil, -- The last position, to return when there are no more to move to.
         minDiff = 0, -- Minimum distance to current point
-        wAcc = sharedPanel:Get("Move Control"):CreateValue("Acc.", "m/s2"),
         wDist = sharedPanel:Get("Move Control"):CreateValue("Dist.", "m"),
         wPid = sharedPanel:Get("Move Control"):CreateValue("PID", "m/s"),
+        wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
         wQueue = sharedPanel:Get("Move Control"):CreateValue("Points", "")
     }
 
@@ -34,12 +34,12 @@ local function new()
 end
 
 function moveControl:Current()
-    return self.queue[1] or self.last
+    return self.queue[1]
 end
 
 function moveControl:Next()
     local switched = false
-    if #self.queue > 0 then
+    if #self.queue > 1 then
         table.remove(self.queue, 1)
         switched = true
     end
@@ -56,14 +56,10 @@ end
 function moveControl:Append(behaviour)
     diag:AssertIsTable(behaviour, "behaviour", "moveControl:Append")
 
-    local curr = self:Current()
-
     table.insert(self.queue, #self.queue + 1, behaviour)
     if #self.queue == 1 then
         self.minDiff = behaviour.margin
     end
-
-    self.last = behaviour
 end
 
 function moveControl:Flush()
@@ -81,40 +77,45 @@ function moveControl:Flush()
 
     self.wQueue:Set(#self.queue)
 
-    local acc = nullVec
-
     if behaviour ~= nil then
-        local toDest = behaviour.destination - construct.position.Current()
+        local ownPos = construct.position.Current()
+        local toDest = behaviour.destination - ownPos
         local direction = toDest:normalize()
-        local distanceToDestination = toDest:len()
         local brakeDistance = brakes:BrakeDistance()
         local velocity = construct.velocity.Movement()
         local reached = behaviour:IsReached()
 
-        self.minDiff = min(distanceToDestination, self.minDiff)
-        self.wDist:Set(calc.Round(distanceToDestination, 3) .. " " .. calc.Round(self.minDiff, 3))
+        -- How far from the travel vector are we?
+        local closestPoint = calc.NearestPointOnLine(behaviour.start, behaviour.direction, ownPos)
+        local deviationVec = closestPoint - ownPos
 
-        diag:DrawNumber(1, behaviour.destination)
+        local dev = deviationVec:len()
+        self.deviationPid:inject(dev)
+        self.wDeviation:Set(dev)
+        local deviationAcceleration = self.deviationPid:get() * deviationVec:normalize()
 
-        self.pid:inject(distanceToDestination)
-        local pidValue = self.pid:get()
-        local maxSpeed = min(pidValue, behaviour.maxSpeed)
-        self.wPid:Set(pidValue .. " (" .. maxSpeed .. ")")
+        ctrl.setEngineCommand(LongLatEngines:Union(), {deviationAcceleration:unpack()})
 
-        local enableBrakes = false
-
-        if not calc.SameishDirection(direction, velocity) or distanceToDestination < brakeDistance then
-            enableBrakes = true
-        end
+        -- How far from the end point are we?
+        local distanceAlongTravelVector = behaviour.destination - closestPoint
+        local distance = distanceAlongTravelVector:len()
+        self.distancePid:inject(distance)
+        self.minDiff = min(distance, self.minDiff)
+        self.wDist:Set(calc.Round(distance, 3) .. " " .. calc.Round(self.minDiff, 3))
 
         -- Start with an acceleration that counters gravity, if any.
-        acc = -construct.world.GAlongGravity()
-
-        if velocity:len() < maxSpeed then
-            acc = acc + direction * construct.world.G() * 1.01
+        local acc = -construct.world.GAlongGravity()
+        acc = acc + direction * self.distancePid:get()
+        if velocity:len() < behaviour.maxSpeed then
+            ctrl.setEngineCommand(VerticalEngines:Union(), {acc:unpack()})
         end
 
-        if enableBrakes or reached then
+        diag:DrawNumber(1, behaviour.start)
+        diag:DrawNumber(2, behaviour.start + (behaviour.destination - behaviour.start) / 2)
+        diag:DrawNumber(3, behaviour.destination)
+        diag:DrawNumber(0, closestPoint)
+
+        if not calc.SameishDirection(direction, velocity) or distance < brakeDistance or reached then
             brakes:Set()
         else
             brakes:Set(0)
@@ -122,10 +123,30 @@ function moveControl:Flush()
     else
         brakes:Set()
     end
+end
 
-    self.wAcc:Set(acc:len())
+local p = 0.01
+local i = 0.001
+local d = 100
+local mul = 1
+local a = 0.5
 
-    ctrl.setEngineCommand(ThrustEngines:Union(), {acc:unpack()})
+function moveControl:ActionStart(key)
+    if key == "brake" then
+        mul = mul * -1
+        diag:Info("Mul", mul)
+    elseif key == "option4" then
+        p = p + 0.01 * mul
+    elseif key == "option5" then
+        i = i + 0.01 * mul
+    elseif key == "option6" then
+        d = d + 10 * mul
+    elseif key == "option7" then
+        a = a + 0.01 * mul
+    end
+
+    self.deviationPid = PID(p, i, d, a)
+    diag:Info("P", p, ", I:", i, ", D:", d, a)
 end
 
 -- The module
@@ -137,6 +158,8 @@ return setmetatable(
         __call = function(_, ...)
             if singelton == nil then
                 singelton = new()
+                system:onEvent("actionStart", singelton.ActionStart, singelton)
+                system:onEvent("actionLoop", singelton.ActionStart, singelton)
             end
             return singelton
         end

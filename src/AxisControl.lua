@@ -8,12 +8,9 @@ local constants = require("Constants")
 local vec3 = require("builtin/cpml/vec3")
 local PID = require("builtin/cpml/PID")
 
-local abs = math.abs
-local max = math.max
-local deg = math.deg
-
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
+local nullVec = vec3()
 
 local control = {}
 control.__index = control
@@ -23,9 +20,9 @@ AxisControlRoll = 2
 AxisControlYaw = 3
 
 local finalAcceleration = {}
-finalAcceleration[AxisControlPitch] = vec3()
-finalAcceleration[AxisControlRoll] = vec3()
-finalAcceleration[AxisControlYaw] = vec3()
+finalAcceleration[AxisControlPitch] = nullVec
+finalAcceleration[AxisControlRoll] = nullVec
+finalAcceleration[AxisControlYaw] = nullVec
 
 ---Creates a new AxisControl
 ---@return table A new AxisControl
@@ -45,7 +42,6 @@ local function new(axis)
         target = {
             coordinate = nil
         },
-        setAcceleration = vec3(),
         pid = PID(24, 16, 1600, 0.5) -- 0.5 amortization makes it alot smoother
     }
 
@@ -99,6 +95,7 @@ end
 
 function control:Disable()
     self.target.coordinate = nil
+    finalAcceleration[self.controlledAxis] = nullVec
 end
 
 ---Returns the current signed angular velocity, in degrees per seconds.
@@ -157,8 +154,8 @@ function control:Flush(apply)
 end
 
 function control:Apply()
-    self.setAcceleration = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] + finalAcceleration[AxisControlYaw]
-    self.ctrl.setEngineCommand(self.torqueGroup:Union(), {0, 0, 0}, {self.setAcceleration:unpack()})
+    local acc = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] + finalAcceleration[AxisControlYaw]
+    self.ctrl.setEngineCommand(self.torqueGroup:Union(), {0, 0, 0}, {acc:unpack()})
 end
 
 function control:Update()
