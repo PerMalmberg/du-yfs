@@ -11,7 +11,7 @@
     axb = 0 when vectors are parallel.
 
 ]]
-local vec3 = require("builtin/cpml/vec3")
+local vec3 = require("cpml/vec3")
 local EngineGroup = require("EngineGroup")
 local library = require("abstraction/Library")()
 local diag = require("Diagnostics")()

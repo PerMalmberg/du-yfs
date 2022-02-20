@@ -4,7 +4,7 @@
     Library abstraction. This is assumes the project is being compiled with du-LuaC (https://github.com/wolfe-labs/DU-LuaC/) which provides
     a GetCoreUnit() function via the global 'library'.
 ]]
-local utils = require("builtin/cpml/utils")
+local utils = require("cpml/utils")
 
 local clamp = utils.clamp
 local pid = {}

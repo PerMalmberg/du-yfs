@@ -1,7 +1,7 @@
 ---Represents a position in the universe.
 
 local diag = require("Diagnostics")()
-local vec3 = require("builtin/cpml/vec3")
+local vec3 = require("cpml/vec3")
 local stringFormat = string.format
 
 local position = vec3()

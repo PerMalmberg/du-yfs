@@ -1,13 +1,13 @@
 local diag = require("Diagnostics")()
 local library = require("abstraction/Library")()
-local vec3 = require("builtin/cpml/vec3")
+local vec3 = require("cpml/vec3")
 local brakes = require("Brakes")()
 local construct = require("abstraction/Construct")()
 local calc = require("Calc")
 local ctrl = library.GetController()
 local engine = require("abstraction/Engine")()
 local sharedPanel = require("panel/SharedPanel")()
-local PID = require("builtin/cpml/PID")
+local PID = require("cpml/PID")
 local min = math.min
 
 local nullVec = vec3()

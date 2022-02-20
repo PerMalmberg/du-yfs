@@ -1,9 +1,8 @@
 local lu = require("luaunit")
 local FlightCore = require("FlightCore")
 local EngineGroup = require("EngineGroup")
-local vec3 = require("builtin/cpml/vec3")
-local Pid = require("builtin/cpml/pid")
-
+local vec3 = require("cpml/vec3")
+local Pid = require("cpml/pid")
 
 Test = {}
 
@@ -20,9 +19,8 @@ function Test:testPid()
     for i = 1, 100, .1 do
         local input = math.sin(i)
         pid:inject(input)
-        io.write(input .. ": ".. tostring(pid:get() .. "\n"))
+        io.write(input .. ": " .. tostring(pid:get() .. "\n"))
     end
-
 end
 
 local runner = lu.LuaUnit.new()

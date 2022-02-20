@@ -1,5 +1,5 @@
 local library = require("abstraction/Library")()
-local json = require("builtin/dkjson")
+local json = require("dkjson")
 
 local widget = {}
 widget.__index = widget

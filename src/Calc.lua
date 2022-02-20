@@ -1,5 +1,5 @@
 local library = require("abstraction/Library")()
-local vec3 = require("builtin/cpml/vec3")
+local vec3 = require("cpml/vec3")
 
 local atan = math.atan
 local sqrt = math.sqrt

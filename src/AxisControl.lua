@@ -5,8 +5,8 @@ local calc = require("Calc")
 local sharedPanel = require("panel/SharedPanel")()
 local EngineGroup = require("EngineGroup")
 local constants = require("Constants")
-local vec3 = require("builtin/cpml/vec3")
-local PID = require("builtin/cpml/PID")
+local vec3 = require("cpml/vec3")
+local PID = require("cpml/PID")
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180

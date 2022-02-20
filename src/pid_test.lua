@@ -1,5 +1,5 @@
 local lu = require("luaunit")
-local Pid = require("builtin/pid")
+local Pid = require("pid")
 
 Test = {}
 
@@ -14,9 +14,7 @@ function Test:testPid()
         end
         io.write(i .. " " .. p:get() .. "\n")
     end
-
 end
-
 
 local runner = lu.LuaUnit.new()
 runner:setOutputType("text")

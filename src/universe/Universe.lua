@@ -4,7 +4,7 @@ local library = require("abstraction/Library")()
 local diag = require("Diagnostics")()
 local Galaxy = require("universe/Galaxy")
 local Position = require("universe/Position")
-local vec3 = require("builtin/cpml/vec3")
+local vec3 = require("cpml/vec3")
 local cos = math.cos
 local sin = math.sin
 
@@ -97,7 +97,7 @@ function universe:ClosestBodyByDistance(galaxyId, position)
 end
 
 function universe:Prepare()
-    local ga = require("builtin/atlas")
+    local ga = require("atlas")
     diag:AssertIsTable(ga, "ga", "Universe:Prepare")
 
     for galaxyId, galaxy in pairs(ga) do

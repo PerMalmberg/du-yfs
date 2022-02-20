@@ -1,6 +1,6 @@
 local lu = require("luaunit")
 local diag = require("Diagnostics")()
-local vec3 = require("builtin/cpml/vec3")
+local vec3 = require("cpml/vec3")
 
 Test = {}
 local result = ""
@@ -26,7 +26,7 @@ function Test:testInfo()
 end
 
 function Test:testVe3()
-    diag:Info("Hello", vec3(1,2,3))
+    diag:Info("Hello", vec3(1, 2, 3))
     lu.assertEquals(result, "[I] Hello: vec3(1, 2, 3)")
 end
 
