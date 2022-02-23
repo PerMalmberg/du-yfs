@@ -30,10 +30,10 @@ function ActionStart(system, key)
         moveControl:Append(MovementBehaviour(construct.position.Current(), startPos + upDirection * 2, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(5)))
     elseif key == "option2" then
         moveControl:Clear()
-        moveControl:Append(MovementBehaviour(construct.position.Current(), startPos + upDirection * 10, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(20)))
+        moveControl:Append(MovementBehaviour(construct.position.Current(), startPos + upDirection * 10, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(10)))
     elseif key == "option3" then
         moveControl:Clear()
-        moveControl:Append(MovementBehaviour(construct.position.Current(), startPos + upDirection * 30, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(10)))
+        moveControl:Append(MovementBehaviour(construct.position.Current(), startPos + upDirection * 300, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(20)))
     end
 end
 
