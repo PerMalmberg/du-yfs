@@ -1,6 +1,7 @@
 local library = require("abstraction/Library")()
 local json = require("dkjson")
 local utils = require("cpml/utils")
+local vec3 = require("cpml/vec3")
 local diag = require("Diagnostics")()
 local construct = require("abstraction/Construct")()
 local sharedPanel = require("panel/SharedPanel")()
@@ -31,6 +32,7 @@ local function new()
         currentAtmoForce = 0,
         currentSpaceForce = 0,
         totalMass = 1,
+        brakeParts = {},
         brakeGroup = EngineGroup("brake"),
         wPercentage = sharedPanel:Get("Breaks"):CreateValue("Percentage", "%"),
         wDistance = sharedPanel:Get("Breaks"):CreateValue("Brake dist.", "m"),
@@ -55,13 +57,26 @@ function brakes:Update()
 end
 
 function brakes:Flush()
-    -- The brake vector must point against the direction of travel, so negate it.
-    local brakeVector = -velocity.Movement():normalize() * self:Deceleration() * self.percentage
+    -- The brake vector must point against the direction of travel.
+    local brakeVector = vec3()
+
+    for _, dir in pairs(self.brakeParts) do
+        brakeVector = brakeVector + dir
+    end
+
+    brakeVector = brakeVector:normalize_inplace() * self:Deceleration()
+
+    brakeVector = brakeVector - velocity.Movement():normalize() * self:Deceleration() * self.percentage
+
     self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
 end
 
 function brakes:Set(percentage)
     self.percentage = percentage or 100
+end
+
+function brakes:SetPart(partName, direction)
+    self.brakeParts[partName] = direction
 end
 
 function brakes:calculateBreakForce()

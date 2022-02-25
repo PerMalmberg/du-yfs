@@ -113,8 +113,8 @@ function flightCore:Flush()
     self.pitch:Flush(false)
     self.roll:Flush(false)
     self.yaw:Flush(true)
-    self.brakes:Flush()
     self.movement:Flush()
+    self.brakes:Flush()
 end
 
 -- The module

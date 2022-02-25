@@ -90,15 +90,13 @@ function moveControl:Flush()
         local closestPoint = calc.NearestPointOnLine(behaviour.start, behaviour.direction, ownPos)
         local deviationVec = closestPoint - ownPos
 
-        -- Determine if we're moving towards or away from the desired point along the line
-        local dev = deviationVec:len()
         local velocityOnPlane = velocity:project_on_plane(direction):normalize_inplace()
         diag:DrawNumber(9, ownPos + velocityOnPlane * 5)
         diag:DrawNumber(0, ownPos + deviationVec:normalize() * 5)
 
-        self.wDeviation:Set(calc.Round(dev, 5))
+        self.wDeviation:Set(calc.Round(deviationVec:len(), 5))
 
-        local speedControlVec = deviationVec:normalize() * calc.Kph2Mps(3)
+        local speedControlVec = deviationVec:normalize() * behaviour.maxSpeed
 
         -- How far from the end point are we?
         local distanceVec = behaviour.destination - ownPos
@@ -106,7 +104,7 @@ function moveControl:Flush()
 
         self.wDist:Set(calc.Round(distance, 3))
 
-        speedControlVec = speedControlVec + distanceVec:normalize() * calc.Kph2Mps(behaviour.maxSpeed)
+        speedControlVec = speedControlVec + distanceVec:normalize() * behaviour.maxSpeed
         self.speedCtrlForward:SetVelocity(speedControlVec)
         self.speedCtrlRight:SetVelocity(speedControlVec)
         self.speedCtrlUp:SetVelocity(speedControlVec)
