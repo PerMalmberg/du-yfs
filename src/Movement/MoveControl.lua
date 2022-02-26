@@ -18,11 +18,7 @@ local moveControl = {}
 moveControl.__index = moveControl
 local singelton = nil
 
-local p = 0.01
-local i = 2.16
-local d = 530
-local a = 0.23
-local mul = 1
+local BRAKE_MARK = "MoveControlReached"
 
 local function new()
     local instance = {
@@ -86,59 +82,47 @@ function moveControl:Flush()
         local velocity = construct.velocity.Movement()
         local reached = behaviour:IsReached()
 
-        -- How far from the travel vector are we?
-        local closestPoint = calc.NearestPointOnLine(behaviour.start, behaviour.direction, ownPos)
-        local deviationVec = closestPoint - ownPos
+        if reached then
+            local g = construct.world.GAlongGravity()
+            if g:len2() > 0 then
+                brakes:SetPart(BRAKE_MARK, -g)
+            else
+                brakes:SetPart(BRAKE_MARK, -velocity:normalize())
+            end
+        else
+            brakes:SetPart(BRAKE_MARK, vec3())
 
-        local velocityOnPlane = velocity:project_on_plane(direction):normalize_inplace()
-        diag:DrawNumber(9, ownPos + velocityOnPlane * 5)
-        diag:DrawNumber(0, ownPos + deviationVec:normalize() * 5)
+            -- How far from the travel vector are we?
+            local closestPoint = calc.NearestPointOnLine(behaviour.start, behaviour.direction, ownPos)
+            local deviationVec = closestPoint - ownPos
 
-        self.wDeviation:Set(calc.Round(deviationVec:len(), 5))
+            local velocityOnPlane = velocity:project_on_plane(direction):normalize_inplace()
+            diag:DrawNumber(9, ownPos + velocityOnPlane * 5)
+            diag:DrawNumber(0, ownPos + deviationVec:normalize() * 5)
 
-        local speedControlVec = deviationVec:normalize() * behaviour.maxSpeed
+            self.wDeviation:Set(calc.Round(deviationVec:len(), 5))
 
-        -- How far from the end point are we?
-        local distanceVec = behaviour.destination - ownPos
-        local distance = distanceVec:len()
+            local speedControlVec = deviationVec:normalize() * behaviour.maxSpeed
 
-        self.wDist:Set(calc.Round(distance, 3))
+            -- How far from the end point are we?
+            local distanceVec = behaviour.destination - ownPos
+            local distance = distanceVec:len()
 
-        speedControlVec = speedControlVec + distanceVec:normalize() * behaviour.maxSpeed
-        self.speedCtrlForward:SetVelocity(speedControlVec)
-        self.speedCtrlRight:SetVelocity(speedControlVec)
-        self.speedCtrlUp:SetVelocity(speedControlVec)
+            self.wDist:Set(calc.Round(distance, 3))
 
-        diag:DrawNumber(1, behaviour.start)
-        diag:DrawNumber(2, behaviour.start + (behaviour.destination - behaviour.start) / 2)
-        diag:DrawNumber(3, behaviour.destination)
+            speedControlVec = speedControlVec + distanceVec:normalize() * behaviour.maxSpeed
+            self.speedCtrlForward:SetVelocity(speedControlVec)
+            self.speedCtrlRight:SetVelocity(speedControlVec)
+            self.speedCtrlUp:SetVelocity(speedControlVec)
 
-        self.speedCtrlForward:Flush(false)
-        self.speedCtrlRight:Flush(false)
-        self.speedCtrlUp:Flush(true)
-
-        brakes:Set(0)
-    else
-        brakes:Set()
+            diag:DrawNumber(1, behaviour.start)
+            diag:DrawNumber(2, behaviour.start + (behaviour.destination - behaviour.start) / 2)
+            diag:DrawNumber(3, behaviour.destination)
+            self.speedCtrlForward:Flush(false)
+            self.speedCtrlRight:Flush(false)
+            self.speedCtrlUp:Flush(true)
+        end
     end
-end
-
-function moveControl:ActionStart(key)
-    if key == "brake" then
-        mul = mul * -1
-        diag:Info("Mul", mul)
-    elseif key == "option4" then
-        p = p + 0.01 * mul
-    elseif key == "option5" then
-        i = i + 0.01 * mul
-    elseif key == "option6" then
-        d = d + 10 * mul
-    elseif key == "option7" then
-        a = a + 0.01 * mul
-    end
-
-    self.deviationPid = PID(p, i, d, a)
-    diag:Info("P", p, ", I:", i, ", D:", d, a)
 end
 
 -- The module
@@ -150,8 +134,6 @@ return setmetatable(
         __call = function(_, ...)
             if singelton == nil then
                 singelton = new()
-            --system:onEvent("actionStart", singelton.ActionStart, singelton)
-            --system:onEvent("actionLoop", singelton.ActionStart, singelton)
             end
             return singelton
         end

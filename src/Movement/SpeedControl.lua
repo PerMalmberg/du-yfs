@@ -33,7 +33,7 @@ local function new(controlledAxis)
     local instance = {
         controlledAxis = controlledAxis, -- Getter for the normal vector of the plane this instance is working on.
         targetVelocity = vec3(), -- The target speed and direction
-        pid = PID(0.01, 0.001, 10),
+        pid = PID(0.1, 0.001, 10),
         wPid = sharedPanel:Get(ControlName(controlledAxis)):CreateValue("Pid", ""),
         wSpeed = sharedPanel:Get(ControlName(controlledAxis)):CreateValue("Curr speed", "m/s"),
         wTargetSpeed = sharedPanel:Get(ControlName(controlledAxis)):CreateValue("Trg speed", "m/s"),
@@ -73,9 +73,9 @@ function speedControl:Flush(apply)
     local v = self.pid:get()
     finalAcceleration[self.controlledAxis] = v * targetDirectionOnPlane
 
-    local alignment = velocityOnPlane:dot(targetDirectionOnPlane)
+    local alignment = Velocity():dot(normal)
     self.wAlignment:Set(alignment)
-    if alignment <= 0.8 then
+    if alignment <= 0.9 then
         -- Not aligned enough, apply brakes in the direction of the current velocity
         brakes:SetPart("SpeedControl" .. tostring(self.controlledAxis), -velocityOnPlane:normalize())
     else
