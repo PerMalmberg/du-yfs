@@ -85,6 +85,14 @@ function universe:ParsePosition(pos)
     return nil
 end
 
+---comment Creates a ::pos string from the given position, within the current galaxy.
+---@param position vec3 The positon to create the position for
+function universe:CreatePos(position)
+    diag:AssertIsVec3(position, "coordinate", "universe:CreatePos")
+    local closestBody = self:ClosestBodyByDistance(self:CurrentGalaxyId(), position)
+    return Position(self:CurrentGalaxy(), closestBody, position.x, position.y, position.z)
+end
+
 --- Gets the information for the closest stellar body
 ---@return table
 function universe:ClosestBody()

@@ -1,3 +1,5 @@
+package.path = package.path .. "?;./src/builtin/?.lua;./src/?.lua"
+
 local lu = require("luaunit")
 local Universe = require("universe/Universe")
 local library = require("abstraction/Library")()
@@ -8,6 +10,15 @@ local core = library.GetCoreUnit()
 
 Test = {}
 local u = Universe()
+
+local positionOnAlioth = u:ParsePosition("::pos{0,2,7.7093,78.0806,34.7991}")
+local positionAboveMarket6 = u:ParsePosition("::pos{0,2,35.9160,101.2832,132000.2500}")
+local positionNearJago = u:ParsePosition("::pos{0,0,-102232240.0000,36433324.0000,11837611.0000}")
+local positionNearTalemai = u:ParsePosition("::pos{0,0,-10126823.0000,53124664.0000,-14922930.0000}")
+local positionNearThades = u:ParsePosition("::pos{0,0,37979880.0000,17169778.0000,-2641396.2500}")
+local positionAboveIon = u:ParsePosition("::pos{0,0,2970018.8563,-98961141.3186,-787105.8790}")
+local market6Pad = u:ParsePosition("::pos{0,2,36.0242,101.2872,231.3857}")
+local sveaBaseSWSide = u:ParsePosition("::pos{0,2,7.5425,78.0995,47.6314}")
 
 function Test:testUniverse()
     core.setCurrentPlanetId(2)
@@ -26,15 +37,6 @@ function Test:testPosition()
 end
 
 function Test:testParsePosition()
-    local positionOnAlioth = u:ParsePosition("::pos{0,2,7.7093,78.0806,34.7991}")
-    local positionAboveMarket6 = u:ParsePosition("::pos{0,2,35.9160,101.2832,132000.2500}")
-    local positionNearJago = u:ParsePosition("::pos{0,0,-102232240.0000,36433324.0000,11837611.0000}")
-    local positionNearTalemai = u:ParsePosition("::pos{0,0,-10126823.0000,53124664.0000,-14922930.0000}")
-    local positionNearThades = u:ParsePosition("::pos{0,0,37979880.0000,17169778.0000,-2641396.2500}")
-    local positionAboveIon = u:ParsePosition("::pos{0,0,2970018.8563,-98961141.3186,-787105.8790}")
-    local market6Pad = u:ParsePosition("::pos{0,2,36.0242,101.2872,231.3857}")
-    local sveaBaseSWSide = u:ParsePosition("::pos{0,2,7.5425,78.0995,47.6314}")
-
     lu.assertEquals(tostring(positionOnAlioth), "::pos{0,2,7.7093,78.0806,34.7991}")
     lu.assertEquals(tostring(positionAboveMarket6), "::pos{0,2,35.9160,101.2832,132000.2500}")
     lu.assertEquals(tostring(positionNearJago), "::pos{0,0,-102232240.0000,36433324.0000,11837611.0000}")
@@ -46,6 +48,12 @@ function Test:testParsePosition()
 
     lu.assertEquals((positionOnAlioth.Coords - positionOnAlioth.Coords):len(), 0)
     lu.assertEquals(math.floor((sveaBaseSWSide.Coords - market6Pad.Coords):len()), 76934)
+end
+
+function Test:testCreatePos()
+    local coordinate = positionOnAlioth.Coords
+    local reconstructed = u:CreatePos(coordinate)
+    lu.assertEquals(tostring(reconstructed), tostring(positionOnAlioth))
 end
 
 local runner = lu.LuaUnit.new()
