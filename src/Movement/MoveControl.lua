@@ -78,9 +78,10 @@ function moveControl:Flush()
         local ownPos = construct.position.Current()
         local toDest = behaviour.destination - ownPos
         local direction = toDest:normalize()
-        local brakeDistance = brakes:BrakeDistance()
         local velocity = construct.velocity.Movement()
         local reached = behaviour:IsReached()
+
+        local speedControlVec = nullVec
 
         if reached then
             local g = construct.world.GAlongGravity()
@@ -90,7 +91,7 @@ function moveControl:Flush()
                 brakes:SetPart(BRAKE_MARK, -velocity:normalize())
             end
         else
-            brakes:SetPart(BRAKE_MARK, vec3())
+            brakes:SetPart(BRAKE_MARK, nullVec)
 
             -- How far from the travel vector are we?
             local closestPoint = calc.NearestPointOnLine(behaviour.start, behaviour.direction, ownPos)
@@ -102,7 +103,7 @@ function moveControl:Flush()
 
             self.wDeviation:Set(calc.Round(deviationVec:len(), 5))
 
-            local speedControlVec = deviationVec:normalize() * behaviour.maxSpeed
+            speedControlVec = deviationVec:normalize() * behaviour.maxSpeed
 
             -- How far from the end point are we?
             local distanceVec = behaviour.destination - ownPos
@@ -110,18 +111,26 @@ function moveControl:Flush()
 
             self.wDist:Set(calc.Round(distance, 3))
 
-            speedControlVec = speedControlVec + distanceVec:normalize() * behaviour.maxSpeed
-            self.speedCtrlForward:SetVelocity(speedControlVec)
-            self.speedCtrlRight:SetVelocity(speedControlVec)
-            self.speedCtrlUp:SetVelocity(speedControlVec)
+            local brakeDistance = brakes:BrakeDistance()
+            if brakeDistance >= distance then
+                brakes:SetPart(BRAKE_MARK, -velocity:normalize())
+            else
+                brakes:SetPart(BRAKE_MARK, nullVec)
+                speedControlVec = speedControlVec + distanceVec:normalize() * behaviour.maxSpeed
+            end
 
             diag:DrawNumber(1, behaviour.start)
             diag:DrawNumber(2, behaviour.start + (behaviour.destination - behaviour.start) / 2)
             diag:DrawNumber(3, behaviour.destination)
-            self.speedCtrlForward:Flush(false)
-            self.speedCtrlRight:Flush(false)
-            self.speedCtrlUp:Flush(true)
         end
+
+        self.speedCtrlForward:SetVelocity(speedControlVec)
+        self.speedCtrlRight:SetVelocity(speedControlVec)
+        self.speedCtrlUp:SetVelocity(speedControlVec)
+
+        self.speedCtrlForward:Flush(false)
+        self.speedCtrlRight:Flush(false)
+        self.speedCtrlUp:Flush(true)
     end
 end
 

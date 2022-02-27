@@ -155,8 +155,9 @@ function brakes:BrakeDistance()
 
     local V0 = vel:len()
 
-    -- If gravity is larger than the brake acceleration then we return a realy long brake distance.
-    if brakeAcceleration <= 0 then
+    -- If gravity is larger than the brake acceleration then we return a really
+    -- long brake distance, but only if we're actually moving
+    if brakeAcceleration <= 0 and V0 > 0.1 then
         return 9999999
     else
         return (V0 * V0) / (2 * brakeAcceleration)
