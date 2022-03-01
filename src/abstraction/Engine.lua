@@ -14,6 +14,8 @@ local longitudalForce = core.getMaxKinematicsParametersAlongAxis(LongitudalEngin
 local lateralForce = core.getMaxKinematicsParametersAlongAxis(LateralEngines:Union(), {construct.orientation.localized.Right():unpack()})
 local verticalForce = core.getMaxKinematicsParametersAlongAxis(VerticalEngines:Union(), {construct.orientation.localized.Up():unpack()})
 
+local world = construct.world
+
 local engine = {}
 engine.__index = engine
 
@@ -27,7 +29,7 @@ end
 
 local function getCurrent(range, positive)
     local r
-    if construct.world.IsInAtmo() then
+    if world.IsInAtmo() then
         r = range.atmoRange
     else
         r = range.spaceRange
@@ -49,7 +51,7 @@ function engine:MaxAcceleration(engineGroup, axis, positive)
     return self:MaxForce(engineGroup, axis, positive) / mass.Total()
 end
 
-function engine:MaxForwardAcceleratio()
+function engine:MaxForwardAcceleration()
     return getCurrent(longitudalForce, true)
 end
 
