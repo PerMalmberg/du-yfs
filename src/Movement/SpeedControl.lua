@@ -27,18 +27,38 @@ local function ControlName(axis)
     end
 end
 
+local function GetAxes(axis)
+    if axis == SpeedControlForward then
+        return construct.orientation.Forward, construct.orientation.Right, construct.orientation.Up
+    elseif axis == SpeedControlRight then
+        return construct.orientation.Right, function()
+            return -construct.orientation.Forward()
+        end, construct.orientation.Up
+    else
+        return construct.orientation.Up, construct.orientation.Right, function()
+            return -construct.orientation.Forward()
+        end
+    end
+end
+
 local function new(controlledAxis)
-    diag:AssertIsNumber(controlledAxis, "controlledAxis", "speedControl:new")
+    diag:AssertIsNumber(controlledAxis, "name", "speedControl:new")
+
+    local name = ControlName(controlledAxis)
+    local forward, right, normal = GetAxes(controlledAxis)
 
     local instance = {
-        controlledAxis = controlledAxis, -- Getter for the normal vector of the plane this instance is working on.
+        controlledAxis = controlledAxis,
+        forward = forward,
+        right = right,
+        normal = normal,
         targetVelocity = vec3(), -- The target speed and direction
-        pid = PID(0.001, 0.01, 1),
-        wPid = sharedPanel:Get(ControlName(controlledAxis)):CreateValue("Pid", ""),
-        wSpeed = sharedPanel:Get(ControlName(controlledAxis)):CreateValue("Curr speed", "m/s"),
-        wTargetSpeed = sharedPanel:Get(ControlName(controlledAxis)):CreateValue("Trg speed", "m/s"),
-        wSpeedError = sharedPanel:Get(ControlName(controlledAxis)):CreateValue("Speed Err", "m/s"),
-        wAlignment = sharedPanel:Get(ControlName(controlledAxis)):CreateValue("Alignment", "")
+        pid = PID(1, 0.001, 0),
+        wPid = sharedPanel:Get(name):CreateValue("Pid", ""),
+        wSpeed = sharedPanel:Get(name):CreateValue("Curr speed", "m/s"),
+        wTargetSpeed = sharedPanel:Get(name):CreateValue("Trg speed", "m/s"),
+        wSpeedError = sharedPanel:Get(name):CreateValue("Speed Err", "m/s"),
+        wAlignment = sharedPanel:Get(name):CreateValue("Alignment", "")
     }
 
     setmetatable(instance, speedControl)
@@ -51,34 +71,23 @@ function speedControl:SetVelocity(vel)
     self.targetVelocity = vel
 end
 
-function speedControl:NormalAxis()
-    if self.controlledAxis == SpeedControlUp then
-        return construct.orientation.Up()
-    elseif self.controlledAxis == SpeedControlForward then
-        return construct.orientation.Forward()
-    else
-        return construct.orientation.Right()
-    end
-end
-
 function speedControl:Flush(apply)
-    local normal = self:NormalAxis()
-    local velocity = Velocity()
-    local velocityOnPlane = velocity:project_on_plane(normal)
-    local targetVelocityOnPlane = self.targetVelocity:project_on_plane(normal)
-    local targetDirectionOnPlane = targetVelocityOnPlane:normalize()
+    local forward = self.forward()
+    local velocity = Velocity():project_on(forward)
+    local targetVelocity = self.targetVelocity:project_on(forward)
+    local targetDirection = targetVelocity:normalize()
 
-    local speedError = targetVelocityOnPlane - velocityOnPlane
+    local speedError = targetVelocity - velocity
     self.pid:inject(speedError:len())
 
     local v = self.pid:get()
-    finalAcceleration[self.controlledAxis] = v * targetDirectionOnPlane
+    finalAcceleration[self.controlledAxis] = v * targetDirection
 
-    local alignment = velocity:dot(normal)
+    local alignment = velocity:dot(self.forward())
     self.wAlignment:Set(alignment)
     if alignment <= 0.9 then
         -- Not aligned enough, apply brakes in the direction of the current velocity
-        brakes:SetPart("SpeedControl" .. tostring(self.controlledAxis), -velocityOnPlane:normalize())
+        brakes:SetPart("SpeedControl" .. tostring(self.controlledAxis), -velocity:normalize())
     else
         brakes:SetPart("SpeedControl" .. self.controlledAxis, vec3())
     end
@@ -90,8 +99,8 @@ function speedControl:Flush(apply)
     end
 
     self.wPid:Set(v)
-    self.wSpeed:Set(velocityOnPlane:len())
-    self.wTargetSpeed:Set(targetVelocityOnPlane:len())
+    self.wSpeed:Set(velocity:len())
+    self.wTargetSpeed:Set(targetVelocity:len())
     self.wSpeedError:Set(speedError:len())
 end
 
