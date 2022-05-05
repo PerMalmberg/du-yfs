@@ -7,9 +7,7 @@ local calc = require("Calc")
 local ctrl = library.GetController()
 local engine = require("abstraction/Engine")()
 local sharedPanel = require("panel/SharedPanel")()
-local PID = require("cpml/PID")
-local SpeedControl = require("movement/SpeedControl")
-local min = math.min
+local Slide = require("movement/AxisSlide")
 
 local nullVec = vec3()
 local nullTri = {0, 0, 0}
@@ -25,10 +23,7 @@ local function new()
         queue = {}, -- The positions we want to move to
         wDist = sharedPanel:Get("Move Control"):CreateValue("Dist.", "m"),
         wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
-        wQueue = sharedPanel:Get("Move Control"):CreateValue("Points", ""),
-        speedCtrlForward = SpeedControl(SpeedControlForward),
-        speedCtrlRight = SpeedControl(SpeedControlRight),
-        speedCtrlUp = SpeedControl(SpeedControlUp)
+        wQueue = sharedPanel:Get("Move Control"):CreateValue("Points", "")
     }
 
     setmetatable(instance, moveControl)
@@ -77,11 +72,8 @@ function moveControl:Flush()
     if behaviour ~= nil then
         local ownPos = construct.position.Current()
         local toDest = behaviour.destination - ownPos
-        local direction = toDest:normalize()
         local velocity = construct.velocity.Movement()
         local reached = behaviour:IsReached()
-
-        local speedControlVec = nullVec
 
         if reached then
             local g = construct.world.GAlongGravity()
@@ -97,40 +89,23 @@ function moveControl:Flush()
             local closestPoint = calc.NearestPointOnLine(behaviour.start, behaviour.direction, ownPos)
             local deviationVec = closestPoint - ownPos
 
-            local velocityOnPlane = velocity:project_on_plane(direction):normalize_inplace()
-            diag:DrawNumber(9, ownPos + velocityOnPlane * 5)
-            diag:DrawNumber(0, ownPos + deviationVec:normalize() * 5)
+            local acc
 
-            self.wDeviation:Set(calc.Round(deviationVec:len(), 5))
-
-            speedControlVec = deviationVec:normalize() * behaviour.maxSpeed
-
-            -- How far from the end point are we?
-            local distanceVec = behaviour.destination - ownPos
-            local distance = distanceVec:len()
-
-            self.wDist:Set(calc.Round(distance, 3))
-
-            local brakeDistance = brakes:BrakeDistance()
-            if brakeDistance >= distance then
-                brakes:SetPart(BRAKE_MARK, -velocity:normalize())
+            if deviationVec:len() > 0.001 then
+                -- Move towards the vector
+                acc = deviationVec:normalize()
             else
-                brakes:SetPart(BRAKE_MARK, nullVec)
-                speedControlVec = speedControlVec + distanceVec:normalize() * behaviour.maxSpeed
+                acc = toDest:normalize()
             end
+
+            acc = acc - construct.world.GAlongGravity()
+
+            ctrl.setEngineCommand("thrust", {acc:unpack()})
 
             diag:DrawNumber(1, behaviour.start)
             diag:DrawNumber(2, behaviour.start + (behaviour.destination - behaviour.start) / 2)
             diag:DrawNumber(3, behaviour.destination)
         end
-
-        self.speedCtrlForward:SetVelocity(speedControlVec)
-        self.speedCtrlRight:SetVelocity(speedControlVec)
-        self.speedCtrlUp:SetVelocity(speedControlVec)
-
-        self.speedCtrlForward:Flush(false)
-        self.speedCtrlRight:Flush(false)
-        self.speedCtrlUp:Flush(true)
     end
 end
 
