@@ -5,9 +5,7 @@ local brakes = require("Brakes")()
 local construct = require("abstraction/Construct")()
 local calc = require("Calc")
 local ctrl = library.GetController()
-local engine = require("abstraction/Engine")()
 local sharedPanel = require("panel/SharedPanel")()
-local Slide = require("movement/AxisSlide")
 
 local nullVec = vec3()
 local nullTri = {0, 0, 0}
