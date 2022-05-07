@@ -74,27 +74,18 @@ function moveControl:Flush()
         local reached = behaviour:IsReached()
 
         if reached then
-            local g = construct.world.GAlongGravity()
-            if g:len2() > 0 then
-                brakes:SetPart(BRAKE_MARK, -g)
-            else
-                brakes:SetPart(BRAKE_MARK, -velocity:normalize())
-            end
+            brakes:SetPart(BRAKE_MARK, true)
         else
-            brakes:SetPart(BRAKE_MARK, nullVec)
+            brakes:SetPart(BRAKE_MARK, false)
 
             -- How far from the travel vector are we?
             local closestPoint = calc.NearestPointOnLine(behaviour.start, behaviour.direction, ownPos)
             local deviationVec = closestPoint - ownPos
 
-            local acc
+            -- If not moving in desired direction, enable brake
+            brakes:SetPart(BRAKE_MARK, not calc.SameishDirection(toDest, velocity))
 
-            if deviationVec:len() > 0.001 then
-                -- Move towards the vector
-                acc = deviationVec:normalize()
-            else
-                acc = toDest:normalize()
-            end
+            local acc = deviationVec:normalize() + toDest:normalize()
 
             acc = acc - construct.world.GAlongGravity()
 

@@ -26,7 +26,7 @@ local function new()
 
     local instance = {
         ctrl = ctrl,
-        percentage = 0,
+        engaged = false,
         GetData = ctrl.getData,
         lastUpdateAtmoDensity = nil,
         currentAtmoForce = 0,
@@ -34,7 +34,7 @@ local function new()
         totalMass = 1,
         brakeParts = {},
         brakeGroup = EngineGroup("brake"),
-        wPercentage = sharedPanel:Get("Breaks"):CreateValue("Percentage", "%"),
+        wEnagaged = sharedPanel:Get("Breaks"):CreateValue("Engaged", ""),
         wDistance = sharedPanel:Get("Breaks"):CreateValue("Brake dist.", "m"),
         wDeceleration = sharedPanel:Get("Breaks"):CreateValue("Deceleration", "m/s2"),
         wGravInfluence = sharedPanel:Get("Breaks"):CreateValue("Grav. Influence", "m/s2"),
@@ -51,32 +51,27 @@ end
 
 function brakes:Update()
     self:calculateBreakForce()
-    self.wPercentage:Set(self.percentage)
+    self.wEnagaged:Set(tostring(self.engaged))
     self.wDistance:Set(calc.Round(self:BrakeDistance(), 2))
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
 end
 
 function brakes:Flush()
-    -- The brake vector must point against the direction of travel.
-    local brakeVector = vec3()
+    self.engaged = false
 
-    for _, dir in pairs(self.brakeParts) do
-        brakeVector = brakeVector + dir
+    for _, part_enabled in pairs(self.brakeParts) do
+        self.engaged = self.engaged or part_enabled
     end
 
-    brakeVector = brakeVector:normalize_inplace() * self:Deceleration()
-
-    brakeVector = brakeVector - velocity.Movement():normalize() * self:Deceleration() * self.percentage
-
-    self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
+    if self.engaged then
+        -- The brake vector must point against the direction of travel.
+        local brakeVector = -velocity.Movement():normalize() * self:Deceleration()
+        self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
+    end
 end
 
-function brakes:Set(percentage)
-    self.percentage = percentage or 100
-end
-
-function brakes:SetPart(partName, direction)
-    self.brakeParts[partName] = direction
+function brakes:SetPart(partName, enabled)
+    self.brakeParts[partName] = enabled
 end
 
 function brakes:calculateBreakForce()
