@@ -19,12 +19,16 @@ local BRAKE_MARK = "MoveControlReached"
 local function new()
     local instance = {
         queue = {}, -- The positions we want to move to
-        wDist = sharedPanel:Get("Move Control"):CreateValue("Dist.", "m"),
+        wVel = sharedPanel:Get("Move Control"):CreateValue("Vel.", "m/s"),
         wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
-        wQueue = sharedPanel:Get("Move Control"):CreateValue("Points", "")
+        wToDest = sharedPanel:Get("Move Control"):CreateValue("To dest", "m"),
+        wQueue = sharedPanel:Get("Move Control"):CreateValue("Points", ""),
+        wMode = sharedPanel:Get("Move Control"):CreateValue("Mode", "")
     }
 
     setmetatable(instance, moveControl)
+
+    ctrl.setEngineCommand("ALL", nullTri, nullTri)
 
     return instance
 end
@@ -71,30 +75,46 @@ function moveControl:Flush()
         local ownPos = construct.position.Current()
         local toDest = behaviour.destination - ownPos
         local velocity = construct.velocity.Movement()
+
         local reached = behaviour:IsReached()
 
-        if reached then
-            brakes:SetPart(BRAKE_MARK, true)
-        else
+        -- How far from the travel vector are we?
+        local closestPoint = calc.NearestPointOnLine(behaviour.start, behaviour.direction, ownPos)
+        local deviationVec = closestPoint - ownPos
+
+        -- Counter gravity
+        local acc = -construct.world.GAlongGravity()
+
+        -- Assume reached
+        brakes:SetPart(BRAKE_MARK, true)
+
+        if not reached then
             brakes:SetPart(BRAKE_MARK, false)
 
-            -- How far from the travel vector are we?
-            local closestPoint = calc.NearestPointOnLine(behaviour.start, behaviour.direction, ownPos)
-            local deviationVec = closestPoint - ownPos
+            local brakeDistance, validBrake = brakes:BrakeDistance()
 
-            -- If not moving in desired direction, enable brake
-            brakes:SetPart(BRAKE_MARK, not calc.SameishDirection(toDest, velocity))
+            if validBrake and brakeDistance >= toDest:len() then
+                brakes:SetPart(BRAKE_MARK, true)
+                self.wMode:Set("Braking")
+            else
+                self.wMode:Set("Moving")
 
-            local acc = deviationVec:normalize() + toDest:normalize()
+                local direction = deviationVec:normalize() + toDest:normalize()
+                direction:normalize_inplace()
 
-            acc = acc - construct.world.GAlongGravity()
-
-            ctrl.setEngineCommand("thrust", {acc:unpack()})
-
-            diag:DrawNumber(1, behaviour.start)
-            diag:DrawNumber(2, behaviour.start + (behaviour.destination - behaviour.start) / 2)
-            diag:DrawNumber(3, behaviour.destination)
+                acc = acc + direction
+            end
         end
+
+        ctrl.setEngineCommand("thrust", {acc:unpack()})
+
+        self.wVel:Set(velocity:len())
+        self.wToDest:Set(toDest:len())
+        self.wDeviation:Set(deviationVec:len())
+
+        diag:DrawNumber(1, behaviour.start)
+        diag:DrawNumber(2, behaviour.start + (behaviour.destination - behaviour.start) / 2)
+        diag:DrawNumber(3, behaviour.destination)
     end
 end
 

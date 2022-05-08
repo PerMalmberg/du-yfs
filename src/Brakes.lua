@@ -38,7 +38,8 @@ local function new()
         wDistance = sharedPanel:Get("Breaks"):CreateValue("Brake dist.", "m"),
         wDeceleration = sharedPanel:Get("Breaks"):CreateValue("Deceleration", "m/s2"),
         wGravInfluence = sharedPanel:Get("Breaks"):CreateValue("Grav. Influence", "m/s2"),
-        wBrakeAcc = sharedPanel:Get("Breaks"):CreateValue("Brake Acc.", "m/s2")
+        wBrakeAcc = sharedPanel:Get("Breaks"):CreateValue("Brake Acc.", "m/s2"),
+        wMaxBrake = sharedPanel:Get("Breaks"):CreateValue("Max .", "N")
     }
 
     setmetatable(instance, brakes)
@@ -52,7 +53,12 @@ end
 function brakes:Update()
     self:calculateBreakForce()
     self.wEnagaged:Set(tostring(self.engaged))
-    self.wDistance:Set(calc.Round(self:BrakeDistance(), 2))
+    local brakeDist, valid = self:BrakeDistance()
+    if valid then
+        self.wDistance:Set(calc.Round(brakeDist, 4))
+    else
+        self.wDistance:Set("to weak")
+    end
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
 end
 
@@ -77,7 +83,7 @@ end
 function brakes:calculateBreakForce()
     --[[
         The effective brake force in atmo depends on the atmosphere density and current speed.
-        - Speed affects break force such that it increases from 10% to 100% at <=10m/s to >=100m/s
+        - Speed affects break force such that it increases from 10% to 100% at >=10m/s to >=100m/s
         - Atmospheric density affects break force in a linearly.
     ]]
     local density = world.AtmoDensity()
@@ -95,8 +101,10 @@ function brakes:calculateBreakForce()
             if world.IsInAtmo() then
                 local speedAdjustment = clamp(speed / minimumSpeedForMaxAtmoBrakeForce, 0.1, 1)
                 self.currentAtmoForce = force * speedAdjustment * density
+                self.wMaxBrake:Set(self.currentAtmoForce)
             else
                 self.currentSpaceForce = force
+                self.wMaxBrake:Set(self.currentSpaceForce)
             end
         end
     end
@@ -152,11 +160,22 @@ function brakes:BrakeDistance()
 
     -- If gravity is larger than the brake acceleration then we return a really
     -- long brake distance, but only if we're actually moving
+
+    local res = 0
+    local valid = true
+
     if brakeAcceleration <= 0 and V0 > 0.1 then
-        return 9999999
+        valid = false
     else
-        return (V0 * V0) / (2 * brakeAcceleration)
+        res = (V0 * V0) / (2 * brakeAcceleration)
     end
+
+    -- When we haven't moved yet we get NaN.
+    if calc.IsNaN(res) then
+        valid = false
+    end
+
+    return res, valid
 end
 
 return setmetatable(

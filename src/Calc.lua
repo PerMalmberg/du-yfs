@@ -47,7 +47,7 @@ local calc = {
         return up:cross(right)
     end,
     SameishDirection = function(v1, v2)
-        return v1:dot(v2) > 0
+        return v1:dot(v2:normalize()) > 0
     end,
     Mps2Kph = function(mps)
         return mps * 3.6
@@ -64,6 +64,9 @@ local calc = {
         local v = pointAwayFromLine - lineStart
         local d = v:dot(lineDir)
         return lineStart + lineDir * d
+    end,
+    IsNaN = function(value)
+        return value ~= value
     end
 }
 
