@@ -67,20 +67,17 @@ end
 local i = 0
 
 ---Returns true if we have moved towards compared to last check.
----Must check each axis separately since vector:len() can become less without
----us actually moving *towards* the destination.
 ---@param toDest vec3 Distance to destination as a vec3
 function moveControl:MovedTowards(toDest)
     local res = true
 
-    if self.lastToDest == nil then
-        self.lastToDest = toDest
-    elseif (self.lastToDest - toDest):len() > 0.1 then
+    if self.lastToDest ~= nil then
+        -- Must check each axis separately since vector:len() can become less without
+        -- us actually moving *towards* the destination; we might be moving up to the target, but on path beside it.
         res = abs(toDest.x) <= abs(self.lastToDest.x) and abs(toDest.y) <= abs(self.lastToDest.y) and abs(toDest.z) <= abs(self.lastToDest.z)
-        self.lastToDest = toDest
-        i = i + 1
-        system.print("movedTowards: " .. i .. tostring(res))
     end
+
+    self.lastToDest = toDest
 
     return res
 end
@@ -155,15 +152,12 @@ function moveControl:Flush()
             acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distance, speed)
             self.wMode:Set("Braking")
         else
-            local movedTowards = self:MovedTowards(toDest, behaviour.margin)
+            local movedTowards = self:MovedTowards(toDest)
             if not movedTowards or speed < behaviour.maxSpeed then
                 -- If moving away, enable brakes to counter wrong direction
                 brakes:SetPart(BRAKE_MARK, not movedTowards, "D")
                 self.wMode:Set("Move, acc")
-                acceleration = (toDest):normalize() -- 1g
-            elseif speed > behaviour.maxSpeed then
-                --brakes:SetPart(BRAKE_MARK, true, "E")
-                self.wMode:Set("Move, brake")
+                acceleration = (toDest + deviationVec):normalize_inplace() -- 1g
             else
                 self.wMode:Set("Maintain")
             end

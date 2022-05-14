@@ -27,12 +27,15 @@ local function PointAlongParallelLine()
 end
 
 function ActionStart(system, key)
-    if key == "option1" then
+    if key == "option9" then
         moveControl:Clear()
-        moveControl:Append(MovementBehaviour(construct.position.Current(), startPos + upDirection * 5, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.5, calc.Kph2Mps(3)))
+        moveControl:Append(MovementBehaviour(construct.position.Current(), construct.position.Current(), PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(10)))
+    elseif key == "option1" then
+        moveControl:Clear()
+        moveControl:Append(MovementBehaviour(construct.position.Current(), startPos + upDirection * 65, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(10)))
     elseif key == "option2" then
         moveControl:Clear()
-        moveControl:Append(MovementBehaviour(construct.position.Current(), startPos + upDirection * 10, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.5, calc.Kph2Mps(3)))
+        moveControl:Append(MovementBehaviour(construct.position.Current(), startPos + upDirection * 1, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(10)))
     elseif key == "option3" then
         moveControl:Clear()
         --moveControl:Append(
@@ -44,7 +47,7 @@ function ActionStart(system, key)
                 startPos + upDirection * 20 + forwardDirection * 10 + rightDirection * 10,
                 PointAlongParallelLine,
                 AboveSelfAlignedToGravity,
-                0.5,
+                0.1,
                 calc.Kph2Mps(3)
             )
         )
