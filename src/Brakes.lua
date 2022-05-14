@@ -53,12 +53,8 @@ end
 function brakes:Update()
     self:calculateBreakForce()
     self.wEnagaged:Set(tostring(self.engaged))
-    local brakeDist, valid = self:BrakeDistance()
-    if valid then
-        self.wDistance:Set(calc.Round(brakeDist, 4))
-    else
-        self.wDistance:Set("to weak")
-    end
+    local brakeDist = self:BrakeDistance()
+    self.wDistance:Set(calc.Round(brakeDist, 4))
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
 end
 
@@ -70,14 +66,20 @@ function brakes:Flush()
     end
 
     if self.engaged then
+        system.print("Enabled")
         -- The brake vector must point against the direction of travel.
-        local brakeVector = -velocity.Movement():normalize() * self:Deceleration()
+        local brakeVector = -velocity.Movement():normalize() * self:Deceleration() * 1000
         self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
+    else
+        self.ctrl.setEngineCommand(self.brakeGroup:Union(), {0, 0, 0})
     end
 end
 
-function brakes:SetPart(partName, enabled)
+function brakes:SetPart(partName, enabled, callee)
     self.brakeParts[partName] = enabled
+    if enabled then
+        system.print(callee)
+    end
 end
 
 function brakes:calculateBreakForce()
@@ -114,10 +116,14 @@ end
 ---@return number The deceleration
 function brakes:Deceleration()
     -- F = m * a
+    return self:CurrentBrakeForce() / self.totalMass
+end
+
+function brakes:CurrentBrakeForce()
     if world.IsInAtmo() then
-        return self.currentAtmoForce / self.totalMass
+        return self.currentAtmoForce
     else
-        return self.currentSpaceForce / self.totalMass
+        return self.currentSpaceForce
     end
 end
 
@@ -152,30 +158,39 @@ function brakes:BrakeDistance()
     -- distance = (v^2 - V0^2) / 2*a
 
     local vel = velocity.Movement()
-    local brakeAcceleration = self:Deceleration() + self:GravityInfluence(vel)
+    local brakeAcceleration = self:Deceleration()
+    -- + self:GravityInfluence(vel)
 
     self.wBrakeAcc:Set(calc.Round(brakeAcceleration, 4))
 
     local V0 = vel:len()
 
-    -- If gravity is larger than the brake acceleration then we return a really
-    -- long brake distance, but only if we're actually moving
-
     local res = 0
-    local valid = true
 
-    if brakeAcceleration <= 0 and V0 > 0.1 then
-        valid = false
-    else
+    if brakeAcceleration > 0 then
         res = (V0 * V0) / (2 * brakeAcceleration)
     end
 
-    -- When we haven't moved yet we get NaN.
-    if calc.IsNaN(res) then
-        valid = false
+    return res
+end
+
+---Calculates the additional deceleration needed to stop in the given distance with the current speed.
+---@param distance number
+---@param speed number
+---@return number
+function brakes:AdditionalAccelerationNeededToStop(distance, speed)
+    local timeToTarget = speed / distance
+    --distance = (v^2 - V0^2) / 2*a
+    -- a = (v^2 - V0^2) / (2*distance)
+    local a = (speed * speed) * (2 * distance)
+    a = a - self:Deceleration()
+
+    -- If no extra decelration is needed, return 0
+    if a < 0 then
+        a = 0
     end
 
-    return res, valid
+    return a
 end
 
 return setmetatable(

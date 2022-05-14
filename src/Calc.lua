@@ -67,6 +67,9 @@ local calc = {
     end,
     IsNaN = function(value)
         return value ~= value
+    end,
+    AreAlmostEqual = function(a, b, margin)
+        return abs(a - b) < margin
     end
 }
 
