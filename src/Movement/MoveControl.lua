@@ -15,7 +15,7 @@ local moveControl = {}
 moveControl.__index = moveControl
 local singelton = nil
 
-local BRAKE_MARK = "MoveControlReached"
+local BRAKE_MARK = "MoveControlBrake"
 
 local function new()
     local instance = {
@@ -68,16 +68,18 @@ local i = 0
 
 ---Returns true if we have moved towards compared to last check.
 ---@param toDest vec3 Distance to destination as a vec3
-function moveControl:MovedTowards(toDest)
+---@param margin number Margin in meters
+function moveControl:MovedTowards(toDest, margin)
     local res = true
 
-    if self.lastToDest ~= nil then
+    if self.lastToDest == nil then
+        self.lastToDest = toDest
+    elseif (self.lastToDest - toDest):len() > margin then
         -- Must check each axis separately since vector:len() can become less without
         -- us actually moving *towards* the destination; we might be moving up to the target, but on path beside it.
         res = abs(toDest.x) <= abs(self.lastToDest.x) and abs(toDest.y) <= abs(self.lastToDest.y) and abs(toDest.z) <= abs(self.lastToDest.z)
+        self.lastToDest = toDest
     end
-
-    self.lastToDest = toDest
 
     return res
 end
@@ -115,9 +117,13 @@ function moveControl:Flush()
     local acceleration = nullVec
     local behaviour = self:Current()
     local ownPos = construct.position.Current()
-    local toDest = nullVec
 
-    if behaviour ~= nil then
+    if behaviour == nil then
+        self.wVel:Set("-")
+        self.wToDest:Set("-")
+        self.wDeviation:Set("-")
+        self.wMode:Set("-")
+    else
         if behaviour:IsReached() then
             local switched
             behaviour, switched = self:Next()
@@ -125,50 +131,48 @@ function moveControl:Flush()
                 self.lastToDest = nil
             end
         end
-    end
 
-    self.wQueue:Set(#self.queue)
-
-    if behaviour ~= nil then
-        toDest = behaviour.destination - ownPos
+        local toDest = behaviour.destination - ownPos
         local velocity = construct.velocity.Movement()
 
         local reached = behaviour:IsReached()
         local distance = toDest:len()
         local speed = velocity:len()
 
-        brakes:SetPart(BRAKE_MARK, false, "A")
+        self.wVel:Set(calc.Round(speed, 2) .. "/" .. calc.Round(behaviour.maxSpeed, 2))
+        self.wToDest:Set(toDest:len())
+
+        brakes:SetPart(BRAKE_MARK, false)
 
         -- How far from the travel vector are we?
         local closestPoint = calc.NearestPointOnLine(behaviour.start, behaviour.direction, ownPos)
         local deviationVec = closestPoint - ownPos
+        self.wDeviation:Set(deviationVec:len())
 
         if reached then
-            brakes:SetPart(BRAKE_MARK, true, "B")
+            brakes:SetPart(BRAKE_MARK, true)
             self.wMode:Set("Reached")
+            acceleration = (toDest + deviationVec):normalize_inplace() * 0.01
         elseif brakes:BrakeDistance() >= distance then
-            brakes:SetPart(BRAKE_MARK, true, "C")
+            brakes:SetPart(BRAKE_MARK, true)
             -- Use engines to brake too if needed
             acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distance, speed)
             self.wMode:Set("Braking")
         else
-            local movedTowards = self:MovedTowards(toDest)
-            if not movedTowards or speed < behaviour.maxSpeed then
-                -- If moving away, enable brakes to counter wrong direction
-                brakes:SetPart(BRAKE_MARK, not movedTowards, "D")
-                self.wMode:Set("Move, acc")
-                acceleration = (toDest + deviationVec):normalize_inplace() -- 1g
+            if speed < behaviour.maxSpeed then
+                self.wMode:Set("Move")
+                acceleration = toDest:normalize_inplace() * 4 -- 1m/s2
+            elseif speed > behaviour.maxSpeed * 1.01 then
+                brakes:SetPart(BRAKE_MARK, true)
             else
                 self.wMode:Set("Maintain")
             end
         end
 
+        acceleration = acceleration + self:CounterDeviation(toDest, deviationVec)
+
         -- Always counter gravity, so we don't have to think about it in other calculations, i.e. pretend we're in space.
         acceleration = acceleration - construct.world.GAlongGravity()
-
-        self.wVel:Set(velocity:len())
-        self.wToDest:Set(toDest:len())
-        self.wDeviation:Set(deviationVec:len())
 
         diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
         diag:DrawNumber(1, behaviour.start)
@@ -176,7 +180,22 @@ function moveControl:Flush()
         diag:DrawNumber(3, behaviour.destination)
     end
 
+    self.wQueue:Set(#self.queue)
+
     ctrl.setEngineCommand("thrust", {acceleration:unpack()})
+end
+
+function moveControl:CounterDeviation(toDestination, deviationVec)
+    local res = nullVec
+    local movedTowards = self:MovedTowards(toDestination, 0.3)
+    -- If moving away, enable brakes to counter wrong direction
+    if not movedTowards then
+        brakes:SetPart(BRAKE_MARK, true)
+        res = deviationVec:normalize_inplace() * 0.02 -- 0.02m/s2
+    end
+    -- Don't turn if off, that's done on each Flush()
+
+    return res
 end
 
 -- The module

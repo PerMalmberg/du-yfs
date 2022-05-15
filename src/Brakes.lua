@@ -18,6 +18,7 @@ local singelton = nil
 local world = construct.world
 local mass = construct.mass
 local velocity = construct.velocity
+local nullVec = vec3()
 
 local minimumSpeedForMaxAtmoBrakeForce = 100 --m/s (360km/h) Minimum speed in atmo to reach maximum brake force
 
@@ -59,27 +60,22 @@ function brakes:Update()
 end
 
 function brakes:Flush()
-    self.engaged = false
+    local brakeVector = nullVec
 
     for _, part_enabled in pairs(self.brakeParts) do
-        self.engaged = self.engaged or part_enabled
+        if part_enabled then
+            -- The brake vector must point against the direction of travel.
+            brakeVector = -velocity.Movement():normalize() * self:Deceleration()
+            break
+        end
     end
 
-    if self.engaged then
-        system.print("Enabled")
-        -- The brake vector must point against the direction of travel.
-        local brakeVector = -velocity.Movement():normalize() * self:Deceleration() * 1000
-        self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
-    else
-        self.ctrl.setEngineCommand(self.brakeGroup:Union(), {0, 0, 0})
-    end
+    self.engaged = brakeVector:len2() > 0
+    self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
 end
 
-function brakes:SetPart(partName, enabled, callee)
+function brakes:SetPart(partName, enabled)
     self.brakeParts[partName] = enabled
-    if enabled then
-        system.print(callee)
-    end
 end
 
 function brakes:calculateBreakForce()
