@@ -3,7 +3,7 @@ local universe = require("universe/Universe")()
 local construct = require("abstraction/Construct")()
 local calc = require("Calc")
 local moveControl = require("movement/MoveControl")()
-local MovementBehaviour = require("movement/MovementBehaviour")
+local StandardMovement = require("movement/StandardMovement")
 
 local fc = FlightCore()
 
@@ -17,43 +17,20 @@ local parallelPathStart = startPos + calc.StraightForward(upDirection, construct
 
 fc:ReceiveEvents()
 
-local function AboveSelfAlignedToGravity()
-    return construct.position.Current() + upDirection * 100
-end
-
-local function PointAlongParallelLine()
-    local distanceFromStart = construct.position.Current() - startPos
-    return parallelPathStart + distanceFromStart
-end
-
 function ActionStart(system, key)
     if key == "option1" then
         moveControl:Clear()
-        moveControl:Append(
-            MovementBehaviour(construct.position.Current(), startPos + upDirection * 1050, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(100))
-        )
+        moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 1050, 0.1, calc.Kph2Mps(100)))
     elseif key == "option2" then
         moveControl:Clear()
-        moveControl:Append(MovementBehaviour(construct.position.Current(), startPos + upDirection * 1, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(50)))
+        moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 1, 0.1, calc.Kph2Mps(50)))
     elseif key == "option3" then
-        --moveControl:Append(MovementBehaviour(construct.position.Current(), startPos + upDirection * 35, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, 1))
         moveControl:Clear()
-        --moveControl:Append(
-        --    MovementBehaviour(construct.position.Current(), startPos + upDirection * 20 + forwardDirection * 10, PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, 1)
-        --)
-        moveControl:Append(
-            MovementBehaviour(
-                construct.position.Current(),
-                startPos + upDirection * 20 + forwardDirection * 10 + rightDirection * 10,
-                PointAlongParallelLine,
-                AboveSelfAlignedToGravity,
-                0.1,
-                calc.Kph2Mps(3)
-            )
-        )
+
+        moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 20 + forwardDirection * 10 + rightDirection * 10, 0.1, calc.Kph2Mps(3)))
     elseif key == "option9" then
         moveControl:Clear()
-        moveControl:Append(MovementBehaviour(construct.position.Current(), construct.position.Current(), PointAlongParallelLine, AboveSelfAlignedToGravity, 0.1, calc.Kph2Mps(10)))
+        moveControl:Append(StandardMovement(construct.position.Current(), construct.position.Current(), 0.1, calc.Kph2Mps(10)))
     end
 end
 

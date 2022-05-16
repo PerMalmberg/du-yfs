@@ -11,12 +11,9 @@
     axb = 0 when vectors are parallel.
 
 ]]
-local vec3 = require("cpml/vec3")
 local EngineGroup = require("EngineGroup")
 local library = require("abstraction/Library")()
-local diag = require("Diagnostics")()
 local Brakes = require("Brakes")
-local construct = require("abstraction/Construct")()
 local AxisControl = require("AxisControl")
 local MoveControl = require("movement/MoveControl")
 
@@ -44,25 +41,6 @@ local function new()
     return instance
 end
 
----Enables hold position
----@param positionGetter vec3 A function that returns the position to hold
----@param deadZone number If close than this distance (in m) then consider position reached
-function flightCore:EnableHoldPosition(positionGetter, deadZone)
-    diag:AssertIsFunction(positionGetter, "position", "flightCore:EnableHoldPosition")
-    if deadZone ~= nil then
-        diag:AssertIsNumber(deadZone, "deadZone", "flightCore:EnableHoldPosition")
-    end
-
-    self.holdPosition = {
-        targetPos = positionGetter,
-        deadZone = deadZone or 1
-    }
-end
-
-function flightCore:DisableHoldPosition()
-    self.holdPosition = nil
-end
-
 function flightCore:ReceiveEvents()
     self.flushHandlerId = system:onEvent("flush", self.Flush, self)
     self.updateHandlerId = system:onEvent("update", self.Update, self)
@@ -85,8 +63,8 @@ function flightCore:Align()
     local target
     local topSideAlignment
     if behaviour ~= nil then
-        target = behaviour.AlignTo()
-        topSideAlignment = behaviour.TopSideAlignment()
+        target = behaviour:YawAndPitch()
+        topSideAlignment = behaviour:Roll()
     end
 
     if target ~= nil then
