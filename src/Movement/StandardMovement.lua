@@ -70,7 +70,7 @@ function standardMovement:Behave(modeWidget, deviationVec)
     if reached then
         brakes:SetPart(BRAKE_MARK, true)
         modeWidget:Set("Reached")
-        acceleration = (toDest + deviationVec):normalize_inplace() * 0.01
+        acceleration = toDest:normalize() * 0.01
     elseif brakes:BrakeDistance() >= distance then
         brakes:SetPart(BRAKE_MARK, true)
         -- Use engines to brake too if needed
@@ -79,7 +79,7 @@ function standardMovement:Behave(modeWidget, deviationVec)
     else
         if speed < self.maxSpeed then
             modeWidget:Set("Move")
-            acceleration = toDest:normalize_inplace() * 4 -- 1m/s2
+            acceleration = toDest:normalize() * 1 -- 1m/s2
         elseif speed > self.maxSpeed * 1.01 then
             brakes:SetPart(BRAKE_MARK, true)
         else
@@ -93,16 +93,17 @@ function standardMovement:Behave(modeWidget, deviationVec)
 end
 
 function standardMovement:CounterDeviation(toDestination, deviationVec)
-    local res = nullVec
-    local movedTowards = self:MovedTowards(toDestination, 0.3)
     -- If moving away, enable brakes to counter wrong direction
-    if not movedTowards then
+    if not self:MovedTowards(toDestination, 0.3) then
         brakes:SetPart(BRAKE_MARK, true)
-        res = deviationVec:normalize_inplace() * 0.02 -- 0.02m/s2
     end
-    -- Don't turn if off, that's done on by MoveControl
+    -- Don't turn off brakes, that's done by MoveControl
 
-    return res
+    if deviationVec:len() > 0.001 then
+        return deviationVec:normalize_inplace() * 0.02 -- 0.02m/s2
+    else
+        return nullVec
+    end
 end
 
 ---Returns true if we have moved towards compared to last check.

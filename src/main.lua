@@ -13,14 +13,16 @@ local upDirection = -construct.orientation.AlongGravity()
 local forwardDirection = construct.orientation.Forward()
 local rightDirection = construct.orientation.Right()
 local startPos = construct.position.Current()
-local parallelPathStart = startPos + calc.StraightForward(upDirection, construct.orientation.Right()) * 10 -- 10m infront
 
 fc:ReceiveEvents()
 
 function ActionStart(system, key)
     if key == "option1" then
         moveControl:Clear()
-        moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 1050, 0.1, calc.Kph2Mps(100)))
+        moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 250, 0.1, calc.Kph2Mps(50)))
+        moveControl:Append(StandardMovement(startPos + upDirection * 250, startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, 0.1, calc.Kph2Mps(50)))
+        moveControl:Append(StandardMovement(startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, startPos + upDirection * 10, 0.1, calc.Kph2Mps(20)))
+        moveControl:Append(StandardMovement(startPos + upDirection * 10, 0.1 + upDirection * 1, 0.1, calc.Kph2Mps(20)))
     elseif key == "option2" then
         moveControl:Clear()
         moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 1, 0.1, calc.Kph2Mps(50)))

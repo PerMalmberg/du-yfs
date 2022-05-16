@@ -121,7 +121,7 @@ function moveControl:Flush()
         -- How far from the travel vector are we?
         local closestPoint = calc.NearestPointOnLine(behaviour.origin, behaviour.direction, currentPos)
         local deviationVec = closestPoint - currentPos
-        self.wDeviation:Set(deviationVec:len2())
+        self.wDeviation:Set(calc.Round(deviationVec:len2(), 5))
 
         acceleration = behaviour:Behave(self.wMode, deviationVec)
 
