@@ -54,7 +54,7 @@ function standardMovement:IsReached()
     return diff <= self.margin
 end
 
-function standardMovement:Behave(modeWidget, deviationVec)
+function standardMovement:Move(modeWidget, deviationVec)
     local ownPos = construct.position.Current()
     local toDest = self.destination - ownPos
     local velocity = construct.velocity.Movement()
@@ -70,7 +70,6 @@ function standardMovement:Behave(modeWidget, deviationVec)
     if reached then
         brakes:SetPart(BRAKE_MARK, true)
         modeWidget:Set("Reached")
-        acceleration = toDest:normalize() * 0.01
     elseif brakes:BrakeDistance() >= distance then
         brakes:SetPart(BRAKE_MARK, true)
         -- Use engines to brake too if needed
@@ -106,7 +105,7 @@ function standardMovement:CounterDeviation(toDestination, deviationVec)
     end
 end
 
----Returns true if we have moved towards compared to last check.
+---Returns true if we have moved towards target compared to last check.
 ---@param toDest vec3 Distance to destination as a vec3
 ---@param margin number Margin in meters
 function standardMovement:MovedTowards(toDest, margin)

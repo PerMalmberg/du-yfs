@@ -54,10 +54,10 @@ function moveControl:Clear()
     end
 end
 
-function moveControl:Append(behaviour)
-    diag:AssertIsTable(behaviour, "behaviour", "moveControl:Append")
+function moveControl:Append(movement)
+    diag:AssertIsTable(movement, "movement", "moveControl:Append")
 
-    table.insert(self.queue, #self.queue + 1, behaviour)
+    table.insert(self.queue, #self.queue + 1, movement)
 end
 
 function moveControl:TimeToTarget()
@@ -96,39 +96,40 @@ function moveControl:Flush()
 
 ]]
     local acceleration = nullVec
-    local behaviour = self:Current()
+    local movement = self:Current()
 
-    if behaviour == nil then
+    if movement == nil then
         self.wVel:Set("-")
         self.wToDest:Set("-")
         self.wDeviation:Set("-")
         self.wMode:Set("-")
     else
-        if behaviour:IsReached() then
+        if movement:IsReached() then
             local switched
-            behaviour, switched = self:Next()
+            movement, switched = self:Next()
             if switched then
                 self.lastToDest = nil
             end
         end
 
-        self.wVel:Set(calc.Round(construct.velocity.Movement():len(), 2) .. "/" .. calc.Round(behaviour.maxSpeed, 2))
+        self.wVel:Set(calc.Round(construct.velocity.Movement():len(), 2) .. "/" .. calc.Round(movement.maxSpeed, 2))
         local currentPos = construct.position.Current()
-        self.wToDest:Set((behaviour.destination - currentPos):len())
+        self.wToDest:Set((movement.destination - currentPos):len())
 
         brakes:SetPart(BRAKE_MARK, false)
 
         -- How far from the travel vector are we?
-        local closestPoint = calc.NearestPointOnLine(behaviour.origin, behaviour.direction, currentPos)
+        local closestPoint = calc.NearestPointOnLine(movement.origin, movement.direction, currentPos)
         local deviationVec = closestPoint - currentPos
-        self.wDeviation:Set(calc.Round(deviationVec:len2(), 5))
+        self.wDeviation:Set(calc.Round(deviationVec:len(), 5))
 
-        acceleration = behaviour:Behave(self.wMode, deviationVec)
+        acceleration = movement:Move(self.wMode, deviationVec)
 
         diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
-        diag:DrawNumber(1, behaviour.origin)
-        diag:DrawNumber(2, behaviour.origin + (behaviour.destination - behaviour.origin) / 2)
-        diag:DrawNumber(3, behaviour.destination)
+        diag:DrawNumber(1, movement.origin)
+        diag:DrawNumber(2, movement.origin + (movement.destination - movement.origin) / 2)
+        diag:DrawNumber(3, movement.destination)
+        diag:DrawNumber(9, closestPoint)
     end
 
     self.wQueue:Set(#self.queue)
