@@ -19,7 +19,7 @@ fc:ReceiveEvents()
 function ActionStart(system, key)
     if key == "option1" then
         moveControl:Clear()
-        moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 150, 0.1, calc.Kph2Mps(5)))
+        moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 150, 0.1, calc.Kph2Mps(20)))
         moveControl:Append(StandardMovement(startPos + upDirection * 150, startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, 0.1, calc.Kph2Mps(5)))
         moveControl:Append(StandardMovement(startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, startPos + upDirection * 10, 0.1, calc.Kph2Mps(5)))
         moveControl:Append(StandardMovement(startPos + upDirection * 10, startPos, 0.1, calc.Kph2Mps(5)))

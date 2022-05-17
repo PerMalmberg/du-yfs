@@ -60,11 +60,6 @@ function moveControl:Append(movement)
     table.insert(self.queue, #self.queue + 1, movement)
 end
 
-function moveControl:TimeToTarget()
-end
-
-local i = 0
-
 function moveControl:Flush()
     --[[
     * Gravity
