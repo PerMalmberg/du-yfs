@@ -6,6 +6,7 @@ local construct = require("abstraction/Construct")()
 local calc = require("Calc")
 local ctrl = library.GetController()
 local sharedPanel = require("panel/SharedPanel")()
+local TargetPoint = require("movement/TargetPoint")
 local abs = math.abs
 
 local nullVec = vec3()
@@ -24,7 +25,8 @@ local function new()
         wMode = sharedPanel:Get("Move Control"):CreateValue("Mode", ""),
         wVel = sharedPanel:Get("Move Control"):CreateValue("Vel.", "m/s"),
         wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
-        wToDest = sharedPanel:Get("Move Control"):CreateValue("To dest", "m")
+        wToDest = sharedPanel:Get("Move Control"):CreateValue("To dest", "m"),
+        targetPoint = nil
     }
 
     setmetatable(instance, moveControl)
@@ -45,17 +47,27 @@ function moveControl:Next()
         switched = true
     end
 
-    return self:Current(), switched
+    local current = self:Current()
+
+    if switched then
+        self.targetPoint = TargetPoint(current.origin, current.destination, current.maxSpeed)
+    end
+
+    return current, switched
 end
 
 function moveControl:Clear()
-    while #self.queue > 0 do
-        table.remove(self.queue, 1)
-    end
+    self.queue = {}
+    self.targetPoint = nil
 end
 
 function moveControl:Append(movement)
     diag:AssertIsTable(movement, "movement", "moveControl:Append")
+
+    -- Setup target point when it is the first item to be added.
+    if self.targetPoint == nil then
+        self.targetPoint = TargetPoint(movement.origin, movement.destination, movement.maxSpeed)
+    end
 
     table.insert(self.queue, #self.queue + 1, movement)
 end
@@ -93,7 +105,7 @@ function moveControl:Flush()
     local acceleration = nullVec
     local movement = self:Current()
 
-    if movement == nil then
+    if movement == nil or self.targetPoint == nil then
         self.wVel:Set("-")
         self.wToDest:Set("-")
         self.wDeviation:Set("-")
@@ -118,13 +130,13 @@ function moveControl:Flush()
         local deviationVec = closestPoint - currentPos
         self.wDeviation:Set(calc.Round(deviationVec:len(), 5))
 
-        acceleration = movement:Move(self.wMode, deviationVec)
+        acceleration = movement:Move(self.targetPoint:Current(), self.wMode, deviationVec)
 
         diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
         diag:DrawNumber(1, movement.origin)
         diag:DrawNumber(2, movement.origin + (movement.destination - movement.origin) / 2)
         diag:DrawNumber(3, movement.destination)
-        diag:DrawNumber(9, closestPoint)
+        diag:DrawNumber(9, self.targetPoint:Current())
     end
 
     self.wQueue:Set(#self.queue)

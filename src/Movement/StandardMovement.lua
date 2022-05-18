@@ -8,8 +8,6 @@ local abs = math.abs
 local nullVec = vec3()
 local BRAKE_MARK = "MoveControlBrake"
 
---https://www.tutorialspoint.com/lua/lua_object_oriented.htm
-
 local standardMovement = {}
 standardMovement.__index = standardMovement
 
@@ -54,9 +52,9 @@ function standardMovement:IsReached()
     return diff <= self.margin
 end
 
-function standardMovement:Move(modeWidget, deviationVec)
+function standardMovement:Move(target, modeWidget, deviationVec)
     local ownPos = construct.position.Current()
-    local toDest = self.destination - ownPos
+    local toDest = target - ownPos
     local velocity = construct.velocity.Movement()
 
     local reached = self:IsReached()
