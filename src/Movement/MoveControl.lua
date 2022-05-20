@@ -130,13 +130,14 @@ function moveControl:Flush()
         local deviationVec = closestPoint - currentPos
         self.wDeviation:Set(calc.Round(deviationVec:len(), 5))
 
-        acceleration = movement:Move(self.targetPoint:Current(), self.wMode, deviationVec)
+        local rabbit = self.targetPoint:Current(currentPos, 3)
+        acceleration = movement:Move(rabbit, self.wMode, deviationVec)
 
         diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
         diag:DrawNumber(1, movement.origin)
         diag:DrawNumber(2, movement.origin + (movement.destination - movement.origin) / 2)
         diag:DrawNumber(3, movement.destination)
-        diag:DrawNumber(9, self.targetPoint:Current())
+        diag:DrawNumber(9, rabbit)
     end
 
     self.wQueue:Set(#self.queue)

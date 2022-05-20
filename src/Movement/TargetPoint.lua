@@ -17,24 +17,36 @@ local function new(origin, destination, maxSpeed)
         distance = diff:len(),
         direction = diff:normalize(),
         maxSpeed = maxSpeed,
-        startTime = nil
+        startTime = nil,
+        holdTime = 0,
+        lastTime = 0
     }
     return setmetatable(instance, targetPoint)
 end
 
-function targetPoint:Current()
+function targetPoint:Current(chaserPosition, maxDistanceAhead)
+    local now = utc()
+
     if self.startTime == nil then
-        self.startTime = utc()
+        self.startTime = now
+        self.lastTime = now
     end
 
-    local elapsed = utc() - self.startTime
+    local elapsed = now - self.startTime - self.holdTime
     local distance = self.maxSpeed * elapsed
+    local pos = self.origin + self.direction * distance
 
-    if distance < self.distance then
-        return self.origin + self.direction * distance
-    else
-        return self.destination
+    if distance >= self.distance then
+        pos = self.destination
     end
+
+    if (chaserPosition - pos):len() > maxDistanceAhead then
+        self.holdTime = self.holdTime + (now - self.lastTime)
+    end
+
+    self.lastTime = now
+
+    return pos
 end
 
 -- The module

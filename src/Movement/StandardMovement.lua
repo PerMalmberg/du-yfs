@@ -79,6 +79,7 @@ function standardMovement:Move(target, modeWidget, deviationVec)
             acceleration = toDest:normalize() * 1 -- 1m/s2
         elseif speed > self.maxSpeed * 1.01 then
             brakes:SetPart(BRAKE_MARK, true)
+            acceleration = toDest:normalize() * 1 -- 1m/s2 -- QQQ Is it good to accelerate while braking? Can we do otherwise and stil move in the desired direction?
         else
             modeWidget:Set("Maintain")
         end
