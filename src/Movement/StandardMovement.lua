@@ -68,26 +68,28 @@ function standardMovement:Move(target, modeWidget, deviationVec)
     local acceleration = nullVec
 
     local mode
-    local travelDeviation = utils.clamp(velocity:normalize():dot(toDest:normalize()), 0, 1)
+
+    -- 1 fully aligned, 0 not aligned to destination
+    local travelAlignment = utils.clamp(velocity:normalize():dot(toDest:normalize()), 0, 1)
 
     if brakes:BrakeDistance() >= distance or speed >= self.maxSpeed * 1.01 then
         brakes:SetPart(BRAKE_MARK, true)
         -- Use engines to brake too if needed
         acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distance, speed)
         mode = "Braking"
-    elseif travelDeviation < 0.85 then
+    elseif travelAlignment < 0.85 then
         brakes:SetPart(BRAKE_MARK, true)
         mode = "Deviating"
     else
         mode = "Accelerating"
     end
 
-    modeWidget:Set(mode .. " " .. tostring(travelDeviation))
+    modeWidget:Set(mode .. " " .. tostring(travelAlignment))
 
     self.pid:inject(deviationVec:len())
 
     if acceleration == nullVec then
-        acceleration = toDest:normalize() * (1 + 1 - travelDeviation)
+        acceleration = toDest:normalize() * (1 + 5 * (1 - travelAlignment))
         -- Don't let deviation adustment take overhand so clamp it.
         local devAcc = deviationVec:normalize_inplace() * utils.clamp(self.pid:get(), 0, 0.2)
         acceleration = acceleration + devAcc
