@@ -18,10 +18,10 @@ standardMovement.__index = standardMovement
 ---@param margin number The distance, in meters, the construct must be within the destination for it to be considered reached.
 ---@param maxSpeed number The maximum speed to travel towards the point, in m/s
 local function new(origin, destination, margin, maxSpeed)
-    diag:AssertIsVec3(origin, "start", "BaseMovement:new")
-    diag:AssertIsVec3(destination, "destination", "BaseMovement:new")
-    diag:AssertIsNumber(margin, "margin", "BaseMovement:new")
-    diag:AssertIsNumber(maxSpeed, "maxSpeed", "BaseMovement:new")
+    diag:AssertIsVec3(origin, "start", "StandardMovement:new")
+    diag:AssertIsVec3(destination, "destination", "StandardMovement:new")
+    diag:AssertIsNumber(margin, "margin", "StandardMovement:new")
+    diag:AssertIsNumber(maxSpeed, "maxSpeed", "StandardMovement:new")
 
     local o = {
         origin = origin,
@@ -30,7 +30,8 @@ local function new(origin, destination, margin, maxSpeed)
         margin = margin,
         parallelPathStart = origin + calc.StraightForward(-construct.world.GAlongGravity(), construct.orientation.Right()) * 10, -- 10m infront
         maxSpeed = maxSpeed,
-        lastToDest = nil
+        lastToDest = nil,
+        reachStandStill = false
     }
 
     setmetatable(o, standardMovement)
@@ -74,12 +75,18 @@ function standardMovement:Move(target, modeWidget, deviationVec)
         acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distance, speed)
         modeWidget:Set("Braking")
     else
+        local acc = 1
+        if self.reachStandStill then
+            acc = 0.1
+        end
+
         if speed < self.maxSpeed then
-            modeWidget:Set("Move")
-            acceleration = toDest:normalize() * 1 -- 1m/s2
+            modeWidget:Set("Accelerate")
+            acceleration = toDest:normalize() * acc -- m/s2
         elseif speed > self.maxSpeed * 1.01 then
+            modeWidget:Set("Decelerate")
             brakes:SetPart(BRAKE_MARK, true)
-            acceleration = toDest:normalize() * 1 -- 1m/s2 -- QQQ Is it good to accelerate while braking? Can we do otherwise and stil move in the desired direction?
+            acceleration = toDest:normalize() * acc -- m/s2 -- QQQ Is it good to accelerate while braking? Can we do otherwise and stil move in the desired direction?
         else
             modeWidget:Set("Maintain")
         end
@@ -90,9 +97,9 @@ function standardMovement:Move(target, modeWidget, deviationVec)
     return acceleration
 end
 
-function standardMovement:CounterDeviation(toDestination, deviationVec)
+function standardMovement:CounterDeviation(toDestination, deviationVec, margin)
     -- If moving away, enable brakes to counter wrong direction
-    if not self:MovedTowards(toDestination, 0.3) then
+    if not self:MovedTowards(toDestination, 0.2) then
         brakes:SetPart(BRAKE_MARK, true)
     end
     -- Don't turn off brakes, that's done by MoveControl

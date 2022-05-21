@@ -25,7 +25,7 @@ function widget:Close()
 end
 
 function widget:Set(value)
-    self.newValue = value
+    self.newValue = tostring(value)
 end
 
 function widget:Update()

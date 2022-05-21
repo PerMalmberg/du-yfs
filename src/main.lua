@@ -16,13 +16,43 @@ local startPos = construct.position.Current()
 
 fc:ReceiveEvents()
 
+function AddPath(origin, destination, maxSpeed, initialMargin, finalMargin)
+    -- Start point of path
+
+    local toAdd = {}
+
+    local current = destination
+    local m = 0
+    local backwards = (origin - destination):normalize()
+
+    -- Create waypoints from destination going backwards towards origin but not past the origin
+    while m < initialMargin and (current - destination):len2() <= (origin - destination):len2() do
+        m = m + finalMargin -- Increase margin for each point
+        local before = current + backwards * m
+        table.insert(toAdd, 1, StandardMovement(before, current, m, maxSpeed))
+
+        current = before
+    end
+
+    for i, v in ipairs(toAdd) do
+        if i == #toAdd then
+            v.reachStandStill = true
+        end
+        moveControl:Append(v)
+    end
+end
+
 function ActionStart(system, key)
     if key == "option1" then
+        --moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 150, 0.1, calc.Kph2Mps(20)))
+        --moveControl:Append(StandardMovement(startPos + upDirection * 150, startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, 0.1, calc.Kph2Mps(5)))
+        --moveControl:Append(StandardMovement(startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, startPos + upDirection * 10, 0.1, calc.Kph2Mps(5)))
+        --moveControl:Append(StandardMovement(startPos + upDirection * 10, startPos, 0.1, calc.Kph2Mps(5)))
         moveControl:Clear()
-        moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 150, 0.1, calc.Kph2Mps(20)))
-        moveControl:Append(StandardMovement(startPos + upDirection * 150, startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, 0.1, calc.Kph2Mps(5)))
-        moveControl:Append(StandardMovement(startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, startPos + upDirection * 10, 0.1, calc.Kph2Mps(5)))
-        moveControl:Append(StandardMovement(startPos + upDirection * 10, startPos, 0.1, calc.Kph2Mps(5)))
+        AddPath(startPos, startPos + upDirection * 150, calc.Kph2Mps(20), 3, 0.1)
+        AddPath(startPos + upDirection * 150, startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, calc.Kph2Mps(20), 3, 0.1)
+        AddPath(startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, startPos + upDirection * 10, calc.Kph2Mps(20), 3, 0.1)
+        AddPath(startPos + upDirection * 10, startPos, calc.Kph2Mps(5), 3, 0.1)
     elseif key == "option2" then
         moveControl:Clear()
         moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 1, 0.1, calc.Kph2Mps(20)))

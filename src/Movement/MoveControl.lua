@@ -26,6 +26,8 @@ local function new()
         wVel = sharedPanel:Get("Move Control"):CreateValue("Vel.", "m/s"),
         wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
         wToDest = sharedPanel:Get("Move Control"):CreateValue("To dest", "m"),
+        wMargin = sharedPanel:Get("Move Control"):CreateValue("Margin", "m"),
+        wReachStandStill = sharedPanel:Get("Move Control"):CreateValue("Stand still", ""),
         targetPoint = nil
     }
 
@@ -110,6 +112,8 @@ function moveControl:Flush()
         self.wToDest:Set("-")
         self.wDeviation:Set("-")
         self.wMode:Set("-")
+        self.wMargin:Set("-")
+        self.wReachStandStill:Set("-")
     else
         if movement:IsReached() then
             local switched
@@ -122,6 +126,8 @@ function moveControl:Flush()
         self.wVel:Set(calc.Round(construct.velocity.Movement():len(), 2) .. "/" .. calc.Round(movement.maxSpeed, 2))
         local currentPos = construct.position.Current()
         self.wToDest:Set((movement.destination - currentPos):len())
+        self.wMargin:Set(movement.margin)
+        self.wReachStandStill:Set(movement.reachStandStill)
 
         brakes:SetPart(BRAKE_MARK, false)
 
