@@ -175,7 +175,6 @@ end
 ---@param speed number
 ---@return number
 function brakes:AdditionalAccelerationNeededToStop(distance, speed)
-    local timeToTarget = speed / distance
     --distance = (v^2 - V0^2) / 2*a
     -- a = (v^2 - V0^2) / (2*distance)
     local a = (speed * speed) * (2 * distance)

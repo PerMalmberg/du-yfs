@@ -28,7 +28,8 @@ local function new()
         wToDest = sharedPanel:Get("Move Control"):CreateValue("To dest", "m"),
         wMargin = sharedPanel:Get("Move Control"):CreateValue("Margin", "m"),
         wReachStandStill = sharedPanel:Get("Move Control"):CreateValue("Stand still", ""),
-        targetPoint = nil
+        targetPoint = nil,
+        forcedBrake = false
     }
 
     setmetatable(instance, moveControl)
@@ -72,6 +73,10 @@ function moveControl:Append(movement)
     end
 
     table.insert(self.queue, #self.queue + 1, movement)
+end
+
+function moveControl:SetBrake(enabled)
+    self.forcedBrake = enabled
 end
 
 function moveControl:Flush()
@@ -129,7 +134,7 @@ function moveControl:Flush()
         self.wMargin:Set(movement.margin)
         self.wReachStandStill:Set(movement.reachStandStill)
 
-        brakes:SetPart(BRAKE_MARK, false)
+        brakes:SetPart(BRAKE_MARK, self.forcedBrake)
 
         -- How far from the travel vector are we?
         local closestPoint = calc.NearestPointOnLine(movement.origin, movement.direction, currentPos)

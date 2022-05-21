@@ -63,7 +63,22 @@ function ActionStart(system, key)
     elseif key == "option9" then
         moveControl:Clear()
         moveControl:Append(StandardMovement(construct.position.Current(), construct.position.Current(), 0.1, calc.Kph2Mps(10)))
+    elseif key == "brake" then
+        moveControl:SetBrake(true)
+        system.print("Enabled brakes")
     end
 end
 
+function ActionStop(system, key)
+    if key == "brake" then
+        moveControl:SetBrake(false)
+        system.print("Diasbled brakes")
+    end
+end
+
+function ActionLoop(system, key)
+end
+
 system:onEvent("actionStart", ActionStart)
+system:onEvent("actionLoop", ActionLoop)
+system:onEvent("actionStop", ActionStop)
