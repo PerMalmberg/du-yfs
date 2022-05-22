@@ -34,7 +34,7 @@ local function new(origin, destination, margin, maxSpeed)
         maxSpeed = maxSpeed,
         lastToDest = nil,
         reachStandStill = false,
-        pid = PID(0.01, 0.01, 0)
+        pid = PID(0.01, 0.2, 0, 0.5)
     }
 
     setmetatable(o, standardMovement)
@@ -91,7 +91,7 @@ function standardMovement:Move(target, modeWidget, deviationVec)
     if acceleration == nullVec then
         acceleration = toDest:normalize() * (1 + 5 * (1 - travelAlignment))
         -- Don't let deviation adustment take overhand so clamp it.
-        local devAcc = deviationVec:normalize_inplace() * utils.clamp(self.pid:get(), 0, 0.2)
+        local devAcc = deviationVec:normalize_inplace() * utils.clamp(self.pid:get(), 0, 1)
         acceleration = acceleration + devAcc
     end
 
