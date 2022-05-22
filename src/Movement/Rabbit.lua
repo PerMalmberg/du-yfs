@@ -32,14 +32,14 @@ function targetPoint:Current(chaserPosition, maxDistanceAhead)
         self.lastTime = now
     end
 
-    local rabbitPosition = self:Position(now)
+    local rabbitPosition = self:position(now)
 
     -- Is the rabbit too far ahead?
     if (rabbitPosition - chaserPosition):len() > maxDistanceAhead then
         self.holdTime = self.holdTime + (now - self.lastTime)
     end
 
-    local pos = self:Position(now)
+    local pos = self:position(now)
     self.lastTime = now
     return pos
 end
@@ -48,7 +48,7 @@ function targetPoint:Elapsed(now)
     return now - self.startTime - self.holdTime
 end
 
-function targetPoint:Position(now)
+function targetPoint:position(now)
     local distance = self.maxSpeed * self:Elapsed(now)
     if distance >= self.distance then
         return self.destination

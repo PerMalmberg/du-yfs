@@ -94,9 +94,9 @@ function moveControl:SetBrake(enabled)
     self.forcedBrake = enabled
 end
 
-function moveControl:Move(destination)
+function moveControl:Move(rabbitPos)
     local ownPos = construct.position.Current()
-    local toDest = destination - ownPos
+    local toDest = rabbitPos - ownPos
     local distance = toDest:len()
     local velocity = construct.velocity.Movement()
     local speed = velocity:len()
@@ -114,8 +114,10 @@ function moveControl:Move(destination)
         -- Use engines to brake too if needed
         acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distance, speed)
         mode = "Braking"
-    elseif travelAlignment < 0.85 then
-        brakes:SetPart(BRAKE_MARK, true)
+    elseif travelAlignment < 0.75 then
+        if wp:Reached(rabbitPos) then
+            brakes:SetPart(BRAKE_MARK, true)
+        end
         mode = "Deviating"
     else
         mode = "Accelerating"
@@ -160,6 +162,7 @@ function moveControl:Flush()
 
             self.wVel:Set(calc.Round(construct.velocity.Movement():len(), 2) .. "/" .. calc.Round(wp.maxSpeed, 2))
             self.wToDest:Set((wp.destination - currentPos):len())
+            self.wMargin:Set(wp.margin)
 
             local rabbitPos = self.rabbit:Current(currentPos, 3)
             acceleration = self:Move(rabbitPos)
