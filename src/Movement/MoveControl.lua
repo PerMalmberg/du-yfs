@@ -26,10 +26,11 @@ local function new()
         wWaypoints = sharedPanel:Get("Move Control"):CreateValue("Waypoints", ""),
         rabbit = nil,
         forcedBrake = false,
+        wMode = sharedPanel:Get("Move Control"):CreateValue("Mode", "m"),
+        wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
+        wMargin = sharedPanel:Get("Move Control"):CreateValue("Margin", "m"),
         wVel = sharedPanel:Get("Move Control"):CreateValue("Vel.", "m/s"),
         wToDest = sharedPanel:Get("Move Control"):CreateValue("To dest", "m"),
-        wMargin = sharedPanel:Get("Move Control"):CreateValue("Margin", "m"),
-        wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
         pid = PID(0.01, 0.2, 0, 0.5)
     }
 
@@ -109,31 +110,31 @@ function moveControl:Move(rabbitPos)
     -- 1 fully aligned, 0 not aligned to destination
     local travelAlignment = utils.clamp(velocity:normalize():dot(toDest:normalize()), 0, 1)
 
-    if brakes:BrakeDistance() >= distance or speed >= wp.maxSpeed * 1.01 then
+    local desiredAcceleration = 1
+
+    if brakes:BrakeDistance() >= distance then
         brakes:SetPart(BRAKE_MARK, true)
         -- Use engines to brake too if needed
         acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distance, speed)
+        mode = "Braking - final"
+    elseif travelAlignment < 0.75 and speed > 0.1 then -- Speed check needed to prevent getting stuck due to brakes being stronger than acceleration
+        -- If we're deviating, make use of brakes to reduce overshoot
+        brakes:SetPart(BRAKE_MARK, true)
+        mode = "Deviating " .. calc.Round(travelAlignment, 3)
+        acceleration = toDest:normalize() * desiredAcceleration
+    elseif speed >= wp.maxSpeed * 1.01 then
+        acceleration = -velocity:normalize() * desiredAcceleration
         mode = "Braking"
-    elseif travelAlignment < 0.75 then
-        if wp:Reached(rabbitPos) then
-            brakes:SetPart(BRAKE_MARK, true)
-        end
-        mode = "Deviating"
     else
         mode = "Accelerating"
+        acceleration = toDest:normalize() * desiredAcceleration
     end
 
-    system.print(mode .. " " .. tostring(travelAlignment))
-
-    if acceleration == nullVec then
-        acceleration = toDest:normalize() * (1 + 5 * (1 - travelAlignment))
-    end
+    self.wMode:Set(mode)
 
     -- Always counter gravity if some command has been given,
     -- so we don't have to think about it in other calculations, i.e. pretend we're in space.
-    if acceleration ~= nullVec then
-        acceleration = acceleration - construct.world.GAlongGravity()
-    end
+    acceleration = acceleration - construct.world.GAlongGravity()
 
     return acceleration
 end
@@ -168,7 +169,7 @@ function moveControl:Flush()
             acceleration = self:Move(rabbitPos)
 
             local nearestPoint = calc.NearestPointOnLine(self.rabbit.origin, self.rabbit.destination - self.rabbit.origin, currentPos)
-            self.wDeviation:Set((nearestPoint - currentPos):len())
+            self.wDeviation:Set(calc.Round((nearestPoint - currentPos):len(), 4))
 
             diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
             diag:DrawNumber(1, wp.destination)
