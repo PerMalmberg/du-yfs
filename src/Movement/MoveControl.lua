@@ -6,30 +6,31 @@ local construct = require("abstraction/Construct")()
 local calc = require("Calc")
 local ctrl = library.GetController()
 local sharedPanel = require("panel/SharedPanel")()
-local TargetPoint = require("movement/TargetPoint")
+local Rabbit = require("movement/Rabbit")
+local utils = require("cpml/utils")
+local PID = require("cpml/PID")
 local abs = math.abs
 
 local nullVec = vec3()
 local nullTri = {0, 0, 0}
+local BRAKE_MARK = "MoveControlBrake"
+local DISTANCE_BETWEEN_TRAVEL_POINTS = 1
 
 local moveControl = {}
 moveControl.__index = moveControl
 local singelton = nil
 
-local BRAKE_MARK = "MoveControlBrake"
-
 local function new()
     local instance = {
-        queue = {}, -- The positions we want to move to
-        wQueue = sharedPanel:Get("Move Control"):CreateValue("Points", ""),
-        wMode = sharedPanel:Get("Move Control"):CreateValue("Mode", ""),
+        waypoints = {}, -- The positions we want to move to
+        wWaypoints = sharedPanel:Get("Move Control"):CreateValue("Waypoints", ""),
+        rabbit = nil,
+        forcedBrake = false,
         wVel = sharedPanel:Get("Move Control"):CreateValue("Vel.", "m/s"),
-        wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
         wToDest = sharedPanel:Get("Move Control"):CreateValue("To dest", "m"),
         wMargin = sharedPanel:Get("Move Control"):CreateValue("Margin", "m"),
-        wReachStandStill = sharedPanel:Get("Move Control"):CreateValue("Stand still", ""),
-        targetPoint = nil,
-        forcedBrake = false
+        wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
+        pid = PID(0.01, 0.2, 0, 0.5)
     }
 
     setmetatable(instance, moveControl)
@@ -39,98 +40,147 @@ local function new()
     return instance
 end
 
+local function Direction(from, to)
+    return (to - from):normalize_inplace()
+end
+
+function moveControl:AddWaypoint(wp)
+    table.insert(self.waypoints, #self.waypoints + 1, wp)
+    if #self.waypoints == 1 then
+        self:NewRabbit(construct.position.Current(), self:Current())
+    end
+end
+
+function moveControl:Clear()
+    self.waypoints = {}
+    self.rabbit = nil
+end
+
 function moveControl:Current()
-    return self.queue[1]
+    return self.waypoints[1]
 end
 
 function moveControl:Next()
     local switched = false
-    if #self.queue > 1 then
-        table.remove(self.queue, 1)
+    local prev = self:Current()
+
+    if #self.waypoints > 1 then
+        table.remove(self.waypoints, 1)
         switched = true
     end
 
     local current = self:Current()
 
     if switched then
-        self.targetPoint = TargetPoint(current.origin, current.destination, current.maxSpeed)
+        if prev == nil then
+            self:NewRabbit(construct.position.Current(), current)
+        else
+            self:NewRabbit(prev.destination, current)
+        end
     end
 
     return current, switched
 end
 
-function moveControl:Clear()
-    self.queue = {}
-    self.targetPoint = nil
-end
+function moveControl:NewRabbit(travelOrigin, waypoint)
+    diag:AssertIsVec3(travelOrigin, "travelOrigin", "moveControl:NewRabbit")
+    diag:AssertIsTable(waypoint, "waypoint", "moveControl:NewRabbit")
 
-function moveControl:Append(movement)
-    diag:AssertIsTable(movement, "movement", "moveControl:Append")
-
-    -- Setup target point when it is the first item to be added.
-    if self.targetPoint == nil then
-        self.targetPoint = TargetPoint(movement.origin, movement.destination, movement.maxSpeed, movement.margin)
-    end
-
-    table.insert(self.queue, #self.queue + 1, movement)
+    local direction = Direction(travelOrigin, waypoint.destination)
+    self.rabbit = Rabbit(travelOrigin + direction * DISTANCE_BETWEEN_TRAVEL_POINTS, waypoint.destination, waypoint.maxSpeed)
 end
 
 function moveControl:SetBrake(enabled)
     self.forcedBrake = enabled
 end
 
-function moveControl:Flush()
+function moveControl:Move(destination)
+    local ownPos = construct.position.Current()
+    local toDest = destination - ownPos
+    local distance = toDest:len()
+    local velocity = construct.velocity.Movement()
+    local speed = velocity:len()
+    local wp = self:Current()
+
     local acceleration = nullVec
-    local movement = self:Current()
 
-    if movement == nil or self.targetPoint == nil then
-        self.wVel:Set("-")
-        self.wToDest:Set("-")
-        self.wDeviation:Set("-")
-        self.wMode:Set("-")
-        self.wMargin:Set("-")
-        self.wReachStandStill:Set("-")
+    local mode
+
+    -- 1 fully aligned, 0 not aligned to destination
+    local travelAlignment = utils.clamp(velocity:normalize():dot(toDest:normalize()), 0, 1)
+
+    if brakes:BrakeDistance() >= distance or speed >= wp.maxSpeed * 1.01 then
+        brakes:SetPart(BRAKE_MARK, true)
+        -- Use engines to brake too if needed
+        acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distance, speed)
+        mode = "Braking"
+    elseif travelAlignment < 0.85 then
+        brakes:SetPart(BRAKE_MARK, true)
+        mode = "Deviating"
     else
-        if movement:IsReached() then
-            local switched
-            movement, switched = self:Next()
-            if switched then
-                self.lastToDest = nil
-            end
-        end
-
-        self.wVel:Set(calc.Round(construct.velocity.Movement():len(), 2) .. "/" .. calc.Round(movement.maxSpeed, 2))
-        local currentPos = construct.position.Current()
-        self.wToDest:Set((movement.destination - currentPos):len())
-        self.wMargin:Set(movement.margin)
-        self.wReachStandStill:Set(movement.reachStandStill)
-
-        brakes:SetPart(BRAKE_MARK, self.forcedBrake)
-
-        -- How far from the travel vector are we?
-        local closestPoint = calc.NearestPointOnLine(movement.origin, movement.direction, currentPos)
-        local deviationVec = closestPoint - currentPos
-        self.wDeviation:Set(calc.Round(deviationVec:len(), 5))
-
-        local rabbit = self.targetPoint:Current(currentPos, 3)
-        acceleration = movement:Move(rabbit, self.wMode, deviationVec)
-
-        diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
-        diag:DrawNumber(1, movement.origin)
-        diag:DrawNumber(2, movement.origin + (movement.destination - movement.origin) / 2)
-        diag:DrawNumber(3, movement.destination)
-        diag:DrawNumber(9, rabbit)
+        mode = "Accelerating"
     end
 
-    self.wQueue:Set(#self.queue)
+    system.print(mode .. " " .. tostring(travelAlignment))
+
+    if acceleration == nullVec then
+        acceleration = toDest:normalize() * (1 + 5 * (1 - travelAlignment))
+    end
 
     -- Always counter gravity if some command has been given,
     -- so we don't have to think about it in other calculations, i.e. pretend we're in space.
-    if acceleration:len2() > 0 then
+    if acceleration ~= nullVec then
         acceleration = acceleration - construct.world.GAlongGravity()
     end
 
-    ctrl.setEngineCommand("thrust", {acceleration:unpack()})
+    return acceleration
+end
+
+function moveControl:Flush()
+    local f = function()
+        brakes:SetPart(BRAKE_MARK, self.forcedBrake)
+
+        local acceleration = nullVec
+        local wp = self:Current()
+        local currentPos = construct.position.Current()
+
+        if wp == nil or self.rabbit == nil then
+            self.wVel:Set("-")
+            self.wToDest:Set("-")
+            self.wMargin:Set("-")
+            self.wDeviation:Set("-")
+
+            -- Enable brakes if we don't have a waypoint
+            brakes:SetPart(BRAKE_MARK, true)
+        else
+            if wp:Reached(currentPos) then
+                local switched
+                wp, switched = self:Next()
+            end
+
+            self.wVel:Set(calc.Round(construct.velocity.Movement():len(), 2) .. "/" .. calc.Round(wp.maxSpeed, 2))
+            self.wToDest:Set((wp.destination - currentPos):len())
+
+            local rabbitPos = self.rabbit:Current(currentPos, 3)
+            acceleration = self:Move(rabbitPos)
+
+            local nearestPoint = calc.NearestPointOnLine(self.rabbit.origin, self.rabbit.destination - self.rabbit.origin, currentPos)
+            self.wDeviation:Set((nearestPoint - currentPos):len())
+
+            diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
+            diag:DrawNumber(1, wp.destination)
+            diag:DrawNumber(2, self.rabbit.destination)
+            diag:DrawNumber(9, rabbitPos)
+        end
+
+        ctrl.setEngineCommand("thrust", {acceleration:unpack()})
+    end
+
+    local status, err, ret = xpcall(f, traceback)
+    if not status then
+        system.print(err)
+        unit.exit()
+    end
 end
 
 -- The module

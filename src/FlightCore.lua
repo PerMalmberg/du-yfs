@@ -60,8 +60,8 @@ end
 function flightCore:Align()
     local behaviour = self.movement:Current()
 
-    local target
-    local topSideAlignment
+    local target = nil
+    local topSideAlignment = nil
     if behaviour ~= nil then
         target = behaviour:YawAndPitch()
         topSideAlignment = behaviour:Roll()

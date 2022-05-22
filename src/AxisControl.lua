@@ -90,7 +90,11 @@ function control:StopEvents()
 end
 
 function control:SetTarget(targetCoordinate)
-    self.target.coordinate = targetCoordinate
+    if targetCoordinate == nil then
+        self:Disable()
+    else
+        self.target.coordinate = targetCoordinate
+    end
 end
 
 function control:Disable()
