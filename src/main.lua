@@ -44,12 +44,9 @@ end
 
 function ActionStart(system, key)
     if key == "option1" then
-        --moveControl:Append(StandardMovement(construct.position.Current(), startPos + upDirection * 150, 0.1, calc.Kph2Mps(20)))
-        --moveControl:Append(StandardMovement(startPos + upDirection * 150, startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, 0.1, calc.Kph2Mps(5)))
-        --moveControl:Append(StandardMovement(startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, startPos + upDirection * 10, 0.1, calc.Kph2Mps(5)))
-        --moveControl:Append(StandardMovement(startPos + upDirection * 10, startPos, 0.1, calc.Kph2Mps(5)))
         moveControl:Clear()
         AddPath(startPos, startPos + upDirection * 150, calc.Kph2Mps(20), 3, 0.1)
+        AddPath(startPos + upDirection * 150, startPos + upDirection * 150 + forwardDirection * 30, calc.Kph2Mps(20), 3, 0.1)
         AddPath(startPos + upDirection * 150, startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, calc.Kph2Mps(20), 3, 0.1)
         AddPath(startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, startPos + upDirection * 10, calc.Kph2Mps(20), 3, 0.1)
         AddPath(startPos + upDirection * 10, startPos, calc.Kph2Mps(5), 3, 0.1)

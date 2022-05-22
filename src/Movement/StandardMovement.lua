@@ -63,8 +63,6 @@ function standardMovement:Move(target, modeWidget, deviationVec)
     local velocity = construct.velocity.Movement()
     local speed = velocity:len()
 
-    local reached = self:IsReached()
-
     local acceleration = nullVec
 
     local mode
@@ -96,24 +94,6 @@ function standardMovement:Move(target, modeWidget, deviationVec)
     end
 
     return acceleration
-end
-
----Returns true if we have moved towards target compared to last check.
----@param toDest vec3 Distance to destination as a vec3
----@param margin number Margin in meters
-function standardMovement:MovedTowards(toDest, margin)
-    local res = true
-
-    if self.lastToDest == nil then
-        self.lastToDest = toDest
-    elseif (self.lastToDest - toDest):len() > margin then
-        -- Must check each axis separately since vector:len() can become less without
-        -- us actually moving *towards* the destination; we might be moving up to the target, but on path beside it.
-        res = abs(toDest.x) <= abs(self.lastToDest.x) and abs(toDest.y) <= abs(self.lastToDest.y) and abs(toDest.z) <= abs(self.lastToDest.z)
-        self.lastToDest = toDest
-    end
-
-    return res
 end
 
 -- The module

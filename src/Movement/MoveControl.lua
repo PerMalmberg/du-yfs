@@ -69,7 +69,7 @@ function moveControl:Append(movement)
 
     -- Setup target point when it is the first item to be added.
     if self.targetPoint == nil then
-        self.targetPoint = TargetPoint(movement.origin, movement.destination, movement.maxSpeed)
+        self.targetPoint = TargetPoint(movement.origin, movement.destination, movement.maxSpeed, movement.margin)
     end
 
     table.insert(self.queue, #self.queue + 1, movement)
@@ -80,35 +80,6 @@ function moveControl:SetBrake(enabled)
 end
 
 function moveControl:Flush()
-    --[[
-    * Gravity
-    * Brake deceleration
-    * Engine acceleration
-    * Engine deceleration
-
-    * Brake distance
-    * Distance to target
-
-    * Time to target
-    * Time to stop
-
-    * Current travel direction
-    * Desired travel direction
-
-    * Current speed
-    * Desired speed
-
-    If not within brake distance
-        If not at desired speed
-            Accelerate towards desired target
-        else if at desired speed
-            Maintain speed
-        else
-            decelerate to desired speed
-    else
-        descelerate to come to a stop at the desired position.
-
-]]
     local acceleration = nullVec
     local movement = self:Current()
 
