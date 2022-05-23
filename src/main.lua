@@ -27,10 +27,10 @@ end
 function ActionStart(system, key)
     if key == "option1" then
         moveControl:Clear()
-        moveControl:AddWaypoint(WayPoint(startPos + upDirection * 45, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
-        moveControl:AddWaypoint(WayPoint(startPos + upDirection * 45 + forwardDirection * 30, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        moveControl:AddWaypoint(WayPoint(startPos + upDirection * 150, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        moveControl:AddWaypoint(WayPoint(startPos + upDirection * 150 + forwardDirection * 200, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
         moveControl:AddWaypoint(
-            WayPoint(startPos + upDirection * 30 + forwardDirection * 30 + rightDirection * 30, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromGravity, KeepHorizontal)
+            WayPoint(startPos + upDirection * 30 + forwardDirection * 100 + rightDirection * 30, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromGravity, KeepHorizontal)
         )
         moveControl:AddWaypoint(WayPoint(startPos + upDirection * 4, calc.Kph2Mps(15), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
         moveControl:AddWaypoint(WayPoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))

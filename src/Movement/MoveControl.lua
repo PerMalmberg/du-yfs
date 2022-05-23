@@ -14,7 +14,6 @@ local abs = math.abs
 local nullVec = vec3()
 local nullTri = {0, 0, 0}
 local BRAKE_MARK = "MoveControlBrake"
-local DISTANCE_BETWEEN_TRAVEL_POINTS = 1
 
 local moveControl = {}
 moveControl.__index = moveControl
@@ -87,8 +86,7 @@ function moveControl:NewRabbit(travelOrigin, waypoint)
     diag:AssertIsVec3(travelOrigin, "travelOrigin", "moveControl:NewRabbit")
     diag:AssertIsTable(waypoint, "waypoint", "moveControl:NewRabbit")
 
-    local direction = Direction(travelOrigin, waypoint.destination)
-    self.rabbit = Rabbit(travelOrigin + direction * DISTANCE_BETWEEN_TRAVEL_POINTS, waypoint.destination, waypoint.maxSpeed)
+    self.rabbit = Rabbit(travelOrigin, waypoint.destination, waypoint.maxSpeed)
 end
 
 function moveControl:SetBrake(enabled)
@@ -97,37 +95,37 @@ end
 
 function moveControl:Move(rabbitPos)
     local ownPos = construct.position.Current()
-    local toDest = rabbitPos - ownPos
-    local distance = toDest:len()
+    local toRabbit = rabbitPos - ownPos
+    local wp = self:Current()
+    local distanceToWaypoint = (wp.destination - ownPos):len()
     local velocity = construct.velocity.Movement()
     local speed = velocity:len()
-    local wp = self:Current()
 
     local acceleration = nullVec
 
     local mode
 
     -- 1 fully aligned, 0 not aligned to destination
-    local travelAlignment = utils.clamp(velocity:normalize():dot(toDest:normalize()), 0, 1)
+    local travelAlignment = utils.clamp(velocity:normalize():dot(toRabbit:normalize()), 0, 1)
 
     local desiredAcceleration = 1
 
-    if brakes:BrakeDistance() >= distance then
+    if brakes:BrakeDistance() >= distanceToWaypoint * 1.05 then
         brakes:SetPart(BRAKE_MARK, true)
         -- Use engines to brake too if needed
-        acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distance, speed)
+        acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distanceToWaypoint, speed)
         mode = "Braking - final"
     elseif travelAlignment < 0.75 and speed > 0.1 then -- Speed check needed to prevent getting stuck due to brakes being stronger than acceleration
         -- If we're deviating, make use of brakes to reduce overshoot
         brakes:SetPart(BRAKE_MARK, true)
         mode = "Deviating " .. calc.Round(travelAlignment, 3)
-        acceleration = toDest:normalize() * desiredAcceleration
+        acceleration = toRabbit:normalize() * desiredAcceleration
     elseif speed >= wp.maxSpeed * 1.01 then
         acceleration = -velocity:normalize() * desiredAcceleration
         mode = "Braking"
     else
         mode = "Accelerating"
-        acceleration = toDest:normalize() * desiredAcceleration
+        acceleration = toRabbit:normalize() * desiredAcceleration
     end
 
     self.wMode:Set(mode)
