@@ -93,8 +93,6 @@ function moveControl:SetBrake(enabled)
     self.forcedBrake = enabled
 end
 
-local lastMode = ""
-local i = 0
 function moveControl:Move(rabbitPos)
     local ownPos = construct.position.Current()
     local toRabbit = rabbitPos - ownPos
@@ -110,7 +108,7 @@ function moveControl:Move(rabbitPos)
     -- 1 fully aligned, 0 not aligned to destination
     local travelAlignment = utils.clamp(velocity:normalize():dot(toRabbit:normalize()), 0, 1)
 
-    local desiredAcceleration = 10
+    local desiredAcceleration = 1
 
     if brakes:BrakeDistance() >= distanceToWaypoint * 1.05 then
         brakes:SetPart(BRAKE_MARK, true)
@@ -136,12 +134,6 @@ function moveControl:Move(rabbitPos)
     end
 
     self.wMode:Set(mode .. " " .. calc.Round(travelAlignment, 3))
-
-    if lastMode ~= mode then
-        i = i + 1
-        system.print(i .. " " .. mode)
-        lastMode = mode
-    end
 
     -- Always counter gravity if some command has been given,
     -- so we don't have to think about it in other calculations, i.e. pretend we're in space.
