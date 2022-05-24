@@ -93,6 +93,8 @@ function moveControl:SetBrake(enabled)
     self.forcedBrake = enabled
 end
 
+local lastMode = ""
+local i = 0
 function moveControl:Move(rabbitPos)
     local ownPos = construct.position.Current()
     local toRabbit = rabbitPos - ownPos
@@ -108,27 +110,38 @@ function moveControl:Move(rabbitPos)
     -- 1 fully aligned, 0 not aligned to destination
     local travelAlignment = utils.clamp(velocity:normalize():dot(toRabbit:normalize()), 0, 1)
 
-    local desiredAcceleration = 1
+    local desiredAcceleration = 10
 
     if brakes:BrakeDistance() >= distanceToWaypoint * 1.05 then
         brakes:SetPart(BRAKE_MARK, true)
         -- Use engines to brake too if needed
         acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distanceToWaypoint, speed)
         mode = "Braking - final"
-    elseif travelAlignment < 0.75 and speed > 0.1 then -- Speed check needed to prevent getting stuck due to brakes being stronger than acceleration
+    elseif wp:Reached(ownPos) then
+        brakes:SetPart(BRAKE_MARK, true)
+        mode = "Hold"
+    elseif travelAlignment < 0.75 and speed > 0.5 then -- Speed check needed to prevent getting stuck due to brakes being stronger than acceleration
         -- If we're deviating, make use of brakes to reduce overshoot
         brakes:SetPart(BRAKE_MARK, true)
-        mode = "Deviating " .. calc.Round(travelAlignment, 3)
+        mode = "Deviating"
         acceleration = toRabbit:normalize() * desiredAcceleration
     elseif speed >= wp.maxSpeed * 1.01 then
         acceleration = -velocity:normalize() * desiredAcceleration
         mode = "Braking"
-    else
+    elseif speed < wp.maxSpeed then
         mode = "Accelerating"
         acceleration = toRabbit:normalize() * desiredAcceleration
+    else
+        mode = "Maintain"
     end
 
-    self.wMode:Set(mode)
+    self.wMode:Set(mode .. " " .. calc.Round(travelAlignment, 3))
+
+    if lastMode ~= mode then
+        i = i + 1
+        system.print(i .. " " .. mode)
+        lastMode = mode
+    end
 
     -- Always counter gravity if some command has been given,
     -- so we don't have to think about it in other calculations, i.e. pretend we're in space.
@@ -138,51 +151,48 @@ function moveControl:Move(rabbitPos)
 end
 
 function moveControl:Flush()
-    local f = function()
-        brakes:SetPart(BRAKE_MARK, self.forcedBrake)
+    brakes:SetPart(BRAKE_MARK, self.forcedBrake)
 
-        local acceleration = nullVec
-        local wp = self:Current()
-        local currentPos = construct.position.Current()
+    local acceleration = nullVec
+    local wp = self:Current()
+    local currentPos = construct.position.Current()
 
-        if wp == nil or self.rabbit == nil then
-            self.wVel:Set("-")
-            self.wToDest:Set("-")
-            self.wMargin:Set("-")
-            self.wDeviation:Set("-")
+    if wp == nil or self.rabbit == nil then
+        self.wVel:Set("-")
+        self.wToDest:Set("-")
+        self.wMargin:Set("-")
+        self.wDeviation:Set("-")
 
-            -- Enable brakes if we don't have a waypoint
-            brakes:SetPart(BRAKE_MARK, true)
-        else
-            if wp:Reached(currentPos) then
-                local switched
-                wp, switched = self:Next()
-            end
-
-            self.wVel:Set(calc.Round(construct.velocity.Movement():len(), 2) .. "/" .. calc.Round(wp.maxSpeed, 2))
-            self.wToDest:Set((wp.destination - currentPos):len())
-            self.wMargin:Set(wp.margin)
-
-            local rabbitPos = self.rabbit:Current(currentPos, 3)
-            acceleration = self:Move(rabbitPos)
-
-            local nearestPoint = calc.NearestPointOnLine(self.rabbit.origin, self.rabbit.destination - self.rabbit.origin, currentPos)
-            self.wDeviation:Set(calc.Round((nearestPoint - currentPos):len(), 4))
-
-            diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
-            diag:DrawNumber(1, wp.destination)
-            diag:DrawNumber(2, self.rabbit.destination)
-            diag:DrawNumber(9, rabbitPos)
+        -- Enable brakes if we don't have a waypoint
+        brakes:SetPart(BRAKE_MARK, true)
+    else
+        if wp:Reached(currentPos) then
+            local switched
+            wp, switched = self:Next()
         end
 
-        ctrl.setEngineCommand("thrust", {acceleration:unpack()})
+        self.wVel:Set(calc.Round(construct.velocity.Movement():len(), 2) .. "/" .. calc.Round(wp.maxSpeed, 2))
+        self.wToDest:Set((wp.destination - currentPos):len())
+        self.wMargin:Set(wp.margin)
+
+        local rabbitPos = self.rabbit:Current(currentPos, 3)
+        acceleration = self:Move(rabbitPos)
+
+        local nearestPoint = calc.NearestPointOnLine(self.rabbit.origin, self.rabbit.direction, currentPos)
+        local deviation = nearestPoint - currentPos
+        self.pid:inject(deviation:len())
+
+        acceleration = acceleration + deviation:normalize() * utils.clamp(self.pid:get(), 0, 2)
+
+        self.wDeviation:Set(calc.Round(deviation:len(), 4))
+
+        diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
+        diag:DrawNumber(1, wp.destination)
+        diag:DrawNumber(2, self.rabbit.destination)
+        diag:DrawNumber(9, rabbitPos)
     end
 
-    local status, err, ret = xpcall(f, traceback)
-    if not status then
-        system.print(err)
-        unit.exit()
-    end
+    ctrl.setEngineCommand("thrust", {acceleration:unpack()})
 end
 
 -- The module

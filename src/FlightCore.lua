@@ -83,16 +83,38 @@ function flightCore:Align()
 end
 
 function flightCore:Update()
-    self.brakes:Update()
-    self:Align()
+    local status, err, _ =
+        xpcall(
+        function()
+            self.brakes:Update()
+            self:Align()
+        end,
+        traceback
+    )
+
+    if not status then
+        system.print(err)
+        unit.exit()
+    end
 end
 
 function flightCore:Flush()
-    self.pitch:Flush(false)
-    self.roll:Flush(false)
-    self.yaw:Flush(true)
-    self.movement:Flush()
-    self.brakes:Flush()
+    local status, err, _ =
+        xpcall(
+        function()
+            self.pitch:Flush(false)
+            self.roll:Flush(false)
+            self.yaw:Flush(true)
+            self.movement:Flush()
+            self.brakes:Flush()
+        end,
+        traceback
+    )
+
+    if not status then
+        system.print(err)
+        unit.exit()
+    end
 end
 
 -- The module
