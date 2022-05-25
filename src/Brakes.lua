@@ -35,12 +35,13 @@ local function new()
         totalMass = 1,
         brakeParts = {},
         brakeGroup = EngineGroup("brake"),
-        wEnagaged = sharedPanel:Get("Breaks"):CreateValue("Engaged", ""),
-        wDistance = sharedPanel:Get("Breaks"):CreateValue("Brake dist.", "m"),
-        wDeceleration = sharedPanel:Get("Breaks"):CreateValue("Deceleration", "m/s2"),
-        wGravInfluence = sharedPanel:Get("Breaks"):CreateValue("Grav. Influence", "m/s2"),
-        wBrakeAcc = sharedPanel:Get("Breaks"):CreateValue("Brake Acc.", "m/s2"),
-        wMaxBrake = sharedPanel:Get("Breaks"):CreateValue("Max .", "N")
+        wEnagaged = sharedPanel:Get("Brakes"):CreateValue("Engaged", ""),
+        wDistance = sharedPanel:Get("Brakes"):CreateValue("Brake dist.", "m"),
+        wDeceleration = sharedPanel:Get("Brakes"):CreateValue("Deceleration", "m/s2"),
+        wGravInfluence = sharedPanel:Get("Brakes"):CreateValue("Grav. Influence", "m/s2"),
+        wBrakeAcc = sharedPanel:Get("Brakes"):CreateValue("Brake Acc.", "m/s2"),
+        wMaxBrake = sharedPanel:Get("Brakes"):CreateValue("Max .", "N"),
+        wAtmoDensity = sharedPanel:Get("Brakes"):CreateValue("Atmo. den.", "")
     }
 
     setmetatable(instance, brakes)
@@ -89,6 +90,7 @@ function brakes:calculateBreakForce()
 
     if self.lastUpdateAtmoDensity == nil or atmoNow ~= self.lastUpdateAtmoDensity then
         self.lastUpdateAtmoDensity = atmoNow
+        self.wAtmoDensity:Set(atmoNow)
 
         self.totalMass = mass.Total()
 
@@ -111,7 +113,7 @@ end
 ---Returns the deceleration the constuct is capable of in the given movement.
 ---@return number The deceleration
 function brakes:Deceleration()
-    -- F = m * a
+    -- F = m * a => a = F / m
     return self:CurrentBrakeForce() / self.totalMass
 end
 
@@ -154,7 +156,8 @@ function brakes:BrakeDistance()
     -- distance = (v^2 - V0^2) / 2*a
 
     local vel = velocity.Movement()
-    local brakeAcceleration = self:Deceleration() + self:GravityInfluence(vel)
+    local brakeAcceleration = self:Deceleration()
+    -- + self:GravityInfluence(vel)
 
     self.wBrakeAcc:Set(calc.Round(brakeAcceleration, 4))
 
