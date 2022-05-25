@@ -154,8 +154,7 @@ function brakes:BrakeDistance()
     -- distance = (v^2 - V0^2) / 2*a
 
     local vel = velocity.Movement()
-    local brakeAcceleration = self:Deceleration()
-    -- + self:GravityInfluence(vel)
+    local brakeAcceleration = self:Deceleration() + self:GravityInfluence(vel)
 
     self.wBrakeAcc:Set(calc.Round(brakeAcceleration, 4))
 
