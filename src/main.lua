@@ -3,7 +3,7 @@ local universe = require("universe/Universe")()
 local construct = require("abstraction/Construct")()
 local calc = require("Calc")
 local moveControl = require("movement/MoveControl")()
-local WayPoint = require("movement/WayPoint")
+local Waypoint = require("movement/Waypoint")
 
 local fc = FlightCore()
 
@@ -27,17 +27,18 @@ end
 function ActionStart(system, key)
     if key == "option1" then
         moveControl:Clear()
-        moveControl:AddWaypoint(WayPoint(startPos + upDirection * 150, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
-        moveControl:AddWaypoint(WayPoint(startPos + upDirection * 150 + forwardDirection * 200, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        moveControl:AddWaypoint(Waypoint(startPos + upDirection * 150, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        moveControl:AddWaypoint(Waypoint(startPos + upDirection * 150 + forwardDirection * 100, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        moveControl:AddWaypoint(Waypoint(startPos + upDirection * 150 + forwardDirection * 110, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
         moveControl:AddWaypoint(
-            WayPoint(startPos + upDirection * 30 + forwardDirection * 100 + rightDirection * 30, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromGravity, KeepHorizontal)
+            Waypoint(startPos + upDirection * 30 + forwardDirection * 100 + rightDirection * 30, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromGravity, KeepHorizontal)
         )
-        moveControl:AddWaypoint(WayPoint(startPos + upDirection * 4, calc.Kph2Mps(15), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
-        moveControl:AddWaypoint(WayPoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        moveControl:AddWaypoint(Waypoint(startPos + upDirection * 4, calc.Kph2Mps(50), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        moveControl:AddWaypoint(Waypoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
     elseif key == "option2" then
         moveControl:Clear()
-        moveControl:AddWaypoint(WayPoint(startPos + upDirection * 4, calc.Kph2Mps(15), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
-        moveControl:AddWaypoint(WayPoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        moveControl:AddWaypoint(Waypoint(startPos + upDirection * 50, calc.Kph2Mps(300), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        moveControl:AddWaypoint(Waypoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
     elseif key == "option3" then
         moveControl:Clear()
     elseif key == "option9" then

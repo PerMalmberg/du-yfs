@@ -6,9 +6,9 @@ local construct = require("abstraction/Construct")()
 local calc = require("Calc")
 local ctrl = library.GetController()
 local sharedPanel = require("panel/SharedPanel")()
-local Rabbit = require("movement/Rabbit")
 local utils = require("cpml/utils")
 local PID = require("cpml/PID")
+local Waypoint = require("movement/WayPoint")
 local abs = math.abs
 
 local nullVec = vec3()
@@ -22,8 +22,8 @@ local singelton = nil
 local function new()
     local instance = {
         waypoints = {}, -- The positions we want to move to
+        previousWaypoint = nil,
         wWaypoints = sharedPanel:Get("Move Control"):CreateValue("Waypoints", ""),
-        rabbit = nil,
         forcedBrake = false,
         wMode = sharedPanel:Get("Move Control"):CreateValue("Mode", "m"),
         wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
@@ -47,13 +47,15 @@ end
 function moveControl:AddWaypoint(wp)
     table.insert(self.waypoints, #self.waypoints + 1, wp)
     if #self.waypoints == 1 then
-        self:NewRabbit(construct.position.Current(), self:Current())
+        local noAdjust = function()
+            return nil
+        end
+        self.previousWaypoint = Waypoint(construct.position.Current(), 0, 0, noAdjust, noAdjust)
     end
 end
 
 function moveControl:Clear()
     self.waypoints = {}
-    self.rabbit = nil
 end
 
 function moveControl:Current()
@@ -62,42 +64,26 @@ end
 
 function moveControl:Next()
     local switched = false
-    local prev = self:Current()
 
     if #self.waypoints > 1 then
-        table.remove(self.waypoints, 1)
+        self.previousWaypoint = table.remove(self.waypoints, 1)
         switched = true
     end
 
     local current = self:Current()
 
-    if switched then
-        if prev == nil then
-            self:NewRabbit(construct.position.Current(), current)
-        else
-            self:NewRabbit(prev.destination, current)
-        end
-    end
-
     return current, switched
-end
-
-function moveControl:NewRabbit(travelOrigin, waypoint)
-    diag:AssertIsVec3(travelOrigin, "travelOrigin", "moveControl:NewRabbit")
-    diag:AssertIsTable(waypoint, "waypoint", "moveControl:NewRabbit")
-
-    self.rabbit = Rabbit(travelOrigin, waypoint.destination, waypoint.maxSpeed)
 end
 
 function moveControl:SetBrake(enabled)
     self.forcedBrake = enabled
 end
 
-function moveControl:Move(rabbitPos)
+function moveControl:Move()
     local ownPos = construct.position.Current()
-    local toRabbit = rabbitPos - ownPos
     local wp = self:Current()
-    local distanceToWaypoint = (wp.destination - ownPos):len()
+    local toDest = wp.destination - ownPos
+    local distanceToWaypoint = toDest:len()
     local velocity = construct.velocity.Movement()
     local speed = velocity:len()
 
@@ -106,9 +92,12 @@ function moveControl:Move(rabbitPos)
     local mode
 
     -- 1 fully aligned, 0 not aligned to destination
-    local travelAlignment = utils.clamp(velocity:normalize():dot(toRabbit:normalize()), 0, 1)
+    local travelAlignment = utils.clamp(velocity:normalize():dot(toDest:normalize()), 0, 1)
 
-    local desiredAcceleration = 1
+    local desiredAcceleration = 5
+    if travelAlignment < 0.99 then
+        desiredAcceleration = 1
+    end
 
     if brakes:BrakeDistance() >= distanceToWaypoint * 1.05 then
         brakes:SetPart(BRAKE_MARK, true)
@@ -122,13 +111,13 @@ function moveControl:Move(rabbitPos)
         -- If we're deviating, make use of brakes to reduce overshoot
         brakes:SetPart(BRAKE_MARK, true)
         mode = "Deviating"
-        acceleration = toRabbit:normalize() * desiredAcceleration
+        acceleration = toDest:normalize() * desiredAcceleration
     elseif speed >= wp.maxSpeed * 1.01 then
         acceleration = -velocity:normalize() * desiredAcceleration
         mode = "Braking"
     elseif speed < wp.maxSpeed then
         mode = "Accelerating"
-        acceleration = toRabbit:normalize() * desiredAcceleration
+        acceleration = toDest:normalize() * desiredAcceleration
     else
         mode = "Maintain"
     end
@@ -149,7 +138,7 @@ function moveControl:Flush()
     local wp = self:Current()
     local currentPos = construct.position.Current()
 
-    if wp == nil or self.rabbit == nil then
+    if wp == nil then
         self.wVel:Set("-")
         self.wToDest:Set("-")
         self.wMargin:Set("-")
@@ -167,21 +156,19 @@ function moveControl:Flush()
         self.wToDest:Set((wp.destination - currentPos):len())
         self.wMargin:Set(wp.margin)
 
-        local rabbitPos = self.rabbit:Current(currentPos, 3)
-        acceleration = self:Move(rabbitPos)
+        acceleration = self:Move()
 
-        local nearestPoint = calc.NearestPointOnLine(self.rabbit.origin, self.rabbit.direction, currentPos)
+        local nearestPoint = calc.NearestPointOnLine(wp.destination, Direction(self.previousWaypoint.destination, wp.destination), currentPos)
         local deviation = nearestPoint - currentPos
         self.pid:inject(deviation:len())
 
-        acceleration = acceleration + deviation:normalize() * utils.clamp(self.pid:get(), 0, 2)
+        acceleration = acceleration + deviation:normalize() * utils.clamp(self.pid:get(), 0, 1)
 
         self.wDeviation:Set(calc.Round(deviation:len(), 4))
 
         diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
         diag:DrawNumber(1, wp.destination)
-        diag:DrawNumber(2, self.rabbit.destination)
-        diag:DrawNumber(9, rabbitPos)
+        diag:DrawNumber(9, wp.destination)
     end
 
     ctrl.setEngineCommand("thrust", {acceleration:unpack()})
