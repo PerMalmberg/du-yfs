@@ -11,6 +11,7 @@ local PID = require("cpml/PID")
 local Waypoint = require("movement/WayPoint")
 local abs = math.abs
 local min = math.min
+local max = math.max
 
 local nullVec = vec3()
 local nullTri = {0, 0, 0}
@@ -102,20 +103,20 @@ function moveControl:Move()
         desiredAcceleration = 1
     end
 
-    if brakes:BrakeDistance() >= distanceToWaypoint * 1.05 then
+    if brakes:BrakeDistance() >= distanceToWaypoint then
         brakes:SetPart(BRAKE_MARK, true)
         -- Use engines to brake too if needed
         acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distanceToWaypoint, speed)
         mode = "Braking - final"
-        self.approachSpeed = min(self.approachSpeed, speed)
+        self.approachSpeed = utils.clamp(min(self.approachSpeed, speed), min(calc.Kph2Mps(1), wp.maxSpeed), max(calc.Kph2Mps(1), wp.maxSpeed))
     elseif wp:Reached(ownPos) then
         brakes:SetPart(BRAKE_MARK, true)
         mode = "Hold"
-    elseif travelAlignment < 0.75 and speed > calc.Kph2Mps(1) then -- Speed check needed to prevent getting stuck due to brakes being stronger than acceleration
+    elseif travelAlignment < 0.95 and speed > calc.Kph2Mps(1) then -- Speed check needed to prevent getting stuck due to brakes being stronger than acceleration
+        --acceleration = toDest:normalize() * desiredAcceleration
         -- If we're deviating, make use of brakes to reduce overshoot
         brakes:SetPart(BRAKE_MARK, true)
         mode = "Deviating"
-        acceleration = toDest:normalize() * desiredAcceleration
     elseif speed >= self.approachSpeed then
         acceleration = -velocity:normalize() * desiredAcceleration
         mode = "Braking"
@@ -165,7 +166,7 @@ function moveControl:Flush()
 
         acceleration = self:Move()
 
-        local nearestPoint = calc.NearestPointOnLine(wp.destination, Direction(self.previousWaypoint.destination, wp.destination), currentPos)
+        local nearestPoint = self:NearestPointBetweenWaypoints(self.previousWaypoint, wp, currentPos)
         local deviation = nearestPoint - currentPos
         self.pid:inject(deviation:len())
 
@@ -179,6 +180,19 @@ function moveControl:Flush()
     end
 
     ctrl.setEngineCommand("thrust", {acceleration:unpack()})
+end
+
+function moveControl:NearestPointBetweenWaypoints(wpStart, wpEnd, currentPos)
+    local diff = wpEnd.destination - wpStart.destination
+    local dirToEnd = diff:normalize()
+    local nearestPoint = calc.NearestPointOnLine(wpStart.destination, dirToEnd, currentPos)
+    local dirToNearest = nearestPoint - wpEnd.destination
+    -- Is the point past the end?
+    if dirToNearest:normalize():dot(dirToEnd) > 0 then
+        return wpEnd.destination
+    else
+        return nearestPoint
+    end
 end
 
 -- The module
