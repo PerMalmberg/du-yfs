@@ -10,6 +10,7 @@ local calc = require("Calc")
 local clamp = utils.clamp
 local jdecode = json.decode
 local abs = math.abs
+local max = math.max
 
 local brakes = {}
 brakes.__index = brakes
@@ -180,14 +181,9 @@ function brakes:AdditionalAccelerationNeededToStop(distance, speed)
     --distance = (v^2 - V0^2) / 2*a
     -- a = (v^2 - V0^2) / (2*distance)
     local a = (speed * speed) / (2 * distance)
-    a = a - self:Deceleration()
 
     -- If no extra decelration is needed, return 0
-    if a < 0 then
-        a = 0
-    end
-
-    return a
+    return max(0, a - self:Deceleration())
 end
 
 return setmetatable(
