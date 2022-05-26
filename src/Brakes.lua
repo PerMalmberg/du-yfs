@@ -132,11 +132,10 @@ function brakes:GravityInfluence(velocity)
     -- Determine how much the gravity affects us by checking the alignment between our movement vector and the gravity.
     local gravity = world.GAlongGravity()
 
-    local gravity2 = gravity:len2()
     local influence = 0
 
-    if gravity2 > 0 then
-        local dot = gravity:dot(velocity)
+    if gravity:len2() > 0 then
+        local dot = gravity:normalize():dot(velocity:normalize())
 
         if dot > 0 then
             -- Traveling in the same direction - we're infuenced such that the break force is reduced
@@ -158,7 +157,7 @@ function brakes:BrakeDistance()
     local v0 = velocity.Movement()
     local speed = v0:len()
     local brakeAcceleration = self:Deceleration()
-     -- + self:GravityInfluence(v0)
+    -- + self:GravityInfluence(v0)
 
     self.wBrakeAcc:Set(calc.Round(brakeAcceleration, 4))
 
