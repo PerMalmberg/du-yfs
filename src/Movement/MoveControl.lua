@@ -10,6 +10,7 @@ local utils = require("cpml/utils")
 local PID = require("cpml/PID")
 local Waypoint = require("movement/WayPoint")
 local abs = math.abs
+local min = math.min
 
 local nullVec = vec3()
 local nullTri = {0, 0, 0}
@@ -30,7 +31,8 @@ local function new()
         wMargin = sharedPanel:Get("Move Control"):CreateValue("Margin", "m"),
         wVel = sharedPanel:Get("Move Control"):CreateValue("Vel.", "m/s"),
         wToDest = sharedPanel:Get("Move Control"):CreateValue("To dest", "m"),
-        pid = PID(0.01, 0.2, 0, 0.5)
+        pid = PID(1, 0.12, 0, 0.5),
+        approachSpeed = nil
     }
 
     setmetatable(instance, moveControl)
@@ -51,6 +53,7 @@ function moveControl:AddWaypoint(wp)
             return nil
         end
         self.previousWaypoint = Waypoint(construct.position.Current(), 0, 0, noAdjust, noAdjust)
+        self.approachSpeed = wp.maxSpeed
     end
 end
 
@@ -104,18 +107,19 @@ function moveControl:Move()
         -- Use engines to brake too if needed
         acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distanceToWaypoint, speed)
         mode = "Braking - final"
+        self.approachSpeed = min(self.approachSpeed, speed)
     elseif wp:Reached(ownPos) then
         brakes:SetPart(BRAKE_MARK, true)
         mode = "Hold"
-    elseif travelAlignment < 0.75 and speed > 0.5 then -- Speed check needed to prevent getting stuck due to brakes being stronger than acceleration
+    elseif travelAlignment < 0.75 and speed > calc.Kph2Mps(1) then -- Speed check needed to prevent getting stuck due to brakes being stronger than acceleration
         -- If we're deviating, make use of brakes to reduce overshoot
         brakes:SetPart(BRAKE_MARK, true)
         mode = "Deviating"
         acceleration = toDest:normalize() * desiredAcceleration
-    elseif speed >= wp.maxSpeed * 1.01 then
+    elseif speed >= self.approachSpeed then
         acceleration = -velocity:normalize() * desiredAcceleration
         mode = "Braking"
-    elseif speed < wp.maxSpeed then
+    elseif speed < self.approachSpeed then
         mode = "Accelerating"
         acceleration = toDest:normalize() * desiredAcceleration
     else
@@ -150,9 +154,12 @@ function moveControl:Flush()
         if wp:Reached(currentPos) then
             local switched
             wp, switched = self:Next()
+            if switched then
+                self.approachSpeed = wp.maxSpeed
+            end
         end
 
-        self.wVel:Set(calc.Round(construct.velocity.Movement():len(), 2) .. "/" .. calc.Round(wp.maxSpeed, 2))
+        self.wVel:Set(calc.Round(construct.velocity.Movement():len(), 2) .. "/" .. calc.Round(self.approachSpeed, 2))
         self.wToDest:Set((wp.destination - currentPos):len())
         self.wMargin:Set(wp.margin)
 

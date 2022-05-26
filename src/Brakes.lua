@@ -155,21 +155,22 @@ function brakes:BrakeDistance()
     -- https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas
     -- distance = (v^2 - V0^2) / 2*a
 
-    local vel = velocity.Movement()
+    local v0 = velocity.Movement()
+    local speed = v0:len()
     local brakeAcceleration = self:Deceleration()
-    -- + self:GravityInfluence(vel)
+     -- + self:GravityInfluence(v0)
 
     self.wBrakeAcc:Set(calc.Round(brakeAcceleration, 4))
-
-    local V0 = vel:len()
 
     local res = 0
 
     if brakeAcceleration > 0 then
-        res = (V0 * V0) / (2 * brakeAcceleration)
+        res = (speed ^ 2) / (2 * brakeAcceleration)
     end
 
-    return res
+    -- Assume we only have a fraction of the available brake force by doubling the distance.
+    -- We do this since there are vaiables in play we don't know about.
+    return res * 2
 end
 
 ---Calculates the additional deceleration needed to stop in the given distance with the current speed.
