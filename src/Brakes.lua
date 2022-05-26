@@ -56,8 +56,7 @@ end
 function brakes:Update()
     self:calculateBreakForce()
     self.wEnagaged:Set(tostring(self.engaged))
-    local brakeDist = self:BrakeDistance()
-    self.wDistance:Set(calc.Round(brakeDist, 4))
+    self.wDistance:Set(calc.Round(self:BrakeDistance(), 4))
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
 end
 
