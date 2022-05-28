@@ -84,56 +84,73 @@ function moveControl:SetBrake(enabled)
 end
 
 function moveControl:Move()
-    local ownPos = construct.position.Current()
+    local currentPos = construct.position.Current()
     local wp = self:Current()
-    local toDest = wp.destination - ownPos
+    local toDest = wp.destination - currentPos
     local distanceToWaypoint = toDest:len()
+    local travelDirection = toDest:normalize()
     local velocity = construct.velocity.Movement()
     local speed = velocity:len()
 
     local acceleration = nullVec
 
-    local mode
-
     -- 1 fully aligned, 0 not aligned to destination
-    local travelAlignment = utils.clamp(velocity:normalize():dot(toDest:normalize()), 0, 1)
+    local travelAlignment = utils.clamp(velocity:normalize():dot(travelDirection), 0, 1)
 
     local desiredAcceleration = 5
+
     if travelAlignment < 0.99 then
         desiredAcceleration = 1
     end
 
-    if brakes:BrakeDistance() >= distanceToWaypoint then
+    local mode
+    local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance()
+
+    if brakeDistance >= distanceToWaypoint then
         brakes:SetPart(BRAKE_MARK, true)
         -- Use engines to brake too if needed
-        acceleration = -velocity:normalize() * brakes:AdditionalAccelerationNeededToStop(distanceToWaypoint, speed)
+        acceleration = -velocity:normalize() * brakeAccelerationNeeded
         mode = "Braking - final"
-        self.approachSpeed = utils.clamp(min(self.approachSpeed, speed), min(calc.Kph2Mps(1), wp.maxSpeed), max(calc.Kph2Mps(1), wp.maxSpeed))
-    elseif wp:Reached(ownPos) then
+        local _1kmph = calc.Kph2Mps(1)
+        self.approachSpeed = utils.clamp(min(self.approachSpeed, speed), min(_1kmph, wp.maxSpeed), max(_1kmph, wp.maxSpeed))
+    elseif wp:Reached(currentPos) then
         brakes:SetPart(BRAKE_MARK, true)
         mode = "Hold"
-    elseif travelAlignment < 0.95 and speed > calc.Kph2Mps(1) then -- Speed check needed to prevent getting stuck due to brakes being stronger than acceleration
-        --acceleration = toDest:normalize() * desiredAcceleration
+    elseif travelAlignment < 0.95 and speed > calc.Kph2Mps(5) then -- Speed check needed to prevent getting stuck due to brakes being stronger than acceleration
         -- If we're deviating, make use of brakes to reduce overshoot
+        acceleration = travelDirection * desiredAcceleration
         brakes:SetPart(BRAKE_MARK, true)
         mode = "Deviating"
     elseif speed >= self.approachSpeed then
-        acceleration = -velocity:normalize() * desiredAcceleration
+        brakes:SetPart(BRAKE_MARK, true)
+        --acceleration = -velocity:normalize() * desiredAcceleration
         mode = "Braking"
     elseif speed < self.approachSpeed then
         mode = "Accelerating"
-        acceleration = toDest:normalize() * desiredAcceleration
+        acceleration = travelDirection * desiredAcceleration
     else
         mode = "Maintain"
     end
 
     self.wMode:Set(mode .. " " .. calc.Round(travelAlignment, 3))
 
-    -- Always counter gravity if some command has been given,
-    -- so we don't have to think about it in other calculations, i.e. pretend we're in space.
+    acceleration = acceleration + self:AdjustForDeviation(wp, currentPos)
+
+    -- Always counter gravity so we don't have to think about it in
+    -- other calculations, i.e. pretend we're in space.
     acceleration = acceleration - construct.world.GAlongGravity()
 
     return acceleration
+end
+
+function moveControl:AdjustForDeviation(waypoint, currentPos)
+    local nearestPoint = self:NearestPointBetweenWaypoints(self.previousWaypoint, waypoint, currentPos)
+    local deviation = nearestPoint - currentPos
+    self.pid:inject(deviation:len())
+
+    self.wDeviation:Set(calc.Round(deviation:len(), 4))
+
+    return deviation:normalize() * utils.clamp(self.pid:get(), 0, 1)
 end
 
 function moveControl:Flush()
@@ -166,17 +183,9 @@ function moveControl:Flush()
 
         acceleration = self:Move()
 
-        local nearestPoint = self:NearestPointBetweenWaypoints(self.previousWaypoint, wp, currentPos)
-        local deviation = nearestPoint - currentPos
-        self.pid:inject(deviation:len())
-
-        acceleration = acceleration + deviation:normalize() * utils.clamp(self.pid:get(), 0, 1)
-
-        self.wDeviation:Set(calc.Round(deviation:len(), 4))
-
         diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
         diag:DrawNumber(1, wp.destination)
-        diag:DrawNumber(9, wp.destination)
+        diag:DrawNumber(9, self.previousWaypoint.destination)
     end
 
     ctrl.setEngineCommand("thrust", {acceleration:unpack()})

@@ -62,16 +62,17 @@ end
 
 function brakes:Flush()
     local brakeVector = nullVec
+    self.engaged = false
 
     for _, part_enabled in pairs(self.brakeParts) do
         if part_enabled then
             -- The brake vector must point against the direction of travel.
             brakeVector = -velocity.Movement():normalize() * self:Deceleration()
+            self.engaged = true
             break
         end
     end
 
-    self.engaged = brakeVector:len2() > 0
     self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
 end
 
@@ -154,35 +155,34 @@ function brakes:BrakeDistance()
     -- https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas
     -- distance = (v^2 - V0^2) / 2*a
 
-    local v0 = velocity.Movement()
-    local speed = v0:len()
-    local brakeAcceleration = self:Deceleration()
-    -- + self:GravityInfluence(v0)
-
-    self.wBrakeAcc:Set(calc.Round(brakeAcceleration, 4))
-
-    local res = 0
-
-    if brakeAcceleration > 0 then
-        res = (speed ^ 2) / (2 * brakeAcceleration)
+    local calcBrakeDistance = function(speed, acceleration)
+        return (speed ^ 2) / (2 * acceleration)
     end
 
-    -- Assume we only have a fraction of the available brake force by doubling the distance.
-    -- We do this since there are vaiables in play we don't know about.
-    return res * 2
-end
+    local velocity = velocity.Movement()
+    local speed = velocity:len()
+    local deceleration = self:Deceleration()
+    local influence = self:GravityInfluence(velocity)
+    local total = deceleration + influence
 
----Calculates the additional deceleration needed to stop in the given distance with the current speed.
----@param distance number
----@param speed number
----@return number
-function brakes:AdditionalAccelerationNeededToStop(distance, speed)
-    --distance = (v^2 - V0^2) / 2*a
-    -- a = (v^2 - V0^2) / (2*distance)
-    local a = (speed * speed) / (2 * distance)
+    local distance = 0
+    local accelerationNeededToBrake = 0
 
-    -- If no extra decelration is needed, return 0
-    return max(0, a - self:Deceleration())
+    if total > 0 then
+        distance = calcBrakeDistance(speed, total)
+    else
+        distance = calcBrakeDistance(speed, deceleration)
+        accelerationNeededToBrake = abs(influence)
+    end
+
+    if construct.world.IsInAtmo() then
+        -- Assume we only have a fraction of the available brake force by doubling the distance.
+        -- We do this since there are variables in play we don't understand.
+        distance = distance * 2
+    end
+
+    self.wBrakeAcc:Set(calc.Round(total, 4))
+    return distance, accelerationNeededToBrake
 end
 
 return setmetatable(
