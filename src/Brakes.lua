@@ -22,6 +22,7 @@ local velocity = construct.velocity
 local nullVec = vec3()
 
 local minimumSpeedForMaxAtmoBrakeForce = 100 --m/s (360km/h) Minimum speed in atmo to reach maximum brake force
+local brakeEfficiencyFactor = 0.3 -- Assume brakes are this efficient
 
 local function new()
     local ctrl = library.GetController()
@@ -141,10 +142,11 @@ function brakes:GravityInfluence(velocity)
         if dot > 0 then
             -- Traveling in the same direction - we're infuenced such that the break force is reduced
             influence = -gravity:project_on(velocity):len()
-        elseif dot < 0 then
+        end
+    --[[elseif dot < 0 then
             -- Traveling against gravity - break force is increased
             influence = gravity:project_on(velocity):len()
-        end
+        end]]
     end
 
     self.wGravInfluence:Set(calc.Round(influence, 4))
@@ -178,7 +180,8 @@ function brakes:BrakeDistance()
     if construct.world.IsInAtmo() then
         -- Assume we only have a fraction of the available brake force by doubling the distance.
         -- We do this since there are variables in play we don't understand.
-        distance = distance * 2
+        distance = distance / brakeEfficiencyFactor
+        accelerationNeededToBrake = accelerationNeededToBrake / brakeEfficiencyFactor
     end
 
     self.wBrakeAcc:Set(calc.Round(total, 4))
