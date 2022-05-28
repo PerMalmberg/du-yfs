@@ -22,7 +22,8 @@ local function new(destination, maxSpeed, margin, roll, yawPitch)
         maxSpeed = maxSpeed,
         margin = margin,
         rollFunc = roll,
-        yawPitchFunc = yawPitch
+        yawPitchFunc = yawPitch,
+        acceleration = 15
     }
 
     setmetatable(o, waypoint)

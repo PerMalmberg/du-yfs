@@ -25,8 +25,8 @@ local function new()
     local instance = {
         waypoints = {}, -- The positions we want to move to
         previousWaypoint = nil,
-        wWaypoints = sharedPanel:Get("Move Control"):CreateValue("Waypoints", ""),
         forcedBrake = false,
+        wWaypoints = sharedPanel:Get("Move Control"):CreateValue("Waypoints", ""),
         wMode = sharedPanel:Get("Move Control"):CreateValue("Mode", "m"),
         wDeviation = sharedPanel:Get("Move Control"):CreateValue("Deviation", "m"),
         wAlignment = sharedPanel:Get("Move Control"):CreateValue("Alignment", ""),
@@ -42,10 +42,6 @@ local function new()
     ctrl.setEngineCommand("ALL", nullTri, nullTri)
 
     return instance
-end
-
-local function Direction(from, to)
-    return (to - from):normalize_inplace()
 end
 
 function moveControl:AddWaypoint(wp)
@@ -93,13 +89,18 @@ function moveControl:Move()
     local velocity = construct.velocity.Movement()
     local speed = velocity:len()
 
-    local desiredAcceleration = 5
-
     local mode
+
+    local deviationAcceleration, deviationLength = self:AdjustForDeviation(wp, currentPos)
+
+    -- Use slower acceleration when close to the waypoint
+    local desiredAcceleration = wp.acceleration
+    if distanceToWaypoint < 5 then
+        desiredAcceleration = min(1, wp.acceleration)
+    end
 
     -- Always counter gravity so we don't have to think about it in
     -- other calculations, i.e. pretend we're in space.
-    local deviationAcceleration, deviationLength = self:AdjustForDeviation(wp, currentPos)
     local acceleration = -construct.world.GAlongGravity() + deviationAcceleration
 
     local alignment = directionToWaypoint:dot(velocity:normalize())
@@ -140,10 +141,13 @@ function moveControl:AdjustForDeviation(waypoint, currentPos)
     self.deviationPID:inject(len)
     self.wDeviation:Set(calc.Round(len, 4))
 
+    diag:DrawNumber(8, nearestPoint)
+
     return deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, 2), len
 end
 
 function moveControl:Flush()
+    self.wWaypoints:Set(#self.waypoints)
     brakes:SetPart(BRAKE_MARK, self.forcedBrake)
 
     local acceleration = nullVec
