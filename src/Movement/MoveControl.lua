@@ -33,7 +33,7 @@ local function new()
         wMargin = sharedPanel:Get("Move Control"):CreateValue("Margin", "m"),
         wVel = sharedPanel:Get("Move Control"):CreateValue("Vel.", "m/s"),
         wToDest = sharedPanel:Get("Move Control"):CreateValue("To dest", "m"),
-        deviationPID = PID(0.5, 0.22, 0.2, 0.5),
+        deviationPID = PID(0, 0.8, 0.2, 0.5),
         approachSpeed = nil
     }
 
@@ -99,7 +99,6 @@ function moveControl:Move()
 
     -- Always counter gravity so we don't have to think about it in
     -- other calculations, i.e. pretend we're in space.
-
     local deviationAcceleration, deviationLength = self:AdjustForDeviation(wp, currentPos)
     local acceleration = -construct.world.GAlongGravity() + deviationAcceleration
 
@@ -117,7 +116,7 @@ function moveControl:Move()
         if brakeDistance >= distanceToWaypoint then
             acceleration = acceleration - velocity:normalize() * brakeAccelerationNeeded
             brakes:SetPart(BRAKE_MARK, true)
-            mode = "Final approach"
+            mode = "Approaching"
             self.approachSpeed = utils.clamp(self.approachSpeed, calc.Kph2Mps(2), wp.maxSpeed)
         elseif speed <= self.approachSpeed then
             acceleration = acceleration + directionToWaypoint * desiredAcceleration
@@ -136,11 +135,12 @@ end
 function moveControl:AdjustForDeviation(waypoint, currentPos)
     local nearestPoint = self:NearestPointBetweenWaypoints(self.previousWaypoint, waypoint, currentPos)
     local deviation = nearestPoint - currentPos
-    self.deviationPID:inject(deviation:len())
+    local len = deviation:len()
 
-    self.wDeviation:Set(calc.Round(deviation:len(), 4))
+    self.deviationPID:inject(len)
+    self.wDeviation:Set(calc.Round(len, 4))
 
-    return deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, 2), deviation:len()
+    return deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, 2), len
 end
 
 function moveControl:Flush()
@@ -173,7 +173,6 @@ function moveControl:Flush()
         self.wMargin:Set(wp.margin)
 
         acceleration = self:Move()
-        system.print(acceleration:len())
 
         diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
         diag:DrawNumber(1, wp.destination)
