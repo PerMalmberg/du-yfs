@@ -10,7 +10,6 @@ local calc = require("Calc")
 local clamp = utils.clamp
 local jdecode = json.decode
 local abs = math.abs
-local max = math.max
 
 local brakes = {}
 brakes.__index = brakes
@@ -30,12 +29,12 @@ local function new()
     local instance = {
         ctrl = ctrl,
         engaged = false,
+        forced = false,
         GetData = ctrl.getData,
         lastUpdateAtmoDensity = nil,
         currentAtmoForce = 0,
         currentSpaceForce = 0,
         totalMass = 1,
-        brakeParts = {},
         brakeGroup = EngineGroup("brake"),
         wEnagaged = sharedPanel:Get("Brakes"):CreateValue("Engaged", ""),
         wDistance = sharedPanel:Get("Brakes"):CreateValue("Brake dist.", "m"),
@@ -56,33 +55,31 @@ end
 
 function brakes:Update()
     self:calculateBreakForce()
-    self.wEnagaged:Set(tostring(self.engaged))
+    self.wEnagaged:Set(tostring(self:IsEngaged()))
     self.wDistance:Set(calc.Round(self:BrakeDistance(), 4))
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
 end
 
 function brakes:IsEngaged()
-    return self.engaged
+    return self.enabled or self.forced
+end
+
+function brakes:Set(on)
+    self.enabled = on
+end
+
+function brakes:Forced(on)
+    self.forced = on
 end
 
 function brakes:Flush()
-    local brakeVector = nullVec
-    self.engaged = false
-
-    for _, part_enabled in pairs(self.brakeParts) do
-        if part_enabled then
-            -- The brake vector must point against the direction of travel.
-            brakeVector = -velocity.Movement():normalize() * self:Deceleration()
-            self.engaged = true
-            break
-        end
+    -- The brake vector must point against the direction of travel.
+    if self:IsEngaged() then
+        local brakeVector = -velocity.Movement():normalize() * self:Deceleration()
+        self.ctrl.setEngineCommand(self.brakeGroup:Union(), { brakeVector:unpack() })
+    else
+        self.ctrl.setEngineCommand(self.brakeGroup:Union(), { 0, 0, 0 })
     end
-
-    self.ctrl.setEngineCommand(self.brakeGroup:Union(), {brakeVector:unpack()})
-end
-
-function brakes:SetPart(partName, enabled)
-    self.brakeParts[partName] = enabled
 end
 
 function brakes:calculateBreakForce()
@@ -147,10 +144,10 @@ function brakes:GravityInfluence(velocity)
             -- Traveling in the same direction - we're infuenced such that the break force is reduced
             influence = -gravity:project_on(velocity):len()
         end
-    --[[elseif dot < 0 then
-            -- Traveling against gravity - break force is increased
-            influence = gravity:project_on(velocity):len()
-        end]]
+        --[[elseif dot < 0 then
+                -- Traveling against gravity - break force is increased
+                influence = gravity:project_on(velocity):len()
+            end]]
     end
 
     self.wGravInfluence:Set(calc.Round(influence, 4))
@@ -193,15 +190,15 @@ function brakes:BrakeDistance()
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            if singelton == nil then
-                singelton = new()
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                if singelton == nil then
+                    singelton = new()
+                end
+                return singelton
             end
-            return singelton
-        end
-    }
+        }
 )

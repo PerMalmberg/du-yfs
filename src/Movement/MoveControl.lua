@@ -8,7 +8,7 @@ local ctrl = library.GetController()
 local sharedPanel = require("panel/SharedPanel")()
 local utils = require("cpml/utils")
 local PID = require("cpml/PID")
-local Waypoint = require("movement/WayPoint")
+
 local Rabbit = require("movement/Rabbit")
 local abs = math.abs
 local min = math.min
@@ -24,8 +24,6 @@ local singelton = nil
 
 local function new()
     local instance = {
-        waypoints = {}, -- The positions we want to move to
-        previousWaypoint = nil,
         forcedBrake = false,
         wWaypoints = sharedPanel:Get("Move Control"):CreateValue("Waypoints", ""),
         wMode = sharedPanel:Get("Move Control"):CreateValue("Mode", "m"),
@@ -44,40 +42,6 @@ local function new()
     ctrl.setEngineCommand("ALL", nullTri, nullTri)
 
     return instance
-end
-
-function moveControl:AddWaypoint(wp)
-    table.insert(self.waypoints, #self.waypoints + 1, wp)
-    if #self.waypoints == 1 then
-        local noAdjust = function()
-            return nil
-        end
-        self.previousWaypoint = Waypoint(construct.position.Current(), 0, 0, noAdjust, noAdjust)
-        self.approachSpeed = wp.maxSpeed
-        self.rabbit = Rabbit(self.previousWaypoint.destination, wp.destination, wp.maxSpeed)
-    end
-end
-
-function moveControl:Clear()
-    self.waypoints = {}
-end
-
-function moveControl:Current()
-    return self.waypoints[1]
-end
-
-function moveControl:Next()
-    local switched = false
-
-    if #self.waypoints > 1 then
-        self.previousWaypoint = table.remove(self.waypoints, 1)
-        self.rabbit = Rabbit(self.previousWaypoint.destination, self:Current().destination, self:Current().maxSpeed)
-        switched = true
-    end
-
-    local current = self:Current()
-
-    return current, switched
 end
 
 function moveControl:SetBrake(enabled)
@@ -177,14 +141,6 @@ function moveControl:Flush()
         -- Enable brakes if we don't have a waypoint
         brakes:SetPart(BRAKE_MARK, true)
     else
-        if wp:Reached(currentPos) then
-            local switched
-            wp, switched = self:Next()
-            if switched then
-                self.approachSpeed = wp.maxSpeed
-            end
-        end
-
         self.wVel:Set(calc.Round(construct.velocity.Movement():len(), 2) .. "/" .. calc.Round(self.approachSpeed, 2))
         self.wToDest:Set((wp.destination - currentPos):len())
         self.wMargin:Set(wp.margin)

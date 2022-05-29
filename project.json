@@ -6,6 +6,7 @@
   "builds": {
     "main": {
       "name": "main",
+      "type": "control",
       "slots": {}
     }
   },
@@ -15,7 +16,7 @@
       "minify": false,
       "compress": false
     },
-    "relase": {
+    "release": {
       "name": "release",
       "minify": true,
       "compress": true

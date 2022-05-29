@@ -31,8 +31,16 @@ local function new(destination, maxSpeed, margin, roll, yawPitch)
     return o
 end
 
-function waypoint:Reached(position)
-    return (position - self.destination):len() <= self.margin
+function waypoint:Reached()
+    return self:DistanceTo() <= self.margin
+end
+
+function waypoint:DistanceTo()
+    return (self.destination - construct.position.Current()):len()
+end
+
+function waypoint:DirectionTo()
+    return (self.destination - construct.position.Current()):normalize_inplace()
 end
 
 function waypoint:Roll()
@@ -61,12 +69,12 @@ function RollTopsideAwayFromGravity(waypoint)
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
-        end
-    }
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                return new(...)
+            end
+        }
 )

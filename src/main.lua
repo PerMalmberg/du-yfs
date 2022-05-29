@@ -2,7 +2,6 @@ local FlightCore = require("FlightCore")
 local universe = require("universe/Universe")()
 local construct = require("abstraction/Construct")()
 local calc = require("Calc")
-local moveControl = require("movement/MoveControl")()
 local Waypoint = require("movement/Waypoint")
 local library = require("abstraction/Library")()
 local brakes = require("Brakes")()
@@ -29,33 +28,33 @@ end
 
 function ActionStart(system, key)
     if key == "option1" then
-        moveControl:Clear()
-        --moveControl:AddWaypoint(Waypoint(startPos + upDirection * 150, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
-        moveControl:AddWaypoint(Waypoint(startPos + upDirection * 150 + forwardDirection * 100, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
-        moveControl:AddWaypoint(Waypoint(startPos + upDirection * 150 + forwardDirection * 110, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
-        moveControl:AddWaypoint(
-            Waypoint(startPos + upDirection * 30 + forwardDirection * 100 + rightDirection * 30, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromGravity, KeepHorizontal)
-        )
-        moveControl:AddWaypoint(Waypoint(startPos + upDirection * 4, calc.Kph2Mps(50), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
-        moveControl:AddWaypoint(Waypoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:ClearWP()
+        --fc:AddWaypoint(Waypoint(startPos + upDirection * 150, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 150 + forwardDirection * 100, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 150 + forwardDirection * 110, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 30 + forwardDirection * 100 + rightDirection * 30, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 4, calc.Kph2Mps(50), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:StartFlight()
     elseif key == "option2" then
-        moveControl:Clear()
-        moveControl:AddWaypoint(Waypoint(startPos + upDirection * 50, calc.Kph2Mps(300), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
-        moveControl:AddWaypoint(Waypoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:ClearWP()
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 50, calc.Kph2Mps(300), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:StartFlight()
     elseif key == "option3" then
-        moveControl:Clear()
+        fc:ClearWP()
     elseif key == "option9" then
-        moveControl:Clear()
+        fc:ClearWP()
     elseif key == "brake" then
-        moveControl:SetBrake(true)
+        brakes:Forced(true)
         system.print("Enabled brakes")
     end
 end
 
 function ActionStop(system, key)
     if key == "brake" then
-        moveControl:SetBrake(false)
-        system.print("Diasbled brakes")
+        brakes:Forced(false)
+        system.print("Disabled brakes")
     end
 end
 
