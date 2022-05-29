@@ -9,6 +9,7 @@ local sharedPanel = require("panel/SharedPanel")()
 local utils = require("cpml/utils")
 local PID = require("cpml/PID")
 local Waypoint = require("movement/WayPoint")
+local Rabbit = require("movement/Rabbit")
 local abs = math.abs
 local min = math.min
 local max = math.max
@@ -34,7 +35,8 @@ local function new()
         wVel = sharedPanel:Get("Move Control"):CreateValue("Vel.", "m/s"),
         wToDest = sharedPanel:Get("Move Control"):CreateValue("To dest", "m"),
         deviationPID = PID(0, 0.8, 0.2, 0.5),
-        approachSpeed = nil
+        approachSpeed = nil,
+        rabbit = nil
     }
 
     setmetatable(instance, moveControl)
@@ -52,6 +54,7 @@ function moveControl:AddWaypoint(wp)
         end
         self.previousWaypoint = Waypoint(construct.position.Current(), 0, 0, noAdjust, noAdjust)
         self.approachSpeed = wp.maxSpeed
+        self.rabbit = Rabbit(self.previousWaypoint.destination, wp.destination, wp.maxSpeed)
     end
 end
 
@@ -68,6 +71,7 @@ function moveControl:Next()
 
     if #self.waypoints > 1 then
         self.previousWaypoint = table.remove(self.waypoints, 1)
+        self.rabbit = Rabbit(self.previousWaypoint.destination, self:Current().destination, self:Current().maxSpeed)
         switched = true
     end
 
@@ -83,33 +87,41 @@ end
 function moveControl:Move()
     local currentPos = construct.position.Current()
     local wp = self:Current()
-    local toWaypoint = wp.destination - currentPos
-    local distanceToWaypoint = toWaypoint:len()
-    local directionToWaypoint = toWaypoint:normalize()
     local velocity = construct.velocity.Movement()
     local speed = velocity:len()
 
     local mode
 
-    local deviationAcceleration, deviationLength = self:AdjustForDeviation(wp, currentPos)
+    local deviationAcceleration, deviationLength, nearestPoint = self:AdjustForDeviation(wp, currentPos)
+
+    -- Select target point
+    local targetPoint = self.rabbit:Current(currentPos, 3)
+
+    diag:DrawNumber(6, targetPoint)
+
+    local toTarget = targetPoint - currentPos
+    local distanceToTarget = toTarget:len()
+    local directionToTarget = toTarget:normalize()
+    local distanceToWaypoint = (wp.destination - currentPos):len()
 
     -- Use slower acceleration when close to the waypoint
     local desiredAcceleration = wp.acceleration
-    if distanceToWaypoint < 5 then
+    if distanceToTarget < 5 then
         desiredAcceleration = min(1, wp.acceleration)
     end
 
     -- Always counter gravity so we don't have to think about it in
     -- other calculations, i.e. pretend we're in space.
-    local acceleration = -construct.world.GAlongGravity() + deviationAcceleration
+    local acceleration = -construct.world.GAlongGravity() --+ deviationAcceleration
 
-    local alignment = directionToWaypoint:dot(velocity:normalize())
+    -- Are we currently traveling in the desired direction?
+    local alignment = directionToTarget:dot(velocity:normalize())
     self.wAlignment:Set(calc.Round(alignment, 4))
 
     if wp:Reached(currentPos) then
         brakes:SetPart(BRAKE_MARK, true) -- This is for the last waypoint
         mode = "Hold"
-    elseif alignment < 0.9 and speed > calc.Kph2Mps(1) then -- Moving in the right direction? Speed check to prevent self-lock.
+    elseif alignment < 0.0 and speed > calc.Kph2Mps(1) then -- Speed check to prevent self-lock.
         mode = "Not aligned"
         brakes:SetPart(BRAKE_MARK, true)
     else
@@ -120,7 +132,7 @@ function moveControl:Move()
             mode = "Approaching"
             self.approachSpeed = utils.clamp(self.approachSpeed, calc.Kph2Mps(2), wp.maxSpeed)
         elseif speed <= self.approachSpeed then
-            acceleration = acceleration + directionToWaypoint * desiredAcceleration
+            acceleration = acceleration + directionToTarget * desiredAcceleration
             mode = "Accelerating"
         elseif speed > self.approachSpeed then
             brakes:SetPart(BRAKE_MARK, true)
@@ -135,6 +147,7 @@ end
 
 function moveControl:AdjustForDeviation(waypoint, currentPos)
     local nearestPoint = self:NearestPointBetweenWaypoints(self.previousWaypoint, waypoint, currentPos)
+
     local deviation = nearestPoint - currentPos
     local len = deviation:len()
 
@@ -143,7 +156,7 @@ function moveControl:AdjustForDeviation(waypoint, currentPos)
 
     diag:DrawNumber(8, nearestPoint)
 
-    return deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, 2), len
+    return deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, 2), len, nearestPoint
 end
 
 function moveControl:Flush()
@@ -179,7 +192,8 @@ function moveControl:Flush()
         acceleration = self:Move()
 
         diag:DrawNumber(0, construct.position.Current() + acceleration:normalize() * 5)
-        diag:DrawNumber(1, wp.destination)
+        diag:DrawNumber(1, construct.position.Current() + construct.velocity.Movement():normalize() * 5)
+        diag:DrawNumber(7, wp.destination)
         diag:DrawNumber(9, self.previousWaypoint.destination)
     end
 

@@ -61,6 +61,10 @@ function brakes:Update()
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
 end
 
+function brakes:IsEngaged()
+    return self.engaged
+end
+
 function brakes:Flush()
     local brakeVector = nullVec
     self.engaged = false

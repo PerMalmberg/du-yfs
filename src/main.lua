@@ -4,10 +4,13 @@ local construct = require("abstraction/Construct")()
 local calc = require("Calc")
 local moveControl = require("movement/MoveControl")()
 local Waypoint = require("movement/Waypoint")
+local library = require("abstraction/Library")()
+local brakes = require("Brakes")()
 
 local fc = FlightCore()
 
 --local testPos = universe:ParsePosition("::pos{0,2,7.6926,78.1056,60}")
+local brakelight = library.GetLinkByName("brakelight")
 
 local upDirection = -construct.orientation.AlongGravity()
 local forwardDirection = construct.orientation.Forward()
@@ -27,7 +30,7 @@ end
 function ActionStart(system, key)
     if key == "option1" then
         moveControl:Clear()
-        moveControl:AddWaypoint(Waypoint(startPos + upDirection * 150, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        --moveControl:AddWaypoint(Waypoint(startPos + upDirection * 150, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
         moveControl:AddWaypoint(Waypoint(startPos + upDirection * 150 + forwardDirection * 100, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
         moveControl:AddWaypoint(Waypoint(startPos + upDirection * 150 + forwardDirection * 110, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
         moveControl:AddWaypoint(
@@ -59,6 +62,15 @@ end
 function ActionLoop(system, key)
 end
 
+function Update(system)
+    if brakes:IsEngaged() then
+        brakelight.activate()
+    else
+        brakelight.deactivate()
+    end
+end
+
 system:onEvent("actionStart", ActionStart)
 system:onEvent("actionLoop", ActionLoop)
 system:onEvent("actionStop", ActionStop)
+system:onEvent("update", Update)

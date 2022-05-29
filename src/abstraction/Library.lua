@@ -38,6 +38,13 @@ function libraryProxy.GetSolver3()
     return nil
 end
 
+function libraryProxy.GetLinkByName(name)
+    if library then
+        return library.getLinkByName(name)
+    end
+    return nil
+end
+
 -- The module
 return setmetatable(
     {
