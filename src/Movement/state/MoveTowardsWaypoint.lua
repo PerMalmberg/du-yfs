@@ -1,6 +1,5 @@
 local construct = require("abstraction/Construct")()
 local brakes = require("Brakes")()
-local ApproachWaypoint = require("movement/state/ApproachWaypoint")
 local diag = require("Diagnostics")()
 local vec3 = require("cpml/vec3")
 local nullVec = vec3()
@@ -8,8 +7,10 @@ local nullVec = vec3()
 local state = {}
 state.__index = state
 
+local name = "MoveTowardsWaypoint"
+
 local function new(fsm)
-    diag:AssertIsTable(fsm, "fsm", "MoveTowardsWaypoint:new")
+    diag:AssertIsTable(fsm, "fsm", name .. ":new")
 
     local o = {
         fsm = fsm
@@ -27,21 +28,21 @@ end
 function state:Leave()
 end
 
-function state:Flush(waypoint, previousWaypoint)
+function state:Flush(next, previous)
     local brakeDistance, _ = brakes:BrakeDistance()
     local speed = construct.velocity:Movement():len()
     local currentPos = construct.position.Current()
-    local rabbit = self.fsm:NearestPointBetweenWaypoints(previousWaypoint, waypoint, currentPos, 3)
+    local rabbit = self.fsm:NearestPointBetweenWaypoints(previous, next, currentPos, 3)
     local directionToRabbit = (rabbit - currentPos):normalize_inplace()
 
-    if waypoint:DistanceTo() <= brakeDistance then
+    if next:DistanceTo() <= brakeDistance then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
-    elseif speed > waypoint.maxSpeed then
+    elseif speed > next.maxSpeed then
         self.fsm:SetState(Decelerate(self.fsm))
-    elseif speed <= waypoint.maxSpeed * 0.99 then
-        self.fsm:Thrust(directionToRabbit * waypoint.acceleration)
+    elseif speed <= next.maxSpeed * 0.99 then
+        self.fsm:Thrust(directionToRabbit * next.acceleration)
     else
-        self.fsm:Thrust(nullVec)
+        self.fsm:Thrust()
     end
 end
 
@@ -49,7 +50,7 @@ function state:Update()
 end
 
 function state:Name()
-    return "MoveTowardsWaypoint"
+    return name
 end
 
 return setmetatable(

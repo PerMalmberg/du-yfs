@@ -1,10 +1,5 @@
 local construct = require("abstraction/Construct")()
 local brakes = require("Brakes")()
-local ApproachWaypoint = require("movement/state/ApproachWaypoint")
-local MoveTowardsWaypoint = require("movement/state/MoveTowardsWaypoint")
-local ctrl = library.GetController()
-local Vec3 = require("cpml/ve3")
-local nullVec = Vec3()
 local diag = require("Diagnostics")()
 
 local state = {}
@@ -30,15 +25,15 @@ function state:Leave()
     breaks:Set(false)
 end
 
-function state:Flush(waypoint, previousWaypoint)
+function state:Flush(next, previous)
     local brakeDistance, _ = brakes:BrakeDistance()
 
-    if waypoint:DistanceTo() <= brakeDistance then
+    if next:DistanceTo() <= brakeDistance then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
-    elseif construct.velocity.Movement():len() <= waypoint.maxSpeed then
+    elseif construct.velocity.Movement():len() <= next.maxSpeed then
         self.fsm:SetState(MoveTowardsWaypoint(self.fsm))
     else
-        self.fsm:Thrust(nullVec)
+        self.fsm:Thrust()
     end
 end
 

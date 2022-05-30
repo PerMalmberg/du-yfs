@@ -31,6 +31,7 @@ local function new()
         flightFSM = FlightFSM(),
         waypoints = {}, -- The positions we want to move to
         previousWaypoint = nil, -- Previous waypoint
+        wWaypointCount = sharedPanel:Get("Waypoint"):CreateValue("Count", ""),
         wWaypointDistance = sharedPanel:Get("Waypoint"):CreateValue("WP dist.", "m"),
         wWaypointMaxSpeed = sharedPanel:Get("Waypoint"):CreateValue("WP max. s.", "m/s"),
         wWaypointAcc = sharedPanel:Get("Waypoint"):CreateValue("WP acc", "m/s2"),
@@ -125,14 +126,14 @@ function flightCore:Update()
 
             local wp = self:CurrentWP()
             if wp ~= nil then
+                self.wWaypointCount:Set(#self.waypoints)
                 self.wWaypointDistance:Set(wp:DistanceTo())
                 self.wWaypointMaxSpeed:Set(wp.maxSpeed)
                 self.wWaypointAcc:Set(wp.acceleration)
-                diag:DrawNumber(0, construct.position.Current() * wp:DirectionTo() * 5)
+                diag:DrawNumber(0, construct.position.Current() + wp:DirectionTo() * 5)
                 diag:DrawNumber(1, wp.destination)
                 diag:DrawNumber(2, self.previousWaypoint.destination)
             end
-
         end,
         traceback
     )

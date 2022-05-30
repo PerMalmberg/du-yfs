@@ -1,8 +1,11 @@
 local diag = require("Diagnostics")()
+local brakes = require("Brakes")()
+local construct = require("abstraction/Construct")()
 
 local state = {}
 state.__index = state
-local name = "NameOfState"
+
+local name = "Hold"
 
 local function new(fsm)
     diag:AssertIsTable(fsm, "fsm", name .. ":new")
@@ -17,12 +20,19 @@ local function new(fsm)
 end
 
 function state:Enter()
+    brakes:Set(true)
 end
 
 function state:Leave()
+    brakes:Set(false)
 end
 
 function state:Flush(next, previous)
+    if not next:Reached() then
+        self.fsm:SetState(ApproachWaypoint(self.fsm))
+    else
+        self.fsm:Thrust(next:DirectionTo() * 0.5)
+    end
 end
 
 function state:Update()

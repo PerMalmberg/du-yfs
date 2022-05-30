@@ -43,6 +43,12 @@ function ActionStart(system, key)
         fc:StartFlight()
     elseif key == "option3" then
         fc:ClearWP()
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 10 + forwardDirection * 10, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 10 + forwardDirection * 11, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 30 + forwardDirection * 10 + rightDirection * 30, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 4, calc.Kph2Mps(50), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:StartFlight()
     elseif key == "option9" then
         fc:ClearWP()
     elseif key == "brake" then
