@@ -7,7 +7,7 @@ local nullVec = vec3()
 local state = {}
 state.__index = state
 
-local name = "MoveTowardsWaypoint"
+local name = "Travel"
 
 local function new(fsm)
     diag:AssertIsTable(fsm, "fsm", name .. ":new")
@@ -28,11 +28,11 @@ end
 function state:Leave()
 end
 
-function state:Flush(next, previous)
+function state:Flush(next, previous, rabbit)
     local brakeDistance, _ = brakes:BrakeDistance()
     local speed = construct.velocity:Movement():len()
     local currentPos = construct.position.Current()
-    local rabbit = self.fsm:NearestPointBetweenWaypoints(previous, next, currentPos, 3)
+
     local directionToRabbit = (rabbit - currentPos):normalize_inplace()
 
     if next:DistanceTo() <= brakeDistance then
@@ -41,8 +41,6 @@ function state:Flush(next, previous)
         self.fsm:SetState(Decelerate(self.fsm))
     elseif speed <= next.maxSpeed * 0.99 then
         self.fsm:Thrust(directionToRabbit * next.acceleration)
-    else
-        self.fsm:Thrust()
     end
 end
 

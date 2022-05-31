@@ -1,12 +1,14 @@
 local construct = require("abstraction/Construct")()
 local brakes = require("Brakes")()
 local diag = require("Diagnostics")()
+local calc = require("Calc")
 local nullVec = require("cpml/vec3")()
+
+local name = "ApproachWaypoint"
+local _1kph = calc.Kph2Mps(1)
 
 local state = {}
 state.__index = state
-
-local name = "ApproachWaypoint"
 
 local function new(fsm)
     diag:AssertIsTable(fsm, "fsm", name .. ":new")
@@ -28,25 +30,25 @@ function state:Leave()
 
 end
 
-function state:Flush(next, previous)
+function state:Flush(next, previous, rabbit)
     local currentPos = construct.position.Current()
     local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance()
-    local rabbit = self.fsm:NearestPointBetweenWaypoints(previous, next, currentPos, 3)
+    local velocity = construct.velocity:Movement()
 
-    diag:DrawNumber(3, rabbit)
-
-    local acceleration = nullVec
     brakes:Set(false)
 
     if next:Reached() then
         self.fsm:SetState(Hold(self.fsm))
     else
-        if next:DistanceTo() <= brakeDistance then
-            brakes:Set(true)
-            acceleration = brakeAccelerationNeeded * -construct.velocity:Movement():normalize()
-        end
+        local dirToRabbit = (rabbit - currentPos):normalize()
+        local outOfAlignment = velocity:len() >= _1kph and construct.velocity.Movement():normalize():dot(dirToRabbit) < 0.8
 
-        self.fsm:Thrust(acceleration + (rabbit - currentPos):normalize_inplace() * 1)
+        if outOfAlignment or next:DistanceTo() <= brakeDistance then
+            brakes:Set(true)
+            self.fsm:Thrust(brakeAccelerationNeeded * -velocity:normalize())
+        else
+            self.fsm:Thrust(dirToRabbit)
+        end
     end
 end
 

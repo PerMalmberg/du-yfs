@@ -9,7 +9,7 @@ local Brakes = require("Brakes")
 local AxisControl = require("AxisControl")
 local Waypoint = require("movement/WayPoint")
 local FlightFSM = require("movement/FlightFSM")
-local MoveTowardsWaypoint = require("movement/state/MoveTowardsWaypoint")
+local Travel = require("movement/state/Travel")
 local diag = require("Diagnostics")()
 
 local flightCore = {}
@@ -77,7 +77,7 @@ end
 
 function flightCore:StartFlight()
     local fsm = self.flightFSM
-    fsm:SetState(MoveTowardsWaypoint(fsm))
+    fsm:SetState(Travel(fsm))
 end
 
 function flightCore:ReceiveEvents()
@@ -130,7 +130,6 @@ function flightCore:Update()
                 self.wWaypointDistance:Set(wp:DistanceTo())
                 self.wWaypointMaxSpeed:Set(wp.maxSpeed)
                 self.wWaypointAcc:Set(wp.acceleration)
-                diag:DrawNumber(0, construct.position.Current() + wp:DirectionTo() * 5)
                 diag:DrawNumber(1, wp.destination)
                 diag:DrawNumber(2, self.previousWaypoint.destination)
             end

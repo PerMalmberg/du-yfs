@@ -27,11 +27,9 @@ function state:Leave()
     brakes:Set(false)
 end
 
-function state:Flush(next, previous)
+function state:Flush(next, previous, rabbit)
     if not next:Reached() then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
-    else
-        self.fsm:Thrust(next:DirectionTo() * 0.5)
     end
 end
 

@@ -22,8 +22,7 @@ end
 function state:Leave()
 end
 
-function state:Flush(next, previous)
-    self.fsm:NullThrust()
+function state:Flush(next, previous, rabbit)
 end
 
 function state:Update()

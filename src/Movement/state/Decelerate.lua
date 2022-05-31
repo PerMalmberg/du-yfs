@@ -18,22 +18,20 @@ local function new(fsm)
 end
 
 function state:Enter()
-    breaks:Set(true)
+    brakes:Set(true)
 end
 
 function state:Leave()
-    breaks:Set(false)
+    brakes:Set(false)
 end
 
-function state:Flush(next, previous)
+function state:Flush(next, previous, rabbit)
     local brakeDistance, _ = brakes:BrakeDistance()
 
     if next:DistanceTo() <= brakeDistance then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     elseif construct.velocity.Movement():len() <= next.maxSpeed then
-        self.fsm:SetState(MoveTowardsWaypoint(self.fsm))
-    else
-        self.fsm:Thrust()
+        self.fsm:SetState(Travel(self.fsm))
     end
 end
 
