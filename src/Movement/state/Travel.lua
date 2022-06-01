@@ -47,6 +47,9 @@ end
 function state:Update()
 end
 
+function state:WaypointReached(isLastWaypoint, next, previous)
+end
+
 function state:Name()
     return name
 end

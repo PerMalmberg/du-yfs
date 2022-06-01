@@ -34,25 +34,40 @@ function state:Flush(next, previous, rabbit)
     local currentPos = construct.position.Current()
     local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance()
     local velocity = construct.velocity:Movement()
+    local travelDir = velocity:normalize()
 
     brakes:Set(false)
 
-    if next:Reached() then
-        self.fsm:SetState(Hold(self.fsm))
-    else
-        local dirToRabbit = (rabbit - currentPos):normalize()
-        local outOfAlignment = velocity:len() >= _1kph and construct.velocity.Movement():normalize():dot(dirToRabbit) < 0.8
+    local dirToRabbit = (rabbit - currentPos):normalize()
+    local outOfAlignment = velocity:len() >= _1kph and construct.velocity.Movement():normalize():dot(dirToRabbit) < 0.8
 
-        if outOfAlignment or next:DistanceTo() <= brakeDistance then
-            brakes:Set(true)
-            self.fsm:Thrust(brakeAccelerationNeeded * -velocity:normalize())
-        else
-            self.fsm:Thrust(dirToRabbit)
+    local withinBrakeDistance = next:DistanceTo() <= brakeDistance
+
+    if outOfAlignment or withinBrakeDistance then
+        brakes:Set(true)
+
+        local acc = brakeAccelerationNeeded * -travelDir
+        if outOfAlignment and withinBrakeDistance then
+            if travelDir:dot(construct.world.GAlongGravity():normalize()) < 0 then
+                -- Going against gravity, don't counter it, but don't turn off engines completely for a quick recovery
+                acc = acc + construct.world.GAlongGravity() * 0.8
+            end
         end
+        self.fsm:Thrust(acc)
+    else
+        self.fsm:Thrust(dirToRabbit)
     end
 end
 
 function state:Update()
+end
+
+function state:WaypointReached(isLastWaypoint, next, previous)
+    if isLastWaypoint then
+        self.fsm:SetState(Hold(self.fsm))
+    else
+        self.fsm:SetState(Travel(self.fsm))
+    end
 end
 
 function state:Name()

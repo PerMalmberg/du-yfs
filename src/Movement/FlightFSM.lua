@@ -33,7 +33,7 @@ function fsm:Flush(next, previous)
 
     if c ~= nil then
         local rabbit = self:NearestPointBetweenWaypoints(previous, next, pos, 3)
-        diag:DrawNumber(3, rabbit)
+        diag:DrawNumber(9, rabbit)
         c:Flush(next, previous, rabbit)
 
         -- Add counter to deviation from desired path
@@ -41,7 +41,13 @@ function fsm:Flush(next, previous)
         local len = deviation:len()
         self.deviationPID:inject(len)
         self.wDeviation:Set(calc.Round(len, 4))
-        self.acceleration = self.acceleration + deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, 2)
+
+        local maxDeviationAcc = 2
+        if next:Reached() then
+            maxDeviationAcc = 0.1
+        end
+        
+        self.acceleration = self.acceleration + deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
     end
 
     if self.acceleration == nil then
@@ -58,6 +64,12 @@ function fsm:Update()
     local c = self.current
     if c ~= nil then
         c:Update()
+    end
+end
+
+function fsm:WaypointReached(isLastWaypoint, next, previous)
+    if self.current ~= nil then
+        self.current:WaypointReached(isLastWaypoint, next, previous)
     end
 end
 
