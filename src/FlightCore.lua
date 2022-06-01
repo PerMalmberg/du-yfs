@@ -31,6 +31,7 @@ local function new()
         flightFSM = FlightFSM(),
         waypoints = {}, -- The positions we want to move to
         previousWaypoint = nil, -- Previous waypoint
+        waypointReachedSignaled = false,
         wWaypointCount = sharedPanel:Get("Waypoint"):CreateValue("Count", ""),
         wWaypointDistance = sharedPanel:Get("Waypoint"):CreateValue("WP dist.", "m"),
         wWaypointMaxSpeed = sharedPanel:Get("Waypoint"):CreateValue("WP max. s.", "m/s"),
@@ -56,6 +57,7 @@ end
 function flightCore:ClearWP()
     self.waypoints = {}
     self.previousWaypoint = nil
+    self.waypointReachedSignaled = false
 end
 
 function flightCore:CurrentWP()
@@ -130,8 +132,15 @@ function flightCore:Update()
                 self.wWaypointDistance:Set(wp:DistanceTo())
                 self.wWaypointMaxSpeed:Set(wp.maxSpeed)
                 self.wWaypointAcc:Set(wp.acceleration)
-                diag:DrawNumber(1, wp.destination)
-                diag:DrawNumber(2, self.previousWaypoint.destination)
+
+                local diff = wp.destination - self.previousWaypoint.destination
+                local len = diff:len()
+                local dir = diff:normalize()
+                diag:DrawNumber(1, self.previousWaypoint.destination)
+                diag:DrawNumber(2, self.previousWaypoint.destination + dir * len / 4)
+                diag:DrawNumber(3, self.previousWaypoint.destination + dir * len / 2)
+                diag:DrawNumber(4, self.previousWaypoint.destination + dir * 3 * len / 4)
+                diag:DrawNumber(5, wp.destination)
             end
         end,
         traceback
@@ -151,9 +160,21 @@ function flightCore:Flush()
 
             if wp ~= nil then
                 if wp:Reached() then
+                    if not self.waypointReachedSignaled then
+                        self.waypointReachedSignaled = true
+                        self.flightFSM:WaypointReached(#self.waypoints == 1, wp, self.previousWaypoint)
+                    end
+
                     local switched
                     wp, switched = self:NextWP()
+                    if switched then
+                        self.waypointReachedSignaled = false
+                    end
+                elseif self.waypointReachedSignaled then
+                    -- When we go out of range, reset signal so that we get it again when we're back on the waypoint.
+                    self.waypointReachedSignaled = false
                 end
+
                 self:Align(wp)
                 self.flightFSM:Flush(wp, self.previousWaypoint)
             end

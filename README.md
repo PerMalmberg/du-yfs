@@ -1,8 +1,6 @@
 # Todo
 
-Currently FlightCore updated the waypoints when reached. This causes the state to never see that it has reached the
-waypoint and thus can't act on it. Should the state request the next waypoint to be activated or should there be an
-event when the waypoint is reached (maybe with info if it is the last state?)
+Turn based on waypoint
 
 # Brakes
 
