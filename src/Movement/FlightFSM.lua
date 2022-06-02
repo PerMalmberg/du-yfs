@@ -33,7 +33,7 @@ function fsm:Flush(next, previous)
     local pos = CurrentPos()
 
     if c ~= nil then
-        local rabbit = self:NearestPointBetweenWaypoints(previous, next, pos, 3)
+        local rabbit = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
         diag:DrawNumber(9, rabbit)
         c:Flush(next, previous, rabbit)
 
