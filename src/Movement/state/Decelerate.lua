@@ -32,6 +32,8 @@ function state:Flush(next, previous, rabbit)
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     elseif construct.velocity.Movement():len() <= next.maxSpeed then
         self.fsm:SetState(Travel(self.fsm))
+    else
+        self.fsm:Thrust(-construct.world.GAlongGravity())
     end
 end
 

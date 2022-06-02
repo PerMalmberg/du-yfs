@@ -48,7 +48,8 @@ function state:Flush(next, previous, rabbit)
 
         local acc = brakeAccelerationNeeded * -travelDir
         if outOfAlignment and withinBrakeDistance then
-            if travelDir:dot(construct.world.GAlongGravity():normalize()) < 0 then
+            local gAlong = construct.world.GAlongGravity()
+            if gAlong:len2() > 0 and travelDir:dot(gAlong:normalize()) < 0 then
                 -- Going against gravity, don't counter it, but don't turn off engines completely for a quick recovery
                 acc = acc + construct.world.GAlongGravity() * 0.8
             end

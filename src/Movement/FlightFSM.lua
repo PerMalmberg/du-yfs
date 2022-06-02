@@ -8,6 +8,7 @@ local diag = require("Diagnostics")()
 local PID = require("cpml/PID")
 local ctrl = library.GetController()
 local CurrentPos = construct.position.Current
+local abs = math.abs
 
 local fsm = {}
 fsm.__index = fsm
@@ -36,22 +37,24 @@ function fsm:Flush(next, previous)
         diag:DrawNumber(9, rabbit)
         c:Flush(next, previous, rabbit)
 
-        -- Add counter to deviation from desired path
+        -- Add counter to deviation from optimal path
         local deviation = rabbit - pos
         local len = deviation:len()
         self.deviationPID:inject(len)
         self.wDeviation:Set(calc.Round(len, 4))
 
         local maxDeviationAcc = 2
-        if next:Reached() then
+        -- If we have reached the waypoint or already are moving towards the desired optimal path, then reduce adjustment
+        if next:Reached() or deviation:normalize():dot(deviation:normalize()) > 0.5 then
             maxDeviationAcc = 0.1
         end
-        
+
         self.acceleration = self.acceleration + deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
     end
 
     if self.acceleration == nil then
         diag:RemoveNumber(0)
+        diag:RemoveNumber(9)
         self:NullThrust()
         self.deviationPID:inject(0) -- reset PID
     else
