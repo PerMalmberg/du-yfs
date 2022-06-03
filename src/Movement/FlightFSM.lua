@@ -33,15 +33,15 @@ function fsm:Flush(next, previous)
     local pos = CurrentPos()
 
     if c ~= nil then
-        local rabbit = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
+        local rabbit, nearestPoint = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
         diag:DrawNumber(9, rabbit)
         c:Flush(next, previous, rabbit)
 
         -- Add counter to deviation from optimal path
-        local deviation = rabbit - pos
+        local deviation = nearestPoint - pos
         local len = deviation:len()
         self.deviationPID:inject(len)
-        self.wDeviation:Set(calc.Round(len, 4))
+        self.wDeviation:Set(calc.Round((nearestPoint - pos):len(), 4))
 
         local maxDeviationAcc = 2
         -- If we have reached the waypoint or already are moving towards the desired optimal path, then reduce adjustment
@@ -111,14 +111,14 @@ function fsm:NearestPointBetweenWaypoints(wpStart, wpEnd, currentPos, ahead)
     local nearestPoint = calc.NearestPointOnLine(wpStart.destination, dir, currentPos)
 
     ahead = (ahead or 0)
-    nearestPoint = nearestPoint + dir * ahead
-    local remaining = wpEnd.destination - nearestPoint
+    local point = nearestPoint + dir * ahead
+    local remaining = wpEnd.destination - point
 
     -- Is the point past the end (remaining points back towards start or we're very close to the destination)?
     if remaining:normalize():dot(dir) < 1 or remaining:len() < 0.01 then
-        return wpEnd.destination
+        return wpEnd.destination, nearestPoint
     else
-        return nearestPoint
+        return point, nearestPoint
     end
 end
 
