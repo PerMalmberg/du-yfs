@@ -5,8 +5,10 @@ local diag = require("Diagnostics")()
 local state = {}
 state.__index = state
 
+local name = "Decelerate"
+
 local function new(fsm)
-    diag:AssertIsTable(fsm, "fsm", "Decelerate:new")
+    diag:AssertIsTable(fsm, "fsm", name .. ":new")
 
     local o = {
         fsm = fsm
@@ -33,7 +35,7 @@ function state:Flush(next, previous, rabbit)
     elseif construct.velocity.Movement():len() <= next.maxSpeed then
         self.fsm:SetState(Travel(self.fsm))
     else
-        self.fsm:Thrust(-construct.world.GAlongGravity())
+        self.fsm:Thrust() -- Just counter gravity, let the brakes do its job
     end
 end
 
@@ -44,7 +46,7 @@ function state:WaypointReached(isLastWaypoint, next, previous)
 end
 
 function state:Name()
-    return "AccelerateTowardsWaypoint"
+    return name
 end
 
 return setmetatable(

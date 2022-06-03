@@ -40,7 +40,7 @@ function state:Flush(next, previous, rabbit)
     elseif speed > next.maxSpeed then
         self.fsm:SetState(Decelerate(self.fsm))
     elseif speed <= next.maxSpeed * 0.99 then
-        self.fsm:Thrust(directionToRabbit * next.acceleration - construct.world.GAlongGravity())
+        self.fsm:Thrust(directionToRabbit * next.acceleration)
     end
 end
 
