@@ -1,6 +1,9 @@
 # Todo
 
-Turn based on waypoint
+* Control speed in FlightFSM via PID instead of acceleration in states.
+* States should only work with the direction and adjust speed.
+
+* Turn based on waypoint
 
 # Brakes
 
