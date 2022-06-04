@@ -5,7 +5,7 @@ local construct = {}
 construct.__index = construct
 local singelton = nil
 
-local atmoToSpaceDensityLimit = 0 -- At what density level we consider space to begin. Densities higher than this is atmo.
+local atmoToSpaceDensityLimit = 0.0001 -- At what density level we consider space to begin. Densities higher than this is atmo.
 
 local core = library.GetCoreUnit()
 local ctrl = library.GetController()
@@ -152,15 +152,15 @@ local function new()
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            if singelton == nil then
-                singelton = new()
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                if singelton == nil then
+                    singelton = new()
+                end
+                return singelton
             end
-            return singelton
-        end
-    }
+        }
 )
