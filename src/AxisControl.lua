@@ -114,10 +114,6 @@ function control:Acceleration()
     return (vel * self.LocalNormal()):len() * rad2deg
 end
 
-function control:BrakeDistance(speed, acceleration)
-    return speed * speed / acceleration
-end
-
 function control:SpeedInTicks(ticks)
     return self:Speed() + self:Acceleration() * constants.flushTick * ticks
 end
@@ -159,7 +155,7 @@ end
 
 function control:Apply()
     local acc = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] + finalAcceleration[AxisControlYaw]
-    self.ctrl.setEngineCommand(self.torqueGroup:Union(), {0, 0, 0}, {acc:unpack()})
+    self.ctrl.setEngineCommand(self.torqueGroup:Union(), { 0, 0, 0 }, { acc:unpack() })
 end
 
 function control:Update()
@@ -168,12 +164,12 @@ function control:Update()
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
-        end
-    }
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                return new(...)
+            end
+        }
 )
