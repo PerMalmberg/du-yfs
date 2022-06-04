@@ -46,15 +46,19 @@ function body:Prepare(galaxy, data)
     --diag:Debug("Stellar body", self.Name)
 end
 
+function body:IsWithinAtmosphere(position)
+    return (position - self.Geography.Center):len() < self.Atmosphere.Radius
+end
+
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            local b = new()
-            b:Prepare(...)
-            return b
-        end
-    }
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                local b = new()
+                b:Prepare(...)
+                return b
+            end
+        }
 )
