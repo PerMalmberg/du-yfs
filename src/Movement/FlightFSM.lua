@@ -6,6 +6,7 @@ local calc = require("Calc")
 local nullVec = require("cpml/vec3")()
 local diag = require("Diagnostics")()
 local PID = require("cpml/PID")
+local brakes = require("Brakes")()
 local ctrl = library.GetController()
 local CurrentPos = construct.position.Current
 local abs = math.abs
@@ -18,6 +19,7 @@ local function new()
         current = nil,
         wStateName = sharedPanel:Get("FlightFSM"):CreateValue("State", ""),
         wDeviation = sharedPanel:Get("FlightFSM"):CreateValue("Deviation", "m"),
+        wAcceleration = sharedPanel:Get("FlightFSM"):CreateValue("Acceleration", "m/s2"),
         nearestPoint = nil,
         acceleration = nil,
         deviationPID = PID(0, 0.8, 0.2, 0.5),
@@ -66,6 +68,7 @@ end
 function fsm:Update()
     local c = self.current
     if c ~= nil then
+        self.wAcceleration:Set(construct.acceleration.Movement():len())
         c:Update()
     end
 end
