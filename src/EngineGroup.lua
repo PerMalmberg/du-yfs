@@ -5,7 +5,7 @@ local function new(...)
     local e = {
         tags = {},
         dirty = true,
-        Intersection = ""
+        intersection = ""
     }
     local t = setmetatable(e, engineGroup)
 
@@ -28,11 +28,11 @@ end
 ---@return string
 function engineGroup:Intersection()
     if self.dirty then
-        self.Intersection = table.concat(self.tags, ",")
+        self.intersection = table.concat(self.tags, ",")
         self.dirty = false
     end
 
-    return self.Intersection
+    return self.intersection
 end
 
 function engineGroup:__tostring()
