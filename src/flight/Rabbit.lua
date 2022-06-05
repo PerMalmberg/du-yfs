@@ -1,4 +1,4 @@
-local diag = require("Diagnostics")()
+local diag = require("debug/Diagnostics")()
 local utc = system.getUtcTime
 
 local targetPoint = {}
@@ -59,12 +59,12 @@ end
 
 -- The module
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
-        end
-    }
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                return new(...)
+            end
+        }
 )

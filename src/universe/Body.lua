@@ -1,7 +1,7 @@
 -- Body - stellar bodies
 
-local diag = require("Diagnostics")()
-local vec3 = require("cpml/vec3")
+local diag = require("debug/Diagnostics")()
+local Vec3 = require("cpml/vec3")
 local ENGLISH = 1
 
 local body = {}
@@ -27,7 +27,7 @@ function body:Prepare(galaxy, data)
         Gravity = data.gravity
     }
     self.Geography = {
-        Center = vec3(data.center),
+        Center = Vec3(data.center),
         Radius = data.radius
     }
     self.Atmosphere = {

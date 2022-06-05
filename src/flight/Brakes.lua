@@ -1,14 +1,11 @@
+local EngineGroup = require("flight/EngineGroup")
 local library = require("abstraction/Library")()
-local json = require("dkjson")
-local utils = require("cpml/utils")
-local vec3 = require("cpml/vec3")
-local diag = require("Diagnostics")()
 local construct = require("abstraction/Construct")()
+local diag = require("debug/Diagnostics")()
+local calc = require("util/Calc")
 local sharedPanel = require("panel/SharedPanel")()
-local EngineGroup = require("EngineGroup")
-local calc = require("Calc")
-local clamp = utils.clamp
-local jdecode = json.decode
+local clamp = require("cpml/utils").clamp
+local jdecode = require("dkjson").decode
 local abs = math.abs
 local max = math.max
 local universe = require("universe/Universe")()
@@ -20,13 +17,12 @@ local singelton = nil
 local world = construct.world
 local mass = construct.mass
 local velocity = construct.velocity
-local nullVec = vec3()
 
 local minimumSpeedForMaxAtmoBrakeForce = 100 --m/s (360km/h) Minimum speed in atmo to reach maximum brake force
 local brakeEfficiencyFactor = 0.3 -- Assume brakes are this efficient
 
 local function new()
-    local ctrl = library.GetController()
+    local ctrl = library:GetController()
 
     local instance = {
         ctrl = ctrl,

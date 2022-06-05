@@ -1,25 +1,21 @@
----@diagnostic disable: undefined-doc-name
-
-
-local library = require("abstraction/Library")()
+local AxisControl = require("flight/AxisControl")
+local Brakes = require("flight/Brakes")
+local FlightFSM = require("flight/FlightFSM")
+local EngineGroup = require("flight/EngineGroup")
+local Waypoint = require("flight/Waypoint")
 local construct = require("abstraction/Construct")()
+local diag = require("debug/Diagnostics")()
+local library = require("abstraction/Library")()
 local sharedPanel = require("panel/SharedPanel")()
-local EngineGroup = require("EngineGroup")
-local Brakes = require("Brakes")
-local AxisControl = require("AxisControl")
-local Waypoint = require("movement/WayPoint")
-local FlightFSM = require("movement/FlightFSM")
-local Travel = require("movement/state/Travel")
-local diag = require("Diagnostics")()
+require("flight/state/Require")
 
 local flightCore = {}
 flightCore.__index = flightCore
 local singleton
 
 local function new()
-    local ctrl = library.GetController()
     local instance = {
-        ctrl = ctrl,
+        ctrl = library:GetController(),
         brakes = Brakes(),
         thrustGroup = EngineGroup("thrust"),
         autoStabilization = nil,
@@ -44,7 +40,6 @@ local function new()
 end
 
 function flightCore:AddWaypoint(wp)
-    table.insert(self.waypoints, #self.waypoints + 1, wp)
     if #self.waypoints == 1 then
         local noAdjust = function()
             return nil
@@ -52,6 +47,8 @@ function flightCore:AddWaypoint(wp)
         self.previousWaypoint = Waypoint(construct.position.Current(), 0, 0, noAdjust, noAdjust)
         self.approachSpeed = wp.maxSpeed
     end
+
+    table.insert(self.waypoints, #self.waypoints + 1, wp)
 end
 
 function flightCore:ClearWP()
@@ -120,30 +117,29 @@ function flightCore:Align(waypoint)
 end
 
 function flightCore:Update()
-    local status, err, _ =
-        xpcall(
-        function()
-            self.flightFSM:Update()
-            self.brakes:Update()
+    local status, err, _ = xpcall(
+            function()
+                self.flightFSM:Update()
+                self.brakes:Update()
 
-            local wp = self:CurrentWP()
-            if wp ~= nil then
-                self.wWaypointCount:Set(#self.waypoints)
-                self.wWaypointDistance:Set(wp:DistanceTo())
-                self.wWaypointMaxSpeed:Set(wp.maxSpeed)
-                self.wWaypointAcc:Set(wp.acceleration)
+                local wp = self:CurrentWP()
+                if wp ~= nil then
+                    self.wWaypointCount:Set(#self.waypoints)
+                    self.wWaypointDistance:Set(wp:DistanceTo())
+                    self.wWaypointMaxSpeed:Set(wp.maxSpeed)
+                    self.wWaypointAcc:Set(wp.acceleration)
 
-                local diff = wp.destination - self.previousWaypoint.destination
-                local len = diff:len()
-                local dir = diff:normalize()
-                diag:DrawNumber(1, self.previousWaypoint.destination)
-                diag:DrawNumber(2, self.previousWaypoint.destination + dir * len / 4)
-                diag:DrawNumber(3, self.previousWaypoint.destination + dir * len / 2)
-                diag:DrawNumber(4, self.previousWaypoint.destination + dir * 3 * len / 4)
-                diag:DrawNumber(5, wp.destination)
-            end
-        end,
-        traceback
+                    local diff = wp.destination - self.previousWaypoint.destination
+                    local len = diff:len()
+                    local dir = diff:normalize()
+                    diag:DrawNumber(1, self.previousWaypoint.destination)
+                    diag:DrawNumber(2, self.previousWaypoint.destination + dir * len / 4)
+                    diag:DrawNumber(3, self.previousWaypoint.destination + dir * len / 2)
+                    diag:DrawNumber(4, self.previousWaypoint.destination + dir * 3 * len / 4)
+                    diag:DrawNumber(5, wp.destination)
+                end
+            end,
+            traceback
     )
 
     if not status then
@@ -153,38 +149,37 @@ function flightCore:Update()
 end
 
 function flightCore:Flush()
-    local status, err, _ =
-        xpcall(
-        function()
-            local wp = self:CurrentWP()
+    local status, err, _ = xpcall(
+            function()
+                local wp = self:CurrentWP()
 
-            if wp ~= nil then
-                if wp:Reached() then
-                    if not self.waypointReachedSignaled then
-                        self.waypointReachedSignaled = true
-                        self.flightFSM:WaypointReached(#self.waypoints == 1, wp, self.previousWaypoint)
-                    end
+                if wp ~= nil then
+                    if wp:Reached() then
+                        if not self.waypointReachedSignaled then
+                            self.waypointReachedSignaled = true
+                            self.flightFSM:WaypointReached(#self.waypoints == 1, wp, self.previousWaypoint)
+                        end
 
-                    local switched
-                    wp, switched = self:NextWP()
-                    if switched then
+                        local switched
+                        wp, switched = self:NextWP()
+                        if switched then
+                            self.waypointReachedSignaled = false
+                        end
+                    elseif self.waypointReachedSignaled then
+                        -- When we go out of range, reset signal so that we get it again when we're back on the waypoint.
                         self.waypointReachedSignaled = false
                     end
-                elseif self.waypointReachedSignaled then
-                    -- When we go out of range, reset signal so that we get it again when we're back on the waypoint.
-                    self.waypointReachedSignaled = false
+
+                    self:Align(wp)
+                    self.flightFSM:Flush(wp, self.previousWaypoint)
                 end
 
-                self:Align(wp)
-                self.flightFSM:Flush(wp, self.previousWaypoint)
-            end
-
-            self.pitch:Flush(false)
-            self.roll:Flush(false)
-            self.yaw:Flush(true)
-            self.brakes:Flush()
-        end,
-        traceback
+                self.pitch:Flush(false)
+                self.roll:Flush(false)
+                self.yaw:Flush(true)
+                self.brakes:Flush()
+            end,
+            traceback
     )
 
     if not status then
@@ -195,15 +190,15 @@ end
 
 -- The module
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            if singleton == nil then
-                singleton = new()
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                if singleton == nil then
+                    singleton = new()
+                end
+                return singleton
             end
-            return singleton
-        end
-    }
+        }
 )

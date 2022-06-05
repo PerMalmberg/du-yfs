@@ -1,15 +1,11 @@
-local FlightCore = require("FlightCore")
-local universe = require("universe/Universe")()
-local construct = require("abstraction/Construct")()
-local calc = require("Calc")
-local Waypoint = require("movement/Waypoint")
+local fc = require("flight/FlightCore")()
 local library = require("abstraction/Library")()
-local brakes = require("Brakes")()
+local construct = require("abstraction/Construct")()
+local calc = require("util/Calc")
+local brakes = require("flight/Brakes")()
+local Waypoint = require("flight/Waypoint")
 
-local fc = FlightCore()
-
---local testPos = universe:ParsePosition("::pos{0,2,7.6926,78.1056,60}")
-local brakelight = library.GetLinkByName("brakelight")
+local brakeLight = library:GetLinkByName("brakelight")
 
 local upDirection = -construct.orientation.AlongGravity()
 local forwardDirection = construct.orientation.Forward()
@@ -74,9 +70,9 @@ end
 
 function Update(system)
     if brakes:IsEngaged() then
-        brakelight.activate()
+        brakeLight.activate()
     else
-        brakelight.deactivate()
+        brakeLight.deactivate()
     end
 end
 

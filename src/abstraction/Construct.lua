@@ -1,5 +1,7 @@
 local library = require("abstraction/Library")()
-local vec3 = require("cpml/vec3")
+local Vec3 = require("cpml/vec3")
+local core = library:GetCoreUnit()
+local ctrl = library:GetController()
 
 local construct = {}
 construct.__index = construct
@@ -7,8 +9,6 @@ local singelton = nil
 
 local atmoToSpaceDensityLimit = 0.0001 -- At what density level we consider space to begin. Densities higher than this is atmo.
 
-local core = library.GetCoreUnit()
-local ctrl = library.GetController()
 
 ---Creates a new Core
 ---@return table A new AxisControl
@@ -17,29 +17,29 @@ local function new()
         orientation = {
             Up = function()
                 -- This points in the current up direction of the construct
-                return vec3(core.getConstructWorldOrientationUp())
+                return Vec3(core.getConstructWorldOrientationUp())
             end,
             Right = function()
                 -- This points in the current right direction of the construct
-                return vec3(core.getConstructWorldOrientationRight())
+                return Vec3(core.getConstructWorldOrientationRight())
             end,
             Forward = function()
                 -- This points in the current forward direction of the construct
-                return vec3(core.getConstructWorldOrientationForward())
+                return Vec3(core.getConstructWorldOrientationForward())
             end,
             AlongGravity = function()
                 -- This points towards the center of the planet, i.e. downwards. Is zero when in space.
-                return vec3(core.getWorldVertical())
+                return Vec3(core.getWorldVertical())
             end,
             localized = {
                 Up = function()
-                    return vec3(core.getConstructOrientationUp())
+                    return Vec3(core.getConstructOrientationUp())
                 end,
                 Right = function()
-                    return vec3(core.getConstructOrientationRight())
+                    return Vec3(core.getConstructOrientationRight())
                 end,
                 Forward = function()
-                    return vec3(core.getConstructOrientationForward())
+                    return Vec3(core.getConstructOrientationForward())
                 end
             }
         },
@@ -69,33 +69,33 @@ local function new()
         },
         velocity = {
             Angular = function()
-                return vec3(core.getWorldAngularVelocity())
+                return Vec3(core.getWorldAngularVelocity())
             end,
             Movement = function()
-                return vec3(core.getWorldAbsoluteVelocity())
+                return Vec3(core.getWorldAbsoluteVelocity())
             end,
             localized = {
                 Angular = function()
-                    return vec3(core.getAngularVelocity())
+                    return Vec3(core.getAngularVelocity())
                 end
             }
         },
         acceleration = {
             Angular = function()
-                return vec3(core.getWorldAngularAcceleration())
+                return Vec3(core.getWorldAngularAcceleration())
             end,
             Movement = function()
-                return vec3(core.getWorldAcceleration())
+                return Vec3(core.getWorldAcceleration())
             end,
             localized = {
                 Angular = function()
-                    return vec3(core.getAngularAcceleration())
+                    return Vec3(core.getAngularAcceleration())
                 end
             }
         },
         position = {
             Current = function()
-                return vec3(core.getConstructWorldPos())
+                return Vec3(core.getConstructWorldPos())
             end
         },
         world = {
@@ -108,38 +108,38 @@ local function new()
             end,
             G = core.g,
             AngularAirFrictionAcceleration = function()
-                return vec3(core.getWorldAirFrictionAcceleration())
+                return Vec3(core.getWorldAirFrictionAcceleration())
             end,
             GAlongGravity = function()
-                return vec3(core.getWorldGravity())
+                return Vec3(core.getWorldGravity())
             end
         },
         player = {
             position = {
                 Current = function()
-                    return vec3(ctrl.getMasterPlayerWorldPosition())
+                    return Vec3(ctrl.getMasterPlayerWorldPosition())
                 end
             },
             orientation = {
                 Up = function()
-                    return vec3(ctrl.getMasterPlayerWorldUp())
+                    return Vec3(ctrl.getMasterPlayerWorldUp())
                 end
             },
             camera = {
                 position = {
                     Current = function()
-                        return vec3(system.getCameraWorldPos())
+                        return Vec3(system.getCameraWorldPos())
                     end
                 },
                 orientation = {
                     Forward = function()
-                        return vec3(system.getCameraWorldForward())
+                        return Vec3(system.getCameraWorldForward())
                     end,
                     Up = function()
-                        return vec3(system.getCameraWorldUp())
+                        return Vec3(system.getCameraWorldUp())
                     end,
                     Right = function()
-                        return vec3(system.getCameraWorldRight())
+                        return Vec3(system.getCameraWorldRight())
                     end,
                     IsFirstPerson = system.isFirstPerson
                 }

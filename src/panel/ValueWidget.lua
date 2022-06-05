@@ -1,6 +1,3 @@
-local library = require("abstraction/Library")()
-local json = require("dkjson")
-
 local widget = {}
 widget.__index = widget
 
@@ -45,12 +42,12 @@ function widget:Update()
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
-        end
-    }
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                return new(...)
+            end
+        }
 )

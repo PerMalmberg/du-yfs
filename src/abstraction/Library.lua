@@ -2,7 +2,6 @@
     Library abstraction. This is assumes the project is being compiled with du-LuaC (https://github.com/wolfe-labs/DU-LuaC/) which provides
     a GetCoreUnit() function via the global 'library'.
 ]]
-require("abstraction/System") -- Make system available
 
 local libraryProxy = {}
 libraryProxy.__index = libraryProxy
@@ -13,7 +12,7 @@ local function new()
     return setmetatable({}, libraryProxy)
 end
 
-function libraryProxy.GetCoreUnit()
+function libraryProxy:GetCoreUnit()
     -- Are we running live?
     if library then
         return library.getCoreUnit()
@@ -23,7 +22,7 @@ function libraryProxy.GetCoreUnit()
     end
 end
 
-function libraryProxy.GetController()
+function libraryProxy:GetController()
     if library then
         return unit -- Return the global unit
     else
@@ -31,14 +30,14 @@ function libraryProxy.GetController()
     end
 end
 
-function libraryProxy.GetSolver3()
+function libraryProxy:GetSolver3()
     if library then
         return library.systemResolution3
     end
     return nil
 end
 
-function libraryProxy.GetLinkByName(name)
+function libraryProxy:GetLinkByName(name)
     if library then
         return library.getLinkByName(name)
     end
@@ -47,15 +46,15 @@ end
 
 -- The module
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            if singelton == nil then
-                singelton = new()
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                if singelton == nil then
+                    singelton = new()
+                end
+                return singelton
             end
-            return singelton
-        end
-    }
+        }
 )

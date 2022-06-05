@@ -1,9 +1,9 @@
 local construct = require("abstraction/Construct")()
-local brakes = require("Brakes")()
-local diag = require("Diagnostics")()
-local calc = require("Calc")
+local brakes = require("flight/Brakes")()
+local diag = require("debug/Diagnostics")()
+local calc = require("util/Calc")
 local nullVec = require("cpml/vec3")()
-local brakes = require("Brakes")()
+require("flight/state/Require")
 
 local name = "ApproachWaypoint"
 local _1kph = calc.Kph2Mps(1)

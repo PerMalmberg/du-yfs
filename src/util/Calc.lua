@@ -1,13 +1,13 @@
 local library = require("abstraction/Library")()
-local vec3 = require("cpml/vec3")
+local Vec3 = require("cpml/vec3")
+
+local core = library:GetCoreUnit()
+local solve3 = library:GetSolver3()
 
 local atan = math.atan
-local sqrt = math.sqrt
 local max = math.max
 local min = math.min
 local abs = math.abs
-local core = library.GetCoreUnit()
-local solve3 = library.GetSolver3()
 
 local calc = {
     ---Returns the absolute difference between a and b
@@ -35,8 +35,8 @@ local calc = {
         return (outMax - outMin) / (inMax - inMin) * (value - inMin) + outMin
     end,
     WorldToLocal = function(coordinate)
-        local localized = coordinate - vec3(core.getConstructWorldPos())
-        return vec3(solve3(core.getConstructWorldRight(), core.getConstructWorldForward(), core.getConstructWorldUp(), {localized:unpack()}))
+        local localized = coordinate - Vec3(core.getConstructWorldPos())
+        return Vec3(solve3(core.getConstructWorldRight(), core.getConstructWorldForward(), core.getConstructWorldUp(), { localized:unpack() }))
     end,
     SignedRotationAngle = function(normal, vecA, vecB)
         vecA = vecA:project_on_plane(normal)

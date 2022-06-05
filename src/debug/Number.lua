@@ -1,10 +1,9 @@
-local vec3 = require("cpml/vec3")
-local calc = require("Calc")
+local calc = require("util/Calc")
 
-local shape = {}
-shape.__index = shape
+local numberShape = {}
+numberShape.__index = numberShape
 
-function shape:Draw()
+function numberShape:Draw()
     local constructLocal = calc.WorldToLocal(self.worldPos)
     if self.index == -1 then
         self.index = self.core.spawnNumberSticker(self.number, constructLocal.x, constructLocal.y, constructLocal.z, "front")
@@ -13,7 +12,7 @@ function shape:Draw()
     end
 end
 
-function shape:Remove()
+function numberShape:Remove()
     if self.index ~= -1 then
         system:clearEvent("update", self.updateHandler)
         self.core.deleteSticker(self.index)
@@ -30,18 +29,18 @@ local function new(core, number, worldPos)
         updateHandler = -1
     }
 
-    setmetatable(instance, shape)
+    setmetatable(instance, numberShape)
     instance.updateHandler = system:onEvent("update", instance.Draw, instance)
     return instance
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
-        end
-    }
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                return new(...)
+            end
+        }
 )

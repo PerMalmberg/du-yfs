@@ -1,14 +1,12 @@
+local ValueWidget = require("panel/ValueWidget")
 local library = require("abstraction/Library")()
-local ValueWidget = require("Panel/ValueWidget")
 
 local panel = {}
 panel.__index = panel
 
 local function new(title)
-    local core = library.GetCoreUnit()
-
     local instance = {
-        core = core,
+        core = library:GetCoreUnit(),
         title = title,
         panelId = system.createWidgetPanel(title),
         widgets = {},
@@ -45,12 +43,12 @@ function panel:Update()
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
-        end
-    }
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                return new(...)
+            end
+        }
 )

@@ -1,20 +1,19 @@
 local library = require("abstraction/Library")()
 local construct = require("abstraction/Construct")()
+local EngineGroup = require("flight/EngineGroup")
+local core = library:GetCoreUnit()
 local mass = construct.mass
-local EngineGroup = require("EngineGroup")
-
-LongitudalEngines = EngineGroup("longitudal")
-LateralEngines = EngineGroup("lateral")
-LongLatEngines = EngineGroup("longitudinal", "lateral")
-VerticalEngines = EngineGroup("vertical")
-ThrustEngines = EngineGroup("thrust")
-local core = library.GetCoreUnit()
-
-local longitudalForce = core.getMaxKinematicsParametersAlongAxis(LongitudalEngines:Intersection(), { construct.orientation.localized.Forward():unpack() })
-local lateralForce = core.getMaxKinematicsParametersAlongAxis(LateralEngines:Intersection(), { construct.orientation.localized.Right():unpack() })
-local verticalForce = core.getMaxKinematicsParametersAlongAxis(VerticalEngines:Intersection(), { construct.orientation.localized.Up():unpack() })
-
 local world = construct.world
+
+LongitudinalEngines = EngineGroup("longitudal")
+lateralEngines = EngineGroup("lateral")
+longLatEngines = EngineGroup("longitudinal", "lateral")
+verticalEngines = EngineGroup("vertical")
+thrustEngines = EngineGroup("thrust")
+
+local longitudalForce = core.getMaxKinematicsParametersAlongAxis(longitudinalEngines:Intersection(), { construct.orientation.localized.Forward():unpack() })
+local lateralForce = core.getMaxKinematicsParametersAlongAxis(lateralEngines:Intersection(), { construct.orientation.localized.Right():unpack() })
+local verticalForce = core.getMaxKinematicsParametersAlongAxis(verticalEngines:Intersection(), { construct.orientation.localized.Up():unpack() })
 
 local engine = {}
 engine.__index = engine
@@ -83,6 +82,6 @@ return setmetatable(
         {
             __call = function(_, ...)
                 return new()
-        end
-    }
+            end
+        }
 )

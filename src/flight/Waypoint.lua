@@ -1,4 +1,4 @@
-local diag = require("Diagnostics")()
+local diag = require("debug/Diagnostics")()
 local construct = require("abstraction/Construct")()
 
 local waypoint = {}

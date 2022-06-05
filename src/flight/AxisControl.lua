@@ -1,16 +1,15 @@
 local construct = require("abstraction/Construct")()
 local library = require("abstraction/Library")()
-local diag = require("Diagnostics")()
-local calc = require("Calc")
+local diag = require("debug/Diagnostics")()
+local calc = require("util/Calc")
+local nullVec = require("cpml/vec3")()
 local sharedPanel = require("panel/SharedPanel")()
-local EngineGroup = require("EngineGroup")
-local constants = require("Constants")
+local EngineGroup = require("flight/EngineGroup")
 local vec3 = require("cpml/vec3")
-local PID = require("cpml/PID")
+local PID = require("cpml/pid")
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
-local nullVec = vec3()
 
 local control = {}
 control.__index = control
@@ -112,10 +111,6 @@ end
 function control:Acceleration()
     local vel = construct.acceleration.localized.Angular()
     return (vel * self.LocalNormal()):len() * rad2deg
-end
-
-function control:SpeedInTicks(ticks)
-    return self:Speed() + self:Acceleration() * constants.flushTick * ticks
 end
 
 function control:Flush(apply)

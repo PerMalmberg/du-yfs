@@ -1,15 +1,12 @@
-require("movement/state/Require")
 local sharedPanel = require("panel/SharedPanel")()
 local construct = require("abstraction/Construct")()
-local library = require("abstraction/Library")()
-local calc = require("Calc")
+local calc = require("util/Calc")
 local nullVec = require("cpml/vec3")()
-local diag = require("Diagnostics")()
-local PID = require("cpml/PID")
-local brakes = require("Brakes")()
-local ctrl = library.GetController()
+local diag = require("debug/Diagnostics")()
+local PID = require("cpml/pid")
+local ctrl = require("abstraction/Library")():GetController()
+require("flight/state/Require")
 local CurrentPos = construct.position.Current
-local abs = math.abs
 
 local fsm = {}
 fsm.__index = fsm

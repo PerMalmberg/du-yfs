@@ -1,10 +1,10 @@
+local Timer = require("util/Timer")
+local brakes = require("flight/Brakes")()
+local calc = require("util/Calc")
 local construct = require("abstraction/Construct")()
-local brakes = require("Brakes")()
-local diag = require("Diagnostics")()
-local vec3 = require("cpml/vec3")
-local Timer = require("Timer")
-local calc = require("Calc")
-local nullVec = vec3()
+local diag = require("debug/Diagnostics")()
+require("flight/state/Require")
+
 local min = math.min
 
 local state = {}

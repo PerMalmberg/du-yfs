@@ -1,10 +1,10 @@
 ---Represents a position in the universe.
 
-local diag = require("Diagnostics")()
-local vec3 = require("cpml/vec3")
+local diag = require("debug/Diagnostics")()
+local Vec3 = require("cpml/vec3")
 local stringFormat = string.format
 
-local position = vec3()
+local position = Vec3()
 
 local function new(galaxy, bodyRef, x, y, z)
     diag:AssertIsTable(galaxy, "galaxy", "Position:new")
@@ -16,7 +16,7 @@ local function new(galaxy, bodyRef, x, y, z)
     local instance = {
         Body = bodyRef,
         Galaxy = galaxy,
-        Coords = vec3(x, y, z)
+        Coords = Vec3(x, y, z)
     }
 
     setmetatable(instance, position)
@@ -59,12 +59,12 @@ function position:DistanceAtHeight(other)
 end
 ]]
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
-        end
-    }
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                return new(...)
+            end
+        }
 )

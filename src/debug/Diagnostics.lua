@@ -1,19 +1,9 @@
 -- Diagnostic functions
-
-require("Enum")
+require("util/Enum")
 local library = require("abstraction/Library")()
-local Number = require("DiagShape")
+local Number = require("debug/Number")
 
-system =
-    system or
-    {
-        print = function(s)
-            io.write(s)
-        end
-    }
-
-DiagLevel =
-    Enum {
+DiagLevel = Enum {
     "OFF",
     "ERROR",
     "WARNING",
@@ -27,7 +17,7 @@ local singelton = nil
 
 local function new()
     local instance = {
-        core = library.GetCoreUnit(),
+        core = library:GetCoreUnit(),
         level = DiagLevel.DEBUG,
         shapes = {}
     }
@@ -63,7 +53,7 @@ end
 local function formatValues(...)
     local parts = {}
 
-    for _, v in ipairs({...}) do
+    for _, v in ipairs({ ... }) do
         local s = {}
         if isString(v) then
             s = string.format("%s", v)
@@ -173,16 +163,16 @@ function diag:RemoveNumber(number)
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            if singelton == nil then
-                singelton = new()
-            end
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                if singelton == nil then
+                    singelton = new()
+                end
 
-            return singelton
-        end
-    }
+                return singelton
+            end
+        }
 )

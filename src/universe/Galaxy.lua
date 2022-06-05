@@ -1,6 +1,6 @@
 -- galaxy - utility class to manage the in-game atlas
 
-local diag = require("Diagnostics")()
+local diag = require("debug/Diagnostics")()
 local Body = require("universe/Body")
 
 local galaxy = {}
@@ -51,17 +51,17 @@ function galaxy:Prepare(galaxyAtlas)
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            if singelton == nil then
-                local galaxyId, galaxyAtlas = table.unpack({...})
-                singelton = new(galaxyId)
-                singelton:Prepare(galaxyAtlas)
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                if singelton == nil then
+                    local galaxyId, galaxyAtlas = table.unpack({ ... })
+                    singelton = new(galaxyId)
+                    singelton:Prepare(galaxyAtlas)
+                end
+                return singelton
             end
-            return singelton
-        end
-    }
+        }
 )

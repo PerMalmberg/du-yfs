@@ -1,12 +1,15 @@
-local diag = require("Diagnostics")()
+local brakes = require("flight/Brakes")()
+local diag = require("debug/Diagnostics")()
+require("flight/state/Require")
 
 local state = {}
 state.__index = state
 
-local name = "Idle"
+local name = "Hold"
 
 local function new(fsm)
     diag:AssertIsTable(fsm, "fsm", name .. ":new")
+
     local o = {
         fsm = fsm
     }
@@ -17,12 +20,19 @@ local function new(fsm)
 end
 
 function state:Enter()
+    brakes:Set(true)
 end
 
 function state:Leave()
+
 end
 
 function state:Flush(next, previous, rabbit)
+    if not next:Reached() then
+        self.fsm:SetState(ApproachWaypoint(self.fsm))
+    else
+        self.fsm:Thrust() -- Just counter gravity
+    end
 end
 
 function state:Update()

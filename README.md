@@ -2,6 +2,7 @@
 
 * Too hard on the brakes when doing small movements around the waypoints.
 * Turn based on waypoint
+* IsInAtmo - there can be only one (remove the one in construct)
 
 # Brakes
 

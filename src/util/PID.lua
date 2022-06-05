@@ -5,24 +5,23 @@
     a GetCoreUnit() function via the global 'library'.
 ]]
 local utils = require("cpml/utils")
-
 local clamp = utils.clamp
 local pid = {}
 pid.__index = pid
 
 local function new(p, i, d, min, max)
     return setmetatable(
-        {
-            kp = p,
-            ki = i,
-            kd = d,
-            preError = 0,
-            integral = 0,
-            min = min,
-            max = max,
-            output = 0
-        },
-        pid
+            {
+                kp = p,
+                ki = i,
+                kd = d,
+                preError = 0,
+                integral = 0,
+                min = min,
+                max = max,
+                output = 0
+            },
+            pid
     )
 end
 
@@ -43,12 +42,12 @@ function pid:Get()
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
-        end
-    }
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                return new(...)
+            end
+        }
 )

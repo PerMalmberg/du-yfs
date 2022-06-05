@@ -1,10 +1,10 @@
 -- Universe - utility class to manage the in-game atlas
 
 local library = require("abstraction/Library")()
-local diag = require("Diagnostics")()
+local diag = require("debug/Diagnostics")()
 local Galaxy = require("universe/Galaxy")
 local Position = require("universe/Position")
-local vec3 = require("cpml/vec3")
+local Vec3 = require("cpml/vec3")
 local cos = math.cos
 local sin = math.sin
 
@@ -28,7 +28,7 @@ local function new()
 end
 
 ---Gets the current galaxy id
----@return integer The id of the current galaxy
+---@return number The id of the current galaxy
 function universe:CurrentGalaxyId()
     return 0 -- Until there are more than one galaxy in the game.
 end
@@ -59,7 +59,7 @@ function universe:ParsePosition(pos)
             x = tonumber(latitude)
             y = tonumber(longitude)
             z = tonumber(altitude)
-            bodyRef = self:ClosestBodyByDistance(galaxyId, vec3(x, y, z))
+            bodyRef = self:ClosestBodyByDistance(galaxyId, Vec3(x, y, z))
             return Position(self.galaxy[galaxyId], bodyRef, x, y, z)
         else
             -- https://stackoverflow.com/questions/1185408/converting-from-longitude-latitude-to-cartesian-coordinates
@@ -73,7 +73,7 @@ function universe:ParsePosition(pos)
 
             local radius = body.Geography.Radius + altitude
             local cosLat = cos(latitude)
-            local position = vec3(radius * cosLat * cos(longitude), radius * cosLat * sin(longitude), radius * sin(latitude))
+            local position = Vec3(radius * cosLat * cos(longitude), radius * cosLat * sin(longitude), radius * sin(latitude))
             position = position + body.Geography.Center
 
             return Position(self.galaxy[galaxyId], body, position.x, position.y, position.z)
@@ -86,7 +86,7 @@ function universe:ParsePosition(pos)
 end
 
 ---comment Creates a ::pos string from the given position, within the current galaxy.
----@param position vec3 The positon to create the position for
+---@param position Vec3 The positon to create the position for
 function universe:CreatePos(position)
     diag:AssertIsVec3(position, "coordinate", "universe:CreatePos")
     local closestBody = self:ClosestBodyByDistance(self:CurrentGalaxyId(), position)
@@ -105,26 +105,26 @@ function universe:ClosestBodyByDistance(galaxyId, position)
 end
 
 function universe:Prepare()
-    local ga = require("atlas")
-    diag:AssertIsTable(ga, "ga", "Universe:Prepare")
+    local duAtlas = require("atlas")
+    diag:AssertIsTable(duAtlas, "ga", "Universe:Prepare")
 
-    for galaxyId, galaxy in pairs(ga) do
+    for galaxyId, galaxy in pairs(duAtlas) do
         --diag:Debug("Building galaxy", galaxyId)
-        self.galaxy[galaxyId] = Galaxy(galaxyId, ga[galaxyId])
+        self.galaxy[galaxyId] = Galaxy(galaxyId, duAtlas[galaxyId])
     end
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            if singelton == nil then
-                singelton = new()
-                singelton:Prepare()
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                if singelton == nil then
+                    singelton = new()
+                    singelton:Prepare()
+                end
+                return singelton
             end
-            return singelton
-        end
-    }
+        }
 )

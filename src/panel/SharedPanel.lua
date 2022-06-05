@@ -31,15 +31,15 @@ function panel:Get(title)
 end
 
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            if singleton == nil then
-                singleton = new()
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                if singleton == nil then
+                    singleton = new()
+                end
+                return singleton
             end
-            return singleton
-        end
-    }
+        }
 )
