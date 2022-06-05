@@ -28,9 +28,9 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, rabbit)
-    local brakeDistance, _ = brakes:BrakeDistance()
+    local brakeDistance, neededBrakeAcceleration = brakes:BrakeDistance(next:DistanceTo())
 
-    if next:DistanceTo() <= brakeDistance then
+    if next:DistanceTo() <= brakeDistance or neededBrakeAcceleration > 0 then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     elseif construct.velocity.Movement():len() <= next.maxSpeed then
         self.fsm:SetState(Travel(self.fsm))

@@ -1,13 +1,12 @@
 # Todo
 
-* Control speed in FlightFSM via PID instead of acceleration in states.
-* States should only work with the direction and adjust speed.
-
+* Too hard on the brakes when doing small movements around the waypoints.
 * Turn based on waypoint
 
 # Brakes
 
-Does enabling brakes cause up/down movement? They do!
+- The value we now get is for both, we just must adjust it for atmo.
+  Does enabling brakes cause up/down movement? They do!
 
 # Cross and dot
 

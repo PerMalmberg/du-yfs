@@ -10,6 +10,8 @@ local calc = require("Calc")
 local clamp = utils.clamp
 local jdecode = json.decode
 local abs = math.abs
+local max = math.max
+local universe = require("universe/Universe")()
 
 local brakes = {}
 brakes.__index = brakes
@@ -32,17 +34,19 @@ local function new()
         forced = false,
         GetData = ctrl.getData,
         lastUpdateAtmoDensity = nil,
-        currentAtmoForce = 0,
-        currentSpaceForce = 0,
+        currentForce = 0,
         totalMass = 1,
+        isWithinAtmo = true,
         brakeGroup = EngineGroup("brake"),
-        wEnagaged = sharedPanel:Get("Brakes"):CreateValue("Engaged", ""),
+        wEngaged = sharedPanel:Get("Brakes"):CreateValue("Engaged", ""),
         wDistance = sharedPanel:Get("Brakes"):CreateValue("Brake dist.", "m"),
+        wNeeded = sharedPanel:Get("Brakes"):CreateValue("Needed acc.", "m/s2"),
         wDeceleration = sharedPanel:Get("Brakes"):CreateValue("Deceleration", "m/s2"),
         wGravInfluence = sharedPanel:Get("Brakes"):CreateValue("Grav. Influence", "m/s2"),
         wBrakeAcc = sharedPanel:Get("Brakes"):CreateValue("Brake Acc.", "m/s2"),
-        wMaxBrake = sharedPanel:Get("Brakes"):CreateValue("Max .", "N"),
-        wAtmoDensity = sharedPanel:Get("Brakes"):CreateValue("Atmo. den.", "")
+        wMaxBrake = sharedPanel:Get("Brakes"):CreateValue("Max .", "kN"),
+        wAtmoDensity = sharedPanel:Get("Brakes"):CreateValue("Atmo. den.", ""),
+        wWithinAtmo = sharedPanel:Get("Brakes"):CreateValue("Within atmo", "")
     }
 
     setmetatable(instance, brakes)
@@ -55,8 +59,10 @@ end
 
 function brakes:Update()
     self:calculateBreakForce()
-    self.wEnagaged:Set(tostring(self:IsEngaged()))
-    self.wDistance:Set(calc.Round(self:BrakeDistance(), 4))
+    self.isWithinAtmo = universe:ClosestBody():IsWithinAtmosphere(construct.position.Current())
+    self.wWithinAtmo:Set(self.isWithinAtmo)
+    self.wEngaged:Set(self:IsEngaged())
+    self.wDistance:Set(calc.Round(self:BrakeDistance(), 1))
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
 end
 
@@ -101,15 +107,15 @@ function brakes:calculateBreakForce()
         local speed = velocity.Movement():len()
 
         if force ~= nil and force > 0 then
-            if world.IsInAtmo() then
+            if self.isWithinAtmo then
                 local speedAdjustment = clamp(speed / minimumSpeedForMaxAtmoBrakeForce, 0.1, 1)
-                self.currentAtmoForce = force * speedAdjustment * density
-                self.wMaxBrake:Set(self.currentAtmoForce)
-            else
-                self.currentSpaceForce = force
-                self.wMaxBrake:Set(self.currentSpaceForce)
+                force = force * speedAdjustment * density
             end
+
+            self.currentForce = force
         end
+
+        self.wMaxBrake:Set(calc.Round(self.currentForce / 1000, 1))
     end
 end
 
@@ -117,15 +123,7 @@ end
 ---@return number The deceleration
 function brakes:Deceleration()
     -- F = m * a => a = F / m
-    return self:CurrentBrakeForce() / self.totalMass
-end
-
-function brakes:CurrentBrakeForce()
-    if world.IsInAtmo() then
-        return self.currentAtmoForce
-    else
-        return self.currentSpaceForce
-    end
+    return self.currentForce / self.totalMass
 end
 
 function brakes:GravityInfluence(velocity)
@@ -141,8 +139,8 @@ function brakes:GravityInfluence(velocity)
         local dot = gravity:normalize():dot(velocity:normalize())
 
         if dot > 0 then
-            -- Traveling in the same direction - we're infuenced such that the break force is reduced
-            influence = -gravity:project_on(velocity):len()
+            -- Traveling in the same direction - we're influenced such that the break force is reduced
+            influence = -(gravity * velocity:normalize()):len() -- -gravity:project_on(velocity):len()
         end
         --[[elseif dot < 0 then
                 -- Traveling against gravity - break force is increased
@@ -150,11 +148,11 @@ function brakes:GravityInfluence(velocity)
             end]]
     end
 
-    self.wGravInfluence:Set(calc.Round(influence, 4))
+    self.wGravInfluence:Set(calc.Round(influence, 1))
     return influence
 end
 
-function brakes:BrakeDistance()
+function brakes:BrakeDistance(remainingDistance)
     -- https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas
     -- distance = (v^2 - V0^2) / 2*a
 
@@ -162,30 +160,40 @@ function brakes:BrakeDistance()
         return (speed ^ 2) / (2 * acceleration)
     end
 
-    local velocity = velocity.Movement()
-    local speed = velocity:len()
-    local deceleration = self:Deceleration()
-    local influence = self:GravityInfluence(velocity)
-    local total = deceleration + influence
+    local calcAcceleration = function(speed, distance)
+        return (speed ^ 2) / (2 * distance)
+    end
 
-    local distance = 0
+    remainingDistance = remainingDistance or 0
+
+    local vel = velocity.Movement()
+    local speed = vel:len()
+
+    local deceleration = self:Deceleration()
+
+    if self.isWithinAtmo then
+        -- Assume we only have a fraction of the brake force available
+        deceleration = deceleration * brakeEfficiencyFactor
+    end
+
+    local distance
     local accelerationNeededToBrake = 0
 
-    if total > 0 then
-        distance = calcBrakeDistance(speed, total)
+    if self.currentForce == 0 then
+        distance = 0
     else
-        distance = calcBrakeDistance(speed, deceleration)
-        accelerationNeededToBrake = abs(influence)
+        local influence = abs(self:GravityInfluence(vel))
+        distance = calcBrakeDistance(speed + construct.acceleration.Movement():len() * 1, deceleration)
+
+        if (distance >= remainingDistance and remainingDistance > 0) then
+            -- Not enough brake force with just the brakes
+            accelerationNeededToBrake = max(influence - deceleration, 0) + calcAcceleration(speed, remainingDistance)
+        end
     end
 
-    if construct.world.IsInAtmo() then
-        -- Assume we only have a fraction of the available brake force by doubling the distance.
-        -- We do this since there are variables in play we don't understand.
-        distance = distance / brakeEfficiencyFactor
-        accelerationNeededToBrake = accelerationNeededToBrake / brakeEfficiencyFactor
-    end
+    self.wBrakeAcc:Set(calc.Round(deceleration, 1))
+    self.wNeeded:Set(calc.Round(accelerationNeededToBrake, 1))
 
-    self.wBrakeAcc:Set(calc.Round(total, 4))
     return distance, accelerationNeededToBrake
 end
 

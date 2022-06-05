@@ -3,6 +3,7 @@ local brakes = require("Brakes")()
 local diag = require("Diagnostics")()
 local calc = require("Calc")
 local nullVec = require("cpml/vec3")()
+local brakes = require("Brakes")()
 
 local name = "ApproachWaypoint"
 local _1kph = calc.Kph2Mps(1)
@@ -23,7 +24,6 @@ local function new(fsm)
 end
 
 function state:Enter()
-    brakes:Set(false)
 end
 
 function state:Leave()
@@ -32,32 +32,25 @@ end
 
 function state:Flush(next, previous, rabbit)
     local currentPos = construct.position.Current()
-    local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance()
+    local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(next:DistanceTo())
     local velocity = construct.velocity:Movement()
     local travelDir = velocity:normalize()
 
-    brakes:Set(false)
-
     local dirToRabbit = (rabbit - currentPos):normalize()
-    local outOfAlignment = velocity:len() >= _1kph and construct.velocity.Movement():normalize():dot(dirToRabbit) < 0.8
+    local outOfAlignment = travelDir:dot(dirToRabbit) < 0.8
 
-    local withinBrakeDistance = next:DistanceTo() <= brakeDistance
+    local needToBrake = (brakeDistance > 0 and brakeDistance >= next:DistanceTo()) or brakeAccelerationNeeded > 0
 
-    if outOfAlignment or withinBrakeDistance then
-        brakes:Set(true)
+    brakes:Set(needToBrake or outOfAlignment)
 
-        local acc = brakeAccelerationNeeded * -travelDir
-        if outOfAlignment and withinBrakeDistance then
-            local gAlong = construct.world.GAlongGravity()
-            if gAlong:len2() > 0 and travelDir:dot(gAlong:normalize()) < 0 then
-                -- Going against gravity, don't counter it, but don't turn off engines completely for a quick recovery
-                acc = acc + construct.world.GAlongGravity() * 0.8
-            end
-        end
-        self.fsm:Thrust(acc)
-    else
-        self.fsm:Thrust(dirToRabbit)
+    local acc = nullVec
+    if brakeAccelerationNeeded > 0 then
+        acc = brakeAccelerationNeeded * -travelDir
     end
+
+    acc = acc + (dirToRabbit + next:DirectionTo()):normalize()
+
+    self.fsm:Thrust(acc)
 end
 
 function state:Update()
