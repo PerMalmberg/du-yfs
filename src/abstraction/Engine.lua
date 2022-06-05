@@ -10,9 +10,9 @@ VerticalEngines = EngineGroup("vertical")
 ThrustEngines = EngineGroup("thrust")
 local core = library.GetCoreUnit()
 
-local longitudalForce = core.getMaxKinematicsParametersAlongAxis(LongitudalEngines:Union(), {construct.orientation.localized.Forward():unpack()})
-local lateralForce = core.getMaxKinematicsParametersAlongAxis(LateralEngines:Union(), {construct.orientation.localized.Right():unpack()})
-local verticalForce = core.getMaxKinematicsParametersAlongAxis(VerticalEngines:Union(), {construct.orientation.localized.Up():unpack()})
+local longitudalForce = core.getMaxKinematicsParametersAlongAxis(LongitudalEngines:Intersection(), { construct.orientation.localized.Forward():unpack() })
+local lateralForce = core.getMaxKinematicsParametersAlongAxis(LateralEngines:Intersection(), { construct.orientation.localized.Right():unpack() })
+local verticalForce = core.getMaxKinematicsParametersAlongAxis(VerticalEngines:Intersection(), { construct.orientation.localized.Up():unpack() })
 
 local world = construct.world
 
@@ -43,7 +43,7 @@ local function getCurrent(range, positive)
 end
 
 function engine:MaxForce(engineGroup, axis, positive)
-    local f = core.getMaxKinematicsParametersAlongAxis(engineGroup:Union(), {axis:unpack()})
+    local f = core.getMaxKinematicsParametersAlongAxis(engineGroup:Intersection(), { axis:unpack() })
     return getCurrent(f, positive)
 end
 
@@ -77,12 +77,12 @@ end
 
 -- The module
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new()
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                return new()
         end
     }
 )

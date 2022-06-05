@@ -5,11 +5,11 @@ local function new(...)
     local e = {
         tags = {},
         dirty = true,
-        union = ""
+        Intersection = ""
     }
     local t = setmetatable(e, engineGroup)
 
-    for _, name in ipairs({...}) do
+    for _, name in ipairs({ ... }) do
         if name ~= nil then
             t:Add(name)
         end
@@ -26,27 +26,27 @@ function engineGroup:Add(name --[[string]])
 end
 
 ---@return string
-function engineGroup:Union()
+function engineGroup:Intersection()
     if self.dirty then
-        self.union = table.concat(self.tags, ",")
+        self.Intersection = table.concat(self.tags, ",")
         self.dirty = false
     end
 
-    return self.union
+    return self.Intersection
 end
 
 function engineGroup:__tostring()
-    return self:Union()
+    return self:Intersection()
 end
 
 -- the module
 return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
-        end
-    }
+        {
+            new = new
+        },
+        {
+            __call = function(_, ...)
+                return new(...)
+            end
+        }
 )

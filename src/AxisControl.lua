@@ -155,7 +155,7 @@ end
 
 function control:Apply()
     local acc = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] + finalAcceleration[AxisControlYaw]
-    self.ctrl.setEngineCommand(self.torqueGroup:Union(), { 0, 0, 0 }, { acc:unpack() })
+    self.ctrl.setEngineCommand(self.torqueGroup:Intersection(), { 0, 0, 0 }, { acc:unpack() })
 end
 
 function control:Update()

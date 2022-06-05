@@ -76,9 +76,9 @@ function brakes:Flush()
     -- The brake vector must point against the direction of travel.
     if self:IsEngaged() then
         local brakeVector = -velocity.Movement():normalize() * self:Deceleration()
-        self.ctrl.setEngineCommand(self.brakeGroup:Union(), { brakeVector:unpack() })
+        self.ctrl.setEngineCommand(self.brakeGroup:Intersection(), { brakeVector:unpack() })
     else
-        self.ctrl.setEngineCommand(self.brakeGroup:Union(), { 0, 0, 0 })
+        self.ctrl.setEngineCommand(self.brakeGroup:Intersection(), { 0, 0, 0 })
     end
 end
 

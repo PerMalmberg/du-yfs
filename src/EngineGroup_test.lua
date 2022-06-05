@@ -3,17 +3,17 @@ local EngineGroup = require("EngineGroup")
 
 Test = {}
 
-function Test:testEmptyUnion()
+function Test:testEmptyIntersection()
     local eg = EngineGroup()
     eg:Add("thrust")
-    lu.assertEquals(eg:Union(), "thrust")
+    lu.assertEquals(eg:Intersection(), "thrust")
 end
 
-function Test:testUnion()
+function Test:testIntersection()
     local eg = EngineGroup.new("ALL")
     lu.assertNotIsNil(eg)
     eg:Add("thrust")
-    lu.assertEquals(eg:Union(), "ALL,thrust")
+    lu.assertEquals(eg:Intersection(), "ALL,thrust")
 end
 
 local runner = lu.LuaUnit.new()
