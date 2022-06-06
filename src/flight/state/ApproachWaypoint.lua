@@ -5,7 +5,6 @@ local calc = require("util/Calc")
 require("flight/state/Require")
 
 local name = "ApproachWaypoint"
-local _1kph = calc.Kph2Mps(1)
 
 local state = {}
 state.__index = state
@@ -33,7 +32,9 @@ function state:Flush(next, previous, rabbit)
     local currentPos = construct.position.Current()
     local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(next:DistanceTo())
 
-    if brakeDistance < next:DistanceTo() then
+    local dist = next:DistanceTo()
+    -- Don't switch if we're nearly there
+    if brakeDistance < dist and dist > 10 then
         self.fsm:SetState(Travel(self.fsm))
     else
         local velocity = construct.velocity:Movement()
@@ -42,12 +43,12 @@ function state:Flush(next, previous, rabbit)
         local dirToRabbit = (rabbit - currentPos):normalize()
         local outOfAlignment = travelDir:dot(dirToRabbit) < 0.8
 
-        local needToBrake = (brakeDistance > 0 and brakeDistance >= next:DistanceTo())
+        local needToBrake = brakeDistance >= next:DistanceTo()
 
         brakes:Set(needToBrake or outOfAlignment)
 
         local acc = brakeAccelerationNeeded * -travelDir
-        acc = acc + (dirToRabbit + next:DirectionTo()):normalize()
+        acc = acc + (dirToRabbit + next:DirectionTo()):normalize() * 2
 
         self.fsm:Thrust(acc)
     end

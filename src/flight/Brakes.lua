@@ -18,7 +18,7 @@ local mass = construct.mass
 local velocity = construct.velocity
 
 local minimumSpeedForMaxAtmoBrakeForce = 100 --m/s (360km/h) Minimum speed in atmo to reach maximum brake force
-local brakeEfficiencyFactor = 0.3 -- Assume brakes are this efficient
+local brakeEfficiencyFactor = 0.6 -- Assume brakes are this efficient
 local engineWarmupTime = 3
 
 local function new()

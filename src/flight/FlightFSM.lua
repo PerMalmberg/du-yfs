@@ -8,6 +8,7 @@ local sharedPanel = require("panel/SharedPanel")()
 local PID = require("cpml/pid")
 require("flight/state/Require")
 local CurrentPos = construct.position.Current
+local abs = math.abs
 
 local fsm = {}
 fsm.__index = fsm
@@ -56,7 +57,7 @@ function fsm:Flush(next, previous)
         --    local gVec = construct.world.GAlongGravity()
         --    if gVec:len2() > 0 then
         --        local dot = construct.velocity.Movement():normalize_inplace():dot(gVec:normalize())
-        --        if dot > -0.7 and dot < 0.7 then
+        --        if abs(dot) < 0.7 then
         --            self.acceleration = self.acceleration + brakes:Deceleration() * dot * construct.velocity.Movement():normalize_inplace()
         --        end
         --    end
