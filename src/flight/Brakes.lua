@@ -7,7 +7,6 @@ local sharedPanel = require("panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
 local jdecode = require("dkjson").decode
 local abs = math.abs
-local max = math.max
 local universe = require("universe/Universe")()
 
 local brakes = {}
@@ -20,6 +19,7 @@ local velocity = construct.velocity
 
 local minimumSpeedForMaxAtmoBrakeForce = 100 --m/s (360km/h) Minimum speed in atmo to reach maximum brake force
 local brakeEfficiencyFactor = 0.3 -- Assume brakes are this efficient
+local engineWarmupTime = 3
 
 local function new()
     local ctrl = library:GetController()
@@ -132,11 +132,12 @@ function brakes:GravityInfluence(velocity)
     local influence = 0
 
     if gravity:len2() > 0 then
-        local dot = gravity:normalize():dot(velocity:normalize())
+        local velNorm = velocity:normalize()
+        local dot = gravity:normalize():dot(velNorm)
 
         if dot > 0 then
             -- Traveling in the same direction - we're influenced such that the break force is reduced
-            influence = -(gravity * velocity:normalize()):len() -- -gravity:project_on(velocity):len()
+            influence = -(gravity * velNorm):len() -- -gravity:project_on(velocity):len()
         end
         --[[elseif dot < 0 then
                 -- Traveling against gravity - break force is increased
@@ -172,18 +173,18 @@ function brakes:BrakeDistance(remainingDistance)
         deceleration = deceleration * brakeEfficiencyFactor
     end
 
-    local distance
+    local distance = 0
     local accelerationNeededToBrake = 0
 
-    if self.currentForce == 0 then
-        distance = 0
-    else
+    if self.currentForce > 0 then
         local influence = abs(self:GravityInfluence(vel))
-        distance = calcBrakeDistance(speed + construct.acceleration.Movement():len() * 1, deceleration)
 
-        if (distance >= remainingDistance and remainingDistance > 0) then
+        local warmupDistance = engineWarmupTime * speed
+        distance = calcBrakeDistance(speed, deceleration) + warmupDistance
+
+        if vel:len() > calc.Kph2Mps(3) and distance >= remainingDistance and remainingDistance > 0 then
             -- Not enough brake force with just the brakes
-            accelerationNeededToBrake = max(influence - deceleration, 0) + calcAcceleration(speed, remainingDistance)
+            accelerationNeededToBrake = calcAcceleration(speed, remainingDistance)
         end
     end
 

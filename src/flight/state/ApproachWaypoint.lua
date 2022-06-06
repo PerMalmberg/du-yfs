@@ -2,7 +2,6 @@ local construct = require("abstraction/Construct")()
 local brakes = require("flight/Brakes")()
 local diag = require("debug/Diagnostics")()
 local calc = require("util/Calc")
-local nullVec = require("cpml/vec3")()
 require("flight/state/Require")
 
 local name = "ApproachWaypoint"
@@ -33,24 +32,25 @@ end
 function state:Flush(next, previous, rabbit)
     local currentPos = construct.position.Current()
     local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(next:DistanceTo())
-    local velocity = construct.velocity:Movement()
-    local travelDir = velocity:normalize()
 
-    local dirToRabbit = (rabbit - currentPos):normalize()
-    local outOfAlignment = travelDir:dot(dirToRabbit) < 0.8
+    if brakeDistance < next:DistanceTo() then
+        self.fsm:SetState(Travel(self.fsm))
+    else
+        local velocity = construct.velocity:Movement()
+        local travelDir = velocity:normalize()
 
-    local needToBrake = (brakeDistance > 0 and brakeDistance >= next:DistanceTo()) or brakeAccelerationNeeded > 0
+        local dirToRabbit = (rabbit - currentPos):normalize()
+        local outOfAlignment = travelDir:dot(dirToRabbit) < 0.8
 
-    brakes:Set(needToBrake or outOfAlignment)
+        local needToBrake = (brakeDistance > 0 and brakeDistance >= next:DistanceTo())
 
-    local acc = nullVec
-    if brakeAccelerationNeeded > 0 then
-        acc = brakeAccelerationNeeded * -travelDir
+        brakes:Set(needToBrake or outOfAlignment)
+
+        local acc = brakeAccelerationNeeded * -travelDir
+        acc = acc + (dirToRabbit + next:DirectionTo()):normalize()
+
+        self.fsm:Thrust(acc)
     end
-
-    acc = acc + (dirToRabbit + next:DirectionTo()):normalize()
-
-    self.fsm:Thrust(acc)
 end
 
 function state:Update()

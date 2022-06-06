@@ -34,8 +34,8 @@ function ActionStart(system, key)
         fc:StartFlight()
     elseif key == "option2" then
         fc:ClearWP()
-        fc:AddWaypoint(Waypoint(startPos + upDirection * 500, calc.Kph2Mps(800), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
-        fc:AddWaypoint(Waypoint(startPos, calc.Kph2Mps(100), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 7000, calc.Kph2Mps(800), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos, calc.Kph2Mps(800), 0.1, RollTopsideAwayFromGravity, KeepHorizontal))
         fc:StartFlight()
     elseif key == "option3" then
         fc:ClearWP()

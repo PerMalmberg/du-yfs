@@ -44,7 +44,7 @@ function state:Flush(next, previous, rabbit)
 
     local directionToRabbit = (rabbit - currentPos):normalize_inplace()
 
-    if neededBrakeAcceleration > 0 or brakeDistance >= next:DistanceTo() then
+    if brakeDistance >= next:DistanceTo() or neededBrakeAcceleration > 0 then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     elseif speed > next.maxSpeed then
         self.fsm:SetState(Decelerate(self.fsm))

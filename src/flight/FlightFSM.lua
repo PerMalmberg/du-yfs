@@ -1,10 +1,11 @@
-local sharedPanel = require("panel/SharedPanel")()
+local brakes = require("flight/Brakes")()
 local construct = require("abstraction/Construct")()
 local calc = require("util/Calc")
-local nullVec = require("cpml/vec3")()
-local diag = require("debug/Diagnostics")()
-local PID = require("cpml/pid")
 local ctrl = require("abstraction/Library")():GetController()
+local diag = require("debug/Diagnostics")()
+local nullVec = require("cpml/vec3")()
+local sharedPanel = require("panel/SharedPanel")()
+local PID = require("cpml/pid")
 require("flight/state/Require")
 local CurrentPos = construct.position.Current
 
@@ -49,6 +50,17 @@ function fsm:Flush(next, previous)
         end
 
         self.acceleration = self.acceleration + deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
+
+        -- Brakes give an undesired force that pushes along/against gravity.
+        --if brakes:IsEngaged() then
+        --    local gVec = construct.world.GAlongGravity()
+        --    if gVec:len2() > 0 then
+        --        local dot = construct.velocity.Movement():normalize_inplace():dot(gVec:normalize())
+        --        if dot > -0.7 and dot < 0.7 then
+        --            self.acceleration = self.acceleration + brakes:Deceleration() * dot * construct.velocity.Movement():normalize_inplace()
+        --        end
+        --    end
+        --end
     end
 
     if self.acceleration == nil then
