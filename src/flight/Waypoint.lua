@@ -1,5 +1,6 @@
 local diag = require("debug/Diagnostics")()
 local construct = require("abstraction/Construct")()
+local universe = require("universe/Universe")()
 
 local waypoint = {}
 waypoint.__index = waypoint
@@ -57,6 +58,12 @@ function waypoint:YawAndPitch()
     end
 
     return nil
+end
+
+function RollTopsideAwayFromNearestPlanet(waypoint)
+    local center = universe:ClosestBody().Geography.Center
+    local pos = construct.position.Current()
+    return pos + (pos - center):normalize_inplace() * 100
 end
 
 function RollTopsideAwayFromGravity(waypoint)
