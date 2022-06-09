@@ -16,10 +16,16 @@ fc:ReceiveEvents()
 
 local parallelPathStart = startPos + calc.StraightForward(-construct.world.GAlongGravity(), construct.orientation.Right()) * 10 -- 10m infront
 
-function KeepHorizontal(waypoint)
-    -- Return a point at the same height 10 meters infront to keep us level
+function KeepHorizontal(waypoint, previousWaypoint)
+    -- Return a point at the same height 10 meters in front to keep us level
     local distanceFromStart = construct.position.Current() - startPos
     return parallelPathStart + distanceFromStart
+end
+
+function PointToNextWaypointRightAngleToToGravity(waypoint, previousWaypoint)
+    local dir = (waypoint.destination - previousWaypoint.destination):normalize()
+    dir = dir:project_on_plane(-construct.world.GAlongGravity():normalize_inplace())
+    return construct.position.Current() + dir * 10
 end
 
 function ActionStart(system, key)
@@ -41,11 +47,11 @@ function ActionStart(system, key)
         fc:StartFlight()
     elseif key == "option3" then
         fc:ClearWP()
-        fc:AddWaypoint(Waypoint(startPos + upDirection * 10 + forwardDirection * 10, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromNearestBody, KeepHorizontal))
-        fc:AddWaypoint(Waypoint(startPos + upDirection * 10 + forwardDirection * 11, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromNearestBody, KeepHorizontal))
-        fc:AddWaypoint(Waypoint(startPos + upDirection * 30 + forwardDirection * 10 + rightDirection * 30, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromNearestBody, KeepHorizontal))
-        fc:AddWaypoint(Waypoint(startPos + upDirection * 4, calc.Kph2Mps(50), 0.1, RollTopsideAwayFromNearestBody, KeepHorizontal))
-        fc:AddWaypoint(Waypoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromNearestBody, KeepHorizontal))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 10 + forwardDirection * 10, calc.Kph2Mps(200), 0.1, RollTopsideAwayFromNearestBody, PointToNextWaypointRightAngleToToGravity))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 10 + forwardDirection * 11, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromNearestBody, PointToNextWaypointRightAngleToToGravity))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 30 + forwardDirection * 10 + rightDirection * 30, calc.Kph2Mps(20), 0.1, RollTopsideAwayFromNearestBody, PointToNextWaypointRightAngleToToGravity))
+        fc:AddWaypoint(Waypoint(startPos + upDirection * 4, calc.Kph2Mps(50), 0.1, RollTopsideAwayFromNearestBody, PointToNextWaypointRightAngleToToGravity))
+        fc:AddWaypoint(Waypoint(startPos, calc.Kph2Mps(5), 0.1, RollTopsideAwayFromNearestBody, PointToNextWaypointRightAngleToToGravity))
         fc:StartFlight()
     elseif key == "option4" then
         fc:ClearWP()

@@ -97,7 +97,7 @@ end
 
 function flightCore:Align(waypoint)
     if waypoint ~= nil then
-        local target = waypoint:YawAndPitch()
+        local target = waypoint:YawAndPitch(self.previousWaypoint)
 
         if target ~= nil then
             self.yaw:SetTarget(target)
@@ -107,7 +107,7 @@ function flightCore:Align(waypoint)
             self.pitch:Disable()
         end
 
-        local topSideAlignment = waypoint:Roll()
+        local topSideAlignment = waypoint:Roll(self.previousWaypoint)
         if topSideAlignment ~= nil then
             self.roll:SetTarget(topSideAlignment)
         else
