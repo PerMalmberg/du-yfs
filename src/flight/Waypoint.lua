@@ -60,7 +60,7 @@ function waypoint:YawAndPitch()
     return nil
 end
 
-function RollTopsideAwayFromNearestPlanet(waypoint)
+function RollTopsideAwayFromNearestBody(waypoint)
     local center = universe:ClosestBody().Geography.Center
     local pos = construct.position.Current()
     return pos + (pos - center):normalize_inplace() * 100
