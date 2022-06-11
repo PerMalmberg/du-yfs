@@ -1,11 +1,11 @@
-local diag = require("Diagnostics")()
+local diag = require("du-libs:debug/Checks")
 
 local state = {}
 state.__index = state
 local name = "NameOfState"
 
 local function new(fsm)
-    diag:AssertIsTable(fsm, "fsm", name .. ":new")
+    checks.IsTable(fsm, "fsm", name .. ":new")
 
     local o = {
         fsm = fsm

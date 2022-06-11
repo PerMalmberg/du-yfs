@@ -3,6 +3,12 @@
   "description": "Flight Core",
   "sourcePath": "src",
   "outputPath": "out",
+  "libs": [
+    {
+      "id": "du-libs",
+      "path": "external/du-libs"
+    }
+  ],
   "builds": {
     "main": {
       "name": "main",

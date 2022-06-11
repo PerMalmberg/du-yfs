@@ -1,13 +1,13 @@
 local EngineGroup = require("flight/EngineGroup")
-local library = require("abstraction/Library")()
-local construct = require("abstraction/Construct")()
-local diag = require("debug/Diagnostics")()
-local calc = require("util/Calc")
-local sharedPanel = require("panel/SharedPanel")()
+local library = require("du-libs:abstraction/Library")()
+local construct = require("du-libs:abstraction/Construct")()
+local checks = require("du-libs:debug/Checks")
+local calc = require("du-libs:util/Calc")
+local sharedPanel = require("du-libs:panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
 local jdecode = require("dkjson").decode
+local universe = require("du-libs:universe/Universe")()
 local abs = math.abs
-local universe = require("universe/Universe")()
 
 local brakes = {}
 brakes.__index = brakes
@@ -123,7 +123,7 @@ function brakes:Deceleration()
 end
 
 function brakes:GravityInfluence(velocity)
-    diag:AssertIsVec3(velocity, "velocity", "bakes:GravityInfluence")
+    checks.IsVec3(velocity, "velocity", "bakes:GravityInfluence")
 
     -- When gravity is present, it reduces the available brake force in directions towards the planet and increases it when going out from the planet.
     -- Determine how much the gravity affects us by checking the alignment between our movement vector and the gravity.

@@ -1,13 +1,13 @@
-local diag = require("debug/Diagnostics")()
+local checks = require("du-libs:debug/Checks")
 local utc = system.getUtcTime
 
 local targetPoint = {}
 targetPoint.__index = targetPoint
 
 local function new(origin, destination, maxSpeed)
-    diag:AssertIsVec3(origin, "origin", "targetPoint:new")
-    diag:AssertIsVec3(destination, "destination", "targetPoint:new")
-    diag:AssertIsNumber(maxSpeed, "maxSpeed", "targetPoint:new")
+    checks.IsVec3(origin, "origin", "targetPoint:new")
+    checks.IsVec3(destination, "destination", "targetPoint:new")
+    checks.IsNumber(maxSpeed, "maxSpeed", "targetPoint:new")
 
     local diff = destination - origin
 

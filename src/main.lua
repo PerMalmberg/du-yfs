@@ -1,7 +1,7 @@
+local library = require("du-libs:abstraction/Library")()
+local construct = require("du-libs:abstraction/Construct")()
 local fc = require("flight/FlightCore")()
-local library = require("abstraction/Library")()
-local construct = require("abstraction/Construct")()
-local calc = require("util/Calc")
+local calc = require("du-libs:util/Calc")
 local brakes = require("flight/Brakes")()
 local Waypoint = require("flight/Waypoint")
 

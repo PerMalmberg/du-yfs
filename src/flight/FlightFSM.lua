@@ -1,10 +1,9 @@
-local brakes = require("flight/Brakes")()
-local construct = require("abstraction/Construct")()
-local calc = require("util/Calc")
-local ctrl = require("abstraction/Library")():GetController()
-local diag = require("debug/Diagnostics")()
+local construct = require("du-libs:abstraction/Construct")()
+local calc = require("du-libs:util/Calc")
+local ctrl = require("du-libs:abstraction/Library")():GetController()
+local visual = require("du-libs:debug/Visual")()
 local nullVec = require("cpml/vec3")()
-local sharedPanel = require("panel/SharedPanel")()
+local sharedPanel = require("du-libs:panel/SharedPanel")()
 local PID = require("cpml/pid")
 require("flight/state/Require")
 local CurrentPos = construct.position.Current
@@ -35,7 +34,7 @@ function fsm:Flush(next, previous)
 
     if c ~= nil then
         local rabbit, nearestPoint = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
-        diag:DrawNumber(9, rabbit)
+        visual:DrawNumber(9, rabbit)
         c:Flush(next, previous, rabbit)
 
         -- Add counter to deviation from optimal path
@@ -65,12 +64,12 @@ function fsm:Flush(next, previous)
     end
 
     if self.acceleration == nil then
-        diag:RemoveNumber(0)
-        diag:RemoveNumber(9)
+        visual:RemoveNumber(0)
+        visual:RemoveNumber(9)
         self:NullThrust()
         self.deviationPID:inject(0) -- reset PID
     else
-        diag:DrawNumber(0, pos + self.acceleration:normalize() * 8)
+        visual:DrawNumber(0, pos + self.acceleration:normalize() * 8)
         ctrl.setEngineCommand("thrust", { self.acceleration:unpack() })
     end
 end

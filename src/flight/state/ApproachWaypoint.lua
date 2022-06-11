@@ -1,7 +1,7 @@
-local construct = require("abstraction/Construct")()
+local construct = require("du-libs:abstraction/Construct")()
 local brakes = require("flight/Brakes")()
-local diag = require("debug/Diagnostics")()
-local calc = require("util/Calc")
+local checks = require("du-libs:debug/Checks")
+local calc = require("du-libs:util/Calc")
 require("flight/state/Require")
 
 local name = "ApproachWaypoint"
@@ -10,7 +10,7 @@ local state = {}
 state.__index = state
 
 local function new(fsm)
-    diag:AssertIsTable(fsm, "fsm", name .. ":new")
+    checks.IsTable(fsm, "fsm", name .. ":new")
 
     local o = {
         fsm = fsm

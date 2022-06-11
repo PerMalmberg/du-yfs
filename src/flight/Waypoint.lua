@@ -1,6 +1,6 @@
-local diag = require("debug/Diagnostics")()
-local construct = require("abstraction/Construct")()
-local universe = require("universe/Universe")()
+local checks = require("du-libs:debug/Checks")
+local construct = require("du-libs:abstraction/Construct")()
+local universe = require("du-libs:universe/Universe")()
 
 local waypoint = {}
 waypoint.__index = waypoint
@@ -12,11 +12,11 @@ waypoint.__index = waypoint
 ---@param roll function Function that determines how the constrol aligns its topside (rolls)
 ---@return table
 local function new(destination, maxSpeed, margin, roll, yawPitch)
-    diag:AssertIsVec3(destination, "destination", "waypoint:new")
-    diag:AssertIsNumber(maxSpeed, "maxSpeed", "waypoint:new")
-    diag:AssertIsNumber(margin, "margin", "waypoint:new")
-    diag:AssertIsFunction(roll, "roll", "waypoint:new")
-    diag:AssertIsFunction(yawPitch, "yawPitch", "waypoint:new")
+    checks.IsVec3(destination, "destination", "waypoint:new")
+    checks.IsNumber(maxSpeed, "maxSpeed", "waypoint:new")
+    checks.IsNumber(margin, "margin", "waypoint:new")
+    checks.IsFunction(roll, "roll", "waypoint:new")
+    checks.IsFunction(yawPitch, "yawPitch", "waypoint:new")
 
     local o = {
         destination = destination,

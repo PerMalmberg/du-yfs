@@ -1,8 +1,8 @@
-local Timer = require("util/Timer")
+local Timer = require("du-libs:system/Timer")
+local calc = require("du-libs:util/Calc")
+local construct = require("du-libs:abstraction/Construct")()
+local checks = require("du-libs:debug/Checks")
 local brakes = require("flight/Brakes")()
-local calc = require("util/Calc")
-local construct = require("abstraction/Construct")()
-local diag = require("debug/Diagnostics")()
 require("flight/state/Require")
 
 local min = math.min
@@ -13,7 +13,7 @@ state.__index = state
 local name = "Travel"
 
 local function new(fsm)
-    diag:AssertIsTable(fsm, "fsm", name .. ":new")
+    checks.IsTable(fsm, "fsm", name .. ":new")
 
     local o = {
         fsm = fsm,

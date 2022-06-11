@@ -1,0 +1,3 @@
+[submodule "external/du-libs"]
+	path = external/du-libs
+	url = git@github.com:PerMalmberg/du-libs.git

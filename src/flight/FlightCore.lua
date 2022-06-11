@@ -3,10 +3,10 @@ local Brakes = require("flight/Brakes")
 local FlightFSM = require("flight/FlightFSM")
 local EngineGroup = require("flight/EngineGroup")
 local Waypoint = require("flight/Waypoint")
-local construct = require("abstraction/Construct")()
-local diag = require("debug/Diagnostics")()
-local library = require("abstraction/Library")()
-local sharedPanel = require("panel/SharedPanel")()
+local construct = require("du-libs:abstraction/Construct")()
+local visual = require("du-libs:debug/Visual")()
+local library = require("du-libs:abstraction/Library")()
+local sharedPanel = require("du-libs:panel/SharedPanel")()
 require("flight/state/Require")
 
 local flightCore = {}
@@ -132,11 +132,11 @@ function flightCore:Update()
                     local diff = wp.destination - self.previousWaypoint.destination
                     local len = diff:len()
                     local dir = diff:normalize()
-                    diag:DrawNumber(1, self.previousWaypoint.destination)
-                    diag:DrawNumber(2, self.previousWaypoint.destination + dir * len / 4)
-                    diag:DrawNumber(3, self.previousWaypoint.destination + dir * len / 2)
-                    diag:DrawNumber(4, self.previousWaypoint.destination + dir * 3 * len / 4)
-                    diag:DrawNumber(5, wp.destination)
+                    visual:DrawNumber(1, self.previousWaypoint.destination)
+                    visual:DrawNumber(2, self.previousWaypoint.destination + dir * len / 4)
+                    visual:DrawNumber(3, self.previousWaypoint.destination + dir * len / 2)
+                    visual:DrawNumber(4, self.previousWaypoint.destination + dir * 3 * len / 4)
+                    visual:DrawNumber(5, wp.destination)
                 end
             end,
             traceback

@@ -1,11 +1,11 @@
-local construct = require("abstraction/Construct")()
-local library = require("abstraction/Library")()
-local diag = require("debug/Diagnostics")()
-local calc = require("util/Calc")
+local construct = require("du-libs:abstraction/Construct")()
+local library = require("du-libs:abstraction/Library")()
+local checks = require("du-libs:debug/Checks")
+local calc = require("du-libs:util/Calc")
 local nullVec = require("cpml/vec3")()
-local sharedPanel = require("panel/SharedPanel")()
+local visual = require("du-libs:debug/Visual")()
+local sharedPanel = require("du-libs:panel/SharedPanel")()
 local EngineGroup = require("flight/EngineGroup")
-local vec3 = require("cpml/vec3")
 local PID = require("cpml/pid")
 
 local rad2deg = 180 / math.pi
@@ -26,7 +26,7 @@ finalAcceleration[AxisControlYaw] = nullVec
 ---Creates a new AxisControl
 ---@return table A new AxisControl
 local function new(axis)
-    diag:AssertIsNumber(axis, "axis", "AxisControl:new")
+    checks.IsNumber(axis, "axis", "AxisControl:new")
 
     local instance = {
         controlledAxis = axis,
@@ -72,7 +72,7 @@ local function new(axis)
         instance.Normal = o.Up
         instance.LocalNormal = construct.orientation.localized.Up
     else
-        diag:Fail("Invalid axis: " .. axis)
+        checks.Fail("Invalid axis: " .. axis)
     end
 
     setmetatable(instance, control)
