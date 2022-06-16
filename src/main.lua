@@ -48,50 +48,43 @@ input:Register(keys.option1, Criteria():LAlt():OnPress(), function()
     end
 end)
 
--- why does it seem to accept holding the key down?
 --what happens if you clear all waypoints without adding one?
+function move(reference, distance)
+    fc:ClearWP()
+    local target = construct.position.Current() + reference * distance
+    fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(3), 0.1, RollTopsideAwayFromNearestBody, PointToNextWaypointRightAngleToToGravity))
+    fc:StartFlight()
+end
 
 input:Register(keys.forward, Criteria():OnPress(), function()
-    fc:ClearWP()
-    local target = construct.position.Current() + construct.orientation.Forward() * 1
-    fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(3), 0.1, RollTopsideAwayFromNearestBody, KeepHorizontal))
-    fc:StartFlight()
+    move(construct.orientation.Forward(), 1)
 end)
 
 input:Register(keys.backward, Criteria():OnPress(), function()
-    fc:ClearWP()
-    local target = construct.position.Current() - construct.orientation.Forward() * 1
-    fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(3), 0.1, RollTopsideAwayFromNearestBody, KeepHorizontal))
-    fc:StartFlight()
+    move(construct.orientation.Forward(), -1)
 end)
 
 input:Register(keys.strafeleft, Criteria():OnPress(), function()
-    fc:ClearWP()
-    local target = construct.position.Current() - construct.orientation.Right() * 1
-    fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(3), 0.1, RollTopsideAwayFromNearestBody, KeepHorizontal))
-    fc:StartFlight()
+    move(construct.orientation.Right(), -1)
 end)
 
 input:Register(keys.straferight, Criteria():OnPress(), function()
-    fc:ClearWP()
-    local target = construct.position.Current() + construct.orientation.Right() * 1
-    fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(3), 0.1, RollTopsideAwayFromNearestBody, KeepHorizontal))
-    fc:StartFlight()
+    move(construct.orientation.Right(), 1)
 end)
 
 input:Register(keys.up, Criteria():OnPress(), function()
-    fc:ClearWP()
-    local target = construct.position.Current() + construct.orientation.Up() * 1
-    fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(3), 0.1, RollTopsideAwayFromNearestBody, KeepHorizontal))
-    fc:StartFlight()
+    move(construct.orientation.Up(), 1)
 end)
 
 input:Register(keys.down, Criteria():OnPress(), function()
+    move(construct.orientation.Up(), -1)
+end)
+
+input:Register(keys.yawleft, Criteria():OnRepeat(), function()
     fc:ClearWP()
-    local target = construct.position.Current() - construct.orientation.Up() * 1
-    fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(3), 0.1, RollTopsideAwayFromNearestBody, KeepHorizontal))
     fc:StartFlight()
 end)
+
 
 --function ActionStart(system, key)
 --    if key == "option1" then
