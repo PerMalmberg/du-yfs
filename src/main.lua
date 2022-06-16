@@ -81,8 +81,11 @@ input:Register(keys.down, Criteria():OnPress(), function()
 end)
 
 input:Register(keys.yawleft, Criteria():OnRepeat(), function()
-    fc:ClearWP()
-    fc:StartFlight()
+    fc:RotateWaypoints(0.1, construct.orientation.Up())
+end)
+
+input:Register(keys.yawright, Criteria():OnRepeat(), function()
+    fc:RotateWaypoints(-0.1, construct.orientation.Up())
 end)
 
 

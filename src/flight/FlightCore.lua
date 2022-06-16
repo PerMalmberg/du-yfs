@@ -7,7 +7,9 @@ local construct = require("du-libs:abstraction/Construct")()
 local visual = require("du-libs:debug/Visual")()
 local library = require("du-libs:abstraction/Library")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
+local checks = require("du-libs:debug/Checks")
 require("flight/state/Require")
+local deg2rad = math.rad
 
 local flightCore = {}
 flightCore.__index = flightCore
@@ -84,6 +86,20 @@ function flightCore:StartFlight()
     else
         self:AddWaypoint(Waypoint(construct.position.Current(), 0.05, 0, noAdjust, noAdjust))
         fsm:SetState(Hold(fsm))
+    end
+end
+
+-- Rotates all waypoints around the up-axis with the given angle
+function flightCore:RotateWaypoints(degrees, axis)
+    checks.IsNumber(degrees, "degrees", "flightCore:RotateWaypoints")
+    checks.IsVec3(axis, "axis", "flightCore:RotateWaypoints")
+
+    local rad = deg2rad(degrees)
+    local pos = construct.position.Current()
+
+    for _, w in ipairs(self.waypoints) do
+        local v = w.destination - pos
+        w.destination = v:rotate(rad, axis:normalize_inplace()) + pos
     end
 end
 

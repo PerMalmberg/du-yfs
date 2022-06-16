@@ -1,9 +1,5 @@
 # Todo
 
-* Too hard on the brakes when doing small movements around the waypoints.
-* Turn based on waypoint
-* IsInAtmo - We have two...
-
 # Brakes
 
 - The value we now get is for both, we just must adjust it for atmo.
