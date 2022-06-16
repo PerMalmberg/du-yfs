@@ -39,11 +39,12 @@ local function new()
     return instance
 end
 
+local noAdjust = function()
+    return nil
+end
+
 function flightCore:AddWaypoint(wp)
     if #self.waypoints == 0 then
-        local noAdjust = function()
-            return nil
-        end
         self.previousWaypoint = Waypoint(construct.position.Current(), 0, 0, noAdjust, noAdjust)
         self.approachSpeed = wp.maxSpeed
     end
@@ -76,7 +77,14 @@ end
 
 function flightCore:StartFlight()
     local fsm = self.flightFSM
-    fsm:SetState(Travel(fsm))
+
+    -- Don't start unless we have a destination.
+    if #self.waypoints > 0 then
+        fsm:SetState(Travel(fsm))
+    else
+        self:AddWaypoint(Waypoint(construct.position.Current(), 0.05, 0, noAdjust, noAdjust))
+        fsm:SetState(Hold(fsm))
+    end
 end
 
 function flightCore:ReceiveEvents()
