@@ -40,7 +40,7 @@ local function new()
 end
 
 function flightCore:AddWaypoint(wp)
-    if #self.waypoints == 1 then
+    if #self.waypoints == 0 then
         local noAdjust = function()
             return nil
         end
