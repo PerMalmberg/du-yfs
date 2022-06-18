@@ -33,7 +33,18 @@ input:Register(keys.option1, Criteria():LAlt():OnPress(), function()
     end
 end)
 
---what happens if you clear all waypoints without adding one?
+local step = 1
+
+input:Register(keys.speedup, Criteria():OnRepeat(), function()
+    step = step + 0.1
+    log:Info("Step ", step)
+end)
+
+input:Register(keys.speeddown, Criteria():OnRepeat(), function()
+    step = step - 0.1
+    log:Info("Step ", step)
+end)
+
 function move(reference, distance)
     fc:ClearWP()
     local target = construct.position.Current() + reference * distance
@@ -42,27 +53,27 @@ function move(reference, distance)
 end
 
 input:Register(keys.forward, Criteria():OnRepeat(), function()
-    move(construct.orientation.Forward(), 20)
+    move(construct.orientation.Forward(), step)
 end)
 
 input:Register(keys.backward, Criteria():OnRepeat(), function()
-    move(construct.orientation.Forward(), -20)
+    move(construct.orientation.Forward(), -step)
 end)
 
 input:Register(keys.strafeleft, Criteria():OnRepeat(), function()
-    move(construct.orientation.Right(), -20)
+    move(-construct.orientation.Right(), -step)
 end)
 
 input:Register(keys.straferight, Criteria():OnRepeat(), function()
-    move(construct.orientation.Right(), 20)
+    move(construct.orientation.Right(), step)
 end)
 
 input:Register(keys.up, Criteria():OnRepeat(), function()
-    move(construct.orientation.Up(), 20)
+    move(construct.orientation.Up(), step)
 end)
 
 input:Register(keys.down, Criteria():OnRepeat(), function()
-    move(construct.orientation.Up(), -20)
+    move(construct.orientation.Up(), -step)
 end)
 
 input:Register(keys.yawleft, Criteria():OnRepeat(), function()
@@ -74,9 +85,10 @@ input:Register(keys.yawright, Criteria():OnRepeat(), function()
 end)
 
 local start = construct.position.Current()
+
 input:Register(keys.option8, Criteria():OnPress(), function()
     fc:ClearWP()
-    fc:AddWaypoint(Waypoint(start - construct.world.GAlongGravity():normalize() * 10000, calc.Kph2Mps(800), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:AddWaypoint(Waypoint(start - construct.world.GAlongGravity():normalize() * 20000, calc.Kph2Mps(800), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end)
 
