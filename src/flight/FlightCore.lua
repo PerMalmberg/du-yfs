@@ -8,8 +8,8 @@ local visual = require("du-libs:debug/Visual")()
 local library = require("du-libs:abstraction/Library")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local checks = require("du-libs:debug/Checks")
+local alignment = require("flight/AlignmentFunctions")
 require("flight/state/Require")
-local deg2rad = math.rad
 
 local flightCore = {}
 flightCore.__index = flightCore
@@ -48,7 +48,6 @@ end
 function flightCore:AddWaypoint(wp)
     if #self.waypoints == 0 then
         self.previousWaypoint = Waypoint(construct.position.Current(), 0, 0, noAdjust, noAdjust)
-        self.approachSpeed = wp.maxSpeed
     end
 
     table.insert(self.waypoints, #self.waypoints + 1, wp)
@@ -89,23 +88,19 @@ function flightCore:StartFlight()
     end
 end
 
--- Rotates all waypoints around the up-axis with the given angle
+-- Rotates all waypoints around the axis with the given angle
 function flightCore:RotateWaypoints(degrees, axis)
     checks.IsNumber(degrees, "degrees", "flightCore:RotateWaypoints")
     checks.IsVec3(axis, "axis", "flightCore:RotateWaypoints")
 
-    local rad = deg2rad(degrees)
-    local pos = construct.position.Current()
-
     for _, w in ipairs(self.waypoints) do
-        local v = w.destination - pos
-        w.destination = v:rotate(rad, axis:normalize_inplace()) + pos
+        w:RotateAroundAxis(degrees, axis)
     end
 end
 
 function flightCore:ReceiveEvents()
-    self.flushHandlerId = system:onEvent("flush", self.Flush, self)
-    self.updateHandlerId = system:onEvent("update", self.Update, self)
+    self.flushHandlerId = system:onEvent("flush", self.FCFlush, self)
+    self.updateHandlerId = system:onEvent("update", self.FCUpdate, self)
     self.pitch:ReceiveEvents()
     self.roll:ReceiveEvents()
     self.yaw:ReceiveEvents()
@@ -140,7 +135,7 @@ function flightCore:Align(waypoint)
     end
 end
 
-function flightCore:Update()
+function flightCore:FCUpdate()
     local status, err, _ = xpcall(
             function()
                 self.flightFSM:Update()
@@ -172,7 +167,7 @@ function flightCore:Update()
     end
 end
 
-function flightCore:Flush()
+function flightCore:FCFlush()
     local status, err, _ = xpcall(
             function()
                 local wp = self:CurrentWP()
@@ -182,6 +177,8 @@ function flightCore:Flush()
                         if not self.waypointReachedSignaled then
                             self.waypointReachedSignaled = true
                             self.flightFSM:WaypointReached(#self.waypoints == 1, wp, self.previousWaypoint)
+
+                            wp:OneTimeSetYawPitchDirection(construct.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity)
                         end
 
                         local switched
