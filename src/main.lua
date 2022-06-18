@@ -37,32 +37,32 @@ end)
 function move(reference, distance)
     fc:ClearWP()
     local target = construct.position.Current() + reference * distance
-    fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(3), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(50), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end
 
-input:Register(keys.forward, Criteria():OnPress(), function()
-    move(construct.orientation.Forward(), 1)
+input:Register(keys.forward, Criteria():OnRepeat(), function()
+    move(construct.orientation.Forward(), 20)
 end)
 
-input:Register(keys.backward, Criteria():OnPress(), function()
-    move(construct.orientation.Forward(), -1)
+input:Register(keys.backward, Criteria():OnRepeat(), function()
+    move(construct.orientation.Forward(), -20)
 end)
 
-input:Register(keys.strafeleft, Criteria():OnPress(), function()
-    move(construct.orientation.Right(), -1)
+input:Register(keys.strafeleft, Criteria():OnRepeat(), function()
+    move(construct.orientation.Right(), -20)
 end)
 
-input:Register(keys.straferight, Criteria():OnPress(), function()
-    move(construct.orientation.Right(), 1)
+input:Register(keys.straferight, Criteria():OnRepeat(), function()
+    move(construct.orientation.Right(), 20)
 end)
 
-input:Register(keys.up, Criteria():OnPress(), function()
-    move(construct.orientation.Up(), 1)
+input:Register(keys.up, Criteria():OnRepeat(), function()
+    move(construct.orientation.Up(), 20)
 end)
 
-input:Register(keys.down, Criteria():OnPress(), function()
-    move(construct.orientation.Up(), -1)
+input:Register(keys.down, Criteria():OnRepeat(), function()
+    move(construct.orientation.Up(), -20)
 end)
 
 input:Register(keys.yawleft, Criteria():OnRepeat(), function()
@@ -71,4 +71,17 @@ end)
 
 input:Register(keys.yawright, Criteria():OnRepeat(), function()
     fc:RotateWaypoints(-1, construct.orientation.Up())
+end)
+
+local start = construct.position.Current()
+input:Register(keys.option8, Criteria():OnPress(), function()
+    fc:ClearWP()
+    fc:AddWaypoint(Waypoint(start - construct.world.GAlongGravity():normalize() * 10000, calc.Kph2Mps(800), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:StartFlight()
+end)
+
+input:Register(keys.option9, Criteria():OnPress(), function()
+    fc:ClearWP()
+    fc:AddWaypoint(Waypoint(start, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:StartFlight()
 end)

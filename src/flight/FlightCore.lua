@@ -192,13 +192,13 @@ function flightCore:FCFlush()
                     end
 
                     self:Align(wp)
-                    self.flightFSM:Flush(wp, self.previousWaypoint)
+                    self.flightFSM:FsmFlush(wp, self.previousWaypoint)
                 end
 
-                self.pitch:Flush(false)
-                self.roll:Flush(false)
-                self.yaw:Flush(true)
-                self.brakes:Flush()
+                self.pitch:AxisFlush(false)
+                self.roll:AxisFlush(false)
+                self.yaw:AxisFlush(true)
+                self.brakes:BrakeFlush()
             end,
             traceback
     )

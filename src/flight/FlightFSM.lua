@@ -27,11 +27,11 @@ local function new()
     return instance
 end
 
-function fsm:Flush(next, previous)
-    local c = self.current
+function fsm:FsmFlush(next, previous)
 
     local pos = CurrentPos()
 
+    local c = self.current
     if c ~= nil then
         local rabbit, nearestPoint = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
         visual:DrawNumber(9, rabbit)
@@ -49,7 +49,7 @@ function fsm:Flush(next, previous)
             maxDeviationAcc = 0.1
         end
 
-        self.acceleration = self.acceleration + deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
+        self.acceleration = (self.acceleration or nullVec) + deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
 
         -- Brakes give an undesired force that pushes along/against gravity.
         --if brakes:IsEngaged() then

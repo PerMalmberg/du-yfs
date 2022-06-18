@@ -113,7 +113,7 @@ function control:Acceleration()
     return (vel * self.LocalNormal()):len() * rad2deg
 end
 
-function control:Flush(apply)
+function control:AxisFlush(apply)
     if self.target.coordinate ~= nil then
         -- Positive offset means we're right of target, clock-wise
         -- Postive acceleration turns counter-clockwise

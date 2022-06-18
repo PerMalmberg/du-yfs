@@ -74,7 +74,7 @@ function brakes:Forced(on)
     self.forced = on
 end
 
-function brakes:Flush()
+function brakes:BrakeFlush()
     -- The brake vector must point against the direction of travel.
     if self:IsEngaged() then
         local brakeVector = -velocity.Movement():normalize() * self:Deceleration()
