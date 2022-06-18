@@ -84,11 +84,19 @@ input:Register(keys.yawright, Criteria():OnRepeat(), function()
     fc:RotateWaypoints(-1, construct.orientation.Up())
 end)
 
+input:Register(keys.brake, Criteria():OnPress(), function()
+    brakes:Forced(true)
+end)
+
+input:Register(keys.brake, Criteria():OnRelease(), function()
+    brakes:Forced(false)
+end)
+
 local start = construct.position.Current()
 
 input:Register(keys.option8, Criteria():OnPress(), function()
     fc:ClearWP()
-    fc:AddWaypoint(Waypoint(start - construct.world.GAlongGravity():normalize() * 20000, calc.Kph2Mps(800), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:AddWaypoint(Waypoint(start - construct.world.GAlongGravity():normalize() * 20000, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end)
 
