@@ -3,13 +3,13 @@ local universe = require("du-libs:universe/Universe")()
 
 local alignment = {}
 
-function alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity(waypoint, previousWaypoint)
+function alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity(waypoint, _)
     local dir = waypoint.yawPitchDirection:project_on_plane(-construct.world.GAlongGravity():normalize_inplace())
     return construct.position.Current() + dir * 10
 end
 
 function alignment.YawPitchKeepOrthogonalToGravity(waypoint, previousWaypoint)
-    local dir = (waypoint.destination - previousWaypoint.destination):normalize_inplace()
+    local dir = (waypoint.destination - construct.position.Current()):normalize_inplace()
     dir = dir:project_on_plane(-construct.world.GAlongGravity():normalize_inplace())
     return construct.position.Current() + dir * 10
 end
