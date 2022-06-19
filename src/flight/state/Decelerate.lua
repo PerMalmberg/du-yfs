@@ -33,10 +33,14 @@ function state:Flush(next, previous, rabbit)
 
     if next:DistanceTo() <= brakeDistance or neededBrakeAcceleration > 0 then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
-    elseif construct.velocity.Movement():len() <= next.maxSpeed then
-        self.fsm:SetState(Travel(self.fsm))
     else
-        self.fsm:NullThrust()
+        local velocity = construct.velocity:Movement()
+        local speedNextFlush = (velocity + construct.acceleration:Movement() * 1 / 40):len()
+        if speedNextFlush <= next.maxSpeed then
+            self.fsm:SetState(Travel(self.fsm))
+        else
+            self.fsm:NullThrust()
+        end
     end
 end
 
