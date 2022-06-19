@@ -36,9 +36,7 @@ function state:Flush(next, previous, rabbit)
     elseif construct.velocity.Movement():len() <= next.maxSpeed then
         self.fsm:SetState(Travel(self.fsm))
     else
-        local currentPos = construct.position.Current()
-        local dirToRabbit = (rabbit - currentPos):normalize()
-        self.fsm:Thrust(dirToRabbit) -- Slight nudge towards rabbit and counter gravity, let the brakes do its job
+        self.fsm:NullThrust()
     end
 end
 
