@@ -105,6 +105,7 @@ end
 
 function fsm:DisableThrust()
     self.acceleration = nil
+    ctrl.setEngineCommand("thrust", { 0, 0, 0 })
 end
 
 function fsm:Thrust(acceleration)
@@ -114,7 +115,7 @@ function fsm:Thrust(acceleration)
 end
 
 function fsm:NullThrust()
-    ctrl.setEngineCommand("thrust", { 0, 0, 0 })
+    self.acceleration = nullVec
 end
 
 function fsm:NearestPointBetweenWaypoints(wpStart, wpEnd, currentPos, ahead)
