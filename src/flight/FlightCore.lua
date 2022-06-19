@@ -7,6 +7,7 @@ local construct = require("du-libs:abstraction/Construct")()
 local visual = require("du-libs:debug/Visual")()
 local library = require("du-libs:abstraction/Library")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
+local universe = require("du-libs:universe/Universe")()
 local checks = require("du-libs:debug/Checks")
 local alignment = require("flight/AlignmentFunctions")
 require("flight/state/Require")
@@ -82,6 +83,7 @@ function flightCore:StartFlight()
     -- Don't start unless we have a destination.
     if #self.waypoints > 0 then
         fsm:SetState(Travel(fsm))
+        system.setWaypoint(tostring(universe:CreatePos(self:CurrentWP().destination)))
     else
         self:AddWaypoint(Waypoint(construct.position.Current(), 0.05, 0, noAdjust, noAdjust))
         fsm:SetState(Hold(fsm))
