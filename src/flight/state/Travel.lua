@@ -24,7 +24,7 @@ local function new(fsm)
 end
 
 function state:Enter()
-
+    brakes:Set(false)
 end
 
 function state:Leave()
@@ -32,7 +32,8 @@ end
 
 function state:Flush(next, previous, rabbit)
     local brakeDistance, neededBrakeAcceleration = brakes:BrakeDistance(next:DistanceTo())
-    local speed = construct.velocity:Movement():len()
+    local velocity = construct.velocity:Movement()
+    local speed = velocity:len()
     local currentPos = construct.position.Current()
 
     local directionToRabbit = (rabbit - currentPos):normalize_inplace()
@@ -41,8 +42,15 @@ function state:Flush(next, previous, rabbit)
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     elseif speed > next.maxSpeed then
         self.fsm:SetState(Decelerate(self.fsm))
-    elseif speed <= next.maxSpeed * 0.99 then
-        self.fsm:Thrust(directionToRabbit * next.acceleration)
+    else
+        -- Word of warning for my future self. Quickly toggling the brakes causes
+        -- them to push the construct off the trajectory.
+        local speedNextFlush = (velocity + construct.acceleration:Movement() * 1 / 40):len()
+        if speedNextFlush < next.maxSpeed then
+            self.fsm:Thrust(directionToRabbit * next.acceleration)
+        else
+            self.fsm:Thrust()
+        end
     end
 end
 
