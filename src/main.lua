@@ -36,7 +36,7 @@ end)
 local step = 1
 
 input:Register(keys.speedup, Criteria():OnRepeat(), function()
-    step = step + 0.1
+    step = step + 5
     log:Info("Step ", step)
 end)
 
@@ -96,7 +96,7 @@ local start = construct.position.Current()
 
 input:Register(keys.option8, Criteria():OnPress(), function()
     fc:ClearWP()
-    fc:AddWaypoint(Waypoint(start - construct.world.GAlongGravity():normalize() * 20000, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:AddWaypoint(Waypoint(start - construct.world.GAlongGravity():normalize() * 200000, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end)
 

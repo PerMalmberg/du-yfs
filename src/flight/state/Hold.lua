@@ -27,7 +27,7 @@ function state:Leave()
 
 end
 
-function state:Flush(next, previous, rabbit)
+function state:Flush(next, previous, chaseData)
     if not next:Reached() then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     else

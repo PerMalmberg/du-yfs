@@ -27,7 +27,7 @@ function state:Leave()
 
 end
 
-function state:Flush(next, previous, rabbit)
+function state:Flush(next, previous, chaseData)
     local currentPos = construct.position.Current()
     local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(next:DistanceTo())
 
@@ -39,7 +39,7 @@ function state:Flush(next, previous, rabbit)
         local velocity = construct.velocity:Movement()
         local travelDir = velocity:normalize()
 
-        local toRabbit = rabbit - currentPos
+        local toRabbit = chaseData.rabbit - currentPos
         local dirToRabbit = toRabbit:normalize()
         local outOfAlignment = travelDir:dot(dirToRabbit) < 0.8
 

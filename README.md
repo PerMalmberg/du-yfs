@@ -1,5 +1,7 @@
 # Todo
 
+* Brakes in space - GAlongGravity returns nil? Use custom reference from the closest planet instead
+
 # Brakes
 
 - The value we now get is for both, we just must adjust it for atmo.

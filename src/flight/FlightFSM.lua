@@ -1,3 +1,4 @@
+local brakes = require("flight/Brakes")()
 local construct = require("du-libs:abstraction/Construct")()
 local calc = require("du-libs:util/Calc")
 local ctrl = require("du-libs:abstraction/Library")():GetController()
@@ -33,34 +34,11 @@ function fsm:FsmFlush(next, previous)
 
     local c = self.current
     if c ~= nil then
-        local rabbit, nearestPoint = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
-        visual:DrawNumber(9, rabbit)
-        c:Flush(next, previous, rabbit)
+        local chaseData = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
+        visual:DrawNumber(9, chaseData.rabbit)
+        c:Flush(next, previous, chaseData)
 
-        -- Add counter to deviation from optimal path
-        local deviation = nearestPoint - pos
-        local len = deviation:len()
-        self.deviationPID:inject(len)
-        self.wDeviation:Set(calc.Round((nearestPoint - pos):len(), 4))
-
-        local maxDeviationAcc = 2
-        -- If we have reached the waypoint or already are moving towards the desired optimal path, then reduce adjustment
-        if next:Reached() or deviation:normalize():dot(deviation:normalize()) > 0.5 then
-            maxDeviationAcc = 0.1
-        end
-
-        self.acceleration = (self.acceleration or nullVec) + deviation:normalize() * utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
-
-        -- Brakes give an undesired force that pushes along/against gravity.
-        --if brakes:IsEngaged() then
-        --    local gVec = construct.world.GAlongGravity()
-        --    if gVec:len2() > 0 then
-        --        local dot = construct.velocity.Movement():normalize_inplace():dot(gVec:normalize())
-        --        if abs(dot) < 0.7 then
-        --            self.acceleration = self.acceleration + brakes:Deceleration() * dot * construct.velocity.Movement():normalize_inplace()
-        --        end
-        --    end
-        --end
+        self.acceleration = (self.acceleration or nullVec) + self:AdjustForDeviation(chaseData, pos)
     end
 
     if self.acceleration == nil then
@@ -72,6 +50,24 @@ function fsm:FsmFlush(next, previous)
         visual:DrawNumber(0, pos + self.acceleration:normalize() * 8)
         ctrl.setEngineCommand("thrust", { self.acceleration:unpack() })
     end
+end
+
+function fsm:AdjustForDeviation(chaseData, currentPos)
+    -- Add counter to deviation from optimal path
+    local rabbitDeviation = chaseData.rabbit - currentPos
+    local nearDeviation = chaseData.nearest - currentPos
+    local len = nearDeviation:len()
+    self.deviationPID:inject(len)
+    self.wDeviation:Set(calc.Round((chaseData.nearest - currentPos):len(), 4))
+
+    local velocity = construct.velocity.Movement()
+    if velocity:len() > 1 and velocity:normalize():dot(rabbitDeviation:normalize()) < 0.9 then
+        brakes:Set(true)
+    end
+
+    local maxDeviationAcc = 2
+
+    return nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
 end
 
 function fsm:Update()
@@ -129,9 +125,9 @@ function fsm:NearestPointBetweenWaypoints(wpStart, wpEnd, currentPos, ahead)
 
     -- Is the point past the end (remaining points back towards start or we're very close to the destination)?
     if remaining:normalize():dot(dir) < 1 or remaining:len() < 0.01 then
-        return wpEnd.destination, nearestPoint
+        return { rabbit = wpEnd.destination, nearest = nearestPoint }
     else
-        return point, nearestPoint
+        return { rabbit = point, nearest = nearestPoint }
     end
 end
 

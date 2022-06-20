@@ -22,7 +22,7 @@ end
 function state:Leave()
 end
 
-function state:Flush(next, previous, rabbit)
+function state:Flush(next, previous, chaseData)
     self.fsm:DisableThrust()
 end
 

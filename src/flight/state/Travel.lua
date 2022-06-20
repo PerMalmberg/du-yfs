@@ -1,10 +1,8 @@
-local calc = require("du-libs:util/Calc")
+local constants = require("du-libs:abstraction/Constants")
 local construct = require("du-libs:abstraction/Construct")()
 local checks = require("du-libs:debug/Checks")
 local brakes = require("flight/Brakes")()
 require("flight/state/Require")
-
-local min = math.min
 
 local state = {}
 state.__index = state
@@ -30,13 +28,13 @@ end
 function state:Leave()
 end
 
-function state:Flush(next, previous, rabbit)
+function state:Flush(next, previous, chaseData)
     local brakeDistance, neededBrakeAcceleration = brakes:BrakeDistance(next:DistanceTo())
     local velocity = construct.velocity:Movement()
     local speed = velocity:len()
     local currentPos = construct.position.Current()
 
-    local directionToRabbit = (rabbit - currentPos):normalize_inplace()
+    local directionToRabbit = (chaseData.rabbit - currentPos):normalize_inplace()
 
     if brakeDistance >= next:DistanceTo() or neededBrakeAcceleration > 0 then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
@@ -45,7 +43,7 @@ function state:Flush(next, previous, rabbit)
     else
         -- Word of warning for my future self. Quickly toggling the brakes causes
         -- them to push the construct off the trajectory.
-        local speedNextFlush = (velocity + construct.acceleration:Movement() * 1 / 40):len()
+        local speedNextFlush = (velocity + construct.acceleration:Movement() * constants.PHYSICS_INTERVAL):len()
         if speedNextFlush < next.maxSpeed then
             self.fsm:Thrust(directionToRabbit * next.acceleration)
         else

@@ -1,4 +1,4 @@
-local diag = require("du-libs:debug/Checks")
+local checks = require("du-libs:debug/Checks")
 
 local state = {}
 state.__index = state
@@ -22,7 +22,7 @@ end
 function state:Leave()
 end
 
-function state:Flush(next, previous)
+function state:Flush(next, previous, chaseData)
 end
 
 function state:Update()

@@ -1,3 +1,4 @@
+local constants = require("du-libs:abstraction/Constants")
 local construct = require("du-libs:abstraction/Construct")()
 local brakes = require("flight/Brakes")()
 local checks = require("du-libs:debug/Checks")
@@ -28,14 +29,14 @@ function state:Leave()
     brakes:Set(false)
 end
 
-function state:Flush(next, previous, rabbit)
+function state:Flush(next, previous, chaseData)
     local brakeDistance, neededBrakeAcceleration = brakes:BrakeDistance(next:DistanceTo())
 
     if next:DistanceTo() <= brakeDistance or neededBrakeAcceleration > 0 then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     else
         local velocity = construct.velocity:Movement()
-        local speedNextFlush = (velocity + construct.acceleration:Movement() * 1 / 40):len()
+        local speedNextFlush = (velocity + construct.acceleration:Movement() * constants.PHYSICS_INTERVAL):len()
         if speedNextFlush <= next.maxSpeed then
             self.fsm:SetState(Travel(self.fsm))
         else
