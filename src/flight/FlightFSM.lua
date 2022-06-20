@@ -1,13 +1,16 @@
 local brakes = require("flight/Brakes")()
+local constants = require("du-libs:abstraction/Constants")
 local construct = require("du-libs:abstraction/Construct")()
 local calc = require("du-libs:util/Calc")
 local ctrl = require("du-libs:abstraction/Library")():GetController()
 local visual = require("du-libs:debug/Visual")()
 local nullVec = require("cpml/vec3")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
+local universe = require("du-libs:universe/Universe")()
 local PID = require("cpml/pid")
 require("flight/state/Require")
 local CurrentPos = construct.position.Current
+local Velocity = construct.velocity.Movement
 local abs = math.abs
 
 local fsm = {}
@@ -31,25 +34,64 @@ end
 function fsm:FsmFlush(next, previous)
 
     local pos = CurrentPos()
+    local travelDir = Velocity():normalize_inplace()
+    local speed = Velocity():len()
 
     local c = self.current
     if c ~= nil then
+        local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(next:DistanceTo())
+
         local chaseData = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
-        visual:DrawNumber(9, chaseData.rabbit)
+        local toRabbit = chaseData.rabbit - pos
+        local toNearest = chaseData.nearest - pos
+        local speedNextFlush = (Velocity() + construct.acceleration:Movement() * constants.PHYSICS_INTERVAL):len()
+
+        brakes:Set(false)
+
+        -- Are we moving in the desired direction?
+        if speed > 1 and travelDir:dot(toRabbit:normalize()) < 0.85 and travelDir:dot(toNearest:normalize()) < 0.85 then
+            self:SetState(CorrectDeviation(self))
+            brakes:Set(true)
+        end
+
+        c:Flush(next, previous, chaseData)
+        self.acceleration = (self.acceleration or nullVec) + self:AdjustForDeviation(chaseData, pos)
+
         c:Flush(next, previous, chaseData)
 
-        self.acceleration = (self.acceleration or nullVec) + self:AdjustForDeviation(chaseData, pos)
+        --self:Thrust(acc)
+        visual:DrawNumber(9, chaseData.rabbit)
+        visual:DrawNumber(8, chaseData.nearest)
+        visual:DrawNumber(0, pos + self.acceleration:normalize() * 8)
+
+        --    local gForce = construct.world.GAlongGravity()
+        --    if gForce:len() > 0 then
+        --        -- If we are 'above' the target position we can't allow engines to shut off as that causes is to fall below the point.
+        --        local body = universe:ClosestBody()
+        --        local bodyCenter = body.Geography.Center
+        --        local nearestToCenter = (chaseData.nearest - bodyCenter):len2()
+        --        local constructToCenter = (pos - bodyCenter):len2()
+        --
+        --        if constructToCenter > nearestToCenter then
+        --            -- Let gravity do its thing
+        --        else
+        --            acc = next.acceleration * toNearest:normalize()
+        --        end
+        --    else
+        --        acc = next.acceleration * toNearest:normalize()
+        --    end
+        --elseif brakeDistance >= next:DistanceTo() then
+        --    brakes:Set(true)
+        --    acc = brakeAccelerationNeeded * -travelDir
+        --elseif speedNextFlush < next.maxSpeed then
+        --    acc = next.acceleration * toRabbit:normalize()
+        --elseif speed > next.maxSpeed then
+        --    brakes:Set(true)
+        --end
     end
 
-    if self.acceleration == nil then
-        visual:RemoveNumber(0)
-        visual:RemoveNumber(9)
-        self:NullThrust()
-        self.deviationPID:inject(0) -- reset PID
-    else
-        visual:DrawNumber(0, pos + self.acceleration:normalize() * 8)
-        ctrl.setEngineCommand("thrust", { self.acceleration:unpack() })
-    end
+    local final = self.acceleration or nullVec
+    ctrl.setEngineCommand("thrust", { final:unpack() })
 end
 
 function fsm:AdjustForDeviation(chaseData, currentPos)
