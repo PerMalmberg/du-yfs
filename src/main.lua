@@ -33,7 +33,7 @@ input:Register(keys.option1, Criteria():LAlt():OnPress(), function()
     end
 end)
 
-local step = 1
+local step = 5
 
 input:Register(keys.speedup, Criteria():OnRepeat(), function()
     step = step + 5
@@ -41,7 +41,9 @@ input:Register(keys.speedup, Criteria():OnRepeat(), function()
 end)
 
 input:Register(keys.speeddown, Criteria():OnRepeat(), function()
-    step = step - 0.1
+    if step > 5 then
+        step = step - 5
+    end
     log:Info("Step ", step)
 end)
 
