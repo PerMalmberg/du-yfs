@@ -36,16 +36,14 @@ function state:Flush(next, previous, chaseData)
     if brakeDistance < dist and dist > 10 then
         self.fsm:SetState(Travel(self.fsm))
     else
-        local velocity = construct.velocity:Movement()
-        local travelDir = velocity:normalize()
+        local travelDir = construct.velocity:Movement():normalize_inplace()
 
         local toRabbit = chaseData.rabbit - currentPos
         local dirToRabbit = toRabbit:normalize()
-        local outOfAlignment = travelDir:dot(dirToRabbit) < 0.8
 
         local needToBrake = brakeDistance >= next:DistanceTo()
 
-        brakes:Set(needToBrake or outOfAlignment)
+        brakes:Set(needToBrake)
 
         local acc = brakeAccelerationNeeded * -travelDir
 
