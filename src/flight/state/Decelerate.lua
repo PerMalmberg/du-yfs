@@ -40,7 +40,7 @@ function state:Flush(next, previous, chaseData)
         if speedNextFlush <= next.maxSpeed then
             self.fsm:SetState(Travel(self.fsm))
         else
-            self.fsm:NullThrust()
+            self.fsm:Thrust()
         end
     end
 end
