@@ -9,6 +9,7 @@ local Criteria = require("du-libs:input/Criteria")
 local keys = require("du-libs:input/Keys")
 local log = require("du-libs:debug/Log")()
 local alignment = require("flight/AlignmentFunctions")
+local cmd = require("du-libs:commandline/CommandLine")()
 
 local brakeLight = library:GetLinkByName("brakelight")
 
@@ -47,7 +48,7 @@ input:Register(keys.speeddown, Criteria():OnRepeat(), function()
     log:Info("Step ", step)
 end)
 
-function move(reference, distance)
+local function move(reference, distance)
     fc:ClearWP()
     local target = construct.position.Current() + reference * distance
     fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(50), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
@@ -107,3 +108,16 @@ input:Register(keys.option9, Criteria():OnPress(), function()
     fc:AddWaypoint(Waypoint(start, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end)
+
+local moveFunc = function(data)
+    fc:ClearWP()
+    local pos = construct.position.Current()
+
+    fc:AddWaypoint(Waypoint(pos + construct.orientation.Forward() * data.f + construct.orientation.Right() * data.r + construct.orientation.Up() * data.u, calc.Kph2Mps(100), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:StartFlight()
+end
+
+local moveCmd = cmd:Accept("move", moveFunc):AsString()
+moveCmd:Option("-f"):AsNumber():Mandatory():Default(0)
+moveCmd:Option("-u"):AsNumber():Mandatory():Default(0)
+moveCmd:Option("-r"):AsNumber():Mandatory():Default(0)
