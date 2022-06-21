@@ -33,7 +33,7 @@ function state:Flush(next, previous, chaseData)
 
     local currentPos = construct.position.Current()
     local toTarget = self.target - currentPos
-    system.print(toTarget:len()) -- QQ Why does it no reach? brakes too strong? It get stuck at 1m which is where we reduce acc
+
     if toTarget:len() <= next.margin then
         self.fsm:SetState(Travel(self.fsm))
     else
@@ -44,15 +44,17 @@ function state:Flush(next, previous, chaseData)
         brakes:Set(brakeDistance >= toTarget:len())
 
         local acc = brakeAccelerationNeeded * -travelDir
+        if acc:len2() <= 0 then
+            -- Significantly reduce acceleration when less than 1m from target.
+            local mul
+            if toTarget:len() < 1 then
+                mul = 0.5
+            else
+                mul = 2
+            end
 
-        -- Significantly reduce acceleration when less than 1m from target.
-        local mul
-        if toTarget:len() < 1 then
-            mul = 0.5
-        else
-            mul = 2
+            acc = toTarget:normalize() * mul
         end
-        acc = acc + (toTarget + next:DirectionTo()):normalize() * mul
 
         self.fsm:Thrust(acc)
     end
