@@ -115,7 +115,7 @@ end
 function fsm:Update()
     local c = self.current
     if c ~= nil then
-        self.wAcceleration:Set(construct.acceleration.Movement():len())
+        self.wAcceleration:Set(calc.Round(construct.acceleration.Movement():len(), 2))
         c:Update()
     end
 end
