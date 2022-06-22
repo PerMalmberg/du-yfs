@@ -64,7 +64,7 @@ input:Register(keys.backward, Criteria():OnRepeat(), function()
 end)
 
 input:Register(keys.strafeleft, Criteria():OnRepeat(), function()
-    move(-construct.orientation.Right(), -step)
+    move(-construct.orientation.Right(), step)
 end)
 
 input:Register(keys.straferight, Criteria():OnRepeat(), function()
@@ -112,8 +112,9 @@ end)
 local moveFunc = function(data)
     fc:ClearWP()
     local pos = construct.position.Current()
+    data.s = math.abs(data.s)
 
-    fc:AddWaypoint(Waypoint(pos + construct.orientation.Forward() * data.f + construct.orientation.Right() * data.r + construct.orientation.Up() * data.u, calc.Kph2Mps(100), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:AddWaypoint(Waypoint(pos + construct.orientation.Forward() * data.f + construct.orientation.Right() * data.r + construct.orientation.Up() * data.u, calc.Kph2Mps(data.s), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end
 
@@ -121,3 +122,4 @@ local moveCmd = cmd:Accept("move", moveFunc):AsString()
 moveCmd:Option("-f"):AsNumber():Mandatory():Default(0)
 moveCmd:Option("-u"):AsNumber():Mandatory():Default(0)
 moveCmd:Option("-r"):AsNumber():Mandatory():Default(0)
+moveCmd:Option("-s"):AsNumber():Mandatory():Default(100)

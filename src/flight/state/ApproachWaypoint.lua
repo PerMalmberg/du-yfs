@@ -47,10 +47,10 @@ function state:Flush(next, previous, chaseData)
 
         local acc = brakeAccelerationNeeded * -travelDir
 
-        -- Significantly reduce acceleration when less than 1m from target.
+        -- Reduce acceleration when less than 1m from target.
         local mul
         if toRabbit:len() < 1 then
-            mul = 0.5
+            mul = 1
         else
             mul = 2
         end
