@@ -27,8 +27,9 @@ function alignment.YawPitchKeepOrthogonalToGravity(waypoint, previousWaypoint)
     if abs(dir:dot(normal)) > 0.9 then
         -- When the next waypoint is nearly above or below us, switch alignment mode.
         -- This 'trick' allows turning also in manual control
-        waypoint:OneTimeSetYawPitchDirection(construct.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity)
-        return nil
+        local f = alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity
+        waypoint:OneTimeSetYawPitchDirection(construct.orientation.Forward(), f)
+        return f(waypoint, previousWaypoint)
     end
 
     dir = dir:project_on_plane(normal)

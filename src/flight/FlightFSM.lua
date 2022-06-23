@@ -63,31 +63,6 @@ function fsm:FsmFlush(next, previous)
         visual:DrawNumber(9, chaseData.rabbit)
         visual:DrawNumber(8, chaseData.nearest)
         visual:DrawNumber(0, pos + self.acceleration:normalize() * 8)
-
-        --    local gForce = construct.world.GAlongGravity()
-        --    if gForce:len() > 0 then
-        --        -- If we are 'above' the target position we can't allow engines to shut off as that causes is to fall below the point.
-        --        local body = universe:ClosestBody()
-        --        local bodyCenter = body.Geography.Center
-        --        local nearestToCenter = (chaseData.nearest - bodyCenter):len2()
-        --        local constructToCenter = (pos - bodyCenter):len2()
-        --
-        --        if constructToCenter > nearestToCenter then
-        --            -- Let gravity do its thing
-        --        else
-        --            acc = next.acceleration * toNearest:normalize()
-        --        end
-        --    else
-        --        acc = next.acceleration * toNearest:normalize()
-        --    end
-        --elseif brakeDistance >= next:DistanceTo() then
-        --    brakes:Set(true)
-        --    acc = brakeAccelerationNeeded * -travelDir
-        --elseif speedNextFlush < next.maxSpeed then
-        --    acc = next.acceleration * toRabbit:normalize()
-        --elseif speed > next.maxSpeed then
-        --    brakes:Set(true)
-        --end
     end
 
     local final = self.acceleration or nullVec

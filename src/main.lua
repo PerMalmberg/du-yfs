@@ -80,11 +80,11 @@ input:Register(keys.down, Criteria():OnRepeat(), function()
 end)
 
 input:Register(keys.yawleft, Criteria():OnRepeat(), function()
-    fc:RotateWaypoints(1, construct.orientation.Up())
+    fc:Turn(1, construct.orientation.Up())
 end)
 
 input:Register(keys.yawright, Criteria():OnRepeat(), function()
-    fc:RotateWaypoints(-1, construct.orientation.Up())
+    fc:Turn(-1, construct.orientation.Up(), construct.position.Current())
 end)
 
 input:Register(keys.brake, Criteria():OnPress(), function()

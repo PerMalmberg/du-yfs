@@ -10,7 +10,10 @@ local sharedPanel = require("du-libs:panel/SharedPanel")()
 local universe = require("du-libs:universe/Universe")()
 local checks = require("du-libs:debug/Checks")
 local alignment = require("flight/AlignmentFunctions")
+local Vec3 = require("cpml/vec3")
 require("flight/state/Require")
+
+local nullVec = Vec3()
 
 local flightCore = {}
 flightCore.__index = flightCore
@@ -91,13 +94,17 @@ function flightCore:StartFlight()
 end
 
 -- Rotates all waypoints around the axis with the given angle
-function flightCore:RotateWaypoints(degrees, axis)
+function flightCore:Turn(degrees, axis, rotationPoint)
     checks.IsNumber(degrees, "degrees", "flightCore:RotateWaypoints")
     checks.IsVec3(axis, "axis", "flightCore:RotateWaypoints")
 
-    for _, w in ipairs(self.waypoints) do
-        w:RotateAroundAxis(degrees, axis)
-    end
+    -- Take the next waypoint and rotate it then set a new path from the current location
+    local current = self:CurrentWP()
+    rotationPoint = (rotationPoint or construct.position.Current())
+    current:RotateAroundAxis(degrees, axis, rotationPoint)
+    self:ClearWP()
+    self:AddWaypoint(current)
+    -- Don't restart flight, just let the current flight continue. This avoids engine interruptions.
 end
 
 function flightCore:ReceiveEvents()
