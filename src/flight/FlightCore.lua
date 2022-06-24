@@ -10,6 +10,7 @@ local sharedPanel = require("du-libs:panel/SharedPanel")()
 local universe = require("du-libs:universe/Universe")()
 local checks = require("du-libs:debug/Checks")
 local alignment = require("flight/AlignmentFunctions")
+local calc = require("du-libs:util/Calc")
 local Vec3 = require("cpml/vec3")
 require("flight/state/Require")
 
@@ -36,6 +37,7 @@ local function new()
         waypointReachedSignaled = false,
         wWaypointCount = sharedPanel:Get("Waypoint"):CreateValue("Count", ""),
         wWaypointDistance = sharedPanel:Get("Waypoint"):CreateValue("WP dist.", "m"),
+        wWaypointMargin = sharedPanel:Get("Waypoint"):CreateValue("WP margin", "m"),
         wWaypointMaxSpeed = sharedPanel:Get("Waypoint"):CreateValue("WP max. s.", "m/s")
     }
 
@@ -74,8 +76,11 @@ function flightCore:NextWP()
         switched = true
     end
 
-    local current = self:CurrentWP()
+    if switched then
+        self.waypointReachedSignaled = false
+    end
 
+    local current = self:CurrentWP()
     return current, switched
 end
 
@@ -152,7 +157,8 @@ function flightCore:FCUpdate()
                 local wp = self:CurrentWP()
                 if wp ~= nil then
                     self.wWaypointCount:Set(#self.waypoints)
-                    self.wWaypointDistance:Set(wp:DistanceTo())
+                    self.wWaypointDistance:Set(calc.Round(wp:DistanceTo(), 3))
+                    self.wWaypointMargin:Set(calc.Round(wp.margin, 3))
                     self.wWaypointMaxSpeed:Set(wp.maxSpeed)
 
                     local diff = wp.destination - self.previousWaypoint.destination
@@ -190,10 +196,7 @@ function flightCore:FCFlush()
 
                         local switched
                         wp, switched = self:NextWP()
-                        if switched then
-                            self.waypointReachedSignaled = false
-                        end
-                    elseif self.waypointReachedSignaled then
+                    else
                         -- When we go out of range, reset signal so that we get it again when we're back on the waypoint.
                         self.waypointReachedSignaled = false
                     end
