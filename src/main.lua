@@ -114,7 +114,7 @@ local moveFunc = function(data)
     local pos = construct.position.Current()
     data.s = math.abs(data.s)
 
-    fc:AddWaypoint(Waypoint(pos + construct.orientation.Forward() * data.f + construct.orientation.Right() * data.r + construct.orientation.Up() * data.u, calc.Kph2Mps(data.s), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:AddWaypoint(Waypoint(pos + construct.orientation.Forward() * data.f + construct.orientation.Right() * data.r + construct.orientation.Up() * data.u, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end
 
@@ -122,4 +122,26 @@ local moveCmd = cmd:Accept("move", moveFunc):AsString()
 moveCmd:Option("-f"):AsNumber():Mandatory():Default(0)
 moveCmd:Option("-u"):AsNumber():Mandatory():Default(0)
 moveCmd:Option("-r"):AsNumber():Mandatory():Default(0)
-moveCmd:Option("-s"):AsNumber():Mandatory():Default(100)
+moveCmd:Option("-v"):AsNumber():Mandatory():Default(0)
+
+local turnFunc = function(data)
+    -- Turn in the expected way, i.e. clockwise on positive values.
+    local angle = -data.commandValue
+
+    fc:Turn(angle, construct.orientation.Up(), construct.position.Current())
+end
+
+cmd:Accept("turn", turnFunc):AsNumber()
+
+local strafeFunc = function(data)
+    fc:ClearWP()
+    local pos = construct.position.Current()
+
+    local wp = Waypoint(pos + construct.orientation.Right() * data.commandValue, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity)
+    wp:OneTimeSetYawPitchDirection(construct.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity)
+    fc:AddWaypoint(wp)
+    fc:StartFlight()
+end
+
+local strafeCmd = cmd:Accept("strafe", strafeFunc):AsNumber()
+strafeCmd:Option("-v"):AsNumber():Mandatory():Default(10)

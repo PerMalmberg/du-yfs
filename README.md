@@ -2,7 +2,6 @@
 
 * Space flight - center of planet as reference instead of GAlongGravity?
     * Brakes in space - GAlongGravity returns nil? Use custom reference from the closest planet instead
-* Turning - make new path based on current pos and direction.
 * Diagonal movement.
 
 # Brakes
