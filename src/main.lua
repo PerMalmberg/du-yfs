@@ -10,6 +10,7 @@ local keys = require("du-libs:input/Keys")
 local log = require("du-libs:debug/Log")()
 local alignment = require("flight/AlignmentFunctions")
 local cmd = require("du-libs:commandline/CommandLine")()
+local utils = require("cpml/utils")
 
 local brakeLight = library:GetLinkByName("brakelight")
 
@@ -35,18 +36,6 @@ input:Register(keys.option1, Criteria():LAlt():OnPress(), function()
 end)
 
 local step = 5
-
-input:Register(keys.speedup, Criteria():OnRepeat(), function()
-    step = step + 5
-    log:Info("Step ", step)
-end)
-
-input:Register(keys.speeddown, Criteria():OnRepeat(), function()
-    if step > 5 then
-        step = step - 5
-    end
-    log:Info("Step ", step)
-end)
 
 local function move(reference, distance)
     fc:ClearWP()
@@ -109,10 +98,17 @@ input:Register(keys.option9, Criteria():OnPress(), function()
     fc:StartFlight()
 end)
 
+local stepFunc = function(data)
+    step = utils.clamp(data.commandValue, 0.1, 20000)
+    log:Info("Step set to:", step)
+end
+
+cmd:Accept("step", stepFunc):AsNumber():Mandatory()
+
 local moveFunc = function(data)
     fc:ClearWP()
     local pos = construct.position.Current()
-    data.s = math.abs(data.s)
+    data.v = math.abs(data.v)
 
     fc:AddWaypoint(Waypoint(pos + construct.orientation.Forward() * data.f + construct.orientation.Right() * data.r + construct.orientation.Up() * data.u, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
@@ -122,7 +118,7 @@ local moveCmd = cmd:Accept("move", moveFunc):AsString()
 moveCmd:Option("-f"):AsNumber():Mandatory():Default(0)
 moveCmd:Option("-u"):AsNumber():Mandatory():Default(0)
 moveCmd:Option("-r"):AsNumber():Mandatory():Default(0)
-moveCmd:Option("-v"):AsNumber():Mandatory():Default(0)
+moveCmd:Option("-v"):AsNumber():Mandatory():Default(10)
 
 local turnFunc = function(data)
     -- Turn in the expected way, i.e. clockwise on positive values.

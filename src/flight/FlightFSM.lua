@@ -44,7 +44,6 @@ function fsm:FsmFlush(next, previous)
         local chaseData = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
         local toRabbit = chaseData.rabbit - pos
         local toNearest = chaseData.nearest - pos
-        local speedNextFlush = (Velocity() + construct.acceleration:Movement() * constants.PHYSICS_INTERVAL):len()
 
         brakes:Set(false)
 

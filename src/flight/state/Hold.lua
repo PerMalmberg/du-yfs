@@ -20,7 +20,7 @@ local function new(fsm)
 end
 
 function state:Enter()
-    brakes:Set(true)
+
 end
 
 function state:Leave()
@@ -31,6 +31,7 @@ function state:Flush(next, previous, chaseData)
     if not next:Reached() then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     else
+        brakes:Set(true)
         self.fsm:Thrust() -- Just counter gravity
     end
 end
