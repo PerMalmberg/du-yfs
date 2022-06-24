@@ -2,6 +2,7 @@ local constants = require("du-libs:abstraction/Constants")
 local construct = require("du-libs:abstraction/Construct")()
 local checks = require("du-libs:debug/Checks")
 local brakes = require("flight/Brakes")()
+local engine = require("du-libs:abstraction/Engine")()
 require("flight/state/Require")
 
 local state = {}
@@ -45,7 +46,7 @@ function state:Flush(next, previous, chaseData)
         -- them to push the construct off the trajectory.
         local speedNextFlush = (velocity + construct.acceleration:Movement() * constants.PHYSICS_INTERVAL):len()
         if speedNextFlush < next.maxSpeed then
-            self.fsm:Thrust(directionToRabbit * next.acceleration)
+            self.fsm:Thrust(directionToRabbit * engine:GetMaxAccelerationAlongAxis(directionToRabbit))
         else
             self.fsm:Thrust()
         end

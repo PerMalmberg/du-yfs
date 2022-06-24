@@ -2,6 +2,7 @@ local constants = require("du-libs:abstraction/Constants")
 local construct = require("du-libs:abstraction/Construct")()
 local brakes = require("flight/Brakes")()
 local checks = require("du-libs:debug/Checks")
+local engine = require("du-libs:abstraction/Engine")()
 require("flight/state/Require")
 
 local state = {}
@@ -40,7 +41,8 @@ function state:Flush(next, previous, chaseData)
         if speedNextFlush <= next.maxSpeed then
             self.fsm:SetState(Travel(self.fsm))
         else
-            self.fsm:Thrust()
+            local dir = construct.velocity.Movement():normalize_inplace()
+            self.fsm:Thrust(-dir * engine:GetMaxAccelerationAlongAxis(-dir))
         end
     end
 end

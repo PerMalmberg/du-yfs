@@ -25,7 +25,6 @@ local function new(destination, maxSpeed, margin, roll, yawPitch)
         rollFunc = roll,
         yawPitchFunc = yawPitch,
         yawPitchDirection = nil, -- Fixed target direction, vec3
-        acceleration = 15
     }
 
     setmetatable(o, waypoint)

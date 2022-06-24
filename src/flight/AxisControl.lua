@@ -5,7 +5,7 @@ local calc = require("du-libs:util/Calc")
 local nullVec = require("cpml/vec3")()
 local visual = require("du-libs:debug/Visual")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
-local EngineGroup = require("flight/EngineGroup")
+local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local PID = require("cpml/pid")
 
 local rad2deg = 180 / math.pi

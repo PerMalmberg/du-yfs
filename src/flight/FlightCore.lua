@@ -1,7 +1,7 @@
 local AxisControl = require("flight/AxisControl")
 local Brakes = require("flight/Brakes")
 local FlightFSM = require("flight/FlightFSM")
-local EngineGroup = require("flight/EngineGroup")
+local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Waypoint = require("flight/Waypoint")
 local construct = require("du-libs:abstraction/Construct")()
 local visual = require("du-libs:debug/Visual")()
@@ -36,8 +36,7 @@ local function new()
         waypointReachedSignaled = false,
         wWaypointCount = sharedPanel:Get("Waypoint"):CreateValue("Count", ""),
         wWaypointDistance = sharedPanel:Get("Waypoint"):CreateValue("WP dist.", "m"),
-        wWaypointMaxSpeed = sharedPanel:Get("Waypoint"):CreateValue("WP max. s.", "m/s"),
-        wWaypointAcc = sharedPanel:Get("Waypoint"):CreateValue("WP acc", "m/s2"),
+        wWaypointMaxSpeed = sharedPanel:Get("Waypoint"):CreateValue("WP max. s.", "m/s")
     }
 
     setmetatable(instance, flightCore)
@@ -155,7 +154,6 @@ function flightCore:FCUpdate()
                     self.wWaypointCount:Set(#self.waypoints)
                     self.wWaypointDistance:Set(wp:DistanceTo())
                     self.wWaypointMaxSpeed:Set(wp.maxSpeed)
-                    self.wWaypointAcc:Set(wp.acceleration)
 
                     local diff = wp.destination - self.previousWaypoint.destination
                     local len = diff:len()

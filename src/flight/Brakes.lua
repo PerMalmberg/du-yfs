@@ -1,4 +1,4 @@
-local EngineGroup = require("flight/EngineGroup")
+local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local library = require("du-libs:abstraction/Library")()
 local construct = require("du-libs:abstraction/Construct")()
 local checks = require("du-libs:debug/Checks")
