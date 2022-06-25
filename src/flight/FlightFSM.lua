@@ -1,5 +1,4 @@
 local brakes = require("flight/Brakes")()
-local constants = require("du-libs:abstraction/Constants")
 local construct = require("du-libs:abstraction/Construct")()
 local calc = require("du-libs:util/Calc")
 local ctrl = require("du-libs:abstraction/Library")():GetController()
@@ -24,8 +23,9 @@ local function new()
         wAcceleration = sharedPanel:Get("FlightFSM"):CreateValue("Acceleration", "m/s2"),
         nearestPoint = nil,
         acceleration = nil,
-        deviationPID = PID(0, 0.8, 0.2),
+        deviationPID = PID(0, 0.8, 0.2)
     }
+
     setmetatable(instance, fsm)
     instance:SetState(Idle(instance))
     return instance
@@ -58,14 +58,12 @@ function fsm:FsmFlush(next, previous)
 
         c:Flush(next, previous, chaseData)
 
-        --self:Thrust(acc)
         visual:DrawNumber(9, chaseData.rabbit)
         visual:DrawNumber(8, chaseData.nearest)
         visual:DrawNumber(0, pos + self.acceleration:normalize() * 8)
     end
 
-    local final = self.acceleration or nullVec
-    ctrl.setEngineCommand("thrust", { final:unpack() })
+    self:ApplyAcceleration(self.acceleration or nullVec)
 end
 
 function fsm:AdjustForDeviation(chaseData, currentPos)
@@ -84,6 +82,15 @@ function fsm:AdjustForDeviation(chaseData, currentPos)
     local maxDeviationAcc = 2
 
     return nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
+end
+
+function fsm:ApplyAcceleration(acceleration)
+    -- Compensate for any gravity
+    local gAcc = construct.world.GAlongGravity()
+
+    acceleration = acceleration - gAcc
+
+    ctrl.setEngineCommand("thrust", { acceleration:unpack() })
 end
 
 function fsm:Update()
@@ -121,9 +128,7 @@ function fsm:DisableThrust()
 end
 
 function fsm:Thrust(acceleration)
-    acceleration = acceleration or nullVec
-    -- Compensate for any gravity
-    self.acceleration = acceleration - construct.world.GAlongGravity()
+    self.acceleration = acceleration or nullVec
 end
 
 function fsm:NullThrust()
