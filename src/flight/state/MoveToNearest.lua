@@ -10,8 +10,7 @@ local function new(fsm)
     checks.IsTable(fsm, "fsm", name .. ":new")
 
     local o = {
-        fsm = fsm,
-        target = nil
+        fsm = fsm
     }
 
     setmetatable(o, state)
@@ -26,13 +25,8 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, chaseData)
-    -- Capture the nearest position when w
-    if self.target == nil then
-        self.target = chaseData.nearest
-    end
-
     local currentPos = construct.position.Current()
-    local toTarget = self.target - currentPos
+    local toTarget = chaseData.nearest - currentPos
 
     if toTarget:len() <= next.margin then
         self.fsm:SetState(Travel(self.fsm))
