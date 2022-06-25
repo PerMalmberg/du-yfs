@@ -22,14 +22,15 @@ local function new(fsm)
 end
 
 function state:Enter()
-    brakes:Set(true)
 end
 
 function state:Leave()
-    brakes:Set(false)
+
 end
 
 function state:Flush(next, previous, chaseData)
+    brakes:Set(true)
+
     -- Come to a near stop before moving on
     local vel = Velocity()
     local speed = Velocity():len()

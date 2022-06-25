@@ -1,6 +1,8 @@
 local brakes = require("flight/Brakes")()
 local checks = require("du-libs:debug/Checks")
 local construct = require("du-libs:abstraction/Construct")()
+local calc = require("du-libs:util/Calc")
+local utils = require("cpml/Utils")
 
 local state = {}
 state.__index = state
@@ -38,17 +40,9 @@ function state:Flush(next, previous, chaseData)
         brakes:Set(brakeDistance >= toTarget:len())
 
         local acc = brakeAccelerationNeeded * -travelDir
-        if acc:len2() <= 0 then
-            -- Reduce acceleration when less than 1m from target.
-            local mul
-            if toTarget:len() < 1 then
-                mul = 1
-            else
-                mul = 2
-            end
 
-            acc = toTarget:normalize() * mul
-        end
+        local mul = calc.Scale(utils.clamp(toTarget:len(), 0, 5), 0, 5, 0.1, 2)
+        acc = toTarget:normalize() * mul
 
         self.fsm:Thrust(acc)
     end
