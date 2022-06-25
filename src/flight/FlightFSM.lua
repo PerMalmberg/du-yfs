@@ -24,7 +24,7 @@ local function new()
         wAcceleration = sharedPanel:Get("FlightFSM"):CreateValue("Acceleration", "m/s2"),
         nearestPoint = nil,
         acceleration = nil,
-        deviationPID = PID(0, 0.8, 0.2, 0.5),
+        deviationPID = PID(0, 0.8, 0.2),
     }
     setmetatable(instance, fsm)
     instance:SetState(Idle(instance))
