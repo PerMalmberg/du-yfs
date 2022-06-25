@@ -35,12 +35,13 @@ input:Register(keys.option1, Criteria():LAlt():OnPress(), function()
     end
 end)
 
-local step = 5
+local step = 50
+local speed = 150
 
 local function move(reference, distance)
     fc:ClearWP()
     local target = construct.position.Current() + reference * distance
-    fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(50), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(speed), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end
 
@@ -106,6 +107,13 @@ local stepFunc = function(data)
 end
 
 cmd:Accept("step", stepFunc):AsNumber():Mandatory()
+
+local speedFunc = function(data)
+    speed = utils.clamp(data.commandValue, 1, 2000)
+    log:Info("Speed set to:", speed)
+end
+
+cmd:Accept("speed", speedFunc):AsNumber():Mandatory()
 
 local moveFunc = function(data)
     fc:ClearWP()
