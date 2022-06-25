@@ -114,6 +114,14 @@ function flightCore:Turn(degrees, axis, rotationPoint)
     end
 end
 
+function flightCore:SetFreeMode()
+    self.flightFSM:SetFreeMode()
+end
+
+function flightCore:SetAxisMode()
+    self.flightFSM:SetAxisMode()
+end
+
 function flightCore:ReceiveEvents()
     self.flushHandlerId = system:onEvent("flush", self.FCFlush, self)
     self.updateHandlerId = system:onEvent("update", self.FCUpdate, self)

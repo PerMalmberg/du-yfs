@@ -41,7 +41,7 @@ function state:Flush(next, previous, chaseData)
 
         local acc = brakeAccelerationNeeded * -travelDir
 
-        local mul = calc.Scale(utils.clamp(toTarget:len(), 0, 5), 0, 5, 0.1, 2)
+        local mul = calc.Scale(utils.clamp(toTarget:len(), 0, 5), 0, 5, 0.5, 2)
         acc = toTarget:normalize() * mul
 
         self.fsm:Thrust(acc)

@@ -2,15 +2,22 @@ local brakes = require("flight/Brakes")()
 local construct = require("du-libs:abstraction/Construct")()
 local calc = require("du-libs:util/Calc")
 local ctrl = require("du-libs:abstraction/Library")():GetController()
+local Enum = require("du-libs:util/Enum")
 local visual = require("du-libs:debug/Visual")()
 local nullVec = require("cpml/vec3")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
+local log = require("du-libs:debug/Log")()
 local universe = require("du-libs:universe/Universe")()
 local PID = require("cpml/pid")
 require("flight/state/Require")
 local CurrentPos = construct.position.Current
 local Velocity = construct.velocity.Movement
 local abs = math.abs
+
+local FlightMode = Enum {
+    "AXIS",
+    "FREE"
+}
 
 local fsm = {}
 fsm.__index = fsm
@@ -23,7 +30,8 @@ local function new()
         wAcceleration = sharedPanel:Get("FlightFSM"):CreateValue("Acceleration", "m/s2"),
         nearestPoint = nil,
         acceleration = nil,
-        deviationPID = PID(0, 0.8, 0.2)
+        deviationPID = PID(0, 0.8, 0.2),
+        mode = FlightMode.AXIS
     }
 
     setmetatable(instance, fsm)
@@ -31,26 +39,38 @@ local function new()
     return instance
 end
 
+function fsm:CheckPathAlignment(currentPos, chaseData)
+    local res = true
+
+    if self.mode == FlightMode.AXIS then
+        local travelDir = Velocity():normalize_inplace()
+        local speed = Velocity():len()
+
+        local toRabbit = chaseData.rabbit - currentPos
+        local toNearest = chaseData.nearest - currentPos
+
+        local tolerance = 0.85
+        if speed > 1 then
+            res = travelDir:dot(toRabbit:normalize()) >= tolerance or travelDir:dot(toNearest:normalize()) >= tolerance
+        end
+    end
+
+    return res
+end
+
 function fsm:FsmFlush(next, previous)
 
     local pos = CurrentPos()
-    local travelDir = Velocity():normalize_inplace()
-    local speed = Velocity():len()
 
     local c = self.current
     if c ~= nil then
-        local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(next:DistanceTo())
-
         local chaseData = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
-        local toRabbit = chaseData.rabbit - pos
-        local toNearest = chaseData.nearest - pos
 
         brakes:Set(false)
 
         -- Are we moving in the desired direction?
-        if speed > 1 and travelDir:dot(toRabbit:normalize()) < 0.85 and travelDir:dot(toNearest:normalize()) < 0.85 then
+        if not self:CheckPathAlignment(pos, chaseData) then
             self:SetState(CorrectDeviation(self))
-            brakes:Set(true)
         end
 
         c:Flush(next, previous, chaseData)
@@ -120,6 +140,16 @@ function fsm:SetState(state)
     end
 
     self.current = state
+end
+
+function fsm:SetFreeMode()
+    self.mode = FlightMode.FREE
+    log:Info("Free mode")
+end
+
+function fsm:SetAxisMode()
+    self.mode = FlightMode.AXIS
+    log:Info("Axis mode")
 end
 
 function fsm:DisableThrust()
