@@ -4,7 +4,7 @@ local construct = require("du-libs:abstraction/Construct")()
 
 local state = {}
 state.__index = state
-local name = "MoveToNearest"
+local name = "ReturnToPath"
 
 local function new(fsm)
     checks.IsTable(fsm, "fsm", name .. ":new")
