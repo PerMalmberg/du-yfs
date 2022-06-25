@@ -1,4 +1,5 @@
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
+local Timer = require("du-libs:system/Timer")
 local library = require("du-libs:abstraction/Library")()
 local construct = require("du-libs:abstraction/Construct")()
 local checks = require("du-libs:debug/Checks")
@@ -29,7 +30,7 @@ local function new()
         engaged = false,
         forced = false,
         GetData = ctrl.getData,
-        lastUpdateAtmoDensity = nil,
+        updateTimer = Timer(),
         currentForce = 0,
         totalMass = 1,
         isWithinAtmo = true,
@@ -48,14 +49,16 @@ local function new()
     setmetatable(instance, brakes)
 
     -- Do this at start to get some initial values
-    instance:calculateBreakForce()
+    instance:calculateBreakForce(true)
+    instance.updateTimer:Start()
 
     return instance
 end
 
-function brakes:Update()
+function brakes:BrakeUpdate()
+    local pos = construct.position.Current()
+    self.isWithinAtmo = universe:ClosestBody(pos):IsWithinAtmosphere(pos)
     self:calculateBreakForce()
-    self.isWithinAtmo = universe:ClosestBody():IsWithinAtmosphere(construct.position.Current())
     self.wWithinAtmo:Set(self.isWithinAtmo)
     self.wEngaged:Set(self:IsEngaged())
     self.wDistance:Set(calc.Round(self:BrakeDistance(), 1))
@@ -84,18 +87,17 @@ function brakes:BrakeFlush()
     end
 end
 
-function brakes:calculateBreakForce()
+function brakes:calculateBreakForce(forcedUpdate)
     --[[
         The effective brake force in atmo depends on the atmosphere density and current speed.
         - Speed affects break force such that it increases from 10% to 100% at >=10m/s to >=100m/s
         - Atmospheric density affects break force in a linearly.
     ]]
-    local density = world.AtmoDensity()
-    local atmoNow = calc.Round(density, 5) -- Reduce noise to reduce how often we have to recalculate
 
-    if self.lastUpdateAtmoDensity == nil or atmoNow ~= self.lastUpdateAtmoDensity then
-        self.lastUpdateAtmoDensity = atmoNow
-        self.wAtmoDensity:Set(atmoNow)
+    if forcedUpdate or self.updateTimer:Elapsed() > 0.1 then
+        local density = world.AtmoDensity()
+        self.wAtmoDensity:Set(calc.Round(density, 5))
+        self.updateTimer:Start()
 
         self.totalMass = mass.Total()
 

@@ -163,7 +163,7 @@ function flightCore:FCUpdate()
     local status, err, _ = xpcall(
             function()
                 self.flightFSM:Update()
-                self.brakes:Update()
+                self.brakes:BrakeUpdate()
 
                 local wp = self:CurrentWP()
                 if wp ~= nil then
