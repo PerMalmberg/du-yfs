@@ -37,7 +37,7 @@ function alignment.YawPitchKeepOrthogonalToGravity(waypoint, previousWaypoint)
 end
 
 function alignment.RollTopsideAwayFromNearestBody(waypoint, previousWaypoint)
-    local center = universe:ClosestBody().Geography.Center
+    local center = universe:ClosestBody(construct.position.Current()).Geography.Center
     local pos = construct.position.Current()
     return pos + (pos - center):normalize_inplace() * directionMargin
 end
