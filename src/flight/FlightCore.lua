@@ -102,13 +102,16 @@ function flightCore:Turn(degrees, axis, rotationPoint)
     checks.IsNumber(degrees, "degrees", "flightCore:RotateWaypoints")
     checks.IsVec3(axis, "axis", "flightCore:RotateWaypoints")
 
-    -- Take the next waypoint and rotate it then set a new path from the current location
+    -- Take the next waypoint and rotate it then set a new path from the current location.
     local current = self:CurrentWP()
-    rotationPoint = (rotationPoint or construct.position.Current())
-    current:RotateAroundAxis(degrees, axis, rotationPoint)
-    self:ClearWP()
-    self:AddWaypoint(current)
-    -- Don't restart flight, just let the current flight continue. This avoids engine interruptions.
+    -- Can't turn without a waypoint.
+    if current ~= nil then
+        rotationPoint = (rotationPoint or construct.position.Current())
+        current:RotateAroundAxis(degrees, axis, rotationPoint)
+        self:ClearWP()
+        self:AddWaypoint(current)
+        -- Don't restart flight, just let the current flight continue. This avoids engine interruptions.
+    end
 end
 
 function flightCore:ReceiveEvents()
