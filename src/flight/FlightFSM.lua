@@ -90,7 +90,7 @@ function fsm:ApplyAcceleration(acceleration)
 
     acceleration = acceleration - gAcc
 
-    ctrl.setEngineCommand("thrust", { acceleration:unpack() })
+    ctrl.setEngineCommand("thrust,airfoil", { acceleration:unpack() }, { 0, 0, 0 }, 1, 1, "airfoil", "thrust")
 end
 
 function fsm:Update()
