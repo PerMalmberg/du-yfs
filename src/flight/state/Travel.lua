@@ -44,9 +44,11 @@ function state:Flush(next, previous, chaseData)
     else
         -- Word of warning for my future self. Quickly toggling the brakes causes
         -- them to push the construct off the trajectory.
-        local speedNextFlush = (velocity + construct.acceleration:Movement() * constants.PHYSICS_INTERVAL):len()
+        local acc = engine:GetMaxAccelerationAlongAxis(directionToRabbit)
+        local speedNextFlush = (velocity + acc * constants.PHYSICS_INTERVAL):len()
+        
         if speedNextFlush < next.maxSpeed then
-            self.fsm:Thrust(directionToRabbit * engine:GetMaxAccelerationAlongAxis(directionToRabbit))
+            self.fsm:Thrust(directionToRabbit * acc)
         else
             self.fsm:Thrust()
         end

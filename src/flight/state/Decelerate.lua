@@ -23,11 +23,9 @@ local function new(fsm)
 end
 
 function state:Enter()
-    brakes:Set(true)
 end
 
 function state:Leave()
-    brakes:Set(false)
 end
 
 function state:Flush(next, previous, chaseData)
@@ -41,8 +39,9 @@ function state:Flush(next, previous, chaseData)
         if speedNextFlush <= next.maxSpeed then
             self.fsm:SetState(Travel(self.fsm))
         else
-            local dir = construct.velocity.Movement():normalize_inplace()
-            self.fsm:Thrust(-dir * engine:GetMaxAccelerationAlongAxis(-dir))
+            brakes:Set(true)
+            --local dir = construct.velocity.Movement():normalize_inplace()
+            --self.fsm:Thrust(-dir * engine:GetMaxAccelerationAlongAxis(-dir))
         end
     end
 end
