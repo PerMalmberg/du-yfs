@@ -2,8 +2,10 @@ local constants = require("du-libs:abstraction/Constants")
 local construct = require("du-libs:abstraction/Construct")()
 local checks = require("du-libs:debug/Checks")
 local brakes = require("flight/Brakes")()
-local engine = require("du-libs:abstraction/Engine")()
+local Vec3 = require("cpml/vec3")
+local library = require("du-libs:abstraction/Library")()
 require("flight/state/Require")
+local abs = math.abs
 
 local state = {}
 state.__index = state
@@ -14,7 +16,8 @@ local function new(fsm)
     checks.IsTable(fsm, "fsm", name .. ":new")
 
     local o = {
-        fsm = fsm
+        fsm = fsm,
+        core = library:GetCoreUnit()
     }
 
     setmetatable(o, state)
@@ -32,25 +35,32 @@ end
 function state:Flush(next, previous, chaseData)
     local brakeDistance, neededBrakeAcceleration = brakes:BrakeDistance(next:DistanceTo())
     local velocity = construct.velocity:Movement()
-    local speed = velocity:len()
     local currentPos = construct.position.Current()
 
     local directionToRabbit = (chaseData.rabbit - currentPos):normalize_inplace()
 
     if brakeDistance >= next:DistanceTo() or neededBrakeAcceleration > 0 then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
-    elseif speed > next.maxSpeed then
-        self.fsm:SetState(Decelerate(self.fsm))
     else
-        -- Word of warning for my future self. Quickly toggling the brakes causes
+        -- Word of warning. Quickly toggling the brakes causes
         -- them to push the construct off the trajectory.
-        local acc = engine:GetMaxAccelerationAlongAxis(directionToRabbit)
-        local speedNextFlush = (velocity + acc * constants.PHYSICS_INTERVAL):len()
-        
-        if speedNextFlush < next.maxSpeed then
-            self.fsm:Thrust(directionToRabbit * acc)
-        else
+
+        -- Increase this to prevent engines from stopping/starting
+        local margin = 2
+
+        -- Get speed diff in direction of rabbit
+        local speedDiff = velocity:dot(directionToRabbit) - next.maxSpeed
+        if speedDiff > 0 then
+            -- Need to brake
+            brakes:Set(true)
             self.fsm:Thrust()
+        elseif speedDiff < -margin then
+            -- Simply accelerate with whatever power we have available.
+            -- v = v0 + a*t => a = (v - v0) / t
+            local accNeeded = abs(speedDiff / 2) / constants.PHYSICS_INTERVAL
+            self.fsm:Thrust(directionToRabbit * accNeeded)
+        else
+            self.fsm:Thrust(-Vec3(self.core.getWorldAirFrictionAcceleration()))
         end
     end
 end
