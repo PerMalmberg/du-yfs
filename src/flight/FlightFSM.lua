@@ -106,7 +106,7 @@ end
 
 function fsm:ApplyAcceleration(acceleration)
     -- Compensate for any gravity
-    local gAcc = construct.world.GAlongGravity()
+    local gAcc = universe:VerticalReferenceVector() * construct.world.G()
 
     acceleration = acceleration - gAcc
 

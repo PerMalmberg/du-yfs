@@ -129,17 +129,19 @@ function brakes:GravityInfluence(velocity)
 
     -- When gravity is present, it reduces the available brake force in directions towards the planet and increases it when going out from the planet.
     -- Determine how much the gravity affects us by checking the alignment between our movement vector and the gravity.
-    local gravity = world.GAlongGravity()
+    local gravity = world.G()
 
     local influence = 0
 
-    if gravity:len2() > 0 then
+    if gravity > 0 then
         local velNorm = velocity:normalize()
-        local dot = gravity:normalize():dot(velNorm)
+        local vertRef = universe:VerticalReferenceVector()
+        local dot = vertRef:dot(velNorm)
 
         if dot > 0 then
             -- Traveling in the same direction - we're influenced such that the break force is reduced
-            influence = -(gravity * velNorm):len() -- -gravity:project_on(velocity):len()
+            local gAlongRef = gravity * vertRef
+            influence = -(gAlongRef * velNorm):len() -- -gravity:project_on(velocity):len()
         end
         --[[elseif dot < 0 then
                 -- Traveling against gravity - break force is increased

@@ -12,7 +12,7 @@ local directionMargin = 1000
 local alignment = {}
 
 function alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity(waypoint, previousWaypoint)
-    local normal = -construct.world.GAlongGravity():normalize_inplace()
+    local normal = -universe:VerticalReferenceVector()
     local dir = waypoint.yawPitchDirection:project_on_plane(normal)
     local nearest = calc.NearestPointOnLine(previousWaypoint.destination, (waypoint.destination - previousWaypoint.destination):normalize_inplace(), construct.position.Current())
 
@@ -20,7 +20,7 @@ function alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity(waypoint, pr
 end
 
 function alignment.YawPitchKeepOrthogonalToGravity(waypoint, previousWaypoint)
-    local normal = -construct.world.GAlongGravity():normalize_inplace()
+    local normal = -universe:VerticalReferenceVector()
     local nearest = calc.NearestPointOnLine(previousWaypoint.destination, (waypoint.destination - previousWaypoint.destination):normalize_inplace(), construct.position.Current())
     local dir = (waypoint.destination - nearest):normalize_inplace()
 
@@ -45,7 +45,7 @@ end
 function alignment.RollTopsideAwayFromGravity(waypoint, previousWaypoint)
     -- Presumably we have gravity near a space construct too so we want to align based on that.
     if construct.world.G() > 0 then
-        return construct.position.Current() - construct.world.GAlongGravity():normalize() * directionMargin
+        return construct.position.Current() - universe:VerticalReferenceVector() * directionMargin
     else
         return nil -- Don't do alignment in space
     end
