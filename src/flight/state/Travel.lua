@@ -55,8 +55,8 @@ function state:Flush(next, previous, chaseData)
             brakes:Set(true)
             self.fsm:Thrust()
         elseif speedDiff < -margin then
-            -- Simply accelerate with whatever power we have available.
             -- v = v0 + a*t => a = (v - v0) / t
+            -- Simply accelerate with half of whatever power we have available.
             local accNeeded = abs(speedDiff / 2) / constants.PHYSICS_INTERVAL
             self.fsm:Thrust(directionToRabbit * accNeeded)
         else
