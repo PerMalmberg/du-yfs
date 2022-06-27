@@ -12,7 +12,6 @@ local PID = require("cpml/pid")
 require("flight/state/Require")
 local CurrentPos = construct.position.Current
 local Velocity = construct.velocity.Movement
-local abs = math.abs
 
 local FlightMode = Enum {
     "AXIS",
@@ -30,7 +29,7 @@ local function new()
         wAcceleration = sharedPanel:Get("FlightFSM"):CreateValue("Acceleration", "m/s2"),
         nearestPoint = nil,
         acceleration = nil,
-        deviationPID = PID(0, 0.8, 0.2),
+        deviationPID = PID(0, 0.001, 0.2),
         mode = FlightMode.AXIS
     }
 
@@ -86,22 +85,31 @@ function fsm:FsmFlush(next, previous)
     self:ApplyAcceleration(self.acceleration or nullVec)
 end
 
-function fsm:AdjustForDeviation(chaseData, currentPos)
+function fsm:AdjustForDeviation(chaseData, currentPos, engines)
     -- Add counter to deviation from optimal path
-    local rabbitDeviation = chaseData.rabbit - currentPos
     local nearDeviation = chaseData.nearest - currentPos
     local len = nearDeviation:len()
     self.deviationPID:inject(len)
-    self.wDeviation:Set(calc.Round((chaseData.nearest - currentPos):len(), 4))
-
+    self.wDeviation:Set(calc.Round(len, 4))
     local velocity = construct.velocity.Movement()
-    if velocity:len() > 1 and velocity:normalize():dot(rabbitDeviation:normalize()) < 0.9 then
-        brakes:Set(true)
-    end
 
     local maxDeviationAcc = 2
 
-    return nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
+    -- Looking strictly at the deviation, how long until we reach the path?
+    -- Calculate an acceleration that stops on the path if we're moving towards the path
+    -- otherwise push towards it
+    if velocity:normalize():dot(nearDeviation:normalize()) > 0.8 then
+        -- Moving towards path
+        -- t = s / v
+        -- v = v0 + a*t
+        -- v - v0 = a * (s / v)
+        -- a = (v - v0) / (s / v)
+        local v = velocity:dot(nearDeviation:normalize())
+        local a = v / (nearDeviation:len() / v)
+        return -nearDeviation:normalize() * a
+    else
+        return nearDeviation:normalize() * 1 -- utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
+    end
 end
 
 function fsm:ApplyAcceleration(acceleration)
