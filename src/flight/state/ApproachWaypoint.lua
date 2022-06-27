@@ -28,33 +28,30 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, chaseData)
-    local currentPos = construct.position.Current()
     local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(next:DistanceTo())
 
     local dist = next:DistanceTo()
     -- Don't switch if we're nearly there
-    if brakeDistance < dist and dist > 10 then
+    if brakeDistance < dist and dist > 100 then
         self.fsm:SetState(Travel(self.fsm))
     else
-        local travelDir = construct.velocity:Movement():normalize_inplace()
-
-        local toRabbit = chaseData.rabbit - currentPos
-        local dirToRabbit = toRabbit:normalize()
-
         local needToBrake = brakeDistance >= next:DistanceTo()
 
         brakes:Set(needToBrake)
 
-        local acc = brakeAccelerationNeeded * -travelDir
+        local dir = (chaseData.rabbit - construct.position.Current()):normalize_inplace()
 
-        -- Reduce acceleration when less than 1m from target.
-        local mul
-        if toRabbit:len() < 1 then
-            mul = 1
+        local acc
+        if brakeAccelerationNeeded > 0 then
+            acc = brakeAccelerationNeeded * -construct.velocity:Movement():normalize_inplace()
+        elseif needToBrake then
+            -- Use an acceleration slightly larger than the brake force to ensure we move.
+            acc = dir * brakes:Deceleration() * 1.05
+        elseif dist > 1 then
+            acc = dir * 1
         else
-            mul = 2
+            acc = dir * 0.5
         end
-        acc = acc + (dirToRabbit + next:DirectionTo()):normalize() * mul
 
         self.fsm:Thrust(acc)
     end
