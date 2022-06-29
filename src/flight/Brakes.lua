@@ -101,7 +101,7 @@ function brakes:calculateBreakForce(forcedUpdate)
 
         self.totalMass = mass.Total()
 
-        local force = jdecode(self.GetData()).maxBrake
+        local force = construct.getMaxBrake()
         local speed = velocity.Movement():len()
 
         if force ~= nil and force > 0 then
@@ -117,7 +117,7 @@ function brakes:calculateBreakForce(forcedUpdate)
     end
 end
 
----Returns the deceleration the constuct is capable of in the given movement.
+---Returns the deceleration the construct is capable of in the given movement.
 ---@return number The deceleration
 function brakes:Deceleration()
     -- F = m * a => a = F / m
