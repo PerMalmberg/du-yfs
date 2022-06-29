@@ -1,4 +1,4 @@
-local construct = require("du-libs:abstraction/Construct")()
+local vehicle = require("du-libs:abstraction/Vehicle")()
 local brakes = require("flight/Brakes")()
 local checks = require("du-libs:debug/Checks")
 require("flight/state/Require")
@@ -39,11 +39,11 @@ function state:Flush(next, previous, chaseData)
 
         brakes:Set(needToBrake)
 
-        local dir = (chaseData.rabbit - construct.position.Current()):normalize_inplace()
+        local dir = (chaseData.rabbit - vehicle.position.Current()):normalize_inplace()
 
         local acc
         if brakeAccelerationNeeded > 0 then
-            acc = brakeAccelerationNeeded * -construct.velocity:Movement():normalize_inplace()
+            acc = brakeAccelerationNeeded * -vehicle.velocity:Movement():normalize_inplace()
         elseif needToBrake then
             -- Use an acceleration slightly larger than the brake force to ensure we move.
             acc = dir * brakes:Deceleration() * 1.05

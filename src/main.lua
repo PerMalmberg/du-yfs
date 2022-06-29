@@ -1,5 +1,5 @@
 local library = require("du-libs:abstraction/Library")()
-local construct = require("du-libs:abstraction/Construct")()
+local vehicle = require("du-libs:abstraction/Vehicle")()
 local fc = require("flight/FlightCore")()
 local calc = require("du-libs:util/Calc")
 local brakes = require("flight/Brakes")()
@@ -27,11 +27,11 @@ end
 system:onEvent("onUpdate", Update)
 
 input:Register(keys.option1, Criteria():LAlt():OnPress(), function()
-    if system.isFrozen() == 1 then
-        system.freeze(0)
+    if player.isFrozen() == 1 then
+        player.freeze(0)
         log:Info("Automatic mode")
     else
-        system.freeze(1)
+        player.freeze(1)
         log:Info("Manual mode")
     end
 end)
@@ -41,41 +41,41 @@ local speed = 150
 
 local function move(reference, distance)
     fc:ClearWP()
-    local target = construct.position.Current() + reference * distance
+    local target = vehicle.position.Current() + reference * distance
     fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(speed), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end
 
 input:Register(keys.forward, Criteria():OnRepeat(), function()
-    move(construct.orientation.Forward(), step)
+    move(vehicle.orientation.Forward(), step)
 end)
 
 input:Register(keys.backward, Criteria():OnRepeat(), function()
-    move(construct.orientation.Forward(), -step)
+    move(vehicle.orientation.Forward(), -step)
 end)
 
 input:Register(keys.strafeleft, Criteria():OnRepeat(), function()
-    move(-construct.orientation.Right(), step)
+    move(-vehicle.orientation.Right(), step)
 end)
 
 input:Register(keys.straferight, Criteria():OnRepeat(), function()
-    move(construct.orientation.Right(), step)
+    move(vehicle.orientation.Right(), step)
 end)
 
 input:Register(keys.up, Criteria():OnRepeat(), function()
-    move(construct.orientation.Up(), step)
+    move(vehicle.orientation.Up(), step)
 end)
 
 input:Register(keys.down, Criteria():OnRepeat(), function()
-    move(construct.orientation.Up(), -step)
+    move(vehicle.orientation.Up(), -step)
 end)
 
 input:Register(keys.yawleft, Criteria():OnRepeat(), function()
-    fc:Turn(1, construct.orientation.Up())
+    fc:Turn(1, vehicle.orientation.Up())
 end)
 
 input:Register(keys.yawright, Criteria():OnRepeat(), function()
-    fc:Turn(-1, construct.orientation.Up(), construct.position.Current())
+    fc:Turn(-1, vehicle.orientation.Up(), vehicle.position.Current())
 end)
 
 input:Register(keys.brake, Criteria():OnPress(), function()
@@ -86,7 +86,7 @@ input:Register(keys.brake, Criteria():OnRelease(), function()
     brakes:Forced(false)
 end)
 
-local start = construct.position.Current()
+local start = vehicle.position.Current()
 
 input:Register(keys.option8, Criteria():OnPress(), function()
     fc:ClearWP()
@@ -118,10 +118,10 @@ cmd:Accept("speed", speedFunc):AsNumber():Mandatory()
 
 local moveFunc = function(data)
     fc:ClearWP()
-    local pos = construct.position.Current()
+    local pos = vehicle.position.Current()
     data.v = math.abs(data.v)
 
-    fc:AddWaypoint(Waypoint(pos + construct.orientation.Forward() * data.f + construct.orientation.Right() * data.r + construct.orientation.Up() * data.u, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:AddWaypoint(Waypoint(pos + vehicle.orientation.Forward() * data.f + vehicle.orientation.Right() * data.r + vehicle.orientation.Up() * data.u, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end
 
@@ -135,17 +135,17 @@ local turnFunc = function(data)
     -- Turn in the expected way, i.e. clockwise on positive values.
     local angle = -data.commandValue
 
-    fc:Turn(angle, construct.orientation.Up(), construct.position.Current())
+    fc:Turn(angle, vehicle.orientation.Up(), vehicle.position.Current())
 end
 
 cmd:Accept("turn", turnFunc):AsNumber()
 
 local strafeFunc = function(data)
     fc:ClearWP()
-    local pos = construct.position.Current()
+    local pos = vehicle.position.Current()
 
-    local wp = Waypoint(pos + construct.orientation.Right() * data.commandValue, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity)
-    wp:OneTimeSetYawPitchDirection(construct.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity)
+    local wp = Waypoint(pos + vehicle.orientation.Right() * data.commandValue, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity)
+    wp:OneTimeSetYawPitchDirection(vehicle.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity)
     fc:AddWaypoint(wp)
     fc:StartFlight()
 end

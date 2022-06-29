@@ -1,5 +1,5 @@
 local brakes = require("flight/Brakes")()
-local construct = require("du-libs:abstraction/Construct")()
+local vehicle = require("du-libs:abstraction/Vehicle")()
 local calc = require("du-libs:util/Calc")
 local ctrl = require("du-libs:abstraction/Library")():GetController()
 local Enum = require("du-libs:util/Enum")
@@ -10,8 +10,8 @@ local log = require("du-libs:debug/Log")()
 local universe = require("du-libs:universe/Universe")()
 local PID = require("cpml/pid")
 require("flight/state/Require")
-local CurrentPos = construct.position.Current
-local Velocity = construct.velocity.Movement
+local CurrentPos = vehicle.position.Current
+local Velocity = vehicle.velocity.Movement
 
 local FlightMode = Enum {
     "AXIS",
@@ -91,7 +91,7 @@ function fsm:AdjustForDeviation(chaseData, currentPos, engines)
     local len = nearDeviation:len()
     self.deviationPID:inject(len)
     self.wDeviation:Set(calc.Round(len, 4))
-    local velocity = construct.velocity.Movement()
+    local velocity = vehicle.velocity.Movement()
 
     local maxDeviationAcc = 2
 
@@ -114,7 +114,7 @@ end
 
 function fsm:ApplyAcceleration(acceleration)
     -- Compensate for any gravity
-    local gAcc = universe:VerticalReferenceVector() * construct.world.G()
+    local gAcc = universe:VerticalReferenceVector() * vehicle.world.G()
 
     acceleration = acceleration - gAcc
 
@@ -124,7 +124,7 @@ end
 function fsm:Update()
     local c = self.current
     if c ~= nil then
-        self.wAcceleration:Set(calc.Round(construct.acceleration.Movement():len(), 2))
+        self.wAcceleration:Set(calc.Round(vehicle.acceleration.Movement():len(), 2))
         c:Update()
     end
 end

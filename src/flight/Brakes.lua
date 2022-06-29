@@ -1,7 +1,7 @@
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Timer = require("du-libs:system/Timer")
 local library = require("du-libs:abstraction/Library")()
-local construct = require("du-libs:abstraction/Construct")()
+local vehicle = require("du-libs:abstraction/Vehicle")()
 local checks = require("du-libs:debug/Checks")
 local calc = require("du-libs:util/Calc")
 local sharedPanel = require("du-libs:panel/SharedPanel")()
@@ -14,9 +14,9 @@ local brakes = {}
 brakes.__index = brakes
 
 local singelton = nil
-local world = construct.world
-local mass = construct.mass
-local velocity = construct.velocity
+local world = vehicle.world
+local mass = vehicle.mass
+local velocity = vehicle.velocity
 
 local minimumSpeedForMaxAtmoBrakeForce = 100 --m/s (360km/h) Minimum speed in atmo to reach maximum brake force
 local brakeEfficiencyFactor = 0.6 -- Assume brakes are this efficient
@@ -56,7 +56,7 @@ local function new()
 end
 
 function brakes:BrakeUpdate()
-    local pos = construct.position.Current()
+    local pos = vehicle.position.Current()
     self.isWithinAtmo = universe:ClosestBody(pos):IsWithinAtmosphere(pos)
     self:calculateBreakForce()
     self.wWithinAtmo:Set(self.isWithinAtmo)

@@ -1,5 +1,5 @@
 local checks = require("du-libs:debug/Checks")
-local construct = require("du-libs:abstraction/Construct")()
+local vehicle = require("du-libs:abstraction/Vehicle")()
 local deg2rad = math.rad
 
 local waypoint = {}
@@ -37,11 +37,11 @@ function waypoint:Reached()
 end
 
 function waypoint:DistanceTo()
-    return (self.destination - construct.position.Current()):len()
+    return (self.destination - vehicle.position.Current()):len()
 end
 
 function waypoint:DirectionTo()
-    return (self.destination - construct.position.Current()):normalize_inplace()
+    return (self.destination - vehicle.position.Current()):normalize_inplace()
 end
 
 function waypoint:OneTimeSetYawPitchDirection(direction, yawPitchFunc)

@@ -1,4 +1,4 @@
-local construct = require("du-libs:abstraction/Construct")()
+local vehicle = require("du-libs:abstraction/Vehicle")()
 local library = require("du-libs:abstraction/Library")()
 local checks = require("du-libs:debug/Checks")
 local calc = require("du-libs:util/Calc")
@@ -45,7 +45,7 @@ local function new(axis)
     }
 
     local shared = sharedPanel:Get("AxisControl")
-    local o = construct.orientation
+    local o = vehicle.orientation
 
     if axis == AxisControlPitch then
         instance.offsetWidget = shared:CreateValue("Pitch", "°")
@@ -54,7 +54,7 @@ local function new(axis)
         instance.operationWidget = shared:CreateValue("P.Op", "")
         instance.Reference = o.Forward
         instance.Normal = o.Right
-        instance.LocalNormal = construct.orientation.localized.Right
+        instance.LocalNormal = vehicle.orientation.localized.Right
     elseif axis == AxisControlRoll then
         instance.offsetWidget = shared:CreateValue("Roll", "°")
         instance.velocityWidget = shared:CreateValue("R.Vel", "°/s")
@@ -62,7 +62,7 @@ local function new(axis)
         instance.operationWidget = shared:CreateValue("R.Op", "")
         instance.Reference = o.Up
         instance.Normal = o.Forward
-        instance.LocalNormal = construct.orientation.localized.Forward
+        instance.LocalNormal = vehicle.orientation.localized.Forward
     elseif axis == AxisControlYaw then
         instance.offsetWidget = shared:CreateValue("Yaw", "°")
         instance.velocityWidget = shared:CreateValue("Y.Vel", "°/s")
@@ -70,7 +70,7 @@ local function new(axis)
         instance.operationWidget = shared:CreateValue("Y.Op", "")
         instance.Reference = o.Forward
         instance.Normal = o.Up
-        instance.LocalNormal = construct.orientation.localized.Up
+        instance.LocalNormal = vehicle.orientation.localized.Up
     else
         checks.Fail("Invalid axis: " .. axis)
     end
@@ -104,12 +104,12 @@ end
 ---Returns the current signed angular velocity, in degrees per seconds.
 ---@return number
 function control:Speed()
-    local vel = construct.velocity.localized.Angular()
+    local vel = vehicle.velocity.localized.Angular()
     return (vel * self.LocalNormal()):len() * rad2deg
 end
 
 function control:Acceleration()
-    local vel = construct.acceleration.localized.Angular()
+    local vel = vehicle.acceleration.localized.Angular()
     return (vel * self.LocalNormal()):len() * rad2deg
 end
 
@@ -119,7 +119,7 @@ function control:AxisFlush(apply)
         -- Postive acceleration turns counter-clockwise
         -- Positive velocity means we're turning counter-clockwise
 
-        local vecToTarget = self.target.coordinate - construct.position.Current()
+        local vecToTarget = self.target.coordinate - vehicle.position.Current()
         local offset = calc.SignedRotationAngle(self.Normal(), self.Reference(), vecToTarget) * rad2deg
 
         self.operationWidget:Set("Offset " .. calc.Round(offset, 4))

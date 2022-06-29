@@ -3,7 +3,7 @@ local Brakes = require("flight/Brakes")
 local FlightFSM = require("flight/FlightFSM")
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Waypoint = require("flight/Waypoint")
-local construct = require("du-libs:abstraction/Construct")()
+local vehicle = require("du-libs:abstraction/Vehicle")()
 local visual = require("du-libs:debug/Visual")()
 local library = require("du-libs:abstraction/Library")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
@@ -52,7 +52,7 @@ end
 
 function flightCore:AddWaypoint(wp)
     if #self.waypoints == 0 then
-        self.previousWaypoint = Waypoint(construct.position.Current(), 0, 0, noAdjust, noAdjust)
+        self.previousWaypoint = Waypoint(vehicle.position.Current(), 0, 0, noAdjust, noAdjust)
     end
 
     table.insert(self.waypoints, #self.waypoints + 1, wp)
@@ -92,7 +92,7 @@ function flightCore:StartFlight()
         fsm:SetState(Travel(fsm))
         system.setWaypoint(tostring(universe:CreatePos(self:CurrentWP().destination)))
     else
-        self:AddWaypoint(Waypoint(construct.position.Current(), 0.05, 0, noAdjust, noAdjust))
+        self:AddWaypoint(Waypoint(vehicle.position.Current(), 0.05, 0, noAdjust, noAdjust))
         fsm:SetState(Hold(fsm))
     end
 end
@@ -106,7 +106,7 @@ function flightCore:Turn(degrees, axis, rotationPoint)
     local current = self:CurrentWP()
     -- Can't turn without a waypoint.
     if current ~= nil then
-        rotationPoint = (rotationPoint or construct.position.Current())
+        rotationPoint = (rotationPoint or vehicle.position.Current())
         current:RotateAroundAxis(degrees, axis, rotationPoint)
         self:ClearWP()
         self:AddWaypoint(current)
@@ -202,7 +202,7 @@ function flightCore:FCFlush()
                             self.waypointReachedSignaled = true
                             self.flightFSM:WaypointReached(#self.waypoints == 1, wp, self.previousWaypoint)
 
-                            wp:OneTimeSetYawPitchDirection(construct.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity)
+                            wp:OneTimeSetYawPitchDirection(vehicle.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity)
                         end
 
                         local switched

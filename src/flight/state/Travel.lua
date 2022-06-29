@@ -1,5 +1,5 @@
 local constants = require("du-libs:abstraction/Constants")
-local construct = require("du-libs:abstraction/Construct")()
+local vehicle = require("du-libs:abstraction/Vehicle")()
 local checks = require("du-libs:debug/Checks")
 local brakes = require("flight/Brakes")()
 local Vec3 = require("cpml/vec3")
@@ -34,8 +34,8 @@ end
 
 function state:Flush(next, previous, chaseData)
     local brakeDistance, neededBrakeAcceleration = brakes:BrakeDistance(next:DistanceTo())
-    local velocity = construct.velocity:Movement()
-    local currentPos = construct.position.Current()
+    local velocity = vehicle.velocity:Movement()
+    local currentPos = vehicle.position.Current()
 
     local directionToRabbit = (chaseData.rabbit - currentPos):normalize_inplace()
 
