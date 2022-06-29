@@ -123,8 +123,8 @@ function flightCore:SetAxisMode()
 end
 
 function flightCore:ReceiveEvents()
-    self.flushHandlerId = system:onEvent("flush", self.FCFlush, self)
-    self.updateHandlerId = system:onEvent("update", self.FCUpdate, self)
+    self.flushHandlerId = system:onEvent("onFlush", self.FCFlush, self)
+    self.updateHandlerId = system:onEvent("onUpdate", self.FCUpdate, self)
     self.pitch:ReceiveEvents()
     self.roll:ReceiveEvents()
     self.yaw:ReceiveEvents()

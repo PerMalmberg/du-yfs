@@ -1,4 +1,7 @@
 {
+  "cli": {
+    "fmtVersion": 2
+  },
   "name": "Flight Core",
   "description": "Flight Core",
   "sourcePath": "src",

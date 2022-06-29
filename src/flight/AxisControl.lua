@@ -81,7 +81,7 @@ local function new(axis)
 end
 
 function control:ReceiveEvents()
-    self.updateHandlerId = system:onEvent("update", self.Update, self)
+    self.updateHandlerId = system:onEvent("onUpdate", self.Update, self)
 end
 
 function control:StopEvents()

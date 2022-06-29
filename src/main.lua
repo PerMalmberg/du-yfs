@@ -24,7 +24,7 @@ function Update(system)
         brakeLight.deactivate()
     end
 end
-system:onEvent("update", Update)
+system:onEvent("onUpdate", Update)
 
 input:Register(keys.option1, Criteria():LAlt():OnPress(), function()
     if system.isFrozen() == 1 then
