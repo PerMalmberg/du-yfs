@@ -63,11 +63,11 @@ input:Register(keys.straferight, Criteria():OnRepeat(), function()
 end)
 
 input:Register(keys.up, Criteria():OnRepeat(), function()
-    move(vehicle.orientation.Up(), step)
+    move(-universe:VerticalReferenceVector(), step)
 end)
 
 input:Register(keys.down, Criteria():OnRepeat(), function()
-    move(vehicle.orientation.Up(), -step)
+    move(-universe:VerticalReferenceVector(), -step)
 end)
 
 input:Register(keys.yawleft, Criteria():OnRepeat(), function()
@@ -90,7 +90,9 @@ local start = vehicle.position.Current()
 
 input:Register(keys.option8, Criteria():OnPress(), function()
     fc:ClearWP()
-    fc:AddWaypoint(Waypoint(start - universe:VerticalReferenceVector() * 1500, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    start = vehicle.position.Current()
+    fc:AddWaypoint(Waypoint(start - universe:VerticalReferenceVector() * 2, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:AddWaypoint(Waypoint(start - universe:VerticalReferenceVector() * 100, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     --fc:AddWaypoint(Waypoint(start - universe:VerticalReferenceVector() * 2000, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end)
@@ -121,7 +123,7 @@ local moveFunc = function(data)
     local pos = vehicle.position.Current()
     data.v = math.abs(data.v)
 
-    fc:AddWaypoint(Waypoint(pos + vehicle.orientation.Forward() * data.f + vehicle.orientation.Right() * data.r + vehicle.orientation.Up() * data.u, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
+    fc:AddWaypoint(Waypoint(pos + vehicle.orientation.Forward() * data.f + vehicle.orientation.Right() * data.r - universe:VerticalReferenceVector() * data.u, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromNearestBody, alignment.YawPitchKeepOrthogonalToGravity))
     fc:StartFlight()
 end
 
