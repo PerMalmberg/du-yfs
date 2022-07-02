@@ -8,6 +8,7 @@ local nullVec = require("cpml/vec3")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local log = require("du-libs:debug/Log")()
 local universe = require("du-libs:universe/Universe")()
+local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local PID = require("cpml/pid")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
@@ -16,6 +17,66 @@ local Velocity = vehicle.velocity.Movement
 local FlightMode = Enum {
     "AXIS",
     "FREE"
+}
+
+local longitudinal = "longitudinal"
+local vertical = "vertical"
+local lateral = "lateral"
+local airfoil = "airfoil"
+local thrustTag = "thrust"
+local Forward = vehicle.orientation.Forward
+local Right = vehicle.orientation.Right
+local Up = vehicle.orientation.Up
+local AntiG = function()
+    return -universe:VerticalReferenceVector() * vehicle.world.G()
+end
+local NoAntiG = function()
+    return nullVec
+end
+
+local forwardGroup = {
+    thrust = { engines = EngineGroup(longitudinal),
+               prio1Tag = thrustTag,
+               prio2Tag = "",
+               prio3Tag = "",
+               antiG = NoAntiG
+    },
+    adjust = { engines = EngineGroup(airfoil, lateral, vertical),
+               prio1Tag = airfoil,
+               prio2Tag = lateral,
+               prio3Tag = vertical,
+               antiG = AntiG
+    }
+}
+
+local rightGroup = {
+    thrust = { engines = EngineGroup(lateral),
+               prio1Tag = thrustTag,
+               prio2Tag = "",
+               prio3Tag = "",
+               antiG = NoAntiG
+    },
+    adjust = { engines = EngineGroup(vertical, longitudinal),
+               prio1Tag = vertical,
+               prio2Tag = longitudinal,
+               prio3Tag = "",
+               antiG = AntiG
+    }
+}
+
+local upGroup = {
+    thrust = { engines = EngineGroup(vertical),
+               prio1Tag = vertical,
+               prio2Tag = "",
+               prio3Tag = "",
+               antiG = AntiG
+    },
+    adjust = { engines = EngineGroup(lateral, longitudinal),
+               prio1Tag = vertical,
+               prio2Tag = longitudinal,
+               prio3Tag = "",
+               antiG = NoAntiG
+    }
 }
 
 local fsm = {}
@@ -29,6 +90,7 @@ local function new()
         wAcceleration = sharedPanel:Get("FlightFSM"):CreateValue("Acceleration", "m/s2"),
         nearestPoint = nil,
         acceleration = nil,
+        adjustAcc = nullVec,
         deviationPID = PID(40, 1000, 50),
         mode = FlightMode.AXIS
     }
@@ -36,6 +98,16 @@ local function new()
     setmetatable(instance, fsm)
     instance:SetState(Idle(instance))
     return instance
+end
+
+function fsm:GetEngines(moveDirection)
+    if moveDirection:dot(Forward()) >= 0.707 then
+        return forwardGroup
+    elseif moveDirection:dot(Right()) >= 0.707 then
+        return rightGroup
+    else
+        return upGroup
+    end
 end
 
 function fsm:CheckPathAlignment(currentPos, chaseData)
@@ -72,20 +144,21 @@ function fsm:FsmFlush(next, previous)
             self:SetState(CorrectDeviation(self))
         end
 
-        c:Flush(next, previous, chaseData)
-        self.acceleration = (self.acceleration or nullVec)
+        self.acceleration = nullVec
+        self.adjustAcc = nullVec
 
         c:Flush(next, previous, chaseData)
+        self:AdjustForDeviation(chaseData, pos, next.margin)
 
-        self.acceleration = self:AdjustForDeviation(chaseData, pos, next.margin)
-        --self.acceleration = self.acceleration + self:AdjustForDeviation(chaseData, pos, next.margin)
+        self:ApplyAcceleration(next:DirectionTo())
 
         visual:DrawNumber(9, chaseData.rabbit)
         visual:DrawNumber(8, chaseData.nearest)
         visual:DrawNumber(0, pos + self.acceleration:normalize() * 8)
+    else
+        self:ApplyAcceleration(nullVec)
     end
 
-    self:ApplyAcceleration(self.acceleration or nullVec)
 end
 
 function fsm:AdjustForDeviation(chaseData, currentPos, margin)
@@ -97,26 +170,35 @@ function fsm:AdjustForDeviation(chaseData, currentPos, margin)
 
     local maxDeviationAcc = 5
 
-    if nearDeviation:len() > margin / 2 then
-        return nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0.0, maxDeviationAcc)
+    if nearDeviation:len() > margin then
+        self.adjustAcc = nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0.0, maxDeviationAcc)
     else
-        return nullVec
+        self.adjustAcc = nullVec
     end
 end
 
-function fsm:ApplyAcceleration(acceleration)
-    -- Compensate for any gravity
-    local gAcc = universe:VerticalReferenceVector() * vehicle.world.G()
+function fsm:ApplyAcceleration(moveDirection)
+    if self.acceleration ~= nil then
+        local groups = self:GetEngines(moveDirection)
+        local t = groups.thrust
+        local a = groups.adjust
+        local thrustAcc = (self.acceleration or nullVec) + t.antiG()
+        local adjustAcc = (self.adjustAcc or nullVec) + a.antiG()
 
-    acceleration = acceleration - gAcc
-
-    ctrl.setEngineCommand("thrust,airfoil", { acceleration:unpack() }, { 0, 0, 0 }, 1, 1, "airfoil", "thrust", "", 0.001)
+        system.print(adjustAcc:len())
+        ctrl.setEngineCommand(t.engines:Intersection(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
+        --ctrl.setEngineThrust(a.engines:Union(), 1000)
+        ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
+    else
+        ctrl.setEngineThrust("all", 0)
+        ctrl.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
+    end
 end
 
 function fsm:Update()
     local c = self.current
     if c ~= nil then
-        self.wAcceleration:Set(calc.Round(vehicle.acceleration.Movement():len(), 2))
+        self.wAcceleration:Set(calc.Round(Velocity():len(), 2))
         c:Update()
     end
 end
@@ -154,15 +236,17 @@ end
 
 function fsm:DisableThrust()
     self.acceleration = nil
-    ctrl.setEngineCommand("thrust", { 0, 0, 0 })
+    self.adjustAcc = nil
 end
 
-function fsm:Thrust(acceleration)
+function fsm:Thrust(acceleration, adjustAcc)
     self.acceleration = acceleration or nullVec
+    self.adjustAcc = adjustAcc or nullVec
 end
 
 function fsm:NullThrust()
     self.acceleration = nullVec
+    self.adjustAcc = nullVec
 end
 
 function fsm:NearestPointBetweenWaypoints(wpStart, wpEnd, currentPos, ahead)
