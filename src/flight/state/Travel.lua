@@ -4,6 +4,8 @@ local checks = require("du-libs:debug/Checks")
 local brakes = require("flight/Brakes")()
 local Vec3 = require("cpml/vec3")
 local library = require("du-libs:abstraction/Library")()
+local Timer = require("du-libs:system/Timer")
+local calc = require("du-libs:util/Calc")
 require("flight/state/Require")
 local abs = math.abs
 
@@ -17,7 +19,8 @@ local function new(fsm)
 
     local o = {
         fsm = fsm,
-        core = library:GetCoreUnit()
+        core = library:GetCoreUnit(),
+        spinUp = Timer()
     }
 
     setmetatable(o, state)
@@ -27,6 +30,7 @@ end
 
 function state:Enter()
     brakes:Set(false)
+    self.spinUp:Start()
 end
 
 function state:Leave()
@@ -49,18 +53,21 @@ function state:Flush(next, previous, chaseData)
         local margin = 2
 
         -- Get speed diff in direction of rabbit
-        local speedDiff = velocity:dot(directionToRabbit) - next.maxSpeed
+        local currentSpeed = velocity:dot(directionToRabbit)
+        local dampenedSpeed = calc.Scale(self.spinUp:Elapsed(), 0, 2, 0, next.maxSpeed)
+        local speedDiff = currentSpeed - dampenedSpeed
+
         if speedDiff > 0 then
             -- Need to brake
             brakes:Set(true)
             self.fsm:Thrust()
         elseif speedDiff < -margin then
             -- v = v0 + a*t => a = (v - v0) / t
-            -- Simply accelerate with half of whatever power we have available.
-            local accNeeded = abs(speedDiff / 2) / constants.PHYSICS_INTERVAL
-            self.fsm:Thrust(directionToRabbit * accNeeded)
+            -- Accelerate with whatever power would be needed and is available.
+            local accNeeded = abs(speedDiff) / constants.PHYSICS_INTERVAL
+            self.fsm:Thrust(directionToRabbit * accNeeded - Vec3(construct.getWorldAirFrictionAcceleration()))
         else
-            self.fsm:Thrust(-Vec3(self.core.getWorldAirFrictionAcceleration()))
+            self.fsm:Thrust(-Vec3(construct.getWorldAirFrictionAcceleration()))
         end
     end
 end
