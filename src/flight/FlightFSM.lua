@@ -29,7 +29,7 @@ local function new()
         wAcceleration = sharedPanel:Get("FlightFSM"):CreateValue("Acceleration", "m/s2"),
         nearestPoint = nil,
         acceleration = nil,
-        deviationPID = PID(0, 0.001, 0.2),
+        deviationPID = PID(40, 1000, 50),
         mode = FlightMode.AXIS
     }
 
@@ -73,9 +73,12 @@ function fsm:FsmFlush(next, previous)
         end
 
         c:Flush(next, previous, chaseData)
-        self.acceleration = (self.acceleration or nullVec) + self:AdjustForDeviation(chaseData, pos)
+        self.acceleration = (self.acceleration or nullVec)
 
         c:Flush(next, previous, chaseData)
+
+        self.acceleration = self:AdjustForDeviation(chaseData, pos, next.margin)
+        --self.acceleration = self.acceleration + self:AdjustForDeviation(chaseData, pos, next.margin)
 
         visual:DrawNumber(9, chaseData.rabbit)
         visual:DrawNumber(8, chaseData.nearest)
@@ -85,30 +88,19 @@ function fsm:FsmFlush(next, previous)
     self:ApplyAcceleration(self.acceleration or nullVec)
 end
 
-function fsm:AdjustForDeviation(chaseData, currentPos, engines)
+function fsm:AdjustForDeviation(chaseData, currentPos, margin)
     -- Add counter to deviation from optimal path
     local nearDeviation = chaseData.nearest - currentPos
     local len = nearDeviation:len()
     self.deviationPID:inject(len)
     self.wDeviation:Set(calc.Round(len, 4))
-    local velocity = vehicle.velocity.Movement()
 
-    local maxDeviationAcc = 2
+    local maxDeviationAcc = 5
 
-    -- Looking strictly at the deviation, how long until we reach the path?
-    -- Calculate an acceleration that stops on the path if we're moving towards the path
-    -- otherwise push towards it
-    if velocity:normalize():dot(nearDeviation:normalize()) > 0.8 then
-        -- Moving towards path
-        -- t = s / v
-        -- v = v0 + a*t
-        -- v - v0 = a * (s / v)
-        -- a = (v - v0) / (s / v)
-        local v = velocity:dot(nearDeviation:normalize())
-        local a = v / (nearDeviation:len() / v)
-        return -nearDeviation:normalize() * a
+    if nearDeviation:len() > margin / 2 then
+        return nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0.0, maxDeviationAcc)
     else
-        return nearDeviation:normalize() * 1 -- utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
+        return nullVec
     end
 end
 
@@ -118,7 +110,7 @@ function fsm:ApplyAcceleration(acceleration)
 
     acceleration = acceleration - gAcc
 
-    ctrl.setEngineCommand("thrust,airfoil", { acceleration:unpack() }, { 0, 0, 0 }, 1, 1, "airfoil", "thrust")
+    ctrl.setEngineCommand("thrust,airfoil", { acceleration:unpack() }, { 0, 0, 0 }, 1, 1, "airfoil", "thrust", "", 0.001)
 end
 
 function fsm:Update()
