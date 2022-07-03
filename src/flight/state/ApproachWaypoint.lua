@@ -32,7 +32,7 @@ function state:Flush(next, previous, chaseData)
 
     local dist = next:DistanceTo()
     -- Don't switch if we're nearly there
-    if brakeDistance < dist and dist > 100 then
+    if brakeDistance < dist and dist > 1000 then
         self.fsm:SetState(Travel(self.fsm))
     else
         local needToBrake = brakeDistance >= next:DistanceTo()
