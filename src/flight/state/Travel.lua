@@ -4,10 +4,12 @@ local checks = require("du-libs:debug/Checks")
 local brakes = require("flight/Brakes")()
 local Vec3 = require("cpml/vec3")
 local library = require("du-libs:abstraction/Library")()
-local Timer = require("du-libs:system/Timer")
 local calc = require("du-libs:util/Calc")
 require("flight/state/Require")
 local abs = math.abs
+
+-- Increase this to prevent engines from stopping/starting
+local margin = calc.Kph2Mps(1)
 
 local state = {}
 state.__index = state
@@ -19,8 +21,7 @@ local function new(fsm)
 
     local o = {
         fsm = fsm,
-        core = library:GetCoreUnit(),
-        spinUp = Timer()
+        core = library:GetCoreUnit()
     }
 
     setmetatable(o, state)
@@ -30,7 +31,6 @@ end
 
 function state:Enter()
     brakes:Set(false)
-    self.spinUp:Start()
 end
 
 function state:Leave()
@@ -49,13 +49,9 @@ function state:Flush(next, previous, chaseData)
         -- Word of warning. Quickly toggling the brakes causes
         -- them to push the construct off the trajectory.
 
-        -- Increase this to prevent engines from stopping/starting
-        local margin = 2
-
         -- Get speed diff in direction of rabbit
         local currentSpeed = velocity:dot(directionToRabbit)
-        local dampenedSpeed = calc.Scale(self.spinUp:Elapsed(), 0, 2, 0, next.maxSpeed)
-        local speedDiff = currentSpeed - dampenedSpeed
+        local speedDiff = currentSpeed - next.maxSpeed
 
         if speedDiff > 0 then
             -- Need to brake

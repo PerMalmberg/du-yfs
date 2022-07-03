@@ -29,18 +29,24 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, chaseData)
-    brakes:Set(true)
+    local brakeDistance, neededBrakeAcceleration = brakes:BrakeDistance(next:DistanceTo())
 
-    -- Come to a near stop before moving on
-    local vel = Velocity()
-    local speed = Velocity():len()
-
-    if speed < self.limit then
-        self.fsm:SetState(ReturnToPath(self.fsm))
+    if brakeDistance >= next:DistanceTo() or neededBrakeAcceleration > 0 then
+        self.fsm:SetState(ApproachWaypoint(self.fsm))
     else
-        -- As the velocity goes down, so does the adjustment
-        local againstVel = -vel:normalize() * speed
-        self.fsm:Thrust()
+        brakes:Set(true)
+
+        -- Come to a near stop before moving on
+        local vel = Velocity()
+        local speed = Velocity():len()
+
+        if speed < self.limit then
+            self.fsm:SetState(ReturnToPath(self.fsm))
+        else
+            -- As the velocity goes down, so does the adjustment
+            local againstVel = -vel:normalize() * speed
+            self.fsm:Thrust()
+        end
     end
 end
 
