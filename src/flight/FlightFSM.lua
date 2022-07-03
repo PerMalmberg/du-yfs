@@ -73,12 +73,7 @@ function fsm:FsmFlush(next, previous)
         end
 
         c:Flush(next, previous, chaseData)
-        self.acceleration = (self.acceleration or nullVec)
-
-        c:Flush(next, previous, chaseData)
-
-        self.acceleration = self:AdjustForDeviation(chaseData, pos, next.margin)
-        --self.acceleration = self.acceleration + self:AdjustForDeviation(chaseData, pos, next.margin)
+        self.acceleration = (self.acceleration or nullVec) + self:AdjustForDeviation(chaseData, pos, next.margin)
 
         visual:DrawNumber(9, chaseData.rabbit)
         visual:DrawNumber(8, chaseData.nearest)
