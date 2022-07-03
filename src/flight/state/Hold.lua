@@ -28,11 +28,11 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, chaseData)
-    if not next:Reached() then
-        self.fsm:SetState(ApproachWaypoint(self.fsm))
-    else
+    if next:Reached() then
         brakes:Set(true)
         self.fsm:Thrust() -- Just counter gravity
+    else
+        self.fsm:SetState(ApproachWaypoint(self.fsm))
     end
 end
 
