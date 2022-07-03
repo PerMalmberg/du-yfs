@@ -44,7 +44,7 @@ function state:Flush(next, previous, chaseData)
         local mul = calc.Scale(utils.clamp(toTarget:len(), 0, 5), 0, 5, 0.5, 2)
         acc = toTarget:normalize() * mul
 
-        self.fsm:Thrust(acc)
+        self.fsm:Thrust()
     end
 end
 

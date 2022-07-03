@@ -39,21 +39,22 @@ function state:Flush(next, previous, chaseData)
 
         brakes:Set(needToBrake)
 
+        -- Calculate acceleration for thrust
         local dir = (chaseData.rabbit - vehicle.position.Current()):normalize_inplace()
 
-        local acc
+        local thrustAcc
         if brakeAccelerationNeeded > 0 then
-            acc = brakeAccelerationNeeded * -vehicle.velocity:Movement():normalize_inplace()
+            thrustAcc = brakeAccelerationNeeded * -vehicle.velocity:Movement():normalize_inplace()
         elseif needToBrake then
             -- Use an acceleration slightly larger than the brake force to ensure we move.
-            acc = dir * brakes:Deceleration() * 1.05
+            thrustAcc = dir * brakes:Deceleration() * 1.05
         elseif dist > 1 then
-            acc = dir * 1
+            thrustAcc = dir * 1
         else
-            acc = dir * 0.5
+            thrustAcc = dir * 0.5
         end
 
-        self.fsm:Thrust(acc)
+        self.fsm:Thrust(thrustAcc)
     end
 end
 
