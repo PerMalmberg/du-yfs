@@ -90,7 +90,8 @@ local function new()
         nearestPoint = nil,
         acceleration = nil,
         adjustAcc = nullVec,
-        deviationPID = PID(1, 10, 50),
+        -- Use a low amortization to quickly stop adjusting
+        deviationPID = PID(0, 1, 5, 0.4),
         mode = FlightMode.AXIS
     }
 
@@ -169,7 +170,7 @@ function fsm:AdjustForDeviation(chaseData, currentPos, margin)
 
     local maxDeviationAcc = 5
 
-    if nearDeviation:len() > margin then
+    if nearDeviation:len() > margin / 2 then
         self.adjustAcc = nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0.0, maxDeviationAcc)
     else
         self.adjustAcc = nullVec
@@ -184,10 +185,14 @@ function fsm:ApplyAcceleration(moveDirection)
         local thrustAcc = (self.acceleration or nullVec) + t.antiG()
         local adjustAcc = (self.adjustAcc or nullVec) + a.antiG()
 
-        ctrl.setEngineCommand(t.engines:Intersection(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
-        ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
+        ctrl.setEngineCommand(t.engines:Intersection(), { thrustAcc:unpack() }, { 0, 0, 0 }, 0, 0, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
+        if adjustAcc:len2() == 0 then
+            ctrl.setEngineThrust(a.engines:Union(), 1000)
+        else
+            ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 0, 0, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
+        end
     else
-        ctrl.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
+        ctrl.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, 0, 0, "", "", "", 0.001)
     end
 end
 
