@@ -8,6 +8,7 @@ local sharedPanel = require("du-libs:panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
 local universe = require("du-libs:universe/Universe")()
 local abs = math.abs
+local max = math.max
 
 local brakes = {}
 brakes.__index = brakes
@@ -26,9 +27,9 @@ local function new()
 
     local instance = {
         ctrl = ctrl,
+        activationDelay = Timer(),
         engaged = false,
         forced = false,
-        GetData = ctrl.getData,
         updateTimer = Timer(),
         currentForce = 0,
         totalMass = 1,
@@ -74,6 +75,7 @@ end
 
 function brakes:Forced(on)
     self.forced = on
+
 end
 
 function brakes:BrakeFlush()
@@ -181,6 +183,7 @@ function brakes:BrakeDistance(remainingDistance)
 
     if self.currentForce > 0 then
         local influence = abs(self:GravityInfluence(vel))
+        deceleration = max(deceleration + influence, 0)
 
         local warmupDistance = engineWarmupTime * speed
         distance = calcBrakeDistance(speed, deceleration) + warmupDistance

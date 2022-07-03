@@ -1,9 +1,7 @@
 # Todo
 
-* Space flight - center of planet as reference instead of GAlongGravity?
-    * Brakes in space - GAlongGravity returns nil? Use custom reference from the closest planet instead
 * Diagonal movement.
-* Speed correction - less stop and go
+* Brake causes deviation from path
 
 # Brakes
 
