@@ -6,7 +6,6 @@ local checks = require("du-libs:debug/Checks")
 local calc = require("du-libs:util/Calc")
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
-local jdecode = require("dkjson").decode
 local universe = require("du-libs:universe/Universe")()
 local abs = math.abs
 
