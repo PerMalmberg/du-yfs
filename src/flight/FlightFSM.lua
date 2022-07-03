@@ -26,7 +26,6 @@ local airfoil = "airfoil"
 local thrustTag = "thrust"
 local Forward = vehicle.orientation.Forward
 local Right = vehicle.orientation.Right
-local Up = vehicle.orientation.Up
 local AntiG = function()
     return -universe:VerticalReferenceVector() * vehicle.world.G()
 end
@@ -91,7 +90,7 @@ local function new()
         nearestPoint = nil,
         acceleration = nil,
         adjustAcc = nullVec,
-        deviationPID = PID(40, 1000, 50),
+        deviationPID = PID(1, 10, 50),
         mode = FlightMode.AXIS
     }
 
@@ -185,12 +184,9 @@ function fsm:ApplyAcceleration(moveDirection)
         local thrustAcc = (self.acceleration or nullVec) + t.antiG()
         local adjustAcc = (self.adjustAcc or nullVec) + a.antiG()
 
-        system.print(adjustAcc:len())
         ctrl.setEngineCommand(t.engines:Intersection(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
-        --ctrl.setEngineThrust(a.engines:Union(), 1000)
         ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
     else
-        ctrl.setEngineThrust("all", 0)
         ctrl.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
     end
 end
