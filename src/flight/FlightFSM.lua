@@ -86,12 +86,13 @@ local function new()
         current = nil,
         wStateName = sharedPanel:Get("FlightFSM"):CreateValue("State", ""),
         wDeviation = sharedPanel:Get("FlightFSM"):CreateValue("Deviation", "m"),
+        wDevAcceleration = sharedPanel:Get("FlightFSM"):CreateValue("Dev. acc.", "m/s2"),
         wAcceleration = sharedPanel:Get("FlightFSM"):CreateValue("Acceleration", "m/s2"),
         nearestPoint = nil,
         acceleration = nil,
         adjustAcc = nullVec,
         -- Use a low amortization to quickly stop adjusting
-        deviationPID = PID(0, 1, 5, 0.4),
+        deviationPID = PID(0, 1, 5, 0.2),
         mode = FlightMode.AXIS
     }
 
@@ -148,7 +149,7 @@ function fsm:FsmFlush(next, previous)
         self.adjustAcc = nullVec
 
         c:Flush(next, previous, chaseData)
-        self:AdjustForDeviation(chaseData, pos, next.margin)
+        self:AdjustForDeviation(chaseData, pos)
 
         self:ApplyAcceleration(next:DirectionTo())
 
@@ -161,7 +162,7 @@ function fsm:FsmFlush(next, previous)
 
 end
 
-function fsm:AdjustForDeviation(chaseData, currentPos, margin)
+function fsm:AdjustForDeviation(chaseData, currentPos)
     -- Add counter to deviation from optimal path
     local nearDeviation = chaseData.nearest - currentPos
     local len = nearDeviation:len()
@@ -170,11 +171,10 @@ function fsm:AdjustForDeviation(chaseData, currentPos, margin)
 
     local maxDeviationAcc = 5
 
-    if nearDeviation:len() > margin / 2 then
-        self.adjustAcc = nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0.0, maxDeviationAcc)
-    else
-        self.adjustAcc = nullVec
-    end
+    local devAcc = vehicle.acceleration.Movement():dot(nearDeviation)
+    self.wDevAcceleration:Set(calc.Round(devAcc, 2))
+
+    self.adjustAcc = nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0.0, maxDeviationAcc)
 end
 
 function fsm:ApplyAcceleration(moveDirection)
