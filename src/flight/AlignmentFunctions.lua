@@ -36,19 +36,8 @@ function alignment.YawPitchKeepOrthogonalToVerticalReference(waypoint, previousW
     return nearest + dir * directionMargin
 end
 
-function alignment.RollTopsideAwayFromNearestBody(waypoint, previousWaypoint)
-    local center = universe:ClosestBody(vehicle.position.Current()).Geography.Center
-    local pos = vehicle.position.Current()
-    return pos + (pos - center):normalize_inplace() * directionMargin
-end
-
 function alignment.RollTopsideAwayFromVerticalReference(waypoint, previousWaypoint)
-    -- Presumably we have gravity near a space construct too so we want to align based on that.
-    if vehicle.world.G() > 0 then
-        return vehicle.position.Current() - universe:VerticalReferenceVector() * directionMargin
-    else
-        return nil -- Don't do alignment in space
-    end
+    return vehicle.position.Current() - universe:VerticalReferenceVector() * directionMargin
 end
 
 return alignment

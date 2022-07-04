@@ -1,7 +1,8 @@
 # Todo
 
 * Diagonal movement.
-* Brake causes deviation from path
+* CorrectDeviation/ReturnToPath - too much brake!
+*
 
 # Brakes
 
