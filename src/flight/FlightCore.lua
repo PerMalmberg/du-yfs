@@ -202,7 +202,7 @@ function flightCore:FCFlush()
                             self.waypointReachedSignaled = true
                             self.flightFSM:WaypointReached(#self.waypoints == 1, wp, self.previousWaypoint)
 
-                            wp:OneTimeSetYawPitchDirection(vehicle.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToGravity)
+                            wp:OneTimeSetYawPitchDirection(vehicle.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference)
                         end
 
                         local switched

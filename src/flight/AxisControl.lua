@@ -116,7 +116,7 @@ end
 function control:AxisFlush(apply)
     if self.target.coordinate ~= nil then
         -- Positive offset means we're right of target, clock-wise
-        -- Postive acceleration turns counter-clockwise
+        -- Positive acceleration turns counter-clockwise
         -- Positive velocity means we're turning counter-clockwise
 
         local vecToTarget = self.target.coordinate - vehicle.position.Current()
