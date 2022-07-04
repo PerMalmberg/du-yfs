@@ -13,6 +13,7 @@ local PID = require("cpml/pid")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
+local abs = math.abs
 
 local FlightMode = Enum {
     "AXIS",
@@ -102,9 +103,9 @@ local function new()
 end
 
 function fsm:GetEngines(moveDirection)
-    if moveDirection:dot(Forward()) >= 0.707 then
+    if abs(moveDirection:dot(Forward())) >= 0.707 then
         return forwardGroup
-    elseif moveDirection:dot(Right()) >= 0.707 then
+    elseif abs(moveDirection:dot(Right())) >= 0.707 then
         return rightGroup
     else
         return upGroup
