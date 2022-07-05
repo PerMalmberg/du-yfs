@@ -114,12 +114,12 @@ function flightCore:Turn(degrees, axis, rotationPoint)
     end
 end
 
-function flightCore:SetFreeMode()
-    self.flightFSM:SetFreeMode()
+function flightCore:SetNormalMode()
+    self.flightFSM:SetNormalMode()
 end
 
-function flightCore:SetAxisMode()
-    self.flightFSM:SetAxisMode()
+function flightCore:SetPrecisionMode()
+    self.flightFSM:SetPrecisionMode()
 end
 
 function flightCore:ReceiveEvents()

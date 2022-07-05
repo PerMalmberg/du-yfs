@@ -16,8 +16,8 @@ local Velocity = vehicle.velocity.Movement
 local abs = math.abs
 
 local FlightMode = Enum {
-    "AXIS",
-    "FREE"
+    "PRECISION",
+    "NORMAL"
 }
 
 local longitudinal = "longitudinal"
@@ -27,12 +27,30 @@ local airfoil = "airfoil"
 local thrustTag = "thrust"
 local Forward = vehicle.orientation.Forward
 local Right = vehicle.orientation.Right
+
 local AntiG = function()
     return -universe:VerticalReferenceVector() * vehicle.world.G()
 end
+
 local NoAntiG = function()
     return nullVec
 end
+
+local normalModeGroup = {
+    thrust = {
+        engines = EngineGroup(thrustTag, airfoil),
+        prio1Tag = airfoil,
+        prio2Tag = thrustTag,
+        prio3Tag = "",
+        antiG = AntiG
+    },
+    adjust = { engines = EngineGroup(),
+               prio1Tag = "",
+               prio2Tag = "",
+               prio3Tag = "",
+               antiG = NoAntiG
+    }
+}
 
 local forwardGroup = {
     thrust = { engines = EngineGroup(longitudinal),
@@ -94,7 +112,7 @@ local function new()
         adjustAcc = nullVec,
         -- Use a low amortization to quickly stop adjusting
         deviationPID = PID(0, 1, 5, 0.2),
-        mode = FlightMode.AXIS
+        mode = FlightMode.PRECISION
     }
 
     setmetatable(instance, fsm)
@@ -103,19 +121,23 @@ local function new()
 end
 
 function fsm:GetEngines(moveDirection)
-    if abs(moveDirection:dot(Forward())) >= 0.707 then
-        return forwardGroup
-    elseif abs(moveDirection:dot(Right())) >= 0.707 then
-        return rightGroup
+    if self.mode == FlightMode.PRECISION then
+        if abs(moveDirection:dot(Forward())) >= 0.707 then
+            return forwardGroup
+        elseif abs(moveDirection:dot(Right())) >= 0.707 then
+            return rightGroup
+        else
+            return upGroup
+        end
     else
-        return upGroup
+        return normalModeGroup
     end
 end
 
 function fsm:CheckPathAlignment(currentPos, chaseData)
     local res = true
 
-    if self.mode == FlightMode.AXIS then
+    if self.mode == FlightMode.PRECISION then
         local travelDir = Velocity():normalize_inplace()
         local speed = Velocity():len()
 
@@ -186,14 +208,17 @@ function fsm:ApplyAcceleration(moveDirection)
         local thrustAcc = (self.acceleration or nullVec) + t.antiG()
         local adjustAcc = (self.adjustAcc or nullVec) + a.antiG()
 
-        ctrl.setEngineCommand(t.engines:Intersection(), { thrustAcc:unpack() }, { 0, 0, 0 }, 0, 0, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
-        if adjustAcc:len2() == 0 then
-            ctrl.setEngineThrust(a.engines:Union(), 1000)
+        if self.mode == FlightMode.PRECISION then
+            -- Apply acceleration independently
+            ctrl.setEngineCommand(t.engines:Intersection(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
+            ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
         else
-            ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 0, 0, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
+            -- Apply acceleration as a single vector
+            local finalAcc = thrustAcc + adjustAcc
+            ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
         end
     else
-        ctrl.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, 0, 0, "", "", "", 0.001)
+        ctrl.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
     end
 end
 
@@ -226,14 +251,14 @@ function fsm:SetState(state)
     self.current = state
 end
 
-function fsm:SetFreeMode()
-    self.mode = FlightMode.FREE
-    log:Info("Free mode")
+function fsm:SetNormalMode()
+    self.mode = FlightMode.NORMAL
+    log:Info("Normal mode")
 end
 
-function fsm:SetAxisMode()
-    self.mode = FlightMode.AXIS
-    log:Info("Axis mode")
+function fsm:SetPrecisionMode()
+    self.mode = FlightMode.PRECISION
+    log:Info("Precision mode")
 end
 
 function fsm:DisableThrust()

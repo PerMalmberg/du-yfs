@@ -155,13 +155,13 @@ end
 local strafeCmd = cmd:Accept("strafe", strafeFunc):AsNumber()
 strafeCmd:Option("-v"):AsNumber():Mandatory():Default(10)
 
-local axisFunc = function(data)
-    fc:SetAxisMode()
+local precision = function(data)
+    fc:SetPrecisionMode()
 end
 
 local freeFunc = function(data)
-    fc:SetFreeMode()
+    fc:SetNormalMode()
 end
 
-cmd:Accept("axis", axisFunc):AsEmpty()
-cmd:Accept("free", freeFunc):AsEmpty()
+cmd:Accept("precision", precisionFunc):AsEmpty()
+cmd:Accept("normal", freeFunc):AsEmpty()
