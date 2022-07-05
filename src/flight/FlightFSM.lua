@@ -10,6 +10,7 @@ local log = require("du-libs:debug/Log")()
 local universe = require("du-libs:universe/Universe")()
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local PID = require("cpml/pid")
+local Vec3 = require("cpml/vec3")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
@@ -138,15 +139,14 @@ function fsm:CheckPathAlignment(currentPos, chaseData)
     local res = true
 
     if self.mode == FlightMode.PRECISION then
-        local travelDir = Velocity():normalize_inplace()
+        local tolerance = 3
+
         local speed = Velocity():len()
 
-        local toRabbit = chaseData.rabbit - currentPos
         local toNearest = chaseData.nearest - currentPos
 
-        local tolerance = 0.85
         if speed > 1 then
-            res = travelDir:dot(toRabbit:normalize()) >= tolerance or travelDir:dot(toNearest:normalize()) >= tolerance
+            res = toNearest:len() < tolerance
         end
     end
 
@@ -205,7 +205,7 @@ function fsm:ApplyAcceleration(moveDirection)
         local groups = self:GetEngines(moveDirection)
         local t = groups.thrust
         local a = groups.adjust
-        local thrustAcc = (self.acceleration or nullVec) + t.antiG()
+        local thrustAcc = (self.acceleration or nullVec) + t.antiG() - Vec3(construct.getWorldAirFrictionAcceleration())
         local adjustAcc = (self.adjustAcc or nullVec) + a.antiG()
 
         if self.mode == FlightMode.PRECISION then
@@ -213,9 +213,8 @@ function fsm:ApplyAcceleration(moveDirection)
             ctrl.setEngineCommand(t.engines:Intersection(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
             ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
         else
-            -- Apply acceleration as a single vector
-            local finalAcc = thrustAcc + adjustAcc
-            ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
+            -- Apply acceleration as a single vector, skipping the adjustment acceleration
+            ctrl.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
         end
     else
         ctrl.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)

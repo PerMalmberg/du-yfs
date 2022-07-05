@@ -155,7 +155,7 @@ end
 local strafeCmd = cmd:Accept("strafe", strafeFunc):AsNumber()
 strafeCmd:Option("-v"):AsNumber():Mandatory():Default(10)
 
-local precision = function(data)
+local precisionFunc = function(data)
     fc:SetPrecisionMode()
 end
 

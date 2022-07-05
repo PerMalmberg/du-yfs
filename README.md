@@ -1,6 +1,8 @@
 # Todo
 
-* Diagonal movement.
+* Normal mode
+    * fsm:Thrust() calls only take acceleration in one axis into account so when speed is reached it stops giving
+      commands to follow the path.
 * CorrectDeviation/ReturnToPath - too much brake!
 *
 

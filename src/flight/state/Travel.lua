@@ -49,9 +49,8 @@ function state:Flush(next, previous, chaseData)
         -- Word of warning. Quickly toggling the brakes causes
         -- them to push the construct off the trajectory.
 
-        -- Get speed diff in direction of rabbit
-        local currentSpeed = velocity:dot(directionToRabbit)
-        local speedDiff = currentSpeed - next.maxSpeed
+        -- Compare to absolute speed
+        local speedDiff = velocity:len() - next.maxSpeed
 
         if speedDiff > 0 then
             -- Need to brake
@@ -61,9 +60,9 @@ function state:Flush(next, previous, chaseData)
             -- v = v0 + a*t => a = (v - v0) / t
             -- Accelerate with whatever power would be needed and is available.
             local accNeeded = abs(speedDiff) / constants.PHYSICS_INTERVAL
-            self.fsm:Thrust(directionToRabbit * accNeeded - Vec3(construct.getWorldAirFrictionAcceleration()))
+            self.fsm:Thrust(directionToRabbit * accNeeded)
         else
-            self.fsm:Thrust(-Vec3(construct.getWorldAirFrictionAcceleration()))
+            self.fsm:Thrust()
         end
     end
 end
