@@ -44,8 +44,7 @@ function state:Flush(next, previous, chaseData)
             self.fsm:SetState(ReturnToPath(self.fsm))
         else
             -- As the velocity goes down, so does the adjustment
-            local againstVel = -vel:normalize() * speed
-            self.fsm:Thrust(againstVel)
+            self.fsm:Thrust(-vel)
         end
     end
 end
