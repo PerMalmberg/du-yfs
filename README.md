@@ -1,15 +1,10 @@
 # Todo
 
-* Normal mode
-    * fsm:Thrust() calls only take acceleration in one axis into account so when speed is reached it stops giving
-      commands to follow the path.
-* CorrectDeviation/ReturnToPath - too much brake!
-*
+* Alternating between ApplroachWaypoint and CorrectDeviation/ReturnToPath results in not enough brake.
 
 # Brakes
 
-- The value we now get is for both, we just must adjust it for atmo.
-  Does enabling brakes cause up/down movement? They do!
+- Does enabling brakes cause up/down movement? They do!
 
 # Cross and dot
 
