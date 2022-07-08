@@ -29,11 +29,16 @@ end
 
 function state:Flush(next, previous, chaseData)
     local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(next:DistanceTo())
+    local currentPos = vehicle.position.Current()
 
     local dist = next:DistanceTo()
     -- Don't switch if we're nearly there
     if brakeDistance < dist and dist > 1000 then
         self.fsm:SetState(Travel(self.fsm))
+    elseif not self.fsm:CheckPathAlignment(currentPos, chaseData) then
+        -- Are we on the the desired path?
+        self.fsm:Thrust()
+        self.fsm:SetState(CorrectDeviation(self.fsm))
     else
         local needToBrake = brakeDistance >= next:DistanceTo()
 

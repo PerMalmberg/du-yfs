@@ -138,16 +138,18 @@ end
 function fsm:CheckPathAlignment(currentPos, chaseData)
     local res = true
 
-    if self.mode == FlightMode.PRECISION then
-        local tolerance = 3
+    local toleranceDistance = 3
+    local toleranceDirection = 0.85
 
-        local speed = Velocity():len()
+    local vel = Velocity()
+    local dir = vel:normalize()
+    local speed = vel:len()
 
-        local toNearest = chaseData.nearest - currentPos
+    local toNearest = chaseData.nearest - currentPos
+    local toRabbit = chaseData.rabbit - currentPos
 
-        if speed > 1 then
-            res = toNearest:len() < tolerance
-        end
+    if speed > 1 then
+        res = toNearest:len() < toleranceDistance and dir:dot(toRabbit:normalize()) >= toleranceDirection
     end
 
     return res
@@ -162,11 +164,6 @@ function fsm:FsmFlush(next, previous)
         local chaseData = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
 
         brakes:Set(false)
-
-        -- Are we moving in the desired direction?
-        if not self:CheckPathAlignment(pos, chaseData) then
-            self:SetState(CorrectDeviation(self))
-        end
 
         self.acceleration = nullVec
         self.adjustAcc = nullVec
@@ -214,7 +211,8 @@ function fsm:ApplyAcceleration(moveDirection)
             ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
         else
             -- Apply acceleration as a single vector, skipping the adjustment acceleration
-            ctrl.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
+            local finalAcc = thrustAcc + adjustAcc
+            ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
         end
     else
         ctrl.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
@@ -244,6 +242,7 @@ function fsm:SetState(state)
         self.wStateName:Set("No state!")
     else
         self.wStateName:Set(state:Name())
+        system.print(state:Name()) -- QQQ
         state:Enter()
     end
 

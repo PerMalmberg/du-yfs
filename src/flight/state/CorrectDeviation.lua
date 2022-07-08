@@ -32,7 +32,7 @@ function state:Flush(next, previous, chaseData)
     local brakeDistance, neededBrakeAcceleration = brakes:BrakeDistance(next:DistanceTo())
 
     if brakeDistance >= next:DistanceTo() or neededBrakeAcceleration > 0 then
-        self.fsm:SetState(ApproachWaypoint(self.fsm))
+        self.fsm:SetState(Travel(self.fsm))
     else
         brakes:Set(true)
 
@@ -45,7 +45,7 @@ function state:Flush(next, previous, chaseData)
         else
             -- As the velocity goes down, so does the adjustment
             local againstVel = -vel:normalize() * speed
-            self.fsm:Thrust()
+            self.fsm:Thrust(againstVel)
         end
     end
 end

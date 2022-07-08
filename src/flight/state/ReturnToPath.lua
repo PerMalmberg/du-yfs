@@ -12,7 +12,8 @@ local function new(fsm)
     checks.IsTable(fsm, "fsm", name .. ":new")
 
     local o = {
-        fsm = fsm
+        fsm = fsm,
+        nearestOnEnter = nil
     }
 
     setmetatable(o, state)
@@ -27,8 +28,13 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, chaseData)
+
+    if self.nearestOnEnter == nil then
+        self.nearestOnEnter = chaseData.nearest
+    end
+
     local currentPos = vehicle.position.Current()
-    local toTarget = chaseData.nearest - currentPos
+    local toTarget = self.nearestOnEnter - currentPos
 
     if toTarget:len() <= next.margin then
         self.fsm:SetState(Travel(self.fsm))
@@ -44,7 +50,7 @@ function state:Flush(next, previous, chaseData)
         local mul = calc.Scale(utils.clamp(toTarget:len(), 0, 5), 0, 5, 0.5, 2)
         acc = toTarget:normalize() * mul
 
-        self.fsm:Thrust()
+        self.fsm:Thrust(acc)
     end
 end
 
