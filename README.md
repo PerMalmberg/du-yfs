@@ -6,6 +6,25 @@
 
 - Does enabling brakes cause up/down movement? They do!
 
+# Flight
+
+```mermaid
+flowchart TD
+  Idle-->Travel
+  ApprochingLast{last waypoint}
+  ApproachWaypoint -- out of alignment --> CorrectDeviation
+  ApproachWaypoint -- dist < brakeDist && dist > 1000 --> Travel
+  ApproachWaypoint -- waypoint reached --> ApprochingLast
+  ApprochingLast -- Yes --> Hold
+  ApprochingLast -- No --> Travel
+  CorrectDeviation -- speed < limit --> ReturnToPath
+  ReturnToPath -- distance < margin --> Travel
+  Travel -- need to brake -->ApproachWaypoint
+  Travel -- out of alignment --> CorrectDeviation
+  Hold -- too far --> ApproachWaypoint
+ 
+```
+
 # Cross and dot
 
 Right hand rule for cross product:
