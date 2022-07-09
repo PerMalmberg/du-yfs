@@ -138,7 +138,7 @@ end
 function fsm:CheckPathAlignment(currentPos, chaseData)
     local res = true
 
-    local toleranceDistance = 3
+    local toleranceDistance = 3 -- meters
     local toleranceDirection = 0.85
 
     local vel = Velocity()
@@ -179,7 +179,6 @@ function fsm:FsmFlush(next, previous)
     else
         self:ApplyAcceleration(nullVec)
     end
-
 end
 
 function fsm:AdjustForDeviation(chaseData, currentPos)
@@ -189,11 +188,10 @@ function fsm:AdjustForDeviation(chaseData, currentPos)
     self.deviationPID:inject(len)
     self.wDeviation:Set(calc.Round(len, 4))
 
-    local maxDeviationAcc = 5
-
     local devAcc = vehicle.acceleration.Movement():dot(nearDeviation)
     self.wDevAcceleration:Set(calc.Round(devAcc, 2))
 
+    local maxDeviationAcc = 5
     self.adjustAcc = nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0.0, maxDeviationAcc)
 end
 
