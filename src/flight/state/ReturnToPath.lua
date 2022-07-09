@@ -12,8 +12,7 @@ local function new(fsm)
     checks.IsTable(fsm, "fsm", name .. ":new")
 
     local o = {
-        fsm = fsm,
-        nearestOnEnter = nil
+        fsm = fsm
     }
 
     setmetatable(o, state)
@@ -29,28 +28,21 @@ end
 
 function state:Flush(next, previous, chaseData)
 
-    if self.nearestOnEnter == nil then
-        self.nearestOnEnter = chaseData.nearest
-    end
-
     local currentPos = vehicle.position.Current()
-    local toTarget = self.nearestOnEnter - currentPos
+    local toNearest = chaseData.nearest - currentPos
+    local distance = toNearest:len()
 
-    if toTarget:len() <= next.margin then
+    self.fsm:Thrust()
+
+    if distance <= next.margin then
         self.fsm:SetState(Travel(self.fsm))
     else
-        local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(toTarget:len())
+        local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(toNearest:len())
 
         local travelDir = vehicle.velocity:Movement():normalize_inplace()
+        local enableBrake = travelDir:dot(toNearest:normalize()) < 0.85 or brakeDistance >= distance
 
-        brakes:Set(brakeDistance >= toTarget:len())
-
-        local acc = brakeAccelerationNeeded * -travelDir
-
-        local mul = calc.Scale(utils.clamp(toTarget:len(), 0, 5), 0, 5, 0.5, 2)
-        acc = toTarget:normalize() * mul
-
-        self.fsm:Thrust(acc)
+        brakes:Set(enableBrake)
     end
 end
 
