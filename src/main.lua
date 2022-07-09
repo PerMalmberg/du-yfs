@@ -18,10 +18,12 @@ local brakeLight = library:GetLinkByName("brakelight")
 fc:ReceiveEvents()
 
 function Update(system)
-    if brakes:IsEngaged() then
-        brakeLight.activate()
-    else
-        brakeLight.deactivate()
+    if brakeLight ~= nil then
+        if brakes:IsEngaged() then
+            brakeLight.activate()
+        else
+            brakeLight.deactivate()
+        end
     end
 end
 system:onEvent("onUpdate", Update)
