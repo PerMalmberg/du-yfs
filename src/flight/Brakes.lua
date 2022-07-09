@@ -1,5 +1,5 @@
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
-local Timer = require("du-libs:system/Timer")
+local Stopwatch = require("du-libs:system/Stopwatch")
 local library = require("du-libs:abstraction/Library")()
 local vehicle = require("du-libs:abstraction/Vehicle")()
 local checks = require("du-libs:debug/Checks")
@@ -27,10 +27,9 @@ local function new()
 
     local instance = {
         ctrl = ctrl,
-        activationDelay = Timer(),
         engaged = false,
         forced = false,
-        updateTimer = Timer(),
+        updateTimer = Stopwatch(),
         currentForce = 0,
         totalMass = 1,
         isWithinAtmo = true,

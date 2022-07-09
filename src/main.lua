@@ -17,7 +17,7 @@ local brakeLight = library:GetLinkByName("brakelight")
 
 fc:ReceiveEvents()
 
-function Update(system)
+local function Update(system)
     if brakeLight ~= nil then
         if brakes:IsEngaged() then
             brakeLight.activate()
