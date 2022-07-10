@@ -67,18 +67,6 @@ function waypoint:YawAndPitch(previousWaypoint)
     return nil
 end
 
-function waypoint:RotateAroundAxis(degrees, axis, rotationPoint)
-    local rad = deg2rad(degrees)
-    axis:normalize_inplace()
-
-    local v = self.destination - rotationPoint
-    self.destination = v:rotate(rad, axis) + rotationPoint
-
-    if self.yawPitchDirection ~= nil then
-        self.yawPitchDirection = self.yawPitchDirection:rotate(rad, axis)
-    end
-end
-
 return setmetatable(
         {
             new = new

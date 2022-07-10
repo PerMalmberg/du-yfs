@@ -11,6 +11,10 @@ local directionMargin = 1000
 
 local alignment = {}
 
+function alignment.NoAdjust()
+    return nil
+end
+
 function alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference(waypoint, previousWaypoint)
     local normal = -universe:VerticalReferenceVector()
     local dir = waypoint.yawPitchDirection:project_on_plane(normal)

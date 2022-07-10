@@ -1,6 +1,9 @@
 # Todo
 
 * Alternating between ApplroachWaypoint and CorrectDeviation/ReturnToPath results in not enough brake.
+* "step" without arg -> crash
+* Turning broken
+* Loading/Saving route untested
 
 # Brakes
 
