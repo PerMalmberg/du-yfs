@@ -139,16 +139,13 @@ function control:AxisFlush(apply)
 
         local movingTowardsTarget = (isLeftOf and movingRight) or (isRightOf and movingLeft)
 
-        local acc = 0
-
         if movingTowardsTarget then
             offset = offset * 0.5
         end
 
         self.pid:inject(offset)
-        acc = self.pid:get()
 
-        finalAcceleration[self.controlledAxis] = self:Normal() * acc * deg2rad
+        finalAcceleration[self.controlledAxis] = self:Normal() * self.pid:get() * deg2rad
     end
 
     if apply then
