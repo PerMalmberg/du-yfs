@@ -68,7 +68,6 @@ function flightCore:NextWP()
         return
     end
 
-    system.setWaypoint(nextPoint:Pos())
     self.previousWaypoint = self.currentWaypoint
     self.waypointReachedSignaled = false
     self.currentWaypoint = Waypoint(nextPoint:Coordinate(), calc.Kph2Mps(100), 0.1, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)

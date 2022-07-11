@@ -95,6 +95,15 @@ end)
 
 local start = vehicle.position.Current()
 
+input:Register(keys.option7, Criteria():OnPress(), function()
+    routeController:ActivateRoute()
+    local route = routeController:CurrentRoute()
+    route:AddPos("::pos{0,2,7.7063,78.0886,39.7209}")
+    route:AddPos("::pos{0,2,7.7097,78.0763,38.9275}")
+    route:AddPos("::pos{0,2,7.6924,78.0694,36.1659}")
+    fc:StartFlight()
+end)
+
 input:Register(keys.option8, Criteria():OnPress(), function()
     routeController:ActivateRoute()
     local route = routeController:CurrentRoute()
