@@ -133,7 +133,8 @@ function flightCore:StopEvents()
     self.yaw:StopEvents()
 end
 
-function flightCore:Align(waypoint)
+function flightCore:Align()
+    local waypoint = self.currentWaypoint
     if waypoint ~= nil then
         local target = waypoint:YawAndPitch(self.previousWaypoint)
 
@@ -206,7 +207,7 @@ function flightCore:FCFlush()
                         self.waypointReachedSignaled = false
                     end
 
-                    self:Align(self.currentWaypoint)
+                    self:Align()
                     self.flightFSM:FsmFlush(self.currentWaypoint, self.previousWaypoint)
                 end
 
