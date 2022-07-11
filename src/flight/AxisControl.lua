@@ -3,13 +3,14 @@ local library = require("du-libs:abstraction/Library")()
 local checks = require("du-libs:debug/Checks")
 local calc = require("du-libs:util/Calc")
 local nullVec = require("cpml/vec3")()
-local visual = require("du-libs:debug/Visual")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local PID = require("cpml/pid")
+local G = vehicle.world.G
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
+local abs = math.abs
 
 local control = {}
 control.__index = control
@@ -121,8 +122,15 @@ function control:AxisFlush(apply)
 
         local vecToTarget = self.target.coordinate - vehicle.position.Current()
         local offset = calc.SignedRotationAngle(self.Normal(), self.Reference(), vecToTarget) * rad2deg
-
         self.operationWidget:Set("Offset " .. calc.Round(offset, 4))
+
+        -- Prefer yaw above pitch by preventing the construct from pitching when the target point is behind.
+        -- This prevents construct from ending up upside down while gravity affects us and engines can't keep us afloat.
+        if self.controlledAxis == AxisControlPitch then
+            if abs(offset) >= 90 and G() > 0 then
+                offset = 0
+            end
+        end
 
         local isLeftOf = calc.Sign(offset) == -1
         local isRightOf = calc.Sign(offset) == 1
