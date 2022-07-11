@@ -1,8 +1,6 @@
 local brakes = require("flight/Brakes")()
 local checks = require("du-libs:debug/Checks")
 local vehicle = require("du-libs:abstraction/Vehicle")()
-local calc = require("du-libs:util/Calc")
-local utils = require("cpml/Utils")
 
 local state = {}
 state.__index = state
@@ -40,7 +38,7 @@ function state:Flush(next, previous, chaseData)
         local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(toNearest:len())
 
         local travelDir = vehicle.velocity:Movement():normalize_inplace()
-        local enableBrake = travelDir:dot(toNearest:normalize()) < 0.85 or brakeDistance >= distance
+        local enableBrake = travelDir:dot(toNearest:normalize()) < 0.85 or (brakeDistance >= distance and vehicle.velocity.Movement():len() > 0.5)
 
         brakes:Set(enableBrake)
     end
