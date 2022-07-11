@@ -189,7 +189,7 @@ local strafeCmd = cmd:Accept("strafe", strafeFunc):AsNumber()
 strafeCmd:Option("-v"):AsNumber():Mandatory():Default(10)
 
 cmd :Accept("precision", function()
-    fc:SetNormalMode()
+    fc:SetPrecisionMode()
 end):AsEmpty()
 
 cmd :Accept("normal", function()
