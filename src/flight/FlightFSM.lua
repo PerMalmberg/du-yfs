@@ -175,7 +175,7 @@ function fsm:FsmFlush(next, previous)
 
         visual:DrawNumber(9, chaseData.rabbit)
         visual:DrawNumber(8, chaseData.nearest)
-        visual:DrawNumber(0, pos + self.acceleration:normalize() * 8)
+        visual:DrawNumber(0, pos + (self.acceleration or nullVec):normalize() * 8)
     else
         self:ApplyAcceleration(nullVec)
     end
@@ -240,7 +240,6 @@ function fsm:SetState(state)
         self.wStateName:Set("No state!")
     else
         self.wStateName:Set(state:Name())
-        system.print(state:Name()) -- QQQ
         state:Enter()
     end
 

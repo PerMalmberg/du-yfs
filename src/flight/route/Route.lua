@@ -61,17 +61,19 @@ end
 
 ---@return Point Returns the next point in the route or nil if it is the last.
 function route:Next()
-    local p = self.points[self.currentPointIx]
 
-    if not self:LastPointReached() then
-        self.currentPointIx = self.currentPointIx + 1
+    if self:LastPointReached() then
+        return nil
     end
+
+    local p = self.points[self.currentPointIx]
+    self.currentPointIx = self.currentPointIx + 1
 
     return p
 end
 
 function route:LastPointReached()
-    return self.currentPointIx >= #self.points
+    return self.currentPointIx > #self.points
 end
 
 local function new()

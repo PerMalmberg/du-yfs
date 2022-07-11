@@ -45,7 +45,15 @@ local function new()
 
     setmetatable(instance, flightCore)
 
+    -- Setup start waypoints to prevent nil values
+    instance.currentWaypoint = instance:CreateDefaultWP()
+    instance.previousWaypoint = instance.currentWaypoint
+
     return instance
+end
+
+function flightCore:CreateDefaultWP()
+    return Waypoint(vehicle.position.Current(), 0, 10, alignment.NoAdjust, alignment.NoAdjust)
 end
 
 function flightCore:NextWP()
@@ -72,7 +80,7 @@ function flightCore:StartFlight()
     self.waypointReachedSignaled = false
 
     -- Setup waypoint that will be the previous waypoint
-    self.currentWaypoint = Waypoint(vehicle.position.Current(), 0, 0, alignment.NoAdjust, alignment.NoAdjust)
+    self.currentWaypoint = self:CreateDefaultWP()
     self:NextWP()
 
     -- Don't start unless we have a destination.
@@ -135,23 +143,24 @@ end
 
 function flightCore:Align()
     local waypoint = self.currentWaypoint
-    if waypoint ~= nil then
-        local target = waypoint:YawAndPitch(self.previousWaypoint)
+    local prev = self.previousWaypoint
 
-        if target ~= nil then
-            self.yaw:SetTarget(target)
-            self.pitch:SetTarget(target)
-        else
-            self.yaw:Disable()
-            self.pitch:Disable()
-        end
+    local target = waypoint:YawAndPitch(prev)
 
-        local topSideAlignment = waypoint:Roll(self.previousWaypoint)
-        if topSideAlignment ~= nil then
-            self.roll:SetTarget(topSideAlignment)
-        else
-            self.roll:Disable()
-        end
+    if target ~= nil then
+        visual:DrawNumber(6, target + vehicle.orientation.Forward() * 1)
+        self.yaw:SetTarget(target)
+        self.pitch:SetTarget(target)
+    else
+        self.yaw:Disable()
+        self.pitch:Disable()
+    end
+
+    local topSideAlignment = waypoint:Roll(prev)
+    if topSideAlignment ~= nil then
+        self.roll:SetTarget(topSideAlignment)
+    else
+        self.roll:Disable()
     end
 end
 
@@ -189,13 +198,14 @@ end
 function flightCore:FCFlush()
     local status, err, _ = xpcall(
             function()
+                local route = routeController:CurrentRoute()
                 local wp = self.currentWaypoint
 
-                if wp ~= nil then
+                if wp and route then
                     if wp:Reached() then
                         if not self.waypointReachedSignaled then
                             self.waypointReachedSignaled = true
-                            self.flightFSM:WaypointReached(routeController:CurrentRoute():LastPointReached(), wp, self.previousWaypoint)
+                            self.flightFSM:WaypointReached(route:LastPointReached(), wp, self.previousWaypoint)
 
                             wp:LockDirection(vehicle.orientation.Forward())
                         end
