@@ -67,7 +67,6 @@ function state:Update()
 end
 
 function state:WaypointReached(isLastWaypoint, next, previous)
-    system.print("last: " .. tostring(isLastWaypoint))
     if isLastWaypoint then
         self.fsm:SetState(Hold(self.fsm))
     else

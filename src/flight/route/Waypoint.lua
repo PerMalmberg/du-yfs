@@ -44,8 +44,8 @@ function waypoint:DirectionTo()
     return (self.destination - vehicle.position.Current()):normalize_inplace()
 end
 
-function waypoint:LockDirection(direction)
-    if self.yawPitchDirection == nil then
+function waypoint:LockDirection(direction, forced)
+    if self.yawPitchDirection == nil or forced then
         self.yawPitchDirection = direction
         self.yawPitchFunc = alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference
     end

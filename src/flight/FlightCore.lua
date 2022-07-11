@@ -99,21 +99,12 @@ function flightCore:Turn(degrees, axis, rotationPoint)
     local currentWp = self.currentWaypoint
     if currentWp then
         rotationPoint = (rotationPoint or vehicle.position.Current())
-        local currentPos = vehicle.position.Current()
-        local toTarget = currentWp.destination - currentPos
-
-        -- Load default
-        routeController:ActivateRoute()
-        local route = routeController:CurrentRoute()
 
         -- Find new direction
-        local direction = toTarget:normalize()
+        local direction = vehicle.orientation.Forward()
         direction = calc.RotateAroundAxis(direction, nullVec, degrees, axis)
 
-        -- Create a new point at the remaining distance
-        route:AddCoordinate(currentPos + direction * toTarget:len())
-
-        -- Don't restart flight, just let the current flight continue.
+        currentWp:LockDirection(direction, true)
     end
 end
 

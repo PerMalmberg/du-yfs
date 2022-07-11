@@ -95,7 +95,6 @@ end
 
 function controller:ActivateRoute(name)
     if name == nil then
-        log:Info("Loading default empty route")
         self.current = Route()
         self.currentName = DEFAULT_ROUTE
     else
