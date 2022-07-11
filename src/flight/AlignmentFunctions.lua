@@ -31,9 +31,8 @@ function alignment.YawPitchKeepOrthogonalToVerticalReference(waypoint, previousW
     if abs(dir:dot(normal)) > 0.9 then
         -- When the next waypoint is nearly above or below us, switch alignment mode.
         -- This 'trick' allows turning also in manual control
-        local f = alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference
-        waypoint:OneTimeSetYawPitchDirection(vehicle.orientation.Forward(), f)
-        return f(waypoint, previousWaypoint)
+        waypoint:LockDirection(vehicle.orientation.Forward())
+        return waypoint:YawAndPitch(previousWaypoint)
     end
 
     dir = dir:project_on_plane(normal)

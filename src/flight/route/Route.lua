@@ -63,15 +63,15 @@ end
 function route:Next()
     local p = self.points[self.currentPointIx]
 
-    if self:HasMorePoints() then
+    if not self:LastPointReached() then
         self.currentPointIx = self.currentPointIx + 1
     end
 
     return p
 end
 
-function route:HasMorePoints()
-    return self.currentPointIx < #self.points
+function route:LastPointReached()
+    return self.currentPointIx >= #self.points
 end
 
 local function new()

@@ -1,6 +1,6 @@
 local checks = require("du-libs:debug/Checks")
 local vehicle = require("du-libs:abstraction/Vehicle")()
-local deg2rad = math.rad
+local alignment = require("flight/AlignmentFunctions")
 
 local waypoint = {}
 waypoint.__index = waypoint
@@ -44,10 +44,10 @@ function waypoint:DirectionTo()
     return (self.destination - vehicle.position.Current()):normalize_inplace()
 end
 
-function waypoint:OneTimeSetYawPitchDirection(direction, yawPitchFunc)
+function waypoint:LockDirection(direction)
     if self.yawPitchDirection == nil then
         self.yawPitchDirection = direction
-        self.yawPitchFunc = yawPitchFunc
+        self.yawPitchFunc = alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference
     end
 end
 

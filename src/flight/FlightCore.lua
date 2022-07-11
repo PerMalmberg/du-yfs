@@ -60,7 +60,7 @@ function flightCore:NextWP()
         return
     end
 
-    --system.setWaypoint(tostring(universe:CreatePos(self:CurrentWP().destination)))
+    system.setWaypoint(nextPoint:Pos())
     self.previousWaypoint = self.currentWaypoint
     self.waypointReachedSignaled = false
     self.currentWaypoint = Waypoint(nextPoint:Coordinate(), calc.Kph2Mps(100), 0.1, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
@@ -71,7 +71,7 @@ function flightCore:StartFlight()
 
     self.waypointReachedSignaled = false
 
-    -- Setup default waypoints
+    -- Setup waypoint that will be the previous waypoint
     self.currentWaypoint = Waypoint(vehicle.position.Current(), 0, 0, alignment.NoAdjust, alignment.NoAdjust)
     self:NextWP()
 
@@ -194,9 +194,9 @@ function flightCore:FCFlush()
                     if wp:Reached() then
                         if not self.waypointReachedSignaled then
                             self.waypointReachedSignaled = true
-                            self.flightFSM:WaypointReached(routeController:CurrentRoute():HasMorePoints(), wp, self.previousWaypoint)
+                            self.flightFSM:WaypointReached(routeController:CurrentRoute():LastPointReached(), wp, self.previousWaypoint)
 
-                            wp:OneTimeSetYawPitchDirection(vehicle.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference)
+                            wp:LockDirection(vehicle.orientation.Forward())
                         end
 
                         -- Switch to next waypoint
@@ -206,7 +206,7 @@ function flightCore:FCFlush()
                         self.waypointReachedSignaled = false
                     end
 
-                    self:Align(wp)
+                    self:Align(self.currentWaypoint)
                     self.flightFSM:FsmFlush(self.currentWaypoint, self.previousWaypoint)
                 end
 

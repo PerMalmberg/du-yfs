@@ -171,7 +171,7 @@ local strafeFunc = function(data)
     --local pos = vehicle.position.Current()
     --
     --local wp = Waypoint(pos + vehicle.orientation.Right() * data.commandValue, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference)
-    --wp:OneTimeSetYawPitchDirection(vehicle.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference)
+    --wp:LockDirection(vehicle.orientation.Forward())
     --fc:AddWaypoint(wp)
     --fc:StartFlight()
 end
