@@ -3,16 +3,16 @@ local vehicle = require("du-libs:abstraction/Vehicle")()
 local fc = require("flight/FlightCore")()
 local calc = require("du-libs:util/Calc")
 local brakes = require("flight/Brakes")()
-local Waypoint = require("flight/route/Waypoint")
 local input = require("du-libs:input/Input")()
 local Criteria = require("du-libs:input/Criteria")
 local keys = require("du-libs:input/Keys")
 local log = require("du-libs:debug/Log")()
-local alignment = require("flight/AlignmentFunctions")
 local cmd = require("du-libs:commandline/CommandLine")()
 local utils = require("cpml/utils")
 local universe = require("du-libs:universe/Universe")()
 local routeController = require("flight/route/Controller")()
+local PointOptions = require("flight/route/PointOptions")
+local abs = math.abs
 
 local brakeLight = library:GetLinkByName("brakelight")
 
@@ -98,9 +98,15 @@ local start = vehicle.position.Current()
 input:Register(keys.option7, Criteria():OnPress(), function()
     routeController:ActivateRoute()
     local route = routeController:CurrentRoute()
-    route:AddPos("::pos{0,2,7.7063,78.0886,39.7209}")
-    route:AddPos("::pos{0,2,7.7097,78.0763,38.9275}")
-    route:AddPos("::pos{0,2,7.6924,78.0694,36.1659}")
+    local opt = route:AddPos("::pos{0,2,7.7063,78.0886,39.7209}"):Options()
+    opt:Set(PointOptions.MAX_SPEED, calc.Kph2Mps(40))
+    opt:Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
+
+    opt = route:AddPos("::pos{0,2,7.7097,78.0763,38.9275}"):Options()
+    opt:Set(PointOptions.MAX_SPEED, calc.Kph2Mps(100))
+    opt:Set(PointOptions.MARGIN, 1)
+
+    opt = route:AddPos("::pos{0,2,7.6924,78.0694,36.1659}"):Options()
     fc:StartFlight()
 end)
 
@@ -108,14 +114,9 @@ input:Register(keys.option8, Criteria():OnPress(), function()
     routeController:ActivateRoute()
     local route = routeController:CurrentRoute()
 
-    --start = vehicle.position.Current()
     route:AddCoordinate(start - universe:VerticalReferenceVector() * 2)
     route:AddCoordinate(start - universe:VerticalReferenceVector() * 100)
 
-    --fc:ClearWP()
-    --fc:AddWaypoint(Waypoint(start - universe:VerticalReferenceVector() * 2, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference))
-    --fc:AddWaypoint(Waypoint(start - universe:VerticalReferenceVector() * 100, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference))
-    --fc:AddWaypoint(Waypoint(start - universe:VerticalReferenceVector() * 2000, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference))
     fc:StartFlight()
 end)
 
@@ -124,9 +125,6 @@ input:Register(keys.option9, Criteria():OnPress(), function()
     local route = routeController:CurrentRoute()
     route:AddCoordinate(start)
 
-    --fc:ClearWP()
-    --fc:AddWaypoint(Waypoint(start - universe:VerticalReferenceVector() * 200, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference))
-    --fc:AddWaypoint(Waypoint(start, calc.Kph2Mps(1500), 0.1, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference))
     fc:StartFlight()
 end)
 
@@ -151,9 +149,6 @@ local moveFunc = function(data)
     data.v = math.abs(data.v)
     route:AddCoordinate(pos + vehicle.orientation.Forward() * data.f + vehicle.orientation.Right() * data.r - universe:VerticalReferenceVector() * data.u)
 
-    --fc:ClearWP()
-
-    --fc:AddWaypoint(Waypoint(pos + vehicle.orientation.Forward() * data.f + vehicle.orientation.Right() * data.r - universe:VerticalReferenceVector() * data.u, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference))
     fc:StartFlight()
 end
 
@@ -165,24 +160,22 @@ moveCmd:Option("-v"):AsNumber():Mandatory():Default(10)
 
 local turnFunc = function(data)
     -- Turn in the expected way, i.e. clockwise on positive values.
+    local angle = -data.commandValue
 
-    -- Needs options on points
-    --local angle = -data.commandValue
-    --
-    --fc:Turn(angle, vehicle.orientation.Up(), vehicle.position.Current())
+    fc:Turn(angle, vehicle.orientation.Up(), vehicle.position.Current())
 end
 
 cmd:Accept("turn", turnFunc):AsNumber()
 
 local strafeFunc = function(data)
-    -- Needs options on point to specify movement behaviour
-    --fc:ClearWP()
-    --local pos = vehicle.position.Current()
-    --
-    --local wp = Waypoint(pos + vehicle.orientation.Right() * data.commandValue, calc.Kph2Mps(data.v), 0.1, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference)
-    --wp:LockDirection(vehicle.orientation.Forward())
-    --fc:AddWaypoint(wp)
-    --fc:StartFlight()
+    routeController:ActivateRoute()
+    local route = routeController:CurrentRoute()
+    local opt = route:AddCoordinate(vehicle.position.Current() + vehicle.orientation.Right() * data.commandValue):Options()
+    opt:Set(PointOptions.MAX_SPEED, calc.Kph2Mps(abs(data.v)))
+    opt:Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
+    opt:Set(PointOptions.MARGIN, 0.1)
+
+    fc:StartFlight()
 end
 
 local strafeCmd = cmd:Accept("strafe", strafeFunc):AsNumber()

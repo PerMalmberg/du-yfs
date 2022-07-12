@@ -1,14 +1,7 @@
 --[[
-
     A route holds a series of Point that each contains the data needed to create a Waypoint.
-    When loaded, additional points may be inserted such to create a route that is smooth to fly
+    When loaded, additional points may be inserted to to create a route that is smooth to fly
     and that doesn't pass through a planetary body. Extra points are not persisted.
-
-    Each point has the following data:
-    - pos, A ::pos-string
-    - waypointRef - a string naming a persisted waypoint to be loaded into the current route.
-    - options - a table that holds additional options, such as max speed
-
 ]]--
 local log = require("du-libs:debug/Log")()
 local checks = require("du-libs:debug/Checks")
@@ -26,32 +19,29 @@ function route:AddPos(positionString)
 
     if pos == nil then
         log:Error("Could not add position to route")
-        return false
+        return nil
     end
 
-    table.insert(self.points, Point(pos:AsPosString()))
-
-    return true
+    return self:AddPoint(Point(pos:AsPosString()))
 end
 
 function route:AddCoordinate(coord)
     checks.IsVec3(coord, "coord", "route:AddCoordinate")
 
-    table.insert(self.points, Point(universe:CreatePos(coord):AsPosString()))
-
-    return true
+    return self:AddPoint(Point(universe:CreatePos(coord):AsPosString()))
 end
 
 function route:AddWaypointRef(name)
-    table.insert(self.points, Point("", name))
-end
-
-function route:AddPP(pp)
-    table.insert(self.points, pp)
+    return self:AddPoint(Point("", name))
 end
 
 function route:AddCurrentPos()
-    table.insert(self.points, universe:CreatePos(vehicle.position.Current()):AsPosString())
+    return self:AddCoordinate(vehicle.position.Current())
+end
+
+function route:AddPoint(point)
+    table.insert(self.points, point)
+    return point
 end
 
 function route:Clear()
@@ -61,7 +51,6 @@ end
 
 ---@return Point Returns the next point in the route or nil if it is the last.
 function route:Next()
-
     if self:LastPointReached() then
         return nil
     end

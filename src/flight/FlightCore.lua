@@ -14,6 +14,7 @@ local alignment = require("flight/AlignmentFunctions")
 local calc = require("du-libs:util/Calc")
 local routeController = require("flight/route/Controller")()
 local nullVec = require("cpml/vec3")()
+local PointOptions = require("flight/route/PointOptions")
 require("flight/state/Require")
 
 local flightCore = {}
@@ -70,7 +71,22 @@ function flightCore:NextWP()
 
     self.previousWaypoint = self.currentWaypoint
     self.waypointReachedSignaled = false
-    self.currentWaypoint = Waypoint(nextPoint:Coordinate(), calc.Kph2Mps(100), 0.1, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
+    self.currentWaypoint = self:CreateWPFromPoint(nextPoint)
+end
+
+function flightCore:CreateWPFromPoint(point)
+    local opt = point:Options()
+    local dir = opt:Get(PointOptions.LOCK_DIRECTION, nullVec)
+    local margin = opt:Get(PointOptions.MARGIN, 0.1)
+    local maxSpeed = opt:Get(PointOptions.MAX_SPEED, calc.Kph2Mps(10))
+
+    local wp = Waypoint(point:Coordinate(), maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
+
+    if dir ~= nullVec then
+        wp:LockDirection(dir)
+    end
+
+    return wp
 end
 
 function flightCore:StartFlight()
