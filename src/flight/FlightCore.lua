@@ -21,6 +21,9 @@ local flightCore = {}
 flightCore.__index = flightCore
 local singleton
 
+local defaultSpeed = 50 -- 50kph
+local defaultMargin = 0.1 -- m
+
 local routeDb = BufferedDB("routes")
 
 local function new()
@@ -77,11 +80,13 @@ end
 function flightCore:CreateWPFromPoint(point)
     local opt = point:Options()
     local dir = opt:Get(PointOptions.LOCK_DIRECTION, nullVec)
-    local margin = opt:Get(PointOptions.MARGIN, 0.1)
-    local maxSpeed = opt:Get(PointOptions.MAX_SPEED, calc.Kph2Mps(10))
+    local margin = opt:Get(PointOptions.MARGIN, defaultMargin)
+    local maxSpeed = opt:Get(PointOptions.MAX_SPEED, calc.Kph2Mps(defaultSpeed))
 
     local wp = Waypoint(point:Coordinate(), maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
 
+    wp:SetPrecisionMode(opt:Get(PointOptions.PRECISION, false))
+    
     if dir ~= nullVec then
         wp:LockDirection(dir)
     end

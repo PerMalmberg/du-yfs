@@ -45,11 +45,9 @@ local speed = 150
 local function move(reference, distance)
     routeController:ActivateRoute()
     local route = routeController:CurrentRoute()
-    route:AddCoordinate(vehicle.position.Current() + reference * distance)
+    local opt = route:AddCoordinate(vehicle.position.Current() + reference * distance):Options()
+    opt:Set(PointOptions.MAX_SPEED, calc.Kph2Mps(speed))
 
-    --fc:ClearWP()
-    --local target = vehicle.position.Current() + reference * distance
-    --fc:AddWaypoint(Waypoint(target, calc.Kph2Mps(speed), 0.1, ))
     fc:StartFlight()
 end
 
@@ -147,7 +145,8 @@ local moveFunc = function(data)
     local route = routeController:CurrentRoute()
     local pos = vehicle.position.Current()
     data.v = math.abs(data.v)
-    route:AddCoordinate(pos + vehicle.orientation.Forward() * data.f + vehicle.orientation.Right() * data.r - universe:VerticalReferenceVector() * data.u)
+    local opt = route:AddCoordinate(pos + vehicle.orientation.Forward() * data.f + vehicle.orientation.Right() * data.r - universe:VerticalReferenceVector() * data.u):Options()
+    opt:Set(PointOptions.MAX_SPEED, calc.Kph2Mps(data.v))
 
     fc:StartFlight()
 end
@@ -173,18 +172,9 @@ local strafeFunc = function(data)
     local opt = route:AddCoordinate(vehicle.position.Current() + vehicle.orientation.Right() * data.commandValue):Options()
     opt:Set(PointOptions.MAX_SPEED, calc.Kph2Mps(abs(data.v)))
     opt:Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
-    opt:Set(PointOptions.MARGIN, 0.1)
 
     fc:StartFlight()
 end
 
 local strafeCmd = cmd:Accept("strafe", strafeFunc):AsNumber()
 strafeCmd:Option("-v"):AsNumber():Mandatory():Default(10)
-
-cmd :Accept("precision", function()
-    fc:SetPrecisionMode()
-end):AsEmpty()
-
-cmd :Accept("normal", function()
-    fc:SetNormalMode()
-end):AsEmpty()

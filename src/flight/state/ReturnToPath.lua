@@ -38,7 +38,7 @@ function state:Flush(next, previous, chaseData)
         local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(toNearest:len())
 
         local travelDir = vehicle.velocity:Movement():normalize_inplace()
-        local enableBrake = travelDir:dot(toNearest:normalize()) < 0.85 or (brakeDistance >= distance and vehicle.velocity.Movement():len() > 0.5)
+        local enableBrake = travelDir:dot(toNearest:normalize()) < 0.7
 
         brakes:Set(enableBrake)
     end

@@ -25,6 +25,7 @@ local function new(destination, maxSpeed, margin, roll, yawPitch)
         rollFunc = roll,
         yawPitchFunc = yawPitch,
         yawPitchDirection = nil, -- Fixed target direction, vec3
+        precisionMode = false
     }
 
     setmetatable(o, waypoint)
@@ -42,6 +43,14 @@ end
 
 function waypoint:DirectionTo()
     return (self.destination - vehicle.position.Current()):normalize_inplace()
+end
+
+function waypoint:GetPrecisionMode()
+    return self.precisionMode
+end
+
+function waypoint:SetPrecisionMode(value)
+    self.precisionMode = value
 end
 
 function waypoint:LockDirection(direction, forced)
