@@ -3,6 +3,7 @@
 * Alternating between ApplroachWaypoint and CorrectDeviation/ReturnToPath results in not enough brake.
 * "step" without arg -> crash
 * Loading/Saving route untested
+    * route-create without a previously loaded route causes crash in ApplyAcceleration
 * Accelerate with less force when the distance to move is short - Hold/ApproachWaypoint.
 
 # Brakes

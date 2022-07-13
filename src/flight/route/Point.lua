@@ -16,7 +16,7 @@ function point:Pos()
 end
 
 function point:HasWaypointRef()
-    return #self.waypointRef > 0
+    return self.waypointRef and #self.waypointRef > 0
 end
 
 function point:WaypointRef()

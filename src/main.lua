@@ -10,13 +10,14 @@ local log = require("du-libs:debug/Log")()
 local cmd = require("du-libs:commandline/CommandLine")()
 local utils = require("cpml/utils")
 local universe = require("du-libs:universe/Universe")()
-local routeController = require("flight/route/Controller")()
 local PointOptions = require("flight/route/PointOptions")
 local abs = math.abs
 
 local brakeLight = library:GetLinkByName("brakelight")
 
 fc:ReceiveEvents()
+
+local routeController = fc:GetRoutController()
 
 local function Update(system)
     if brakeLight ~= nil then
@@ -178,3 +179,87 @@ end
 
 local strafeCmd = cmd:Accept("strafe", strafeFunc):AsNumber()
 strafeCmd:Option("-v"):AsNumber():Mandatory():Default(10)
+
+local listRoutes = function(data)
+    log:Info("Available routes")
+    for _, r in ipairs(routeController:GetRouteNames()) do
+        log:Info(r)
+    end
+end
+
+cmd:Accept("route-list", listRoutes):AsString()
+
+local loadRoute = function(data)
+    routeController:LoadRoute(data.commandValue)
+end
+
+cmd:Accept("route-load", loadRoute):AsString()
+
+local createRoute = function(data)
+    routeController:CreateRoute(data.commandValue)
+end
+
+cmd:Accept("route-create", createRoute):AsString():Mandatory()
+
+local routeSave = function(data)
+    routeController:SaveCurrentRoute()
+end
+
+cmd:Accept("route-save", routeSave):AsString()
+
+local deleteRoute = function(data)
+    routeController:DeleteRoute(data.commandValue)
+end
+
+cmd:Accept("route-delete", deleteRoute):AsString()
+
+local function addPointOptions(c)
+    c:Option("-precision"):AsBoolean():Default(false)
+    c:Option("-lock-dir"):AsBoolean():Default(false)
+    c:Option("-max-speed"):AsNumber():Mandatory()
+    c:Option("-margin"):AsNumber():Default(0.1)
+end
+
+local function createOptions(data)
+    local opt = PointOptions()
+    opt:Set(PointOptions.PRECISION, data.precision)
+    opt:Set(PointOptions.MAX_SPEED, data.maxspeed)
+    opt:Set(PointOptions.MARGIN, data.margin)
+
+    if data.lockdir then
+        opt:Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
+    end
+    return opt
+end
+
+local addCurrentPos = function(data)
+    local route = routeController:CurrentRoute()
+    local point = route:AddCurrentPos()
+    point.options = createOptions(data)
+    routeController:SaveCurrentRoute()
+end
+
+local addCurrentToRoute = cmd:Accept("route-add-current-pos", addCurrentPos):AsString()
+addPointOptions(addCurrentToRoute)
+
+local addNamedPos = function(data)
+    local ref = routeController:LoadWaypoint(data.commandValue)
+
+    if ref then
+        local route = routeController:CurrentRoute()
+        local p = route:AddWaypointRef(data.commandValue)
+        p.options = createOptions(data)
+    end
+end
+
+local addStoredToRoute = cmd:Accept("route-add-named-pos", addNamedPos):AsString()
+addPointOptions(addStoredToRoute)
+
+local saveAsWaypoint = function(data)
+    local pos = universe:CreatePos(vehicle.position.Current()):AsPosString()
+    routeController:StoreWaypoint(data.commandValue, pos, createOptions(data))
+    routeController:SaveCurrentRoute()
+end
+
+local saveCurrentPosAs = cmd:Accept("save-position-as", saveAsWaypoint):AsString():Mandatory()
+addPointOptions(saveCurrentPosAs)

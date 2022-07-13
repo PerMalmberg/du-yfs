@@ -22,7 +22,7 @@ end
 ---@param name string The name of the route to load
 ---@return Route A route or nil on failure
 function controller:LoadRoute(name)
-    local routes = self.db.Get(NAMED_ROUTES) or {}
+    local routes = self.db:Get(NAMED_ROUTES) or {}
     local data = routes[name]
 
     if data == nil then
@@ -51,10 +51,33 @@ function controller:LoadRoute(name)
     return route
 end
 
+function controller:DeleteRoute(name)
+    if name == DEFAULT_ROUTE then
+        log:Error("Cannot delete the default route")
+        return
+    end
+
+    local routes = self.db:Get(NAMED_ROUTES) or {}
+    local route = routes[name]
+
+    if route == nil then
+        log:Error("No route by name '", name, "' found.")
+        return nil
+    end
+
+    routes[name] = nil
+    self.db.Put(NAMED_ROUTES, routes)
+end
+
 ---@param name string The name to store the route as
 ---@param route Route The route to store
 function controller:StoreRoute(name, route)
-    local routes = self.db.Get(NAMED_ROUTES) or {}
+    if name == DEFAULT_ROUTE then
+        log:Error("Cannot store route with the default name")
+        return
+    end
+
+    local routes = self.db:Get(NAMED_ROUTES) or {}
     local data = {}
     routes[name] = data
 
@@ -67,9 +90,11 @@ end
 
 ---@param name string The name of the waypoint
 ---@param pos string A ::pos string
-function controller:StoreWaypoint(name, pos)
+function controller:StoreWaypoint(name, pos, options)
     local waypoints = self.db:Get(NAMED_POINTS) or {}
-    waypoints[name] = Point(pos)
+    local p = Point(pos)
+    p.options = options or {}
+    waypoints[name] = p
 
     self.db.Put(NAMED_POINTS, waypoints)
 end
@@ -110,10 +135,20 @@ function controller:ActivateRoute(name)
     end
 end
 
+function controller:CreateRoute(name)
+    if name == nil or #name == 0 then
+        log:Error("No name provided for route")
+        return false
+    end
+
+    self.current = Route()
+    self.currentName = name
+
+    return true
+end
+
 function controller:SaveCurrentRoute()
-    if self.currentName == DEFAULT_ROUTE then
-        log:Error("Cannot save the default route")
-    else
+    if self.currentName ~= DEFAULT_ROUTE then
         log:Info("Storing current route: ", self.currentName)
         self:StoreRoute(self.currentName, self.current)
     end

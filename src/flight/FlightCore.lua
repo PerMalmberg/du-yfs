@@ -12,7 +12,7 @@ local sharedPanel = require("du-libs:panel/SharedPanel")()
 local checks = require("du-libs:debug/Checks")
 local alignment = require("flight/AlignmentFunctions")
 local calc = require("du-libs:util/Calc")
-local routeController = require("flight/route/Controller")()
+local RouteController = require("flight/route/Controller")
 local nullVec = require("cpml/vec3")()
 local PointOptions = require("flight/route/PointOptions")
 require("flight/state/Require")
@@ -25,10 +25,12 @@ local defaultSpeed = 50 -- 50kph
 local defaultMargin = 0.1 -- m
 
 local routeDb = BufferedDB("routes")
+routeDb:BeginLoad()
 
 local function new()
     local instance = {
         ctrl = library:GetController(),
+        routeController = RouteController(routeDb),
         brakes = Brakes(),
         thrustGroup = EngineGroup("thrust"),
         autoStabilization = nil,
@@ -56,12 +58,16 @@ local function new()
     return instance
 end
 
+function flightCore:GetRoutController()
+    return self.routeController
+end
+
 function flightCore:CreateDefaultWP()
     return Waypoint(vehicle.position.Current(), 0, 10, alignment.NoAdjust, alignment.NoAdjust)
 end
 
 function flightCore:NextWP()
-    local route = routeController:CurrentRoute()
+    local route = self.routeController:CurrentRoute()
 
     if route == nil then
         return
@@ -86,7 +92,7 @@ function flightCore:CreateWPFromPoint(point)
     local wp = Waypoint(point:Coordinate(), maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
 
     wp:SetPrecisionMode(opt:Get(PointOptions.PRECISION, false))
-    
+
     if dir ~= nullVec then
         wp:LockDirection(dir)
     end
@@ -209,7 +215,7 @@ end
 function flightCore:FCFlush()
     local status, err, _ = xpcall(
             function()
-                local route = routeController:CurrentRoute()
+                local route = self.routeController:CurrentRoute()
                 local wp = self.currentWaypoint
 
                 if wp and route then
