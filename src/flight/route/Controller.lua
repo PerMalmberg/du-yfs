@@ -8,7 +8,6 @@ controller.__index = controller
 
 local NAMED_POINTS = "NamedPoints"
 local NAMED_ROUTES = "NamedRoutes"
-local DEFAULT_ROUTE = "DefaultRoute"
 
 function controller:GetRouteNames()
     local routes = self.db:Get(NAMED_ROUTES) or {}
@@ -36,20 +35,20 @@ function controller:LoadRoute(name)
 
     local route = Route()
 
-    for _, point in ipairs(route) do
-        local pp = Point(point.pos, point.waypointRef, PointOptions:New(point.options))
+    for _, point in ipairs(data) do
+        local p = Point(point.pos, point.waypointRef, PointOptions:New(point.options))
 
-        if pp:HasWaypointRef() then
-            local wpName = pp:WaypointRef()
+        if p:HasWaypointRef() then
+            local wpName = p:WaypointRef()
             log:Debug("Loading waypoint reference '", wpName, "'")
-            pp = self:LoadWaypoint(wpName)
-            if pp == nil then
-                log:Error("The waypoint by name '", wpName, "' was not found")
+            p = self:LoadWaypoint(wpName)
+            if p == nil then
+                log:Error("The referenced waypoint '", wpName, "' was not found")
                 return nil
             end
         end
 
-        route.AddPP(pp)
+        route:AddPoint(p)
     end
 
     self.edit = route
@@ -60,11 +59,6 @@ function controller:LoadRoute(name)
 end
 
 function controller:DeleteRoute(name)
-    if name == DEFAULT_ROUTE then
-        log:Error("Cannot delete the default route")
-        return
-    end
-
     local routes = self.db:Get(NAMED_ROUTES) or {}
     local route = routes[name]
 
@@ -87,11 +81,6 @@ end
 ---@param name string The name to store the route as
 ---@param route Route The route to store
 function controller:StoreRoute(name, route)
-    if name == DEFAULT_ROUTE then
-        log:Error("Cannot store route with the default name")
-        return
-    end
-
     if not self.edit then
         log:Error("Cannot save, no route currently being edited")
         return
@@ -101,14 +90,12 @@ function controller:StoreRoute(name, route)
     local data = {}
 
     for _, p in ipairs(route.points) do
-        local persist = p:Persist()
-        log:Info(persist)
-        table.insert(data, persist)
+        table.insert(data, p:Persist())
     end
 
     routes[name] = data
     self.db:Put(NAMED_ROUTES, routes)
-    log:Info("Route '", name, "' stored.")
+    log:Info("Route '", name, "' saved.")
 end
 
 ---@param name string The name of the waypoint
@@ -117,9 +104,9 @@ function controller:StoreWaypoint(name, pos, options)
     local waypoints = self.db:Get(NAMED_POINTS) or {}
     local p = Point(pos)
     p.options = options or {}
-    waypoints[name] = p
+    waypoints[name] = p:Persist()
 
-    self.db.Put(NAMED_POINTS, waypoints)
+    self.db:Put(NAMED_POINTS, waypoints)
     log:Info("Waypoint saved as '", name, "'")
 end
 
@@ -134,7 +121,7 @@ function controller:LoadWaypoint(name)
 
     return Point(point.pos,
             "", -- A waypoint can never refer to another point
-            point.options)
+            PointOptions:New(point.options))
 end
 
 ---@return Point Returns the next point in the route or nil if it is the last.
@@ -149,7 +136,6 @@ end
 function controller:ActivateRoute(name)
     if name == nil then
         self.current = Route()
-        self.currentName = DEFAULT_ROUTE
         return false
     end
 
@@ -162,11 +148,10 @@ function controller:ActivateRoute(name)
 
     if r ~= nil then
         self.current = r
-        self.currentName = name
         log:Info("Route activated: ", name)
     end
 
-    return false
+    return true
 end
 
 function controller:CreateRoute(name)
