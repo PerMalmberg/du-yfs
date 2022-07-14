@@ -5,7 +5,7 @@
 ]]--
 local log = require("du-libs:debug/Log")()
 local checks = require("du-libs:debug/Checks")
-local vehicle = require("du-libs:abstraction/Vehicle")
+local vehicle = require("du-libs:abstraction/Vehicle")()
 local universe = require("du-libs:universe/Universe")()
 local Point = require("flight/route/Point")
 
@@ -59,6 +59,12 @@ function route:Next()
     self.currentPointIx = self.currentPointIx + 1
 
     return p
+end
+
+function route:Dump()
+    for _, p in ipairs(self.points) do
+        log:Info(p:Persist())
+    end
 end
 
 function route:LastPointReached()

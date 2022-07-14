@@ -1,4 +1,5 @@
 local Point = require("flight/route/Point")
+local PointOptions = require("flight/route/PointOptions")
 local Route = require("flight/route/Route")
 local log = require("du-libs:debug/Log")()
 
@@ -13,6 +14,9 @@ function controller:GetRouteNames()
     local routes = self.db:Get(NAMED_ROUTES) or {}
     local res = {}
     for name, _ in pairs(routes) do
+        if name == self.editName then
+            name = name .. " (editing)"
+        end
         table.insert(res, name)
     end
 
@@ -33,7 +37,7 @@ function controller:LoadRoute(name)
     local route = Route()
 
     for _, point in ipairs(route) do
-        local pp = Point(point.pos, point.waypointRef, point.options)
+        local pp = Point(point.pos, point.waypointRef, PointOptions:New(point.options))
 
         if pp:HasWaypointRef() then
             local wpName = pp:WaypointRef()
@@ -48,8 +52,8 @@ function controller:LoadRoute(name)
         route.AddPP(pp)
     end
 
-    self.current = route
-    self.currentName = name
+    self.edit = route
+    self.editName = name
 
     log:Info("Route '", name, "' loaded")
     return route
@@ -72,6 +76,12 @@ function controller:DeleteRoute(name)
     routes[name] = nil
     self.db:Put(NAMED_ROUTES, routes)
     log:Info("Route '", name, "' deleted")
+
+    if name == self.editName then
+        self.edit = nil
+        self.editName = nil
+        log:Info("No route is currently being edited")
+    end
 end
 
 ---@param name string The name to store the route as
@@ -82,15 +92,23 @@ function controller:StoreRoute(name, route)
         return
     end
 
+    if not self.edit then
+        log:Error("Cannot save, no route currently being edited")
+        return
+    end
+
     local routes = self.db:Get(NAMED_ROUTES) or {}
     local data = {}
 
-    for i = 1, #route.points, 1 do
-        table.insert(data, route.points[i]:Persist())
+    for _, p in ipairs(route.points) do
+        local persist = p:Persist()
+        log:Info(persist)
+        table.insert(data, persist)
     end
 
     routes[name] = data
     self.db:Put(NAMED_ROUTES, routes)
+    log:Info("Route '", name, "' stored.")
 end
 
 ---@param name string The name of the waypoint
@@ -124,21 +142,31 @@ function controller:CurrentRoute()
     return self.current
 end
 
+function controller:CurrentEdit()
+    return self.edit
+end
+
 function controller:ActivateRoute(name)
     if name == nil then
         self.current = Route()
         self.currentName = DEFAULT_ROUTE
-    else
-        self.current = self:LoadRoute(name)
-
-        if self.current == nil then
-            log:Error("Route activation failed, falling back to default route")
-            self.currentName = DEFAULT_ROUTE
-        else
-            log:Info("Route activated: ", name)
-            self.currentName = name
-        end
+        return false
     end
+
+    if name == self.editName then
+        log:Info("Activating route currently being edited, forcing save.")
+        self:StoreRoute(self.editName, self.edit)
+    end
+
+    local r = self:LoadRoute(name)
+
+    if r ~= nil then
+        self.current = r
+        self.currentName = name
+        log:Info("Route activated: ", name)
+    end
+
+    return false
 end
 
 function controller:CreateRoute(name)
@@ -147,19 +175,18 @@ function controller:CreateRoute(name)
         return false
     end
 
-    self.current = Route()
-    self.currentName = name
+    self.edit = Route()
+    self.editName = name
 
     log:Info("Route '", name, "' created (but not yet saved)")
     return true
 end
 
-function controller:SaveCurrentRoute()
-    if self.currentName == DEFAULT_ROUTE then
-        log:Error("Cannot save default route")
+function controller:SaveRoute()
+    if self.edit then
+        self:StoreRoute(self.editName, self.edit)
     else
-        self:StoreRoute(self.currentName, self.current)
-        log:Info("Route saved: ", self.currentName)
+        log:Error("No route currently opened for edit.")
     end
 end
 
@@ -167,7 +194,8 @@ local function new(bufferedDB)
     local instance = {
         db = bufferedDB,
         current = nil,
-        currentName = DEFAULT_ROUTE
+        edit = nil,
+        editName = nil
     }
 
     setmetatable(instance, controller)

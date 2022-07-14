@@ -99,7 +99,7 @@ input:Register(keys.option7, Criteria():OnPress(), function()
     local route = routeController:CurrentRoute()
     local opt = route:AddPos("::pos{0,2,7.7063,78.0886,39.7209}"):Options()
     opt:Set(PointOptions.MAX_SPEED, calc.Kph2Mps(40))
-    opt:Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
+    opt:Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
 
     opt = route:AddPos("::pos{0,2,7.7097,78.0763,38.9275}"):Options()
     opt:Set(PointOptions.MAX_SPEED, calc.Kph2Mps(100))
@@ -172,7 +172,7 @@ local strafeFunc = function(data)
     local route = routeController:CurrentRoute()
     local opt = route:AddCoordinate(vehicle.position.Current() + vehicle.orientation.Right() * data.commandValue):Options()
     opt:Set(PointOptions.MAX_SPEED, calc.Kph2Mps(abs(data.v)))
-    opt:Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
+    opt:Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
 
     fc:StartFlight()
 end
@@ -203,7 +203,7 @@ end
 cmd:Accept("route-create", createRoute):AsString():Mandatory()
 
 local routeSave = function(data)
-    routeController:SaveCurrentRoute()
+    routeController:SaveRoute()
 end
 
 cmd:Accept("route-save", routeSave):AsString()
@@ -212,29 +212,41 @@ local deleteRoute = function(data)
     routeController:DeleteRoute(data.commandValue)
 end
 
+cmd :Accept("route-activate", function(data)
+    if routeController:ActivateRoute(data.commandValue) then
+        fc:StartFlight()
+    end
+end):AsString():Mandatory()
+
 cmd:Accept("route-delete", deleteRoute):AsString()
 
 local function addPointOptions(c)
     c:Option("-precision"):AsBoolean():Default(false)
-    c:Option("-lock-dir"):AsBoolean():Default(false)
-    c:Option("-max-speed"):AsNumber():Mandatory()
+    c:Option("-lockdir"):AsBoolean():Default(false)
+    c:Option("-maxspeed"):AsNumber():Mandatory()
     c:Option("-margin"):AsNumber():Default(0.1)
 end
 
 local function createOptions(data)
-    local opt = PointOptions()
+    local opt = PointOptions:New()
     opt:Set(PointOptions.PRECISION, data.precision)
     opt:Set(PointOptions.MAX_SPEED, data.maxspeed)
     opt:Set(PointOptions.MARGIN, data.margin)
 
     if data.lockdir then
-        opt:Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
+        opt:Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
     end
     return opt
 end
 
 local addCurrentPos = function(data)
-    local route = routeController:CurrentRoute()
+    local route = routeController:CurrentEdit()
+
+    if not route then
+        log:Error("No route open for edit")
+        return
+    end
+
     local point = route:AddCurrentPos()
     point.options = createOptions(data)
 end
@@ -246,7 +258,7 @@ local addNamedPos = function(data)
     local ref = routeController:LoadWaypoint(data.commandValue)
 
     if ref then
-        local route = routeController:CurrentRoute()
+        local route = routeController:CurrentEdit()
         local p = route:AddWaypointRef(data.commandValue)
         p.options = createOptions(data)
     end
@@ -262,3 +274,10 @@ end
 
 local saveCurrentPosAs = cmd:Accept("save-position-as", saveAsWaypoint):AsString():Mandatory()
 addPointOptions(saveCurrentPosAs)
+
+cmd :Accept("route-dump", function(data)
+    local r = routeController:CurrentEdit()
+    if r then
+        r:Dump()
+    end
+end):AsString()

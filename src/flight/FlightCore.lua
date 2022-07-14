@@ -13,7 +13,8 @@ local checks = require("du-libs:debug/Checks")
 local alignment = require("flight/AlignmentFunctions")
 local calc = require("du-libs:util/Calc")
 local RouteController = require("flight/route/Controller")
-local nullVec = require("cpml/vec3")()
+local Vec3 = require("cpml/vec3")
+local nullVec = Vec3()
 local PointOptions = require("flight/route/PointOptions")
 require("flight/state/Require")
 
@@ -85,7 +86,7 @@ end
 
 function flightCore:CreateWPFromPoint(point)
     local opt = point:Options()
-    local dir = opt:Get(PointOptions.LOCK_DIRECTION, nullVec)
+    local dir = Vec3(opt:Get(PointOptions.LOCK_DIRECTION, nullVec))
     local margin = opt:Get(PointOptions.MARGIN, defaultMargin)
     local maxSpeed = opt:Get(PointOptions.MAX_SPEED, calc.Kph2Mps(defaultSpeed))
 

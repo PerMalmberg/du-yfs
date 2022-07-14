@@ -31,7 +31,7 @@ function point:Persist()
     return {
         pos = self.pos,
         waypointRef = self.waypointRef or "",
-        options = self.options or {}
+        options = self.options:Data() or {}
     }
 end
 
@@ -43,11 +43,11 @@ function point:Options()
     return self.options
 end
 
-local function new(pos, waypointRef)
+local function new(pos, waypointRef, options)
     local instance = {
         pos = pos, -- ::pos string
         waypointRef = waypointRef or "",
-        options = PointOptions:New()
+        options = options or PointOptions:New()
     }
 
     setmetatable(instance, point)
