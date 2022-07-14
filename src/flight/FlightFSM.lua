@@ -2,11 +2,9 @@ local brakes = require("flight/Brakes")()
 local vehicle = require("du-libs:abstraction/Vehicle")()
 local calc = require("du-libs:util/Calc")
 local ctrl = require("du-libs:abstraction/Library")():GetController()
-local Enum = require("du-libs:util/Enum")
 local visual = require("du-libs:debug/Visual")()
 local nullVec = require("cpml/vec3")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
-local log = require("du-libs:debug/Log")()
 local universe = require("du-libs:universe/Universe")()
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local PID = require("cpml/pid")
@@ -207,7 +205,7 @@ function fsm:ApplyAcceleration(moveDirection, precision)
             ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
         end
     else
-        ctrl.setEngineCommand(normalModeGroup:Union(), { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
+        ctrl.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
     end
 end
 
