@@ -181,8 +181,9 @@ local strafeCmd = cmd:Accept("strafe", strafeFunc):AsNumber()
 strafeCmd:Option("-v"):AsNumber():Mandatory():Default(10)
 
 local listRoutes = function(data)
-    log:Info("Available routes")
-    for _, r in ipairs(routeController:GetRouteNames()) do
+    local routes = routeController:GetRouteNames()
+    log:Info(#routes, " available routes")
+    for _, r in ipairs(routes) do
         log:Info(r)
     end
 end
@@ -236,7 +237,6 @@ local addCurrentPos = function(data)
     local route = routeController:CurrentRoute()
     local point = route:AddCurrentPos()
     point.options = createOptions(data)
-    routeController:SaveCurrentRoute()
 end
 
 local addCurrentToRoute = cmd:Accept("route-add-current-pos", addCurrentPos):AsString()
@@ -258,7 +258,6 @@ addPointOptions(addStoredToRoute)
 local saveAsWaypoint = function(data)
     local pos = universe:CreatePos(vehicle.position.Current()):AsPosString()
     routeController:StoreWaypoint(data.commandValue, pos, createOptions(data))
-    routeController:SaveCurrentRoute()
 end
 
 local saveCurrentPosAs = cmd:Accept("save-position-as", saveAsWaypoint):AsString():Mandatory()

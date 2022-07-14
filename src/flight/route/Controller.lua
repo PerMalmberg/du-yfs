@@ -12,7 +12,7 @@ local DEFAULT_ROUTE = "DefaultRoute"
 function controller:GetRouteNames()
     local routes = self.db:Get(NAMED_ROUTES) or {}
     local res = {}
-    for _, name in ipairs(routes) do
+    for name, _ in pairs(routes) do
         table.insert(res, name)
     end
 
@@ -48,6 +48,10 @@ function controller:LoadRoute(name)
         route.AddPP(pp)
     end
 
+    self.current = route
+    self.currentName = name
+
+    log:Info("Route '", name, "' loaded")
     return route
 end
 
@@ -66,7 +70,8 @@ function controller:DeleteRoute(name)
     end
 
     routes[name] = nil
-    self.db.Put(NAMED_ROUTES, routes)
+    self.db:Put(NAMED_ROUTES, routes)
+    log:Info("Route '", name, "' deleted")
 end
 
 ---@param name string The name to store the route as
@@ -79,12 +84,12 @@ function controller:StoreRoute(name, route)
 
     local routes = self.db:Get(NAMED_ROUTES) or {}
     local data = {}
-    routes[name] = data
 
-    for _, point in ipairs(route.points) do
-        table.insert(data, point:Persist())
+    for i = 1, #route.points, 1 do
+        table.insert(data, route.points[i]:Persist())
     end
 
+    routes[name] = data
     self.db:Put(NAMED_ROUTES, routes)
 end
 
@@ -97,6 +102,7 @@ function controller:StoreWaypoint(name, pos, options)
     waypoints[name] = p
 
     self.db.Put(NAMED_POINTS, waypoints)
+    log:Info("Waypoint saved as '", name, "'")
 end
 
 function controller:LoadWaypoint(name)
@@ -144,13 +150,16 @@ function controller:CreateRoute(name)
     self.current = Route()
     self.currentName = name
 
+    log:Info("Route '", name, "' created (but not yet saved)")
     return true
 end
 
 function controller:SaveCurrentRoute()
-    if self.currentName ~= DEFAULT_ROUTE then
-        log:Info("Storing current route: ", self.currentName)
+    if self.currentName == DEFAULT_ROUTE then
+        log:Error("Cannot save default route")
+    else
         self:StoreRoute(self.currentName, self.current)
+        log:Info("Route saved: ", self.currentName)
     end
 end
 
