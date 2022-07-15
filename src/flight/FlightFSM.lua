@@ -7,12 +7,12 @@ local nullVec = require("cpml/vec3")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local universe = require("du-libs:universe/Universe")()
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
-local log = require("du-libs:debug/Log")()
 local PID = require("cpml/pid")
 local Vec3 = require("cpml/vec3")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
+local Acceleration = vehicle.acceleration.Movement
 local abs = math.abs
 
 local longitudinal = "longitudinal"
@@ -96,12 +96,16 @@ local fsm = {}
 fsm.__index = fsm
 
 local function new()
+
+    local p = sharedPanel:Get("FlightFSM")
+
     local instance = {
         current = nil,
-        wStateName = sharedPanel:Get("FlightFSM"):CreateValue("State", ""),
-        wDeviation = sharedPanel:Get("FlightFSM"):CreateValue("Deviation", "m"),
-        wDevAcceleration = sharedPanel:Get("FlightFSM"):CreateValue("Dev. acc.", "m/s2"),
-        wAcceleration = sharedPanel:Get("FlightFSM"):CreateValue("Acceleration", "m/s2"),
+        wStateName = p:CreateValue("State", ""),
+        wDeviation = p:CreateValue("Deviation", "m"),
+        wDevAcceleration = p:CreateValue("Dev. acc.", "m/s2"),
+        wAcceleration = p:CreateValue("Acceleration", "m/s2"),
+        wSpeed = p:CreateValue("Speed", "m/s"),
         nearestPoint = nil,
         acceleration = nil,
         adjustAcc = nullVec,
@@ -185,7 +189,7 @@ function fsm:AdjustForDeviation(chaseData, currentPos)
     self.wDevAcceleration:Set(calc.Round(devAcc, 2))
 
     local maxDeviationAcc = 5
-    self.adjustAcc = nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0.0, maxDeviationAcc)
+    self.adjustAcc = nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
 end
 
 function fsm:ApplyAcceleration(moveDirection, precision)
@@ -213,7 +217,8 @@ end
 function fsm:Update()
     local c = self.current
     if c ~= nil then
-        self.wAcceleration:Set(calc.Round(Velocity():len(), 2))
+        self.wAcceleration:Set(calc.Round(Acceleration():len(), 2))
+        self.wSpeed:Set(calc.Round(Velocity():len(), 2))
         c:Update()
     end
 end

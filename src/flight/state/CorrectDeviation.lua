@@ -13,7 +13,7 @@ local function new(fsm)
 
     local o = {
         fsm = fsm,
-        limit = calc.Kph2Mps(3)
+        limit = calc.Kph2Mps(5)
     }
 
     setmetatable(o, state)

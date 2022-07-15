@@ -1,6 +1,8 @@
 local brakes = require("flight/Brakes")()
 local checks = require("du-libs:debug/Checks")
+local vehicle = require("du-libs:abstraction/Vehicle")()
 require("flight/state/Require")
+local Velocity = vehicle.velocity.Movement
 
 local state = {}
 state.__index = state
@@ -29,9 +31,11 @@ end
 
 function state:Flush(next, previous, chaseData)
     if next:Reached() then
+        next:SetPrecisionMode(true)
         brakes:Set(true)
-        self.fsm:Thrust() -- Just counter gravity
+        self.fsm:Thrust(-Velocity():normalize_inplace() * 0.5)
     else
+        self.fsm:Thrust()
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     end
 end

@@ -3,12 +3,11 @@
 * Alternating between ApproachWaypoint and CorrectDeviation/ReturnToPath results in not enough brake.
 * "step" without arg -> crash
 * Loading/Saving route untested
-    * route-create without a previously loaded route causes crash in ApplyAcceleration
-* Accelerate with less force when the distance to move is short - Hold/ApproachWaypoint.
 * Add unit tests for route point
 * Add unit tests for point options
 * Add unit tests for route
 * Add unit tests for route controller
+* Can we float down on brakes instead of using engines to counter acceleration?
 
 # Brakes
 

@@ -60,6 +60,10 @@ function waypoint:LockDirection(direction, forced)
     end
 end
 
+function waypoint:DirectionLocked()
+    return self.yawPitchDirection ~= nil
+end
+
 function waypoint:Roll(previousWaypoint)
     if self.rollFunc ~= nil then
         return self.rollFunc(self, previousWaypoint)

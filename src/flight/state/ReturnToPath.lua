@@ -1,6 +1,7 @@
 local brakes = require("flight/Brakes")()
 local checks = require("du-libs:debug/Checks")
 local vehicle = require("du-libs:abstraction/Vehicle")()
+local calc = require("du-libs:util/Calc")
 
 local state = {}
 state.__index = state
@@ -30,17 +31,26 @@ function state:Flush(next, previous, chaseData)
     local toNearest = chaseData.nearest - currentPos
     local distance = toNearest:len()
 
-    self.fsm:Thrust()
-
     if distance <= next.margin then
+        self.fsm:Thrust()
         self.fsm:SetState(Travel(self.fsm))
     else
         local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(toNearest:len())
 
         local travelDir = vehicle.velocity:Movement():normalize_inplace()
-        local enableBrake = travelDir:dot(toNearest:normalize()) < 0.7
+        local dot = travelDir:dot(toNearest:normalize())
 
-        brakes:Set(enableBrake)
+        -- Enable brakes if we're moving in the wrong direction, but don't counter all
+        -- the movement acceleration so that we actually get anywhere
+        local needToBrake = brakeDistance >= next:DistanceTo() or dot < 0.7
+        local level = 1
+
+        if dot > 0 then
+            level = calc.Scale(dot, 0, 1, 1, 0.95)
+        end
+
+        brakes:Set(needToBrake, level)
+        self.fsm:Thrust(brakeAccelerationNeeded * -vehicle.velocity.Movement():normalize_inplace())
     end
 end
 

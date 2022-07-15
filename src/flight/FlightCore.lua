@@ -46,10 +46,11 @@ local function new()
         currentWaypoint = nil, -- The positions we want to move to
         previousWaypoint = nil, -- Previous waypoint
         waypointReachedSignaled = false,
-        wWaypointDistance = p:CreateValue("WP dist.", "m"),
-        wWaypointMargin = p:CreateValue("WP margin", "m"),
-        wWaypointMaxSpeed = p:CreateValue("WP max. s.", "m/s"),
-        wWaypointPrecision = p:CreateValue("Precision")
+        wWaypointDistance = p:CreateValue("Distance", "m"),
+        wWaypointMargin = p:CreateValue("Margin", "m"),
+        wWaypointMaxSpeed = p:CreateValue("Max speed", "m/s"),
+        wWaypointPrecision = p:CreateValue("Precision"),
+        wWaypointDirLock = p:CreateValue("Dir lock")
     }
 
     setmetatable(instance, flightCore)
@@ -90,7 +91,7 @@ function flightCore:CreateWPFromPoint(point)
     local opt = point:Options()
     local dir = Vec3(opt:Get(PointOptions.LOCK_DIRECTION, nullVec))
     local margin = opt:Get(PointOptions.MARGIN, defaultMargin)
-    local maxSpeed = opt:Get(PointOptions.MAX_SPEED, calc.Kph2Mps(defaultSpeed))
+    local maxSpeed = opt:Get(PointOptions.MAX_SPEED, defaultSpeed)
 
     local wp = Waypoint(point:Coordinate(), maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
 
@@ -188,6 +189,7 @@ function flightCore:FCUpdate()
                     self.wWaypointMargin:Set(calc.Round(wp.margin, 3))
                     self.wWaypointMaxSpeed:Set(wp.maxSpeed)
                     self.wWaypointPrecision:Set(wp:GetPrecisionMode())
+                    self.wWaypointDirLock:Set(wp:DirectionLocked())
 
                     local diff = wp.destination - self.previousWaypoint.destination
                     local len = diff:len()
