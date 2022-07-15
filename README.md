@@ -1,7 +1,6 @@
 # Todo
 
 * Alternating between ApproachWaypoint and CorrectDeviation/ReturnToPath results in not enough brake.
-* "step" without arg -> crash
 * Loading/Saving route untested
 * Add unit tests for route point
 * Add unit tests for point options
