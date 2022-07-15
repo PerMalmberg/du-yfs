@@ -128,8 +128,7 @@ function flightCore:Turn(degrees, axis, rotationPoint)
 
     local currentWp = self.currentWaypoint
     if currentWp then
-        rotationPoint = (rotationPoint or vehicle.position.Current())
-
+        rotationPoint = rotationPoint or vehicle.position.Current()
         -- Find new direction
         local direction = vehicle.orientation.Forward()
         direction = calc.RotateAroundAxis(direction, nullVec, degrees, axis)

@@ -80,7 +80,7 @@ input:Register(keys.yawleft, Criteria():OnRepeat(), function()
 end)
 
 input:Register(keys.yawright, Criteria():OnRepeat(), function()
-    fc:Turn(-1, vehicle.orientation.Up(), vehicle.position.Current())
+    fc:Turn(-1, vehicle.orientation.Up())
 end)
 
 input:Register(keys.brake, Criteria():OnPress(), function()

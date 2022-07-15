@@ -3,14 +3,19 @@ local library = require("du-libs:abstraction/Library")()
 local checks = require("du-libs:debug/Checks")
 local calc = require("du-libs:util/Calc")
 local nullVec = require("cpml/vec3")()
+local log = require("du-libs:debug/Log")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local PID = require("cpml/pid")
 local G = vehicle.world.G
+local AngVel = vehicle.velocity.localized.Angular
+local AngAcc = vehicle.acceleration.localized.Angular
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
 local abs = math.abs
+local Sign = calc.Sign
+local SignLargestAxis = calc.SignLargestAxis
 
 local control = {}
 control.__index = control
@@ -105,13 +110,18 @@ end
 ---Returns the current signed angular velocity, in degrees per seconds.
 ---@return number
 function control:Speed()
-    local vel = vehicle.velocity.localized.Angular()
-    return (vel * self.LocalNormal()):len() * rad2deg
+    local vel = AngVel() * rad2deg
+    vel = vel * self.LocalNormal()
+
+    -- The normal vector gives the correct x, y or z axis part of the speed
+    -- We need the sign of the speed
+    return vel:len() * SignLargestAxis(vel)
 end
 
 function control:Acceleration()
-    local vel = vehicle.acceleration.localized.Angular()
-    return (vel * self.LocalNormal()):len() * rad2deg
+    local vel = AngAcc() * rad2deg
+    -- The normal vector gives the correct x, y or z axis part of the acceleration
+    return (vel * self.LocalNormal()):len()
 end
 
 function control:AxisFlush(apply)
@@ -132,20 +142,23 @@ function control:AxisFlush(apply)
             end
         end
 
-        local isLeftOf = calc.Sign(offset) == -1
-        local isRightOf = calc.Sign(offset) == 1
-        local movingLeft = calc.Sign(self:Speed()) == 1
-        local movingRight = calc.Sign(self:Speed()) == -1
+        local sign = Sign(offset)
+        local isLeftOf = sign == -1
+        local isRightOf = sign == 1
+        local speed = self:Speed()
+        local movingLeft = Sign(speed) == 1
+        local movingRight = Sign(speed) == -1
 
         local movingTowardsTarget = (isLeftOf and movingRight) or (isRightOf and movingLeft)
 
-        if movingTowardsTarget then
-            offset = offset * 0.5
+        -- Remove jitter
+        if abs(offset) < 0.05 then
+            offset = 0
         end
 
         self.pid:inject(offset)
 
-        finalAcceleration[self.controlledAxis] = self:Normal() * self.pid:get() * deg2rad
+        finalAcceleration[self.controlledAxis] = self:Normal() * self.pid:get() * deg2rad * calc.Ternary(movingTowardsTarget, 0.5, 1)
     end
 
     if apply then
