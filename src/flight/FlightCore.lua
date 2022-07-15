@@ -4,7 +4,7 @@ local FlightFSM = require("flight/FlightFSM")
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Route = require("flight/route/Route")
 local BufferedDB = require("du-libs:storage/BufferedDB")
-local Waypoint = require("flight/route/Waypoint")
+local Waypoint = require("flight/Waypoint")
 local vehicle = require("du-libs:abstraction/Vehicle")()
 local visual = require("du-libs:debug/Visual")()
 local library = require("du-libs:abstraction/Library")()
@@ -29,6 +29,7 @@ local routeDb = BufferedDB("routes")
 routeDb:BeginLoad()
 
 local function new()
+    local p = sharedPanel:Get("Waypoint")
     local instance = {
         ctrl = library:GetController(),
         routeController = RouteController(routeDb),
@@ -45,9 +46,10 @@ local function new()
         currentWaypoint = nil, -- The positions we want to move to
         previousWaypoint = nil, -- Previous waypoint
         waypointReachedSignaled = false,
-        wWaypointDistance = sharedPanel:Get("Waypoint"):CreateValue("WP dist.", "m"),
-        wWaypointMargin = sharedPanel:Get("Waypoint"):CreateValue("WP margin", "m"),
-        wWaypointMaxSpeed = sharedPanel:Get("Waypoint"):CreateValue("WP max. s.", "m/s")
+        wWaypointDistance = p:CreateValue("WP dist.", "m"),
+        wWaypointMargin = p:CreateValue("WP margin", "m"),
+        wWaypointMaxSpeed = p:CreateValue("WP max. s.", "m/s"),
+        wWaypointPrecision = p:CreateValue("Precision")
     }
 
     setmetatable(instance, flightCore)
@@ -135,14 +137,6 @@ function flightCore:Turn(degrees, axis, rotationPoint)
     end
 end
 
-function flightCore:SetNormalMode()
-    self.flightFSM:SetNormalMode()
-end
-
-function flightCore:SetPrecisionMode()
-    self.flightFSM:SetPrecisionMode()
-end
-
 function flightCore:ReceiveEvents()
     self.flushHandlerId = system:onEvent("onFlush", self.FCFlush, self)
     self.updateHandlerId = system:onEvent("onUpdate", self.FCUpdate, self)
@@ -193,6 +187,7 @@ function flightCore:FCUpdate()
                     self.wWaypointDistance:Set(calc.Round(wp:DistanceTo(), 3))
                     self.wWaypointMargin:Set(calc.Round(wp.margin, 3))
                     self.wWaypointMaxSpeed:Set(wp.maxSpeed)
+                    self.wWaypointPrecision:Set(wp:GetPrecisionMode())
 
                     local diff = wp.destination - self.previousWaypoint.destination
                     local len = diff:len()
