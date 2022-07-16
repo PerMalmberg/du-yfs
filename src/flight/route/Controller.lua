@@ -41,11 +41,13 @@ function controller:LoadRoute(name)
         if p:HasWaypointRef() then
             local wpName = p:WaypointRef()
             log:Debug("Loading waypoint reference '", wpName, "'")
-            p = self:LoadWaypoint(wpName)
-            if p == nil then
+            local wp = self:LoadWaypoint(wpName)
+            if wp == nil then
                 log:Error("The referenced waypoint '", wpName, "' was not found")
                 return nil
             end
+
+            p.pos = wp.pos
         end
 
         route:AddPoint(p)
@@ -118,9 +120,7 @@ function controller:LoadWaypoint(name)
         return nil
     end
 
-    return Point(point.pos,
-            "", -- A waypoint can never refer to another point
-            PointOptions:New(point.options))
+    return Point(point.pos)
 end
 
 ---@return Point Returns the next point in the route or nil if it is the last.
