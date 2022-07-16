@@ -3,6 +3,7 @@ local checks = require("du-libs:debug/Checks")
 local vehicle = require("du-libs:abstraction/Vehicle")()
 require("flight/state/Require")
 local Velocity = vehicle.velocity.Movement
+local CurrentPos = vehicle.position.Current
 
 local state = {}
 state.__index = state
@@ -33,7 +34,15 @@ function state:Flush(next, previous, chaseData)
     if next:Reached() then
         next:SetPrecisionMode(true)
         brakes:Set(true)
-        self.fsm:Thrust(-Velocity():normalize_inplace() * 0.5)
+
+        -- If not moving towards the desired point, counter movement
+        local vel = Velocity()
+        local dir = vel:normalize()
+        local diff = (chaseData.rabbit - CurrentPos()):normalize_inplace()
+
+        if diff:dot(dir) < 0.707 then
+            self.fsm:Thrust(-Velocity():normalize_inplace() * 0.5)
+        end
     else
         self.fsm:Thrust()
         self.fsm:SetState(ApproachWaypoint(self.fsm))

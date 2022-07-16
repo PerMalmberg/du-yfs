@@ -3,9 +3,7 @@ local library = require("du-libs:abstraction/Library")()
 local checks = require("du-libs:debug/Checks")
 local calc = require("du-libs:util/Calc")
 local nullVec = require("cpml/vec3")()
-local log = require("du-libs:debug/Log")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
-local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local PID = require("cpml/pid")
 local G = vehicle.world.G
 local AngVel = vehicle.velocity.localized.Angular
@@ -42,7 +40,6 @@ local function new(axis)
         velocityWidget = nil,
         accelerationWidget = nil,
         operationWidget = nil,
-        torqueGroup = EngineGroup("torque"),
         maxAcceleration = 360 / 4, -- start value, degrees per second,
         target = {
             coordinate = nil
@@ -151,11 +148,6 @@ function control:AxisFlush(apply)
 
         local movingTowardsTarget = (isLeftOf and movingRight) or (isRightOf and movingLeft)
 
-        -- Remove jitter
-        if abs(offset) < 0.05 then
-            offset = 0
-        end
-
         self.pid:inject(offset)
 
         finalAcceleration[self.controlledAxis] = self:Normal() * self.pid:get() * deg2rad * calc.Ternary(movingTowardsTarget, 0.5, 1)
@@ -168,7 +160,7 @@ end
 
 function control:Apply()
     local acc = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] + finalAcceleration[AxisControlYaw]
-    self.ctrl.setEngineCommand(self.torqueGroup:Intersection(), { 0, 0, 0 }, { acc:unpack() }, 1, 1, "", "", "")
+    self.ctrl.setEngineCommand("torque", { 0, 0, 0 }, { acc:unpack() }, 1, 1, "", "", "")
 end
 
 function control:Update()
