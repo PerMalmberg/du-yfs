@@ -42,11 +42,15 @@ end)
 local step = 50
 local speed = calc.Kph2Mps(150)
 
-local function move(reference, distance)
+local function move(reference, distance, options)
     routeController:ActivateRoute()
     local route = routeController:CurrentRoute()
-    local opt = route:AddCoordinate(vehicle.position.Current() + reference * distance):Options()
-    opt:Set(PointOptions.MAX_SPEED, speed)
+    local point = route:AddCoordinate(vehicle.position.Current() + reference * distance)
+    options = options or point:Options()
+
+    options:Set(PointOptions.MAX_SPEED, speed)
+
+    point.options = options
 
     fc:StartFlight()
 end
@@ -60,11 +64,18 @@ input:Register(keys.backward, Criteria():OnRepeat(), function()
 end)
 
 input:Register(keys.strafeleft, Criteria():OnRepeat(), function()
-    move(-vehicle.orientation.Right(), step)
+    local options = PointOptions:New()
+    options:Set(PointOptions.MAX_SPEED, speed)
+    options:Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
+
+    move(-vehicle.orientation.Right(), step, options)
 end)
 
 input:Register(keys.straferight, Criteria():OnRepeat(), function()
-    move(vehicle.orientation.Right(), step)
+    local options = PointOptions:New()
+    options:Set(PointOptions.MAX_SPEED, speed)
+    options:Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
+    move(vehicle.orientation.Right(), step, options)
 end)
 
 input:Register(keys.up, Criteria():OnRepeat(), function()
@@ -189,15 +200,16 @@ local strafeFunc = function(data)
     routeController:ActivateRoute()
     local route = routeController:CurrentRoute()
     local point = route:AddCoordinate(vehicle.position.Current() + vehicle.orientation.Right() * data.commandValue)
-    point.options = createOptions(data)
-    point.options:Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
+    local p = PointOptions:New()
+    point.options = p
+    p:Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
+    p:Set(PointOptions.MAX_SPEED, data.maxspeed or speed)
 
     fc:StartFlight()
 end
 
 local strafeCmd = cmd:Accept("strafe", strafeFunc):AsNumber()
-strafeCmd:Option("-v"):AsNumber():Mandatory():Default(10)
-addPointOptions(strafeCmd)
+strafeCmd:Option("-maxspeed"):AsNumber()
 
 local listRoutes = function(data)
     local routes = routeController:GetRouteNames()
@@ -264,16 +276,15 @@ local addNamedPos = function(data)
     end
 end
 
-local addStoredToRoute = cmd:Accept("route-add-named-pos", addNamedPos):AsString()
-addPointOptions(addStoredToRoute)
+local addNamed = cmd:Accept("route-add-named-pos", addNamedPos):AsString()
+addPointOptions(addNamed)
 
 local saveAsWaypoint = function(data)
     local pos = universe:CreatePos(vehicle.position.Current()):AsPosString()
     routeController:StoreWaypoint(data.commandValue, pos, createOptions(data))
 end
 
-local saveCurrentPosAs = cmd:Accept("save-position-as", saveAsWaypoint):AsString():Mandatory()
-addPointOptions(saveCurrentPosAs)
+cmd:Accept("save-position-as", saveAsWaypoint):AsString():Mandatory()
 
 cmd :Accept("route-dump", function(data)
     local r = routeController:CurrentEdit()

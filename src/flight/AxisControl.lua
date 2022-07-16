@@ -44,7 +44,7 @@ local function new(axis)
         target = {
             coordinate = nil
         },
-        pid = PID(24, 16, 1600, 0.5) -- 0.5 amortization makes it alot smoother
+        pid = PID(24, 16, 1600, 0.1) -- 0.5 amortization makes it alot smoother
     }
 
     local shared = sharedPanel:Get("AxisControl")
