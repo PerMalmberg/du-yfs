@@ -140,14 +140,14 @@ end)
 
 local stepFunc = function(data)
     step = utils.clamp(data.commandValue, 0.1, 20000)
-    log:Info("Step set to:", step)
+    log:Info("Step set to: ", step)
 end
 
 cmd:Accept("step", stepFunc):AsNumber():Mandatory()
 
 local speedFunc = function(data)
     speed = calc.Kph2Mps(utils.clamp(data.commandValue, 1, 20000))
-    log:Info("Speed set to:", speed)
+    log:Info("Speed set to: ", speed)
 end
 
 cmd:Accept("speed", speedFunc):AsNumber():Mandatory()
@@ -281,7 +281,7 @@ addPointOptions(addNamed)
 
 local saveAsWaypoint = function(data)
     local pos = universe:CreatePos(vehicle.position.Current()):AsPosString()
-    routeController:StoreWaypoint(data.commandValue, pos, createOptions(data))
+    routeController:StoreWaypoint(data.commandValue, pos)
 end
 
 cmd:Accept("save-position-as", saveAsWaypoint):AsString():Mandatory()

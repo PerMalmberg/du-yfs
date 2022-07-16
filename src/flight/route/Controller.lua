@@ -103,7 +103,6 @@ end
 function controller:StoreWaypoint(name, pos, options)
     local waypoints = self.db:Get(NAMED_POINTS) or {}
     local p = Point(pos)
-    p.options = options or {}
     waypoints[name] = p:Persist()
 
     self.db:Put(NAMED_POINTS, waypoints)

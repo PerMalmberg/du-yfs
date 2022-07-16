@@ -48,16 +48,17 @@
 | route-activate        | name of route      |         | N        | Activates the named route and start the flight.                                                               |
 | route-delete          | name of route      |         | N        | Deletes the named route                                                                                       |
 | route-add-current-pos |                    |         |          | Adds the current position to the current route                                                                |
+|                       | -maxspeed          | kph     | Y        | Maximum approach speed                                                                                        |
+|                       | -precision         | boolean | Y        | if true, the approach will use precision mode.Recommended for 'elevator' movement.                            |
+|                       | -lockdir           | boolean | Y        | if true, locks the direction during the approach to that which the construct had when the command was issued. |
+|                       | -margin            | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.  |
+| route-add-named-pos   |                    |         |          |                                                                                                               |
+|                       | name of waypoint   |         |          | Adds a named waypoint to the route                                                                            |
+|                       | -maxspeed          | kph     | Y        | Maximum approach speed                                                                                        |
+|                       | -precision         | boolean | Y        | if true, the approach will use precision mode.Recommended for 'elevator' movement.                            |
+|                       | -lockdir           | boolean | Y        | if true, locks the direction during the approach to that which the construct had when the command was issued. |
+|                       | -margin            | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.  |
 | route-dump            |                    |         |          | Dumps the current route to the console                                                                        |
-|                       | -maxspeed          | kph     | Y        | Maximum approach speed                                                                                        |
-|                       | -precision         | boolean | Y        | if true, the approach will use precision mode.Recommended for 'elevator' movement.                            |
-|                       | -lockdir           | boolean | Y        | if true, locks the direction during the approach to that which the construct had when the command was issued. |
-|                       | -margin            | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.  |
-| route-add-named-pos   | name of waypoint   |         |          | Adds a named waypoint to the route                                                                            |
-|                       | -maxspeed          | kph     | Y        | Maximum approach speed                                                                                        |
-|                       | -precision         | boolean | Y        | if true, the approach will use precision mode.Recommended for 'elevator' movement.                            |
-|                       | -lockdir           | boolean | Y        | if true, locks the direction during the approach to that which the construct had when the command was issued. |
-|                       | -margin            | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.  |
 | save-position-as      | name of waypoint   |         | N        | Save the current position as a named waypoint for later use in a route                                        |
 
 # Flight
