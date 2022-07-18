@@ -1,7 +1,7 @@
 # Todo
 
 * Alternating between ApproachWaypoint and CorrectDeviation/ReturnToPath results in not enough brake.
-* Loading/Saving route untested
+* Route not loading speed?
 * Add unit tests for route point
 * Add unit tests for point options
 * Add unit tests for route

@@ -6,8 +6,8 @@ local visual = require("du-libs:debug/Visual")()
 local nullVec = require("cpml/vec3")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local universe = require("du-libs:universe/Universe")()
+local engine = require("du-libs:abstraction/Engine")()
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
-local PID = require("cpml/pid")
 local Vec3 = require("cpml/vec3")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
@@ -92,25 +92,32 @@ local upGroup = {
     }
 }
 
+local toleranceDistance = 3 -- meters
+local adjustmentSpeedMin = calc.Kph2Mps(0.5)
+local adjustmentSpeedMax = calc.Kph2Mps(50)
+
 local fsm = {}
 fsm.__index = fsm
 
 local function new()
 
     local p = sharedPanel:Get("FlightFSM")
+    local a = sharedPanel:Get("Deviation")
 
     local instance = {
         current = nil,
         wStateName = p:CreateValue("State", ""),
-        wDeviation = p:CreateValue("Deviation", "m"),
-        wDevAcceleration = p:CreateValue("Dev. acc.", "m/s2"),
         wAcceleration = p:CreateValue("Acceleration", "m/s2"),
         wSpeed = p:CreateValue("Speed", "m/s"),
+        wAdjTowards = a:CreateValue("Towards"),
+        wAdjDist = a:CreateValue("Distance", "m"),
+        wAdjAcc = a:CreateValue("Acceleration", "m/s2"),
+        wAdjBrakeDistance = a:CreateValue("Brake dist.", "m"),
+        wAdjSpeed = a:CreateValue("Speed (limit)", "m/s"),
         nearestPoint = nil,
         acceleration = nil,
         adjustAcc = nullVec,
-        -- Use a low amortization to quickly stop adjusting
-        deviationPID = PID(0, 1, 5, 0.2)
+        lastDevDist = 0,
     }
 
     setmetatable(instance, fsm)
@@ -135,29 +142,22 @@ end
 function fsm:CheckPathAlignment(currentPos, chaseData)
     local res = true
 
-    local toleranceDistance = 3 -- meters
-    local toleranceDirection = 0.85
-
     local vel = Velocity()
-    local dir = vel:normalize()
     local speed = vel:len()
 
     local toNearest = chaseData.nearest - currentPos
-    local toRabbit = chaseData.rabbit - currentPos
 
     if speed > 1 then
-        res = toNearest:len() < toleranceDistance and dir:dot(toRabbit:normalize()) >= toleranceDirection
+        res = toNearest:len() < toleranceDistance
     end
 
     return res
 end
 
 function fsm:FsmFlush(next, previous)
-
-    local pos = CurrentPos()
-
     local c = self.current
     if c ~= nil then
+        local pos = CurrentPos()
         local chaseData = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
 
         brakes:Set(false)
@@ -166,9 +166,10 @@ function fsm:FsmFlush(next, previous)
         self.adjustAcc = nullVec
 
         c:Flush(next, previous, chaseData)
-        self:AdjustForDeviation(chaseData, pos)
+        local moveDirection = next:DirectionTo()
+        self:AdjustForDeviation(next.margin, chaseData, pos, moveDirection)
 
-        self:ApplyAcceleration(next:DirectionTo(), next:GetPrecisionMode())
+        self:ApplyAcceleration(moveDirection, next:GetPrecisionMode())
 
         visual:DrawNumber(9, chaseData.rabbit)
         visual:DrawNumber(8, chaseData.nearest)
@@ -178,18 +179,87 @@ function fsm:FsmFlush(next, previous)
     end
 end
 
-function fsm:AdjustForDeviation(chaseData, currentPos)
+-- Get the shortest distance between a point and a plane. The output is signed so it holds information
+-- as to which side of the plane normal the point is.
+local signedDistancePlanePoint = function(planeNormal, planePoint, point)
+    return planeNormal:dot(point - planePoint);
+end
+
+local projectPointOnPlane = function(planeNormal, planePoint, point)
+    -- First calculate the distance from the point to the plane:
+    local distance = signedDistancePlanePoint(planeNormal, planePoint, point)
+
+    -- Reverse the sign of the distance
+    distance = distance * -1;
+
+    -- Get a translation vector
+    local translationVector = planeNormal * distance
+
+    -- Translate the point to form a projection
+    return point + translationVector
+end
+
+-- Projects a vector onto a plane. The output is not normalized.
+local projectVectorOnPlane = function(planeNormal, vector)
+    return vector - vector:dot(planeNormal) * planeNormal
+end
+
+function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
+    -- https://github.com/GregLukosek/3DMath/blob/master/Math3D.cs
+
     -- Add counter to deviation from optimal path
-    local nearDeviation = chaseData.nearest - currentPos
-    local len = nearDeviation:len()
-    self.deviationPID:inject(len)
-    self.wDeviation:Set(calc.Round(len, 4))
+    local plane = moveDirection:normalize()
+    local vel = projectVectorOnPlane(plane, Velocity())
+    local currSpeed = vel:len()
+    local toTargetWorld = chaseData.nearest - currentPos
+    local toTarget = projectPointOnPlane(plane, currentPos, chaseData.nearest) - projectPointOnPlane(plane, currentPos, currentPos)
+    local dirToTarget = toTarget:normalize()
+    local distance = toTarget:len()
 
-    local devAcc = vehicle.acceleration.Movement():dot(nearDeviation)
-    self.wDevAcceleration:Set(calc.Round(devAcc, 2))
+    local calcBrakeDistance = function(speed, acceleration)
+        return (speed ^ 2) / (2 * acceleration)
+    end
 
-    local maxDeviationAcc = 5
-    self.adjustAcc = nearDeviation:normalize() * utils.clamp(self.deviationPID:get(), 0, maxDeviationAcc)
+    local calcAcceleration = function(speed, distance)
+        return (speed ^ 2) / (2 * distance)
+    end
+
+    local getAcc = function(dir)
+        local maxAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
+        return dirToTarget * calc.Scale(toTarget:len(), 0, toleranceDistance, 0, maxAcc)
+    end
+
+    local warmupTime = 1
+
+    local movingTowardsTarget = vel:normalize():dot(dirToTarget) > 0.707
+    local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:normalize())
+    local brakeDistance = calcBrakeDistance(currSpeed, maxBrakeAcc) + warmupTime * currSpeed
+    local speedLimit = calc.Scale(toTarget:len(), 0, toleranceDistance, adjustmentSpeedMin, adjustmentSpeedMax)
+
+    self.wAdjTowards:Set(movingTowardsTarget)
+    self.wAdjDist:Set(calc.Round(distance, 4))
+    self.wAdjBrakeDistance:Set(calc.Round(brakeDistance))
+    self.wAdjSpeed:Set(calc.Round(currSpeed, 1) .. "(" .. calc.Round(speedLimit, 1) .. ")")
+
+    if distance > 0 and distance >= margin then
+        -- Are we moving towards target?
+        if movingTowardsTarget then
+            if brakeDistance > distance or currSpeed > speedLimit then
+                self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance)
+            elseif distance > self.lastDevDist or currSpeed < speedLimit then
+                -- Slipping away
+                self.adjustAcc = getAcc(toTargetWorld:normalize())
+            end
+        else
+            self.adjustAcc = getAcc(toTargetWorld:normalize())
+        end
+    else
+        self.adjustAcc = nullVec
+    end
+
+    self.lastDevDist = distance
+
+    self.wAdjAcc:Set(calc.Round(self.adjustAcc:len(), 2))
 end
 
 function fsm:ApplyAcceleration(moveDirection, precision)
