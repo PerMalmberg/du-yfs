@@ -1,12 +1,13 @@
 # Todo
 
-* Alternating between ApproachWaypoint and CorrectDeviation/ReturnToPath results in not enough brake.
 * Route not loading speed?
 * Add unit tests for route point
 * Add unit tests for point options
 * Add unit tests for route
 * Add unit tests for route controller
-* Can we float down on brakes instead of using engines to counter acceleration?
+* Can we float down on brakes instead of using engines to counter acceleration? (use brake in setEngineCommand?)
+* AdjustForDeviation - PID with Large
+  D-value? https://discord.com/channels/184691218184273920/748595338813898773/998660730016518234
 
 # Brakes
 
