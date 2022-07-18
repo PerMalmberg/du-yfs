@@ -241,7 +241,8 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
     self.wAdjBrakeDistance:Set(calc.Round(brakeDistance))
     self.wAdjSpeed:Set(calc.Round(currSpeed, 1) .. "(" .. calc.Round(speedLimit, 1) .. ")")
 
-    if distance > 0 and distance >= margin then
+    -- Half margin do stay within the margin
+    if distance > 0 and distance >= margin / 2 then
         -- Are we moving towards target?
         if movingTowardsTarget then
             if brakeDistance > distance or currSpeed > speedLimit then
