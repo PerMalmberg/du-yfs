@@ -1,6 +1,6 @@
 local checks = require("du-libs:debug/Checks")
 local vehicle = require("du-libs:abstraction/Vehicle")()
-local deg2rad = math.rad
+local alignment = require("flight/AlignmentFunctions")
 
 local waypoint = {}
 waypoint.__index = waypoint
@@ -25,6 +25,7 @@ local function new(destination, maxSpeed, margin, roll, yawPitch)
         rollFunc = roll,
         yawPitchFunc = yawPitch,
         yawPitchDirection = nil, -- Fixed target direction, vec3
+        precisionMode = false
     }
 
     setmetatable(o, waypoint)
@@ -44,11 +45,23 @@ function waypoint:DirectionTo()
     return (self.destination - vehicle.position.Current()):normalize_inplace()
 end
 
-function waypoint:OneTimeSetYawPitchDirection(direction, yawPitchFunc)
-    if self.yawPitchDirection == nil then
+function waypoint:GetPrecisionMode()
+    return self.precisionMode
+end
+
+function waypoint:SetPrecisionMode(value)
+    self.precisionMode = value
+end
+
+function waypoint:LockDirection(direction, forced)
+    if self.yawPitchDirection == nil or forced then
         self.yawPitchDirection = direction
-        self.yawPitchFunc = yawPitchFunc
+        self.yawPitchFunc = alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference
     end
+end
+
+function waypoint:DirectionLocked()
+    return self.yawPitchDirection ~= nil
 end
 
 function waypoint:Roll(previousWaypoint)
@@ -65,18 +78,6 @@ function waypoint:YawAndPitch(previousWaypoint)
     end
 
     return nil
-end
-
-function waypoint:RotateAroundAxis(degrees, axis, rotationPoint)
-    local rad = deg2rad(degrees)
-    axis:normalize_inplace()
-
-    local v = self.destination - rotationPoint
-    self.destination = v:rotate(rad, axis) + rotationPoint
-
-    if self.yawPitchDirection ~= nil then
-        self.yawPitchDirection = self.yawPitchDirection:rotate(rad, axis)
-    end
 end
 
 return setmetatable(

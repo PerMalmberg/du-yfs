@@ -13,10 +13,11 @@ local max = math.max
 local brakes = {}
 brakes.__index = brakes
 
-local singelton = nil
-local world = vehicle.world
-local mass = vehicle.mass
-local velocity = vehicle.velocity
+local G = vehicle.world.G
+local AtmoDensity = vehicle.world.AtmoDensity
+local TotalMass = vehicle.mass.Total
+local Velocity = vehicle.velocity.Movement
+local Acceleration = vehicle.acceleration.Movement
 
 local minimumSpeedForMaxAtmoBrakeForce = 100 --m/s (360km/h) Minimum speed in atmo to reach maximum brake force
 local brakeEfficiencyFactor = 0.6 -- Assume brakes are this efficient
@@ -24,6 +25,7 @@ local engineWarmupTime = 3
 
 local function new()
     local ctrl = library:GetController()
+    local p = sharedPanel:Get("Brakes")
 
     local instance = {
         ctrl = ctrl,
@@ -31,18 +33,19 @@ local function new()
         forced = false,
         updateTimer = Stopwatch(),
         currentForce = 0,
+        percentOfVelocityAcc = 1,
         totalMass = 1,
         isWithinAtmo = true,
         brakeGroup = EngineGroup("brake"),
-        wEngaged = sharedPanel:Get("Brakes"):CreateValue("Engaged", ""),
-        wDistance = sharedPanel:Get("Brakes"):CreateValue("Brake dist.", "m"),
-        wNeeded = sharedPanel:Get("Brakes"):CreateValue("Needed acc.", "m/s2"),
-        wDeceleration = sharedPanel:Get("Brakes"):CreateValue("Deceleration", "m/s2"),
-        wGravInfluence = sharedPanel:Get("Brakes"):CreateValue("Grav. Influence", "m/s2"),
-        wBrakeAcc = sharedPanel:Get("Brakes"):CreateValue("Brake Acc.", "m/s2"),
-        wMaxBrake = sharedPanel:Get("Brakes"):CreateValue("Max .", "kN"),
-        wAtmoDensity = sharedPanel:Get("Brakes"):CreateValue("Atmo. den.", ""),
-        wWithinAtmo = sharedPanel:Get("Brakes"):CreateValue("Within atmo", "")
+        wEngaged = p:CreateValue("Engaged", ""),
+        wDistance = p:CreateValue("Brake dist.", "m"),
+        wNeeded = p:CreateValue("Needed acc.", "m/s2"),
+        wDeceleration = p:CreateValue("Deceleration", "m/s2"),
+        wGravInfluence = p:CreateValue("Grav. Influence", "m/s2"),
+        wBrakeAcc = p:CreateValue("Brake Acc.", "m/s2"),
+        wMaxBrake = p:CreateValue("Max .", "kN"),
+        wAtmoDensity = p:CreateValue("Atmo. den.", ""),
+        wWithinAtmo = p:CreateValue("Within atmo", "")
     }
 
     setmetatable(instance, brakes)
@@ -68,8 +71,9 @@ function brakes:IsEngaged()
     return self.enabled or self.forced
 end
 
-function brakes:Set(on)
+function brakes:Set(on, percentOfVelocityAcc)
     self.enabled = on
+    self.percentOfVelocityAcc = percentOfVelocityAcc or 1
 end
 
 function brakes:Forced(on)
@@ -79,7 +83,13 @@ end
 function brakes:BrakeFlush()
     -- The brake vector must point against the direction of travel.
     if self:IsEngaged() then
-        local brakeVector = -velocity.Movement():normalize() * self:Deceleration()
+        local dec = self:Deceleration()
+
+        if self.percentOfVelocityAcc < 1 then
+            dec = self.percentOfVelocityAcc * Acceleration():len()
+        end
+
+        local brakeVector = -Velocity():normalize() * dec
         self.ctrl.setEngineCommand(self.brakeGroup:Intersection(), { brakeVector:unpack() }, 1, 1, "", "", "", 0.001)
     else
         self.ctrl.setEngineCommand(self.brakeGroup:Intersection(), { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
@@ -94,14 +104,14 @@ function brakes:calculateBreakForce(forcedUpdate)
     ]]
 
     if forcedUpdate or self.updateTimer:Elapsed() > 0.1 then
-        local density = world.AtmoDensity()
+        local density = AtmoDensity()
         self.wAtmoDensity:Set(calc.Round(density, 5))
         self.updateTimer:Start()
 
-        self.totalMass = mass.Total()
+        self.totalMass = TotalMass()
 
         local force = construct.getMaxBrake()
-        local speed = velocity.Movement():len()
+        local speed = Velocity():len()
 
         if force ~= nil and force > 0 then
             if self.isWithinAtmo then
@@ -128,12 +138,12 @@ function brakes:GravityInfluence(velocity)
 
     -- When gravity is present, it reduces the available brake force in directions towards the planet and increases it when going out from the planet.
     -- Determine how much the gravity affects us by checking the alignment between our movement vector and the gravity.
-    local gravity = world.G()
+    local gravity = G()
 
     local influence = 0
 
     if gravity > 0 then
-        local velNorm = velocity:normalize()
+        local velNorm = Velocity():normalize()
         local vertRef = universe:VerticalReferenceVector()
         local dot = vertRef:dot(velNorm)
 
@@ -166,7 +176,7 @@ function brakes:BrakeDistance(remainingDistance)
 
     remainingDistance = remainingDistance or 0
 
-    local vel = velocity.Movement()
+    local vel = Velocity()
     local speed = vel:len()
 
     local deceleration = self:Deceleration()
@@ -198,16 +208,17 @@ function brakes:BrakeDistance(remainingDistance)
     return distance, accelerationNeededToBrake
 end
 
+local singleton
 return setmetatable(
         {
             new = new
         },
         {
             __call = function(_, ...)
-                if singelton == nil then
-                    singelton = new()
+                if singleton == nil then
+                    singleton = new()
                 end
-                return singelton
+                return singleton
             end
         }
 )

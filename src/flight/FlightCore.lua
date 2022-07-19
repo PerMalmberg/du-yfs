@@ -2,27 +2,37 @@ local AxisControl = require("flight/AxisControl")
 local Brakes = require("flight/Brakes")
 local FlightFSM = require("flight/FlightFSM")
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
+local Route = require("flight/route/Route")
+local BufferedDB = require("du-libs:storage/BufferedDB")
 local Waypoint = require("flight/Waypoint")
 local vehicle = require("du-libs:abstraction/Vehicle")()
 local visual = require("du-libs:debug/Visual")()
 local library = require("du-libs:abstraction/Library")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
-local universe = require("du-libs:universe/Universe")()
 local checks = require("du-libs:debug/Checks")
 local alignment = require("flight/AlignmentFunctions")
 local calc = require("du-libs:util/Calc")
+local RouteController = require("flight/route/Controller")
 local Vec3 = require("cpml/vec3")
-require("flight/state/Require")
-
 local nullVec = Vec3()
+local PointOptions = require("flight/route/PointOptions")
+require("flight/state/Require")
 
 local flightCore = {}
 flightCore.__index = flightCore
 local singleton
 
+local defaultSpeed = 50 -- 50kph
+local defaultMargin = 0.1 -- m
+
+local routeDb = BufferedDB("routes")
+routeDb:BeginLoad()
+
 local function new()
+    local p = sharedPanel:Get("Waypoint")
     local instance = {
         ctrl = library:GetController(),
+        routeController = RouteController(routeDb),
         brakes = Brakes(),
         thrustGroup = EngineGroup("thrust"),
         autoStabilization = nil,
@@ -32,67 +42,81 @@ local function new()
         roll = AxisControl(AxisControlRoll),
         yaw = AxisControl(AxisControlYaw),
         flightFSM = FlightFSM(),
-        waypoints = {}, -- The positions we want to move to
+        route = Route(routeDb),
+        currentWaypoint = nil, -- The positions we want to move to
         previousWaypoint = nil, -- Previous waypoint
         waypointReachedSignaled = false,
-        wWaypointCount = sharedPanel:Get("Waypoint"):CreateValue("Count", ""),
-        wWaypointDistance = sharedPanel:Get("Waypoint"):CreateValue("WP dist.", "m"),
-        wWaypointMargin = sharedPanel:Get("Waypoint"):CreateValue("WP margin", "m"),
-        wWaypointMaxSpeed = sharedPanel:Get("Waypoint"):CreateValue("WP max. s.", "m/s")
+        wWaypointDistance = p:CreateValue("Distance", "m"),
+        wWaypointMargin = p:CreateValue("Margin", "m"),
+        wWaypointMaxSpeed = p:CreateValue("Max speed", "m/s"),
+        wWaypointPrecision = p:CreateValue("Precision"),
+        wWaypointDirLock = p:CreateValue("Dir lock")
     }
 
     setmetatable(instance, flightCore)
 
+    -- Setup start waypoints to prevent nil values
+    instance.currentWaypoint = instance:CreateDefaultWP()
+    instance.previousWaypoint = instance.currentWaypoint
+
     return instance
 end
 
-local noAdjust = function()
-    return nil
+function flightCore:GetRoutController()
+    return self.routeController
 end
 
-function flightCore:AddWaypoint(wp)
-    if #self.waypoints == 0 then
-        self.previousWaypoint = Waypoint(vehicle.position.Current(), 0, 0, noAdjust, noAdjust)
-    end
-
-    table.insert(self.waypoints, #self.waypoints + 1, wp)
-end
-
-function flightCore:ClearWP()
-    self.waypoints = {}
-    self.previousWaypoint = nil
-    self.waypointReachedSignaled = false
-end
-
-function flightCore:CurrentWP()
-    return self.waypoints[1]
+function flightCore:CreateDefaultWP()
+    return Waypoint(vehicle.position.Current(), 0, 10, alignment.NoAdjust, alignment.NoAdjust)
 end
 
 function flightCore:NextWP()
-    local switched = false
+    local route = self.routeController:CurrentRoute()
 
-    if #self.waypoints > 1 then
-        self.previousWaypoint = table.remove(self.waypoints, 1)
-        switched = true
+    if route == nil then
+        return
     end
 
-    if switched then
-        self.waypointReachedSignaled = false
+    local nextPoint = route:Next()
+    if nextPoint == nil then
+        return
     end
 
-    local current = self:CurrentWP()
-    return current, switched
+    self.previousWaypoint = self.currentWaypoint
+    self.waypointReachedSignaled = false
+    self.currentWaypoint = self:CreateWPFromPoint(nextPoint)
+end
+
+function flightCore:CreateWPFromPoint(point)
+    local opt = point:Options()
+    local dir = Vec3(opt:Get(PointOptions.LOCK_DIRECTION, nullVec))
+    local margin = opt:Get(PointOptions.MARGIN, defaultMargin)
+    local maxSpeed = opt:Get(PointOptions.MAX_SPEED, defaultSpeed)
+
+    local wp = Waypoint(point:Coordinate(), maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
+
+    wp:SetPrecisionMode(opt:Get(PointOptions.PRECISION, false))
+
+    if dir ~= nullVec then
+        wp:LockDirection(dir)
+    end
+
+    return wp
 end
 
 function flightCore:StartFlight()
     local fsm = self.flightFSM
 
+    self.waypointReachedSignaled = false
+
+    -- Setup waypoint that will be the previous waypoint
+    self.currentWaypoint = self:CreateDefaultWP()
+    self:NextWP()
+
     -- Don't start unless we have a destination.
-    if #self.waypoints > 0 then
+    if self.currentWaypoint then
         fsm:SetState(Travel(fsm))
-        system.setWaypoint(tostring(universe:CreatePos(self:CurrentWP().destination)))
     else
-        self:AddWaypoint(Waypoint(vehicle.position.Current(), 0.05, 0, noAdjust, noAdjust))
         fsm:SetState(Hold(fsm))
     end
 end
@@ -102,24 +126,15 @@ function flightCore:Turn(degrees, axis, rotationPoint)
     checks.IsNumber(degrees, "degrees", "flightCore:RotateWaypoints")
     checks.IsVec3(axis, "axis", "flightCore:RotateWaypoints")
 
-    -- Take the next waypoint and rotate it then set a new path from the current location.
-    local current = self:CurrentWP()
-    -- Can't turn without a waypoint.
-    if current ~= nil then
-        rotationPoint = (rotationPoint or vehicle.position.Current())
-        current:RotateAroundAxis(degrees, axis, rotationPoint)
-        self:ClearWP()
-        self:AddWaypoint(current)
-        -- Don't restart flight, just let the current flight continue. This avoids engine interruptions.
+    local currentWp = self.currentWaypoint
+    if currentWp then
+        rotationPoint = rotationPoint or vehicle.position.Current()
+        -- Find new direction
+        local direction = vehicle.orientation.Forward()
+        direction = calc.RotateAroundAxis(direction, nullVec, degrees, axis)
+
+        currentWp:LockDirection(direction, true)
     end
-end
-
-function flightCore:SetNormalMode()
-    self.flightFSM:SetNormalMode()
-end
-
-function flightCore:SetPrecisionMode()
-    self.flightFSM:SetPrecisionMode()
 end
 
 function flightCore:ReceiveEvents()
@@ -138,24 +153,26 @@ function flightCore:StopEvents()
     self.yaw:StopEvents()
 end
 
-function flightCore:Align(waypoint)
-    if waypoint ~= nil then
-        local target = waypoint:YawAndPitch(self.previousWaypoint)
+function flightCore:Align()
+    local waypoint = self.currentWaypoint
+    local prev = self.previousWaypoint
 
-        if target ~= nil then
-            self.yaw:SetTarget(target)
-            self.pitch:SetTarget(target)
-        else
-            self.yaw:Disable()
-            self.pitch:Disable()
-        end
+    local target = waypoint:YawAndPitch(prev)
 
-        local topSideAlignment = waypoint:Roll(self.previousWaypoint)
-        if topSideAlignment ~= nil then
-            self.roll:SetTarget(topSideAlignment)
-        else
-            self.roll:Disable()
-        end
+    if target ~= nil then
+        visual:DrawNumber(6, target + vehicle.orientation.Forward() * 1)
+        self.yaw:SetTarget(target)
+        self.pitch:SetTarget(target)
+    else
+        self.yaw:Disable()
+        self.pitch:Disable()
+    end
+
+    local topSideAlignment = waypoint:Roll(prev)
+    if topSideAlignment ~= nil then
+        self.roll:SetTarget(topSideAlignment)
+    else
+        self.roll:Disable()
     end
 end
 
@@ -165,12 +182,13 @@ function flightCore:FCUpdate()
                 self.flightFSM:Update()
                 self.brakes:BrakeUpdate()
 
-                local wp = self:CurrentWP()
+                local wp = self.currentWaypoint
                 if wp ~= nil then
-                    self.wWaypointCount:Set(#self.waypoints)
                     self.wWaypointDistance:Set(calc.Round(wp:DistanceTo(), 3))
                     self.wWaypointMargin:Set(calc.Round(wp.margin, 3))
                     self.wWaypointMaxSpeed:Set(wp.maxSpeed)
+                    self.wWaypointPrecision:Set(wp:GetPrecisionMode())
+                    self.wWaypointDirLock:Set(wp:DirectionLocked())
 
                     local diff = wp.destination - self.previousWaypoint.destination
                     local len = diff:len()
@@ -194,26 +212,27 @@ end
 function flightCore:FCFlush()
     local status, err, _ = xpcall(
             function()
-                local wp = self:CurrentWP()
+                local route = self.routeController:CurrentRoute()
+                local wp = self.currentWaypoint
 
-                if wp ~= nil then
+                if wp and route then
                     if wp:Reached() then
                         if not self.waypointReachedSignaled then
                             self.waypointReachedSignaled = true
-                            self.flightFSM:WaypointReached(#self.waypoints == 1, wp, self.previousWaypoint)
+                            self.flightFSM:WaypointReached(route:LastPointReached(), wp, self.previousWaypoint)
 
-                            wp:OneTimeSetYawPitchDirection(vehicle.orientation.Forward(), alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference)
+                            wp:LockDirection(vehicle.orientation.Forward())
                         end
 
-                        local switched
-                        wp, switched = self:NextWP()
+                        -- Switch to next waypoint
+                        self:NextWP()
                     else
                         -- When we go out of range, reset signal so that we get it again when we're back on the waypoint.
                         self.waypointReachedSignaled = false
                     end
 
-                    self:Align(wp)
-                    self.flightFSM:FsmFlush(wp, self.previousWaypoint)
+                    self:Align()
+                    self.flightFSM:FsmFlush(self.currentWaypoint, self.previousWaypoint)
                 end
 
                 self.pitch:AxisFlush(false)

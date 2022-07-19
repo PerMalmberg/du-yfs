@@ -13,7 +13,7 @@ local function new(fsm)
 
     local o = {
         fsm = fsm,
-        limit = calc.Kph2Mps(3)
+        limit = calc.Kph2Mps(5)
     }
 
     setmetatable(o, state)
@@ -36,6 +36,7 @@ function state:Flush(next, previous, chaseData)
     local speed = Velocity():len()
 
     if speed < self.limit then
+        self.fsm:Thrust()
         self.fsm:SetState(ReturnToPath(self.fsm))
     else
         -- As the velocity goes down, so does the adjustment

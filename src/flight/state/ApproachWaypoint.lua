@@ -1,6 +1,8 @@
 local vehicle = require("du-libs:abstraction/Vehicle")()
 local brakes = require("flight/Brakes")()
 local checks = require("du-libs:debug/Checks")
+local nullVec = require("cpml/vec3")()
+local calc = require("du-libs:util/Calc")
 require("flight/state/Require")
 
 local name = "ApproachWaypoint"
@@ -40,25 +42,27 @@ function state:Flush(next, previous, chaseData)
         self.fsm:Thrust()
         self.fsm:SetState(CorrectDeviation(self.fsm))
     else
-        local needToBrake = brakeDistance >= next:DistanceTo()
-
-        brakes:Set(needToBrake)
+        local dot = next:DirectionTo():dot(vehicle.velocity.Movement():normalize_inplace())
+        local needToBrake = brakeDistance >= next:DistanceTo() or dot < 0.7
 
         -- Calculate acceleration for thrust
         local dir = (chaseData.rabbit - vehicle.position.Current()):normalize_inplace()
 
-        local thrustAcc
+        local brakeLevel = 1
+        if dot > 0 then
+            brakeLevel = calc.Scale(dot, 0, 1, 1, 0.95)
+        end
+
+        local thrustAcc = nullVec
         if brakeAccelerationNeeded > 0 then
             thrustAcc = brakeAccelerationNeeded * -vehicle.velocity:Movement():normalize_inplace()
         elseif needToBrake then
-            -- Use an acceleration slightly larger than the brake force to ensure we move.
-            thrustAcc = dir * brakes:Deceleration() * 1.05
-        elseif dist > 1 then
-            thrustAcc = dir * 1
+            thrustAcc = dir * brakes:Deceleration() * 1 / brakeLevel
         else
-            thrustAcc = dir * 0.5
+            thrustAcc = dir * brakes:Deceleration() * brakeLevel
         end
 
+        brakes:Set(needToBrake, brakeLevel)
         self.fsm:Thrust(thrustAcc)
     end
 end
