@@ -36,6 +36,7 @@ function state:Flush(next, previous, chaseData)
     local speed = Velocity():len()
 
     if speed < self.limit then
+        self.fsm:Thrust()
         self.fsm:SetState(ReturnToPath(self.fsm))
     else
         -- As the velocity goes down, so does the adjustment
