@@ -13,6 +13,7 @@ local function new(fsm)
 
     local o = {
         fsm = fsm,
+        target = nil,
         sw = Stopwatch()
     }
 
@@ -28,10 +29,11 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, chaseData)
+
     local currentPos = vehicle.position.Current()
 
     -- Remember that chaseData.nearest is the same point that FSM:AdjustForDeviation is working against.
-    local toNearest = chaseData.nearest - currentPos
+    local toNearest = self.fsm:CurrentDeviation()
     local distance = toNearest:len()
 
     if distance <= next.margin then
@@ -42,6 +44,7 @@ function state:Flush(next, previous, chaseData)
         brakes:Set(true)
         self.fsm:Thrust()
 
+        self.sw:Elapsed(self.sw:Elapsed())
         if self.sw:Elapsed() > 1 then
             self.fsm:SetState(Travel(self.fsm))
         end

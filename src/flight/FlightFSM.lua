@@ -114,10 +114,10 @@ local function new()
         wAdjAcc = a:CreateValue("Acceleration", "m/s2"),
         wAdjBrakeDistance = a:CreateValue("Brake dist.", "m"),
         wAdjSpeed = a:CreateValue("Speed (limit)", "m/s"),
-        nearestPoint = nil,
         acceleration = nil,
         adjustAcc = nullVec,
         lastDevDist = 0,
+        currentDeviation = nullVec
     }
 
     setmetatable(instance, fsm)
@@ -204,6 +204,10 @@ local projectVectorOnPlane = function(planeNormal, vector)
     return vector - vector:dot(planeNormal) * planeNormal
 end
 
+function fsm:CurrentDeviation()
+    return self.currentDeviation
+end
+
 function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
     -- https://github.com/GregLukosek/3DMath/blob/master/Math3D.cs
 
@@ -215,6 +219,7 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
     local toTarget = projectPointOnPlane(plane, currentPos, chaseData.nearest) - projectPointOnPlane(plane, currentPos, currentPos)
     local dirToTarget = toTarget:normalize()
     local distance = toTarget:len()
+    self.currentDeviation = toTarget
 
     local calcBrakeDistance = function(speed, acceleration)
         return (speed ^ 2) / (2 * acceleration)
