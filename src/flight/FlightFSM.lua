@@ -92,7 +92,7 @@ local upGroup = {
     }
 }
 
-local toleranceDistance = 3 -- meters
+local toleranceDistance = 2 -- meters
 local adjustmentSpeedMin = calc.Kph2Mps(0.5)
 local adjustmentSpeedMax = calc.Kph2Mps(50)
 
