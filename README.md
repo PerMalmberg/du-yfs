@@ -6,8 +6,7 @@
 * Add unit tests for route
 * Add unit tests for route controller
 * Can we float down on brakes instead of using engines to counter acceleration? (use brake in setEngineCommand?)
-* AdjustForDeviation - PID with Large
-  D-value? https://discord.com/channels/184691218184273920/748595338813898773/998660730016518234
+* Why doesn't Travel state accelerate when not at target speed?
 
 # Brakes
 

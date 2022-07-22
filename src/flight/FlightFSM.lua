@@ -92,7 +92,7 @@ local upGroup = {
     }
 }
 
-local toleranceDistance = 2 -- meters
+local toleranceDistance = 2 -- meters. This limit affects the steepness of the acceleration curve used by the deviation adjustment
 local adjustmentSpeedMin = calc.Kph2Mps(0.5)
 local adjustmentSpeedMax = calc.Kph2Mps(50)
 
@@ -231,15 +231,15 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
 
     local getAcc = function(dir)
         local maxAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
-        return dirToTarget * calc.Scale(toTarget:len(), 0, toleranceDistance, 0.01, maxAcc)
+        return calc.Scale(distance, 0, toleranceDistance, 0.05, calc.Ternary(distance < toleranceDistance, 0.15, maxAcc))
     end
 
     local warmupTime = 1
 
-    local movingTowardsTarget = vel:normalize():dot(dirToTarget) > 0.707
+    local movingTowardsTarget = vel:normalize():dot(dirToTarget) > 0.8
     local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:normalize())
     local brakeDistance = calcBrakeDistance(currSpeed, maxBrakeAcc) + warmupTime * currSpeed
-    local speedLimit = calc.Scale(toTarget:len(), 0, toleranceDistance, adjustmentSpeedMin, adjustmentSpeedMax)
+    local speedLimit = calc.Scale(distance, 0, toleranceDistance, adjustmentSpeedMin, adjustmentSpeedMax)
 
     self.wAdjTowards:Set(movingTowardsTarget)
     self.wAdjDist:Set(calc.Round(distance, 4))
@@ -252,12 +252,25 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
         if movingTowardsTarget then
             if brakeDistance > distance or currSpeed > speedLimit then
                 self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance)
-            elseif distance > self.lastDevDist or currSpeed < speedLimit then
+            elseif distance > self.lastDevDist then
                 -- Slipping away
-                self.adjustAcc = getAcc(toTargetWorld:normalize())
+                self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize())
+            elseif distance < toleranceDistance then
+                -- Add a tiny brake acc to help stop where we want
+                self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance) -- QQQ try with / 2 for faster approach to target
+            elseif currSpeed < speedLimit then
+                -- This check needs to be last so that it doesn't interfere with decelerating towards destination
+                self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize())
             end
         else
-            self.adjustAcc = getAcc(toTargetWorld:normalize())
+            -- Counter current movement, if any
+            local velDir = vel:normalize()
+            if velDir:len() > 0.01 then
+                self.adjustAcc = -velDir * getAcc(toTargetWorld:normalize())
+            else
+                -- Not moving
+                self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize())
+            end
         end
     else
         self.adjustAcc = nullVec
