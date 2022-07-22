@@ -63,21 +63,18 @@ end
 function state:CalculateThrust(maxSpeed, directionToRabbit)
     -- Compare to absolute speed
     local velocity = vehicle.velocity:Movement()
+    -- Negative speedDiff means we're not up to speed yet.
     local speedDiff = velocity:len() - maxSpeed
 
     if speedDiff > 0 then
-        -- Need to brake
-        --brakes:Set(true)
+        -- Going too fast
         return nullVec
     elseif speedDiff < -margin then
         -- v = v0 + a*t => a = (v - v0) / t
         -- We must not saturate the engines; giving a massive acceleration
         -- causes non-axis aligned movement to push us off the path since engines
         -- then fire with all they got which may not result in the vector we want.
-        local maxAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionToRabbit)
-        local accNeeded = abs(speedDiff) / constants.PHYSICS_INTERVAL
-
-        return directionToRabbit * min(accNeeded, maxAcc)
+        return directionToRabbit * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionToRabbit)
     else
         return nullVec
     end
