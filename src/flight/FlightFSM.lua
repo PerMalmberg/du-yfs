@@ -231,7 +231,7 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
 
     local getAcc = function(dir)
         local maxAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
-        return dirToTarget * calc.Scale(toTarget:len(), 0, toleranceDistance, 0, maxAcc)
+        return dirToTarget * calc.Scale(toTarget:len(), 0, toleranceDistance, 0.01, maxAcc)
     end
 
     local warmupTime = 1
@@ -247,7 +247,7 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
     self.wAdjSpeed:Set(calc.Round(currSpeed, 1) .. "(" .. calc.Round(speedLimit, 1) .. ")")
 
     -- Half margin do stay within the margin
-    if distance > 0 and distance >= margin / 2 then
+    if distance > 0 then
         -- Are we moving towards target?
         if movingTowardsTarget then
             if brakeDistance > distance or currSpeed > speedLimit then
