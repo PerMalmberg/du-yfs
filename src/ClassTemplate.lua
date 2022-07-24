@@ -1,23 +1,6 @@
-local X = {}
-X.__index = X
-
-local function new(a, b, c)
-    local instance = {}
-
-    setmetatable(instance, X)
-
-    return instance
-end
-
--- The module
-return setmetatable({ new = new }, { __call = function(_, ...)
-    return new(...)
-end })
-
---[[
 local ClassName = {}
 ClassName.__index = ClassName
-function ClassName:new(args)
+function ClassName:New(args)
     local self = {}
     -- Public field
     self.field = nil
@@ -25,7 +8,7 @@ function ClassName:new(args)
     -- Private attribute
     local attribute = nil
 
-    -- Metafunction
+    -- Meta function
     function self:__add(o1, o2)
     end
 
@@ -41,8 +24,24 @@ function ClassName:new(args)
 end
 
 -- Static function
-ClassName.staticFunction()
+ClassName.staticFunction = function()
+
+end
 
 return ClassName
 
-]]--
+--local X = {}
+--X.__index = X
+--
+--local function new(a, b, c)
+--    local instance = {}
+--
+--    setmetatable(instance, X)
+--
+--    return instance
+--end
+--
+---- The module
+--return setmetatable({ new = new }, { __call = function(_, ...)
+--    return new(...)
+--end })

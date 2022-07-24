@@ -7,6 +7,7 @@
 * Add unit tests for route controller
 * Can we float down on brakes instead of using engines to counter acceleration? (use brake in setEngineCommand?)
 * Why doesn't Travel state accelerate when not at target speed?
+* Brakes in space? Overshoots platform
 
 # Brakes
 

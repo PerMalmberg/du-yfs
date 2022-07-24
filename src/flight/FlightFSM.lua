@@ -9,6 +9,7 @@ local universe = require("du-libs:universe/Universe")()
 local engine = require("du-libs:abstraction/Engine")()
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Vec3 = require("cpml/vec3")
+local Accumulator = require("du-libs:util/Accumulator")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
@@ -117,7 +118,8 @@ local function new()
         acceleration = nil,
         adjustAcc = nullVec,
         lastDevDist = 0,
-        currentDeviation = nullVec
+        currentDeviation = nullVec,
+        deviationAccum = Accumulator:New(10)
     }
 
     setmetatable(instance, fsm)
@@ -225,18 +227,27 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
         return (speed ^ 2) / (2 * acceleration)
     end
 
-    local calcAcceleration = function(speed, distance)
-        return (speed ^ 2) / (2 * distance)
+    local calcAcceleration = function(speed, remainingDistance)
+        return (speed ^ 2) / (2 * remainingDistance)
     end
 
     local getAcc = function(dir)
-        local maxAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
-        return calc.Scale(distance, 0, toleranceDistance, 0.05, calc.Ternary(distance < toleranceDistance, 0.15, maxAcc))
+        local maxAccFollow = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
+
+        local max
+        if distance < toleranceDistance / 4 then
+            max = 0.5
+        else
+            max = maxAccFollow
+        end
+
+        return calc.Scale(distance, 0, toleranceDistance / 4, 0.1, max)
     end
 
     local warmupTime = 1
 
-    local movingTowardsTarget = vel:normalize():dot(dirToTarget) > 0.8
+    local movingTowardsTarget = self.deviationAccum:Add(vel:normalize():dot(dirToTarget) > 0.8) > 0.5
+
     local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:normalize())
     local brakeDistance = calcBrakeDistance(currSpeed, maxBrakeAcc) + warmupTime * currSpeed
     local speedLimit = calc.Scale(distance, 0, toleranceDistance, adjustmentSpeedMin, adjustmentSpeedMax)
@@ -253,20 +264,19 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
             if brakeDistance > distance or currSpeed > speedLimit then
                 self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance)
             elseif distance > self.lastDevDist then
-                -- Slipping away
-                self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize())
+                -- Slipping away, nudge back to path
+                self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize()) / 2
             elseif distance < toleranceDistance then
-                -- Add a tiny brake acc to help stop where we want
-                self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance) -- QQQ try with / 2 for faster approach to target
+                -- Add brake acc to help stop where we want
+                self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance)
             elseif currSpeed < speedLimit then
                 -- This check needs to be last so that it doesn't interfere with decelerating towards destination
                 self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize())
             end
         else
             -- Counter current movement, if any
-            local velDir = vel:normalize()
-            if velDir:len() > 0.01 then
-                self.adjustAcc = -velDir * getAcc(toTargetWorld:normalize())
+            if currSpeed > 0.1 then
+                self.adjustAcc = -vel:normalize() * getAcc(toTargetWorld:normalize())
             else
                 -- Not moving
                 self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize())

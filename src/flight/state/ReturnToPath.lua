@@ -50,22 +50,14 @@ function state:Flush(next, previous, chaseData)
         end
     else
         self.sw:Stop()
-        local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(toNearest:len())
 
         local vel = vehicle.velocity:Movement()
         local travelDir = vel:normalize_inplace()
         local dot = travelDir:dot(toNearest:normalize())
 
-        -- Enable brakes if we're moving in the wrong direction, but don't counter all
-        -- the movement acceleration so that we actually get anywhere
-        local needToBrake = brakeDistance >= distance or (dot < 0.7 and vel:len() > 0.1)
-        local level = 1
+        -- Enable brakes if we're moving in the wrong direction
 
-        if dot > 0 then
-            level = calc.Scale(dot, 0, 1, 1, 0.5)
-        end
-
-        brakes:Set(needToBrake, level)
+        brakes:Set(dot < 0.707)
         self.fsm:Thrust()
     end
 end
