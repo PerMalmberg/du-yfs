@@ -97,6 +97,34 @@ local toleranceDistance = 2 -- meters. This limit affects the steepness of the a
 local adjustmentSpeedMin = calc.Kph2Mps(0.5)
 local adjustmentSpeedMax = calc.Kph2Mps(50)
 
+local adjustAccLookup = {
+    {
+        limit = 0,
+        acc = 0.15,
+        reverse = 0.3
+    },
+    {
+        limit = 0.01,
+        acc = 0.30,
+        reverse = 0.85
+    },
+    {
+        limit = 0.03,
+        acc = 0.40,
+        reverse = 0.9
+    },
+    {
+        limit = 0.05,
+        acc = 0.40,
+        reverse = 0.95
+    },
+    {
+        limit = 0.1,
+        acc = 0,
+        reverse = 0
+    }
+}
+
 local fsm = {}
 fsm.__index = fsm
 
@@ -231,17 +259,25 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
         return (speed ^ 2) / (2 * remainingDistance)
     end
 
-    local getAcc = function(dir)
-        local maxAccFollow = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
-
-        local max
-        if distance < toleranceDistance / 4 then
-            max = 0.5
-        else
-            max = maxAccFollow
+    local getAcc = function(dir, movingTowardsTarget)
+        local selected
+        for _, v in ipairs(adjustAccLookup) do
+            if distance >= v.limit then
+                selected = v
+            end
         end
 
-        return calc.Scale(distance, 0, toleranceDistance / 4, 0.1, max)
+        local max
+        if selected.acc == 0 then
+            max = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
+        else
+            max = calc.Ternary(movingTowardsTarget, selected.acc, selected.reverse)
+        end
+
+        -- QQQ We should just do return max here, but on larger/heavier constructs with
+        -- slow engines the adjustments are too strong, causing overshoot and oscillation.
+        -- Maybe use different tables based on warmup times or mass?
+        return calc.Scale(distance, 0, toleranceDistance, 0.01, max)
     end
 
     local warmupTime = 1
@@ -265,21 +301,20 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
                 self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance)
             elseif distance > self.lastDevDist then
                 -- Slipping away, nudge back to path
-                self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize()) / 2
+                self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize(), movingTowardsTarget)
             elseif distance < toleranceDistance then
                 -- Add brake acc to help stop where we want
                 self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance)
             elseif currSpeed < speedLimit then
                 -- This check needs to be last so that it doesn't interfere with decelerating towards destination
-                self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize())
+                self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize(), movingTowardsTarget)
             end
         else
             -- Counter current movement, if any
-            if currSpeed > 0.1 then
-                self.adjustAcc = -vel:normalize() * getAcc(toTargetWorld:normalize())
+            if currSpeed > 0.5 then
+                self.adjustAcc = -vel:normalize() * getAcc(toTargetWorld:normalize(), movingTowardsTarget)
             else
-                -- Not moving
-                self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize())
+                self.adjustAcc = dirToTarget * getAcc(toTargetWorld:normalize(), movingTowardsTarget)
             end
         end
     else
