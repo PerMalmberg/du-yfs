@@ -120,9 +120,7 @@ local getDeviationAdjustmentAcc = function(accLookup, dir, distance, movingTowar
         max = calc.Ternary(movingTowardsTarget, selected.acc, selected.reverse)
     end
 
-    -- QQQ We should just do return max here, but on larger/heavier constructs with
-    -- slow engines the adjustments are too strong, causing overshoot and oscillation.
-    -- Maybe use different tables based on warmup times or mass?
+    -- Scale the already small values over the tolerance distance.
     return calc.Scale(distance, 0, toleranceDistance, 0.01, max)
 end
 
@@ -289,7 +287,7 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
             end
         else
             -- Counter current movement, if any
-            if currSpeed > 0.5 then
+            if currSpeed > 0.1 then
                 self.adjustAcc = -vel:normalize() * getDeviationAdjustmentAcc(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
             else
                 self.adjustAcc = dirToTarget * getDeviationAdjustmentAcc(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
