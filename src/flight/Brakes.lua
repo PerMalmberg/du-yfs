@@ -7,6 +7,7 @@ local calc = require("du-libs:util/Calc")
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
 local universe = require("du-libs:universe/Universe")()
+local engine = require("du-libs:abstraction/Engine")()
 local abs = math.abs
 local max = math.max
 
@@ -21,7 +22,7 @@ local Acceleration = vehicle.acceleration.Movement
 
 local minimumSpeedForMaxAtmoBrakeForce = 100 --m/s (360km/h) Minimum speed in atmo to reach maximum brake force
 local brakeEfficiencyFactor = 0.6 -- Assume brakes are this efficient
-local engineWarmupTime = 3
+local engineWarmupTime = 1
 
 local function new()
     local ctrl = library:GetController()
@@ -33,9 +34,9 @@ local function new()
         forced = false,
         updateTimer = Stopwatch(),
         currentForce = 0,
-        percentOfVelocityAcc = 1,
         totalMass = 1,
         isWithinAtmo = true,
+        overrideAcc = nil,
         brakeGroup = EngineGroup("brake"),
         wEngaged = p:CreateValue("Engaged", ""),
         wDistance = p:CreateValue("Brake dist.", "m"),
@@ -71,9 +72,9 @@ function brakes:IsEngaged()
     return self.enabled or self.forced
 end
 
-function brakes:Set(on, percentOfVelocityAcc)
+function brakes:Set(on, overrideAcc)
     self.enabled = on
-    self.percentOfVelocityAcc = percentOfVelocityAcc or 1
+    self.overrideAcc = overrideAcc
 end
 
 function brakes:Forced(on)
@@ -83,13 +84,7 @@ end
 function brakes:BrakeFlush()
     -- The brake vector must point against the direction of travel.
     if self:IsEngaged() then
-        local dec = self:Deceleration()
-
-        if self.percentOfVelocityAcc < 1 then
-            dec = self.percentOfVelocityAcc * Acceleration():len()
-        end
-
-        local brakeVector = -Velocity():normalize() * dec
+        local brakeVector = -Velocity():normalize() * (self.overrideAcc or self:Deceleration())
         self.ctrl.setEngineCommand(self.brakeGroup:Intersection(), { brakeVector:unpack() }, 1, 1, "", "", "", 0.001)
     else
         self.ctrl.setEngineCommand(self.brakeGroup:Intersection(), { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
@@ -150,7 +145,7 @@ function brakes:GravityInfluence(velocity)
         if dot > 0 then
             -- Traveling in the same direction - we're influenced such that the break force is reduced
             local gAlongRef = gravity * vertRef
-            influence = -(gAlongRef * velNorm):len() -- -gravity:project_on(velocity):len()
+            influence = -gAlongRef:dot(velNorm)
         end
         --[[elseif dot < 0 then
                 -- Traveling against gravity - break force is increased
@@ -187,25 +182,34 @@ function brakes:BrakeDistance(remainingDistance)
     end
 
     local distance = 0
-    local accelerationNeededToBrake = 0
+    local engineAccelerationNeededToBrake = 0
 
     if self.currentForce > 0 then
-        local influence = abs(self:GravityInfluence(vel))
-        deceleration = max(deceleration + influence, 0)
+        local influence = self:GravityInfluence(vel)
 
+        local total = deceleration + influence
         local warmupDistance = engineWarmupTime * speed
-        distance = calcBrakeDistance(speed, deceleration) + warmupDistance
 
-        if vel:len() > calc.Kph2Mps(3) and distance >= remainingDistance and remainingDistance > 0 then
-            -- Not enough brake force with just the brakes
-            accelerationNeededToBrake = calcAcceleration(speed, remainingDistance)
+        if total < 0 then
+            -- Brakes do not have enough brake force to stop the construct
+            local availableEngineAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-vel:normalize())
+            distance = calcBrakeDistance(speed, availableEngineAcc) + warmupDistance
+
+            if remainingDistance > 0 and distance >= remainingDistance then
+                engineAccelerationNeededToBrake = max(0, calcAcceleration(speed, remainingDistance) - deceleration)
+            end
+        else
+            distance = calcBrakeDistance(speed, total)
+            if remainingDistance > 0 and distance + warmupDistance >= remainingDistance then
+                engineAccelerationNeededToBrake = calcAcceleration(speed, remainingDistance)
+            end
         end
     end
 
     self.wBrakeAcc:Set(calc.Round(deceleration, 1))
-    self.wNeeded:Set(calc.Round(accelerationNeededToBrake, 1))
+    self.wNeeded:Set(calc.Round(engineAccelerationNeededToBrake, 1))
 
-    return distance, accelerationNeededToBrake
+    return distance, engineAccelerationNeededToBrake
 end
 
 local singleton
