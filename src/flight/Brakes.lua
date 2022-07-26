@@ -36,6 +36,7 @@ local function new()
         currentForce = 0,
         totalMass = 1,
         isWithinAtmo = true,
+        overrideAcc = nil,
         brakeGroup = EngineGroup("brake"),
         wEngaged = p:CreateValue("Engaged", ""),
         wDistance = p:CreateValue("Brake dist.", "m"),
@@ -71,8 +72,9 @@ function brakes:IsEngaged()
     return self.enabled or self.forced
 end
 
-function brakes:Set(on)
+function brakes:Set(on, overrideAcc)
     self.enabled = on
+    self.overrideAcc = overrideAcc
 end
 
 function brakes:Forced(on)
@@ -82,7 +84,7 @@ end
 function brakes:BrakeFlush()
     -- The brake vector must point against the direction of travel.
     if self:IsEngaged() then
-        local brakeVector = -Velocity():normalize() * self:Deceleration()
+        local brakeVector = -Velocity():normalize() * (self.overrideAcc or self:Deceleration())
         self.ctrl.setEngineCommand(self.brakeGroup:Intersection(), { brakeVector:unpack() }, 1, 1, "", "", "", 0.001)
     else
         self.ctrl.setEngineCommand(self.brakeGroup:Intersection(), { 0, 0, 0 }, 1, 1, "", "", "", 0.001)

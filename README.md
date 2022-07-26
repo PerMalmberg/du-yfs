@@ -9,10 +9,7 @@
 * Why doesn't Travel state accelerate when not at target speed?
 * Brakes in space? Overshoots platform
 * return to path - lock nearest point
-
-# Brakes
-
-- Does enabling brakes cause up/down movement? They do!
+* Travel state - brake when going the wrong direction
 
 # Controls
 

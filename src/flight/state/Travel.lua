@@ -1,4 +1,3 @@
-local constants = require("du-libs:abstraction/Constants")
 local vehicle = require("du-libs:abstraction/Vehicle")()
 local checks = require("du-libs:debug/Checks")
 local brakes = require("flight/Brakes")()
@@ -9,6 +8,7 @@ local engine = require("du-libs:abstraction/Engine")()
 require("flight/state/Require")
 local abs = math.abs
 local min = math.min
+local Velocity = vehicle.velocity.Movement
 
 -- Increase this to prevent engines from stopping/starting
 local margin = calc.Kph2Mps(1)
@@ -62,12 +62,15 @@ end
 
 function state:CalculateThrust(maxSpeed, directionToRabbit)
     -- Compare to absolute speed
-    local velocity = vehicle.velocity:Movement()
+    local velocity = Velocity()
     -- Negative speedDiff means we're not up to speed yet.
     local speedDiff = velocity:len() - maxSpeed
 
     if speedDiff > 0 then
-        -- Going too fast
+        -- Going too fast, brake over the next second
+        -- v = v0 + a*t => a = (v - v0) / t => a = speedDiff / t
+        -- Since t = 1, acceleration becomes just speedDiff
+        brakes:Set(true, speedDiff)
         return nullVec
     elseif speedDiff < -margin then
         -- v = v0 + a*t => a = (v - v0) / t
