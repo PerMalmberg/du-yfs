@@ -8,8 +8,7 @@
 * Can we float down on brakes instead of using engines to counter acceleration? (use brake in setEngineCommand?)
 * Why doesn't Travel state accelerate when not at target speed?
 * Brakes in space? Overshoots platform
-* return to path - lock nearest point
-* Travel state - brake when going the wrong direction
+* Brakes - get warmup time from construct itself.
 
 # Controls
 

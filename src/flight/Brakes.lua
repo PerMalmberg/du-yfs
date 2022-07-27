@@ -17,7 +17,6 @@ local G = vehicle.world.G
 local AtmoDensity = vehicle.world.AtmoDensity
 local TotalMass = vehicle.mass.Total
 local Velocity = vehicle.velocity.Movement
-local Acceleration = vehicle.acceleration.Movement
 
 local minimumSpeedForMaxAtmoBrakeForce = 100 --m/s (360km/h) Minimum speed in atmo to reach maximum brake force
 local brakeEfficiencyFactor = 0.6 -- Assume brakes are this efficient
