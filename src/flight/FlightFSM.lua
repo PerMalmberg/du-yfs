@@ -245,6 +245,11 @@ function fsm:Move(direction, distance, maxSpeed)
     else
         self:Thrust()
     end
+
+    -- Help come to a stop if we're going in the wrong direction
+    if travelDir:dot(direction) < 0.8 then
+        brakes:Set(true)
+    end
 end
 
 function fsm:CurrentDeviation()

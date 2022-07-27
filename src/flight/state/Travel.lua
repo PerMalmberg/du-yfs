@@ -3,6 +3,7 @@ local checks = require("du-libs:debug/Checks")
 local brakes = require("flight/Brakes")()
 local library = require("du-libs:abstraction/Library")()
 require("flight/state/Require")
+local CurrentPos = vehicle.position.Current
 
 local state = {}
 state.__index = state
@@ -31,7 +32,7 @@ end
 
 function state:Flush(next, previous, chaseData)
     local brakeDistance, neededBrakeAcceleration = brakes:BrakeDistance(next:DistanceTo())
-    local currentPos = vehicle.position.Current()
+    local currentPos = CurrentPos()
 
     local directionToRabbit = (chaseData.rabbit - currentPos):normalize_inplace()
 
