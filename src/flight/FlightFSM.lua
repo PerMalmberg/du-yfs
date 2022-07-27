@@ -218,7 +218,7 @@ end
 
 function fsm:Move(direction, distance, maxSpeed)
     local vel = Velocity()
-    local travelDir = vel:normalize_inplace()
+    local travelDir = vel:normalize()
     local speedDiff = vel:len() - maxSpeed
 
     -- Increase this to prevent engines from stopping/starting
@@ -236,9 +236,8 @@ function fsm:Move(direction, distance, maxSpeed)
         -- v = v0 + a*t => a = (v - v0) / t => a = speedDiff / t
         -- Since t = 1, acceleration becomes just speedDiff
         brakes:Set(true, speedDiff)
-        self.Thrust()
+        self:Thrust()
     elseif speedDiff < -margin then
-        -- v = v0 + a*t => a = (v - v0) / t
         -- We must not saturate the engines; giving a massive acceleration
         -- causes non-axis aligned movement to push us off the path since engines
         -- then fire with all they got which may not result in the vector we want.
