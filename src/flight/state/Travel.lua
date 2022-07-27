@@ -2,16 +2,7 @@ local vehicle = require("du-libs:abstraction/Vehicle")()
 local checks = require("du-libs:debug/Checks")
 local brakes = require("flight/Brakes")()
 local library = require("du-libs:abstraction/Library")()
-local calc = require("du-libs:util/Calc")
-local nullVec = require("cpml/vec3")()
-local engine = require("du-libs:abstraction/Engine")()
 require("flight/state/Require")
-local abs = math.abs
-local min = math.min
-local Velocity = vehicle.velocity.Movement
-
--- Increase this to prevent engines from stopping/starting
-local margin = calc.Kph2Mps(1)
 
 local state = {}
 state.__index = state
@@ -48,38 +39,9 @@ function state:Flush(next, previous, chaseData)
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     elseif not self.fsm:CheckPathAlignment(currentPos, chaseData) then
         -- Are we on the the desired path?
-        self.fsm:SetState(CorrectDeviation(self.fsm))
+        self.fsm:SetState(ReturnToPath(self.fsm, chaseData.nearest))
     else
-
-        -- Word of warning. Quickly toggling the brakes causes
-        -- them to push the construct off the trajectory.
-
-        local thrust = self:CalculateThrust(next.maxSpeed, directionToRabbit)
-
-        self.fsm:Thrust(thrust)
-    end
-end
-
-function state:CalculateThrust(maxSpeed, directionToRabbit)
-    -- Compare to absolute speed
-    local velocity = Velocity()
-    -- Negative speedDiff means we're not up to speed yet.
-    local speedDiff = velocity:len() - maxSpeed
-
-    if speedDiff > 0 then
-        -- Going too fast, brake over the next second
-        -- v = v0 + a*t => a = (v - v0) / t => a = speedDiff / t
-        -- Since t = 1, acceleration becomes just speedDiff
-        brakes:Set(true, speedDiff)
-        return nullVec
-    elseif speedDiff < -margin then
-        -- v = v0 + a*t => a = (v - v0) / t
-        -- We must not saturate the engines; giving a massive acceleration
-        -- causes non-axis aligned movement to push us off the path since engines
-        -- then fire with all they got which may not result in the vector we want.
-        return directionToRabbit * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionToRabbit)
-    else
-        return nullVec
+        self.fsm:Move(directionToRabbit, next:DistanceTo(), next.maxSpeed)
     end
 end
 

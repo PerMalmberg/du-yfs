@@ -1,7 +1,6 @@
 local vehicle = require("du-libs:abstraction/Vehicle")()
 local brakes = require("flight/Brakes")()
 local checks = require("du-libs:debug/Checks")
-local nullVec = require("cpml/vec3")()
 require("flight/state/Require")
 
 local name = "ApproachWaypoint"
@@ -29,7 +28,7 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, chaseData)
-    local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(next:DistanceTo())
+    local brakeDistance, _ = brakes:BrakeDistance(next:DistanceTo())
     local currentPos = vehicle.position.Current()
 
     local dist = next:DistanceTo()
@@ -39,21 +38,9 @@ function state:Flush(next, previous, chaseData)
     elseif not self.fsm:CheckPathAlignment(currentPos, chaseData) then
         -- Are we on the the desired path?
         self.fsm:Thrust()
-        self.fsm:SetState(CorrectDeviation(self.fsm))
+        self.fsm:SetState(ReturnToPath(self.fsm, chaseData.nearest))
     else
-        local needToBrake = brakeDistance >= next:DistanceTo() or brakeAccelerationNeeded > 0
-
-        local thrustAcc = nullVec
-
-        if needToBrake then
-            brakes:Set(true)
-            thrustAcc = brakeAccelerationNeeded * -vehicle.velocity:Movement():normalize_inplace()
-        else
-            local dir = (chaseData.rabbit - vehicle.position.Current()):normalize_inplace()
-            thrustAcc = dir * brakes:Deceleration()
-        end
-
-        self.fsm:Thrust(thrustAcc)
+        self.fsm:Move((chaseData.rabbit - currentPos):normalize_inplace(), dist, next.maxSpeed)
     end
 end
 

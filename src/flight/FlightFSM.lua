@@ -195,8 +195,16 @@ function fsm:FsmFlush(next, previous)
         self.adjustAcc = nullVec
 
         c:Flush(next, previous, chaseData)
-        local moveDirection = next:DirectionTo()
-        self:AdjustForDeviation(next.margin, chaseData, pos, moveDirection)
+        local moveDirection
+
+        if c.OverrideAdjustPoint then
+            chaseData.nearest = c:OverrideAdjustPoint()
+            moveDirection = (chaseData.nearest - pos):normalize_inplace()
+        else
+            moveDirection = next:DirectionTo()
+        end
+
+        self:AdjustForDeviation(chaseData, pos, moveDirection)
 
         self:ApplyAcceleration(moveDirection, next:GetPrecisionMode())
 
@@ -208,42 +216,52 @@ function fsm:FsmFlush(next, previous)
     end
 end
 
--- Get the shortest distance between a point and a plane. The output is signed so it holds information
--- as to which side of the plane normal the point is.
-local signedDistancePlanePoint = function(planeNormal, planePoint, point)
-    return planeNormal:dot(point - planePoint);
-end
+function fsm:Move(direction, distance, maxSpeed)
+    local vel = Velocity()
+    local travelDir = vel:normalize_inplace()
+    local speedDiff = vel:len() - maxSpeed
 
-local projectPointOnPlane = function(planeNormal, planePoint, point)
-    -- First calculate the distance from the point to the plane:
-    local distance = signedDistancePlanePoint(planeNormal, planePoint, point)
+    -- Increase this to prevent engines from stopping/starting
+    local margin = calc.Kph2Mps(1)
 
-    -- Reverse the sign of the distance
-    distance = distance * -1;
+    local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(distance)
 
-    -- Get a translation vector
-    local translationVector = planeNormal * distance
+    local needToBrake = brakeDistance >= distance or brakeAccelerationNeeded > 0
 
-    -- Translate the point to form a projection
-    return point + translationVector
-end
-
--- Projects a vector onto a plane. The output is not normalized.
-local projectVectorOnPlane = function(planeNormal, vector)
-    return vector - vector:dot(planeNormal) * planeNormal
+    if needToBrake then
+        brakes:Set(true)
+        self:Thrust(-travelDir * brakeAccelerationNeeded)
+    elseif speedDiff > 0 then
+        -- Going too fast, brake over the next second
+        -- v = v0 + a*t => a = (v - v0) / t => a = speedDiff / t
+        -- Since t = 1, acceleration becomes just speedDiff
+        brakes:Set(true, speedDiff)
+        self.Thrust()
+    elseif speedDiff < -margin then
+        -- v = v0 + a*t => a = (v - v0) / t
+        -- We must not saturate the engines; giving a massive acceleration
+        -- causes non-axis aligned movement to push us off the path since engines
+        -- then fire with all they got which may not result in the vector we want.
+        self:Thrust(direction * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction))
+    else
+        self:Thrust()
+    end
 end
 
 function fsm:CurrentDeviation()
     return self.currentDeviation
 end
 
-function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
+function fsm:AdjustForDeviation(chaseData, currentPos, moveDirection)
     -- Add counter to deviation from optimal path
     local plane = moveDirection:normalize()
-    local vel = projectVectorOnPlane(plane, Velocity())
+    local vel = calc.ProjectVectorOnPlane(plane, Velocity())
     local currSpeed = vel:len()
-    local toTargetWorld = chaseData.nearest - currentPos
-    local toTarget = projectPointOnPlane(plane, currentPos, chaseData.nearest) - projectPointOnPlane(plane, currentPos, currentPos)
+
+    local targetPoint = chaseData.nearest
+
+    local toTargetWorld = targetPoint - currentPos
+    local toTarget = calc.ProjectPointOnPlane(plane, currentPos, chaseData.nearest) - calc.ProjectPointOnPlane(plane, currentPos, currentPos)
     local dirToTarget = toTarget:normalize()
     local distance = toTarget:len()
     self.currentDeviation = toTarget
@@ -269,7 +287,6 @@ function fsm:AdjustForDeviation(margin, chaseData, currentPos, moveDirection)
     self.wAdjBrakeDistance:Set(calc.Round(brakeDistance))
     self.wAdjSpeed:Set(calc.Round(currSpeed, 1) .. "(" .. calc.Round(speedLimit, 1) .. ")")
 
-    -- Half margin do stay within the margin
     if distance > 0 then
         -- Are we moving towards target?
         if movingTowardsTarget then

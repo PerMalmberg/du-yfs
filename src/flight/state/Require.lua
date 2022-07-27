@@ -5,6 +5,5 @@ if not FLIGHT_STATES_INCLUDED then
     Hold = require("flight/state/Hold")
     Idle = require("flight/state/Idle")
     Travel = require("flight/state/Travel")
-    CorrectDeviation = require("flight/state/CorrectDeviation")
     ReturnToPath = require("flight/state/ReturnToPath")
 end

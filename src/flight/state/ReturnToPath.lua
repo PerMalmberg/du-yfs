@@ -1,19 +1,23 @@
 local brakes = require("flight/Brakes")()
 local checks = require("du-libs:debug/Checks")
 local vehicle = require("du-libs:abstraction/Vehicle")()
-local calc = require("du-libs:util/Calc")
 local Stopwatch = require("du-libs:system/StopWatch")
+local engine = require("du-libs:abstraction/Engine")()
+
+local Velocity = vehicle.velocity.Movement
+local Position = vehicle.position.Current
 
 local state = {}
 state.__index = state
 local name = "ReturnToPath"
 
-local function new(fsm)
+local function new(fsm, returnPoint)
     checks.IsTable(fsm, "fsm", name .. ":new")
 
     local o = {
         fsm = fsm,
-        target = nil,
+        returnPoint = returnPoint,
+        returnPointAdjusted = false,
         sw = Stopwatch()
     }
 
@@ -29,37 +33,43 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, chaseData)
+    local moveDir = Velocity():normalize()
+    -- Start with trying to get back to the closes point on the line
+    local toLine = chaseData.nearest - Position()
+    local dirToLine = toLine:normalize()
 
-    local currentPos = vehicle.position.Current()
-
-    -- Remember that chaseData.nearest is the same point that FSM:AdjustForDeviation is working against.
-    local toNearest = self.fsm:CurrentDeviation()
-    local distance = toNearest:len()
-
-    if distance <= next.margin then
-        if not self.sw:IsRunning() then
-            self.sw:Start()
-        end
-
+    if not self.returnPointAdjusted and moveDir:dot(dirToLine) < 0.8 then
+        -- Still moving away from the line, brake and give thrust
         brakes:Set(true)
-        self.fsm:Thrust()
-
-        self.sw:Elapsed(self.sw:Elapsed())
-        if self.sw:Elapsed() > 1 then
-            self.fsm:SetState(Travel(self.fsm))
-        end
-    else
-        self.sw:Stop()
-
-        local vel = vehicle.velocity:Movement()
-        local travelDir = vel:normalize_inplace()
-        local dot = travelDir:dot(toNearest:normalize())
-
-        -- Enable brakes if we're moving in the wrong direction
-
-        brakes:Set(dot < 0.707)
-        self.fsm:Thrust()
+        self.fsm:Thrust(dirToLine * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dirToLine))
+    elseif not self.returnPointAdjusted then
+        -- Moving to line, fix the return point to the currently closest point
+        self.returnPoint = chaseData.nearest
+        self.returnPointAdjusted = true
     end
+
+    if self.returnPointAdjusted then
+        local timer = self.sw
+        local toReturn = self.returnPoint - Position()
+
+        self.fsm:Move(toReturn:normalize(), toReturn:len(), next.maxSpeed)
+
+        if toReturn:len() <= next.margin then
+            if not timer:IsRunning() then
+                timer:Start()
+            end
+
+            if timer:Elapsed() > 0.3 then
+                self.fsm:SetState(Travel(self.fsm))
+            end
+        else
+            timer:Stop()
+        end
+    end
+end
+
+function state:OverrideAdjustPoint()
+    return self.returnPoint
 end
 
 function state:Update()
