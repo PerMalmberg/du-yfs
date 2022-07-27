@@ -8,7 +8,6 @@ local sharedPanel = require("du-libs:panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
 local universe = require("du-libs:universe/Universe")()
 local engine = require("du-libs:abstraction/Engine")()
-local abs = math.abs
 local max = math.max
 
 local brakes = {}
