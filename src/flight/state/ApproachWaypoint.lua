@@ -37,7 +37,6 @@ function state:Flush(next, previous, chaseData)
         self.fsm:SetState(Travel(self.fsm))
     elseif not self.fsm:CheckPathAlignment(currentPos, chaseData) then
         -- Are we on the the desired path?
-        self.fsm:Thrust()
         self.fsm:SetState(ReturnToPath(self.fsm, chaseData.nearest))
     else
         self.fsm:Move((chaseData.rabbit - currentPos):normalize_inplace(), dist, next.maxSpeed)

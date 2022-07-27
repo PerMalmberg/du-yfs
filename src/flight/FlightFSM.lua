@@ -96,6 +96,8 @@ local upGroup = {
 local toleranceDistance = 2 -- meters. This limit affects the steepness of the acceleration curve used by the deviation adjustment
 local adjustmentSpeedMin = calc.Kph2Mps(0.5)
 local adjustmentSpeedMax = calc.Kph2Mps(50)
+-- Increase this to prevent engines from stopping/starting
+local speedMargin = calc.Kph2Mps(1)
 
 local adjustAccLookup = {
     { limit = 0, acc = 0.15, reverse = 0.3 },
@@ -221,9 +223,6 @@ function fsm:Move(direction, distance, maxSpeed)
     local travelDir = vel:normalize()
     local speedDiff = vel:len() - maxSpeed
 
-    -- Increase this to prevent engines from stopping/starting
-    local margin = calc.Kph2Mps(1)
-
     local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(distance)
 
     local needToBrake = brakeDistance >= distance or brakeAccelerationNeeded > 0
@@ -237,17 +236,18 @@ function fsm:Move(direction, distance, maxSpeed)
         -- Since t = 1, acceleration becomes just speedDiff
         brakes:Set(true, speedDiff)
         self:Thrust()
-    elseif speedDiff < -margin then
+    elseif speedDiff < -speedMargin then
         -- We must not saturate the engines; giving a massive acceleration
         -- causes non-axis aligned movement to push us off the path since engines
         -- then fire with all they got which may not result in the vector we want.
         self:Thrust(direction * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction))
     else
+        -- Just counter gravity.
         self:Thrust()
     end
 
     -- Help come to a stop if we're going in the wrong direction
-    if travelDir:dot(direction) < 0.8 then
+    if travelDir:dot(direction) < 0 then
         brakes:Set(true)
     end
 end
@@ -373,6 +373,9 @@ function fsm:SetState(state)
     end
 
     self.current = state
+
+    -- Ensure state change doesn't cause engines to shutoff
+    self:Thrust()
 end
 
 function fsm:DisableThrust()
