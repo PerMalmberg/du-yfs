@@ -1,15 +1,13 @@
-local r = require("CommonRequire")
-local library = r.library
-local vehicle = r.vehicle
-local checks = r.checks
-local calc = r.calc
-local clamp = r.utils.clamp
-local universe = r.universe
-local engine = r.engine
-
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Stopwatch = require("du-libs:system/Stopwatch")
+local library = require("du-libs:abstraction/Library")()
+local vehicle = require("du-libs:abstraction/Vehicle")()
+local checks = require("du-libs:debug/Checks")
+local calc = require("du-libs:util/Calc")
 local sharedPanel = require("du-libs:panel/SharedPanel")()
+local clamp = require("cpml/utils").clamp
+local universe = require("du-libs:universe/Universe")()
+local engine = require("du-libs:abstraction/Engine")()
 local max = math.max
 
 local brakes = {}
