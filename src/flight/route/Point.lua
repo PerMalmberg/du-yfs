@@ -1,4 +1,4 @@
-local universe = require("du-libs:universe/Universe")()
+local universe = require("CommonRequire").universe
 local PointOptions = require("flight/route/PointOptions")
 
 -- This class represents a position and behavior in a route.

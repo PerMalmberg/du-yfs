@@ -1,7 +1,7 @@
 local Point = require("flight/route/Point")
 local PointOptions = require("flight/route/PointOptions")
 local Route = require("flight/route/Route")
-local log = require("du-libs:debug/Log")()
+local log = require("CommonRequire").log
 
 local controller = {}
 controller.__index = controller

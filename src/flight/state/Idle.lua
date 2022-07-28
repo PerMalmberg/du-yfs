@@ -1,4 +1,4 @@
-local checks = require("du-libs:debug/Checks")
+local checks = require("CommonRequire").checks
 
 local state = {}
 state.__index = state

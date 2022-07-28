@@ -8,7 +8,7 @@ local nullVec = Vec3()
 local ctrl = r.library:GetController()
 local visual = r.visual
 local sharedPanel = require("du-libs:panel/SharedPanel")()
-local engine = require("du-libs:abstraction/Engine")()
+local engine = r.engine
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Accumulator = require("du-libs:util/Accumulator")
 require("flight/state/Require")

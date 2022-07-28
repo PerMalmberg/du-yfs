@@ -8,6 +8,7 @@ local n = {
     universe = require("du-libs:universe/Universe")(),
     checks = require("du-libs:debug/Checks"),
     visual = require("du-libs:debug/Visual")(),
+    engine = require("du-libs:abstraction/Engine")(),
     Vec3 = require("cpml/vec3")
 }
 

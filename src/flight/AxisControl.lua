@@ -1,19 +1,20 @@
-local vehicle = require("du-libs:abstraction/Vehicle")()
-local library = require("du-libs:abstraction/Library")()
-local checks = require("du-libs:debug/Checks")
-local calc = require("du-libs:util/Calc")
-local nullVec = require("cpml/vec3")()
-local sharedPanel = require("du-libs:panel/SharedPanel")()
-local PID = require("cpml/pid")
+local r = require("CommonRequire")
+local library = r.library
+local vehicle = r.vehicle
 local G = vehicle.world.G
 local AngVel = vehicle.velocity.localized.Angular
 local AngAcc = vehicle.acceleration.localized.Angular
+local checks = r.checks
+local calc = r.calc
+local SignLargestAxis = calc.SignLargestAxis
+local nullVec = r.Vec3()
+local sharedPanel = require("du-libs:panel/SharedPanel")()
+local PID = require("cpml/pid")
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
 local abs = math.abs
 local Sign = calc.Sign
-local SignLargestAxis = calc.SignLargestAxis
 
 local control = {}
 control.__index = control

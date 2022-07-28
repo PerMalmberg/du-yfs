@@ -3,10 +3,11 @@
     When loaded, additional points may be inserted to to create a route that is smooth to fly
     and that doesn't pass through a planetary body. Extra points are not persisted.
 ]]--
-local log = require("du-libs:debug/Log")()
-local checks = require("du-libs:debug/Checks")
-local vehicle = require("du-libs:abstraction/Vehicle")()
-local universe = require("du-libs:universe/Universe")()
+local r = require("CommonRequire")
+local log = r.log
+local checks = r.checks
+local vehicle = r.vehicle
+local universe = r.universe
 local Point = require("flight/route/Point")
 
 local route = {}

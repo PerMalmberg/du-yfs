@@ -1,6 +1,7 @@
-local vehicle = require("du-libs:abstraction/Vehicle")()
-local universe = require("du-libs:universe/Universe")()
-local calc = require("du-libs:util/Calc")
+local r = require("CommonRequire")
+local vehicle = r.vehicle
+local universe = r.universe
+local calc = r.calc
 local abs = math.abs
 
 -- Reminder: Don't return a point based on the constructs' current position, it will cause spin if it overshoots etc.

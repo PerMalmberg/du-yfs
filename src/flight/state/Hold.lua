@@ -1,9 +1,7 @@
-local brakes = require("flight/Brakes")()
-local checks = require("du-libs:debug/Checks")
-local vehicle = require("du-libs:abstraction/Vehicle")()
+local r = require("CommonRequire")
+local brakes = r.brakes
+local checks = r.checks
 require("flight/state/Require")
-local Velocity = vehicle.velocity.Movement
-local CurrentPos = vehicle.position.Current
 
 local state = {}
 state.__index = state
