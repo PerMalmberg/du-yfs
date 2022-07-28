@@ -42,6 +42,7 @@ function state:Flush(next, previous, chaseData)
         -- Are we on the the desired path?
         self.fsm:SetState(ReturnToPath(self.fsm, chaseData.nearest))
     else
+        -- QQQ Ramp up the acceleration based engine warmup to prevent getting off path.
         self.fsm:Move(directionToRabbit, next:DistanceTo(), next.maxSpeed)
     end
 end

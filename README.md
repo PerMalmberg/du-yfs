@@ -8,7 +8,9 @@
 * Can we float down on brakes instead of using engines to counter acceleration? (use brake in setEngineCommand?)
 * Why doesn't Travel state accelerate when not at target speed?
 * Brakes in space? Overshoots platform
-* Brakes - get warmup time from construct itself.
+* Brakes - get warmup time from setting
+* Engines - get warmup time from setting
+* fsm:Move - scale acceleration based on engine warmup.
 
 # Controls
 
@@ -65,18 +67,16 @@
 flowchart TD
   Idle-->Travel
   ApprochingLast{last waypoint}
-  ApproachWaypoint -- out of alignment --> CorrectDeviation
+  ApproachWaypoint -- out of alignment --> ReturnToPath
   ApproachWaypoint -- dist < brakeDist && dist > 1000 --> Travel
   ApproachWaypoint -- waypoint reached --> ApprochingLast
   ApprochingLast -- Yes --> Hold
   ApprochingLast -- No --> Travel
-  CorrectDeviation -- speed < limit --> ReturnToPath
   ReturnToPath -- distance < margin --> Travel
   Travel -- need to brake -->ApproachWaypoint
-  Travel -- out of alignment --> CorrectDeviation
+  Travel -- out of alignment --> ReturnToPath
   Hold -- too far --> ApproachWaypoint
- 
-```
+ ```
 
 # Cross and dot
 

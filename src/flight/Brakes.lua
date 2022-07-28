@@ -19,7 +19,7 @@ local TotalMass = vehicle.mass.Total
 local Velocity = vehicle.velocity.Movement
 
 local minimumSpeedForMaxAtmoBrakeForce = 100 --m/s (360km/h) Minimum speed in atmo to reach maximum brake force
-local brakeEfficiencyFactor = 0.6 -- Assume brakes are this efficient
+local brakeEfficiencyFactor = 0.6 -- Assume atmospheric brakes are this efficient
 local engineWarmupTime = 1
 
 local function new()

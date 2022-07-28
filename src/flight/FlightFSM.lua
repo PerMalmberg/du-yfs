@@ -136,6 +136,7 @@ local function new()
     local instance = {
         current = nil,
         wStateName = p:CreateValue("State", ""),
+        wPointDistance = p:CreateValue("Point dist.", "m"),
         wAcceleration = p:CreateValue("Acceleration", "m/s2"),
         wSpeed = p:CreateValue("Abs. speed", "m/s"),
         wAdjTowards = p:CreateValue("Adj. towards"),
@@ -221,6 +222,8 @@ function fsm:Move(direction, distance, maxSpeed)
     local vel = Velocity()
     local travelDir = vel:normalize()
     local speedDiff = vel:len() - maxSpeed
+
+    self.wPointDistance:Set(calc.Round(distance, 4))
 
     local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(distance)
 
