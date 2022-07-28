@@ -16,7 +16,6 @@ local BufferedDB = require("du-libs:storage/BufferedDB")
 local Waypoint = require("flight/Waypoint")
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local alignment = require("flight/AlignmentFunctions")
-local RouteController = require("flight/route/Controller")
 local PointOptions = require("flight/route/PointOptions")
 require("flight/state/Require")
 
@@ -27,14 +26,11 @@ local singleton
 local defaultSpeed = 50 -- 50kph
 local defaultMargin = 0.1 -- m
 
-local routeDb = BufferedDB("routes")
-routeDb:BeginLoad()
-
-local function new()
+local function new(routeController)
     local p = sharedPanel:Get("Waypoint")
     local instance = {
         ctrl = library:GetController(),
-        routeController = RouteController(routeDb),
+        routeController = routeController,
         thrustGroup = EngineGroup("thrust"),
         autoStabilization = nil,
         flushHandlerId = 0,
@@ -258,7 +254,7 @@ return setmetatable(
         {
             __call = function(_, ...)
                 if singleton == nil then
-                    singleton = new()
+                    singleton = new(...)
                 end
                 return singleton
             end

@@ -1,21 +1,13 @@
-local r = require("CommonRequire")
-local fc = require("flight/FlightCore")()
+local RouteController = require("flight/route/Controller")
+local BDB = require("du-libs:storage/BufferedDB")
+local FC = require("flight/FlightCore")
 local Input = require("Input")
 
-local brakes = r.brakes
-local brakeLight = r.library:GetLinkByName("brakelight")
+local routeDb = BDB("routes")
+routeDb:BeginLoad()
+local rc = RouteController(routeDb)
 
+local fc = FC(rc)
 fc:ReceiveEvents()
 
-local function Update(system)
-    if brakeLight ~= nil then
-        if brakes:IsEngaged() then
-            brakeLight.activate()
-        else
-            brakeLight.deactivate()
-        end
-    end
-end
-system:onEvent("onUpdate", Update)
-
-local input = Input:New(fc)
+Input:New(fc)
