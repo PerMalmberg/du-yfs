@@ -11,6 +11,7 @@
 * Brakes - get warmup time from setting
 * Engines - get warmup time from setting
 * fsm:Move - scale acceleration based on engine warmup.
+* All classes - use new class template
 
 # Controls
 
