@@ -1,4 +1,4 @@
-local checks = require("du-libs:debug/Checks")
+local checks = require("CommonRequire").checks
 local utc = system.getUtcTime
 
 local targetPoint = {}

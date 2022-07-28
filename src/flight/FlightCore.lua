@@ -1,20 +1,22 @@
+local r = require("CommonRequire")
+local brakes = r.brakes
+local vehicle = r.vehicle
+local visual = r.visual
+local library = r.library
+local checks = r.checks
+local calc = r.calc
+local Vec3 = r.Vec3
+local nullVec = Vec3()
+
 local AxisControl = require("flight/AxisControl")
-local Brakes = require("flight/Brakes")
 local FlightFSM = require("flight/FlightFSM")
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Route = require("flight/route/Route")
 local BufferedDB = require("du-libs:storage/BufferedDB")
 local Waypoint = require("flight/Waypoint")
-local vehicle = require("du-libs:abstraction/Vehicle")()
-local visual = require("du-libs:debug/Visual")()
-local library = require("du-libs:abstraction/Library")()
 local sharedPanel = require("du-libs:panel/SharedPanel")()
-local checks = require("du-libs:debug/Checks")
 local alignment = require("flight/AlignmentFunctions")
-local calc = require("du-libs:util/Calc")
 local RouteController = require("flight/route/Controller")
-local Vec3 = require("cpml/vec3")
-local nullVec = Vec3()
 local PointOptions = require("flight/route/PointOptions")
 require("flight/state/Require")
 
@@ -33,7 +35,6 @@ local function new()
     local instance = {
         ctrl = library:GetController(),
         routeController = RouteController(routeDb),
-        brakes = Brakes(),
         thrustGroup = EngineGroup("thrust"),
         autoStabilization = nil,
         flushHandlerId = 0,
@@ -180,7 +181,7 @@ function flightCore:FCUpdate()
     local status, err, _ = xpcall(
             function()
                 self.flightFSM:Update()
-                self.brakes:BrakeUpdate()
+                brakes:BrakeUpdate()
 
                 local wp = self.currentWaypoint
                 if wp ~= nil then
@@ -238,7 +239,7 @@ function flightCore:FCFlush()
                 self.pitch:AxisFlush(false)
                 self.roll:AxisFlush(false)
                 self.yaw:AxisFlush(true)
-                self.brakes:BrakeFlush()
+                brakes:BrakeFlush()
             end,
             traceback
     )

@@ -1,6 +1,7 @@
-local checks = require("du-libs:debug/Checks")
-local vehicle = require("du-libs:abstraction/Vehicle")()
 local alignment = require("flight/AlignmentFunctions")
+local r = require("CommonRequire")
+local checks = r.checks
+local vehicle = r.vehicle
 
 local waypoint = {}
 waypoint.__index = waypoint
