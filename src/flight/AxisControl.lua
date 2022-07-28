@@ -27,6 +27,13 @@ finalAcceleration[AxisControlPitch] = nullVec
 finalAcceleration[AxisControlRoll] = nullVec
 finalAcceleration[AxisControlYaw] = nullVec
 
+local function createWidgets(instance, panel, axis)
+    instance.wAngle = panel:CreateValue(axis, "°")
+    instance.wSpeed = panel:CreateValue("P.Vel", "°/s")
+    instance.wAcc = panel:CreateValue("P.Acc", "°/s2")
+    instance.wOffset = panel:CreateValue("Offset", "°")
+end
+
 ---Creates a new AxisControl
 ---@return table A new AxisControl
 local function new(axis)
@@ -36,41 +43,30 @@ local function new(axis)
         controlledAxis = axis,
         ctrl = library.GetController(),
         updateHandlerId = nil,
-        offsetWidget = nil,
-        velocityWidget = nil,
-        accelerationWidget = nil,
-        operationWidget = nil,
+        wAngle = nil,
+        wSpeed = nil,
+        wAcc = nil,
+        wOffset = nil,
         maxAcceleration = 360 / 4, -- start value, degrees per second,
-        target = {
-            coordinate = nil
-        },
+        targetCoordinate = nil,
         pid = PID(24, 16, 1600, 0.1) -- 0.5 amortization makes it alot smoother
     }
 
-    local shared = sharedPanel:Get("AxisControl")
+    local shared = sharedPanel:Get("Axes")
     local o = vehicle.orientation
 
     if axis == AxisControlPitch then
-        instance.offsetWidget = shared:CreateValue("Pitch", "°")
-        instance.velocityWidget = shared:CreateValue("P.Vel", "°/s")
-        instance.accelerationWidget = shared:CreateValue("P.Acc", "°/s2")
-        instance.operationWidget = shared:CreateValue("P.Op", "")
+        createWidgets(instance, shared, "Pitch")
         instance.Reference = o.Forward
         instance.Normal = o.Right
         instance.LocalNormal = vehicle.orientation.localized.Right
     elseif axis == AxisControlRoll then
-        instance.offsetWidget = shared:CreateValue("Roll", "°")
-        instance.velocityWidget = shared:CreateValue("R.Vel", "°/s")
-        instance.accelerationWidget = shared:CreateValue("R.Acc", "°/s2")
-        instance.operationWidget = shared:CreateValue("R.Op", "")
+        createWidgets(instance, shared, "Roll")
         instance.Reference = o.Up
         instance.Normal = o.Forward
         instance.LocalNormal = vehicle.orientation.localized.Forward
     elseif axis == AxisControlYaw then
-        instance.offsetWidget = shared:CreateValue("Yaw", "°")
-        instance.velocityWidget = shared:CreateValue("Y.Vel", "°/s")
-        instance.accelerationWidget = shared:CreateValue("Y.Acc", "°/s2")
-        instance.operationWidget = shared:CreateValue("Y.Op", "")
+        createWidgets(instance, shared, "Yaw")
         instance.Reference = o.Forward
         instance.Normal = o.Up
         instance.LocalNormal = vehicle.orientation.localized.Up
@@ -95,12 +91,12 @@ function control:SetTarget(targetCoordinate)
     if targetCoordinate == nil then
         self:Disable()
     else
-        self.target.coordinate = targetCoordinate
+        self.targetCoordinate = targetCoordinate
     end
 end
 
 function control:Disable()
-    self.target.coordinate = nil
+    self.targetCoordinate = nil
     finalAcceleration[self.controlledAxis] = nullVec
 end
 
@@ -122,14 +118,14 @@ function control:Acceleration()
 end
 
 function control:AxisFlush(apply)
-    if self.target.coordinate ~= nil then
+    if self.targetCoordinate ~= nil then
         -- Positive offset means we're right of target, clock-wise
         -- Positive acceleration turns counter-clockwise
         -- Positive velocity means we're turning counter-clockwise
 
-        local vecToTarget = self.target.coordinate - vehicle.position.Current()
+        local vecToTarget = self.targetCoordinate - vehicle.position.Current()
         local offset = calc.SignedRotationAngle(self.Normal(), self.Reference(), vecToTarget) * rad2deg
-        self.operationWidget:Set("Offset " .. calc.Round(offset, 4))
+        self.wOffset:Set(calc.Round(offset, 4))
 
         -- Prefer yaw above pitch by preventing the construct from pitching when the target point is behind.
         -- This prevents construct from ending up upside down while gravity affects us and engines can't keep us afloat.
@@ -164,8 +160,8 @@ function control:Apply()
 end
 
 function control:Update()
-    self.velocityWidget:Set(self:Speed())
-    self.accelerationWidget:Set(self:Acceleration())
+    self.wSpeed:Set(calc.Round(self:Speed(), 2))
+    self.wAcc:Set(calc.Round(self:Acceleration(), 2))
 end
 
 return setmetatable(

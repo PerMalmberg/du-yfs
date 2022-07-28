@@ -131,19 +131,18 @@ fsm.__index = fsm
 
 local function new()
 
-    local p = sharedPanel:Get("FlightFSM")
-    local a = sharedPanel:Get("Deviation")
+    local p = sharedPanel:Get("Movement")
 
     local instance = {
         current = nil,
         wStateName = p:CreateValue("State", ""),
         wAcceleration = p:CreateValue("Acceleration", "m/s2"),
-        wSpeed = p:CreateValue("Speed", "m/s"),
-        wAdjTowards = a:CreateValue("Towards"),
-        wAdjDist = a:CreateValue("Distance", "m"),
-        wAdjAcc = a:CreateValue("Acceleration", "m/s2"),
-        wAdjBrakeDistance = a:CreateValue("Brake dist.", "m"),
-        wAdjSpeed = a:CreateValue("Speed (limit)", "m/s"),
+        wSpeed = p:CreateValue("Abs. speed", "m/s"),
+        wAdjTowards = p:CreateValue("Adj. towards"),
+        wAdjDist = p:CreateValue("Adj. distance", "m"),
+        wAdjAcc = p:CreateValue("Adj. acc", "m/s2"),
+        wAdjBrakeDistance = p:CreateValue("Adj. brake dist.", "m"),
+        wAdjSpeed = p:CreateValue("Adj. speed (limit)", "m/s"),
         acceleration = nil,
         adjustAcc = nullVec,
         lastDevDist = 0,
