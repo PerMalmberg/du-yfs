@@ -9,10 +9,8 @@ local Vec3 = r.Vec3
 local nullVec = Vec3()
 
 local AxisControl = require("flight/AxisControl")
-local FlightFSM = require("flight/FlightFSM")
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Route = require("flight/route/Route")
-local BufferedDB = require("du-libs:storage/BufferedDB")
 local Waypoint = require("flight/Waypoint")
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local alignment = require("flight/AlignmentFunctions")
@@ -26,7 +24,7 @@ local singleton
 local defaultSpeed = 50 -- 50kph
 local defaultMargin = 0.1 -- m
 
-local function new(routeController)
+local function new(routeController, flightFSM)
     local p = sharedPanel:Get("Waypoint")
     local instance = {
         ctrl = library:GetController(),
@@ -38,8 +36,8 @@ local function new(routeController)
         pitch = AxisControl(AxisControlPitch),
         roll = AxisControl(AxisControlRoll),
         yaw = AxisControl(AxisControlYaw),
-        flightFSM = FlightFSM(),
-        route = Route(routeDb),
+        flightFSM = flightFSM,
+        route = Route(),
         currentWaypoint = nil, -- The positions we want to move to
         previousWaypoint = nil, -- Previous waypoint
         waypointReachedSignaled = false,

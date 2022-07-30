@@ -66,6 +66,10 @@ function brakes:BrakeUpdate()
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
 end
 
+function brakes:SetEngineWarmupTime(t)
+    engineWarmupTime = t
+end
+
 function brakes:IsEngaged()
     return self.enabled or self.forced
 end

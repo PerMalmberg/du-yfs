@@ -97,8 +97,8 @@ local upGroup = {
 local toleranceDistance = 2 -- meters. This limit affects the steepness of the acceleration curve used by the deviation adjustment
 local adjustmentSpeedMin = calc.Kph2Mps(0.5)
 local adjustmentSpeedMax = calc.Kph2Mps(50)
--- Increase this to prevent engines from stopping/starting
-local speedMargin = calc.Kph2Mps(1)
+local speedMargin = calc.Kph2Mps(0.5)
+local warmupTime = 1
 
 local adjustAccLookup = {
     { limit = 0, acc = 0.15, reverse = 0.3 },
@@ -130,7 +130,7 @@ end
 local fsm = {}
 fsm.__index = fsm
 
-local function new()
+local function new(settings)
 
     local p = sharedPanel:Get("Movement")
 
@@ -154,7 +154,21 @@ local function new()
 
     setmetatable(instance, fsm)
     instance:SetState(Idle(instance))
+
+    settings:RegisterCallback("engineWarmup", function(value)
+        instance:SetEngineWarmupTime(value)
+        brakes:SetEngineWarmupTime(value)
+    end)
+
     return instance
+end
+
+function fsm:SetEngineWarmupTime(t)
+    warmupTime = t
+end
+
+function fsm:GetEngineWarmupTime()
+    return warmupTime
 end
 
 function fsm:GetEngines(moveDirection, precision)
@@ -280,8 +294,6 @@ function fsm:AdjustForDeviation(chaseData, currentPos, moveDirection)
     local calcAcceleration = function(speed, remainingDistance)
         return (speed ^ 2) / (2 * remainingDistance)
     end
-
-    local warmupTime = 1
 
     local movingTowardsTarget = self.deviationAccum:Add(vel:normalize():dot(dirToTarget) > 0.8) > 0.5
 
@@ -420,7 +432,7 @@ return setmetatable(
         },
         {
             __call = function(_, ...)
-                return new()
+                return new(...)
             end
         }
 )
