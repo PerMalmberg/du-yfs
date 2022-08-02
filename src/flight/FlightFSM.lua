@@ -233,7 +233,11 @@ function fsm:FsmFlush(next, previous)
     end
 end
 
-function fsm:Move(direction, distance, maxSpeed)
+---@param direction Vec3 The direction to travel
+---@param distance number The remaining distance
+---@param maxSpeed number Maximum speed, m/s
+---@param rampFactor number 0..1 A factor that limits the amount of thrust we may apply.
+function fsm:Move(direction, distance, maxSpeed, rampFactor)
     local vel = Velocity()
     local travelDir = vel:normalize()
     local speedDiff = vel:len() - maxSpeed
@@ -257,7 +261,7 @@ function fsm:Move(direction, distance, maxSpeed)
         -- We must not saturate the engines; giving a massive acceleration
         -- causes non-axis aligned movement to push us off the path since engines
         -- then fire with all they got which may not result in the vector we want.
-        self:Thrust(direction * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction))
+        self:Thrust(direction * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) * (rampFactor or 1))
     else
         -- Just counter gravity.
         self:Thrust()
@@ -339,11 +343,13 @@ function fsm:AdjustForDeviation(chaseData, currentPos, moveDirection)
 end
 
 function fsm:ApplyAcceleration(moveDirection, precision)
-    if self.acceleration ~= nil then
+    if self.acceleration == nil then
+        ctrl.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
+    else
         local groups = self:GetEngines(moveDirection, precision)
         local t = groups.thrust
         local a = groups.adjust
-        local thrustAcc = (self.acceleration or nullVec) + t.antiG() - Vec3(construct.getWorldAirFrictionAcceleration())
+        local thrustAcc = self.acceleration + t.antiG() - Vec3(construct.getWorldAirFrictionAcceleration())
         local adjustAcc = (self.adjustAcc or nullVec) + a.antiG()
 
         if precision then
@@ -355,8 +361,6 @@ function fsm:ApplyAcceleration(moveDirection, precision)
             local finalAcc = thrustAcc + adjustAcc
             ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
         end
-    else
-        ctrl.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
     end
 end
 
@@ -398,9 +402,8 @@ function fsm:DisableThrust()
     self.adjustAcc = nil
 end
 
-function fsm:Thrust(acceleration, adjustAcc)
+function fsm:Thrust(acceleration)
     self.acceleration = acceleration or nullVec
-    self.adjustAcc = adjustAcc or nullVec
 end
 
 function fsm:NullThrust()

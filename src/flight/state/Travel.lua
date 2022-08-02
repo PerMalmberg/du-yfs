@@ -3,7 +3,9 @@ local vehicle = r.vehicle
 local checks = r.checks
 local brakes = r.brakes
 local library = r.library
+local calc = r.calc
 require("flight/state/Require")
+local Stopwatch = require("du-libs:system/Stopwatch")
 local CurrentPos = vehicle.position.Current
 
 local state = {}
@@ -16,7 +18,8 @@ local function new(fsm)
 
     local o = {
         fsm = fsm,
-        core = library:GetCoreUnit()
+        core = library:GetCoreUnit(),
+        rampTimer = Stopwatch()
     }
 
     setmetatable(o, state)
@@ -26,6 +29,7 @@ end
 
 function state:Enter()
     brakes:Set(false)
+    self.rampTimer:Start()
 end
 
 function state:Leave()
@@ -43,8 +47,9 @@ function state:Flush(next, previous, chaseData)
         -- Are we on the the desired path?
         self.fsm:SetState(ReturnToPath(self.fsm, chaseData.nearest))
     else
-        -- QQQ Ramp up the acceleration based engine warmup to prevent getting off path.
-        self.fsm:Move(directionToRabbit, next:DistanceTo(), next.maxSpeed)
+        -- Ramp up the acceleration based on engine warmup to prevent pushing ourselves off the path.
+        local mul = calc.Scale(self.rampTimer:Elapsed(), 0, self.fsm:GetEngineWarmupTime(), 0, 1)
+        self.fsm:Move(directionToRabbit, next:DistanceTo(), next.maxSpeed, mul)
     end
 end
 
