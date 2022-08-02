@@ -62,6 +62,9 @@
 |                       | -margin            | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.  |
 | route-dump            |                    |         |          | Dumps the current route to the console                                                                        |
 | save-position-as      | name of waypoint   |         | N        | Save the current position as a named waypoint for later use in a route                                        |
+| set                   |                    |         |          | Sets the specified setting to the specified value                                                             |
+|                       | -engineWarmup      | seconds | Y        | Sets the engine warmup time (T50). Set this to that of the engine with longes warmup.                         |
+| get                   | <same as 'set'>    |         |          | Displays the value of the specified value                                                                     |
 
 # Flight
 
