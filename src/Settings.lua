@@ -85,10 +85,13 @@ function Settings:New(db)
 
         -- Don't set defaults on these - prevents detecting which setting is to be set as they all have values then.
         local set = cmd:Accept("set", setFunc):AsEmpty()
-        set:Option("-" .. singleton.def.engineWarmup.key):AsNumber()
-
         local get = cmd:Accept("get", getFunc):AsEmpty()
-        get:Option("-" .. singleton.def.engineWarmup.key):AsNumber():Default(singleton.def.engineWarmup.default)
+
+        for _, setting in pairs(singleton.def) do
+            set:Option("-" .. setting.key):AsNumber()
+
+            get:Option("-" .. setting.key):AsNumber():Default(setting.default)
+        end
 
         setmetatable(singleton, Settings)
     end
