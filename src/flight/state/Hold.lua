@@ -34,6 +34,7 @@ function state:Flush(next, previous, chaseData)
     if next:Reached() then
         next:SetPrecisionMode(true)
         brakes:Set(true)
+        self.fsm:Move(next:DirectionTo(), next:DistanceTo(), 0.01)
     else
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     end
