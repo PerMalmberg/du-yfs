@@ -35,7 +35,7 @@ end
 
 function state:Flush(next, previous, chaseData)
     local moveDir = Velocity():normalize()
-    -- Start with trying to get back to the closes point on the line
+    -- Start with trying to get back to the closest point on the line
     local toLine = chaseData.nearest - Position()
     local dirToLine = toLine:normalize()
 
