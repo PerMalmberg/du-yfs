@@ -251,13 +251,13 @@ function fsm:Move(direction, distance, maxSpeed, rampFactor)
     local needToBrake = brakeDistance >= distance
 
     if needToBrake then
-        brakes:Set(true)
+        brakes:Set(true, "Distance")
         self:Thrust(-travelDir * brakeAccelerationNeeded)
     elseif speedDiff > 0 then
         -- Going too fast, brake over the next second
         -- v = v0 + a*t => a = (v - v0) / t => a = speedDiff / t
         -- Since t = 1, acceleration becomes just speedDiff
-        brakes:Set(true, "Too fast", speedDiff)
+        brakes:Set(true, "Maintain speed", speedDiff)
         self:Thrust()
     elseif speedDiff < -speedMargin then
         -- We must not saturate the engines; giving a massive acceleration
