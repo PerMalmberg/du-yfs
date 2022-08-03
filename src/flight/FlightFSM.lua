@@ -108,12 +108,21 @@ local adjustAccLookup = {
     { limit = 0.1, acc = 0, reverse = 0 }
 }
 
-local getDeviationAdjustmentAcc = function(accLookup, dir, distance, movingTowardsTarget)
+local thrustAccLookup = {
+    { limit = 0, acc = 0.15, reverse = 0.30 },
+    { limit = 0.1, acc = 0.20, reverse = 0.30 },
+    { limit = 0.2, acc = 0.30, reverse = 0.30 },
+    { limit = 0.4, acc = 0.40, reverse = 0.30 },
+    { limit = 0.8, acc = 0.50, reverse = 0.30 },
+    { limit = 1.6, acc = 0.60, reverse = 0.30 },
+    { limit = 3.2, acc = 0, reverse = 0 }
+}
+
+local getAdjustedAcceleration = function(accLookup, dir, distance, movingTowardsTarget)
     local selected
     for _, v in ipairs(accLookup) do
-        if distance >= v.limit then
-            selected = v
-        end
+        if distance >= v.limit then selected = v
+        else break end
     end
 
     local max
@@ -263,7 +272,9 @@ function fsm:Move(direction, distance, maxSpeed, rampFactor)
         -- We must not saturate the engines; giving a massive acceleration
         -- causes non-axis aligned movement to push us off the path since engines
         -- then fire with all they got which may not result in the vector we want.
-        self:Thrust(direction * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) * (rampFactor or 1))
+        local movingTowardsTarget = vel:normalize():dot(direction) > 0.8
+        local acc = getAdjustedAcceleration(thrustAccLookup, direction, distance, movingTowardsTarget)
+        self:Thrust(direction * acc * (rampFactor or 1))
     else
         -- Just counter gravity.
         self:Thrust()
@@ -319,20 +330,20 @@ function fsm:AdjustForDeviation(chaseData, currentPos, moveDirection)
                 self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance)
             elseif distance > self.lastDevDist then
                 -- Slipping away, nudge back to path
-                self.adjustAcc = dirToTarget * getDeviationAdjustmentAcc(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                self.adjustAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
             elseif distance < toleranceDistance then
                 -- Add brake acc to help stop where we want
                 self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance)
             elseif currSpeed < speedLimit then
                 -- This check needs to be last so that it doesn't interfere with decelerating towards destination
-                self.adjustAcc = dirToTarget * getDeviationAdjustmentAcc(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                self.adjustAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
             end
         else
             -- Counter current movement, if any
             if currSpeed > 0.1 then
-                self.adjustAcc = -vel:normalize() * getDeviationAdjustmentAcc(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                self.adjustAcc = -vel:normalize() * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
             else
-                self.adjustAcc = dirToTarget * getDeviationAdjustmentAcc(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                self.adjustAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
             end
         end
     else

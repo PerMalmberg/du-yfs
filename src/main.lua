@@ -15,6 +15,14 @@ local settings = Settings:New(settingsDb)
 local NAME = "Yoarii's Flight System"
 local VERSION = "0.0.0"
 
+local function loadWarmUptime(fsm, brakes)
+    local ew = settings.def.engineWarmup
+    -- Warmup time is to T50, so double it for full effect
+    local warmupTime = settingsDb:Get(ew.key, ew.default) * 2
+    brakes:SetEngineWarmupTime(warmupTime)
+    fsm:SetEngineWarmupTime(warmupTime)
+end
+
 runner:Execute(
         function()
             log:Info(NAME)
@@ -27,12 +35,8 @@ runner:Execute(
                 coroutine.yield()
             end
 
-            local ew = settings.def.engineWarmup
-            local warmupTime = settingsDb:Get(ew.key, ew.default)
-            r.brakes:SetEngineWarmupTime(warmupTime)
-
             local fsm = FlightFSM(settings)
-            fsm:SetEngineWarmupTime(warmupTime)
+            loadWarmUptime(fsm, r.brakes)
 
             local fc = FC(RouteController(routeDb), fsm)
             fc:ReceiveEvents()

@@ -34,7 +34,7 @@ function state:Flush(next, previous, chaseData)
 
     local dist = next:DistanceTo()
     -- Don't switch if we're nearly there
-    if brakeDistance < dist and dist > 1000 then
+    if brakeDistance < dist and dist > 100 then
         self.fsm:SetState(Travel(self.fsm))
     elseif not self.fsm:CheckPathAlignment(currentPos, chaseData) then
         -- Are we on the the desired path?

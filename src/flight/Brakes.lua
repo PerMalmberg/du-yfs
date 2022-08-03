@@ -9,6 +9,7 @@ local clamp = require("cpml/utils").clamp
 local universe = require("du-libs:universe/Universe")()
 local engine = require("du-libs:abstraction/Engine")()
 local max = math.max
+local min = math.min
 
 local brakes = {}
 brakes.__index = brakes
@@ -202,18 +203,21 @@ function brakes:BrakeDistance(remainingDistance)
         local total = deceleration + influence
         local warmupDistance = engineWarmupTime * speed
 
-        if total < 0 then
-            -- Brakes do not have enough brake force to stop the construct
-            local availableEngineAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-vel:normalize())
-            distance = calcBrakeDistance(speed, availableEngineAcc) + warmupDistance
+        local engineAtmoFactor = calc.Ternary(AtmoDensity() > 0.01, AtmoDensity(), 1)
+        local availableEngineAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-vel:normalize()) * engineAtmoFactor
 
-            if remainingDistance > 0 and distance >= remainingDistance then
-                engineAccelerationNeededToBrake = max(0, calcAcceleration(speed, remainingDistance) - deceleration)
+        if total <= 0 then
+            -- Brakes are not enough to come to a complete stop so make use of engines (or g-forces).
+            distance = calcBrakeDistance(speed, availableEngineAcc) + warmupDistance
+            if remainingDistance >= 0 then
+                engineAccelerationNeededToBrake = calcAcceleration(speed, remainingDistance)
             end
         else
             distance = calcBrakeDistance(speed, total)
+
+            -- Will brakes be enough to stop before we overshoot?
             if remainingDistance > 0 and distance >= remainingDistance then
-                engineAccelerationNeededToBrake = calcAcceleration(speed, remainingDistance)
+                engineAccelerationNeededToBrake = min(availableEngineAcc, calcAcceleration(speed, max(remainingDistance - warmupDistance, warmupDistance)))
             end
         end
     end

@@ -35,12 +35,12 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, chaseData)
-    local brakeDistance, neededBrakeAcceleration = brakes:BrakeDistance(next:DistanceTo())
+    local brakeDistance, _ = brakes:BrakeDistance(next:DistanceTo())
     local currentPos = CurrentPos()
 
     local directionToRabbit = (chaseData.rabbit - currentPos):normalize_inplace()
 
-    if brakeDistance >= next:DistanceTo() or neededBrakeAcceleration > 0 then
+    if brakeDistance >= next:DistanceTo() then
         self.fsm:SetState(ApproachWaypoint(self.fsm))
     elseif not self.fsm:CheckPathAlignment(currentPos, chaseData) then
         -- Are we on the the desired path?
