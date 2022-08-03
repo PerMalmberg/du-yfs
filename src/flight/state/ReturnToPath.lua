@@ -41,7 +41,6 @@ function state:Flush(next, previous, chaseData)
 
     if not self.returnPointAdjusted and moveDir:dot(dirToLine) < 0.8 then
         -- Still moving away from the line, brake and give thrust
-        brakes:Set(true)
         self.fsm:Move(dirToLine, toLine:len(), next.maxSpeed)
     elseif not self.returnPointAdjusted then
         -- Moving to line, fix the return point to the currently closest point

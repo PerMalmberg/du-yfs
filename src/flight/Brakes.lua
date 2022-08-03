@@ -35,6 +35,7 @@ local function new()
         totalMass = 1,
         isWithinAtmo = true,
         overrideAcc = nil,
+        reason = "",
         brakeGroup = EngineGroup("brake"),
         wEngaged = p:CreateValue("Engaged", ""),
         wDistance = p:CreateValue("Brake dist.", "m"),
@@ -61,8 +62,7 @@ function brakes:BrakeUpdate()
     self.isWithinAtmo = universe:ClosestBody(pos):IsWithinAtmosphere(pos)
     self:calculateBreakForce()
     self.wWithinAtmo:Set(self.isWithinAtmo)
-    self.wEngaged:Set(self:IsEngaged())
-    self.wDistance:Set(calc.Round(self:BrakeDistance(), 1))
+    self.wEngaged:Set(self:GetReason())
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
 end
 
@@ -74,9 +74,19 @@ function brakes:IsEngaged()
     return self.enabled or self.forced
 end
 
-function brakes:Set(on, overrideAcc)
+function brakes:GetReason()
+    return calc.Ternary(self.forced, "Forced", self.reason)
+end
+
+function brakes:Set(on, reason, overrideAcc)
     self.enabled = on
-    self.overrideAcc = overrideAcc
+    if on then
+        self.reason = reason
+        self.overrideAcc = overrideAcc
+    else
+        self.reason = "-"
+        self.overrideAcc = nil
+    end
 end
 
 function brakes:Forced(on)
@@ -97,7 +107,7 @@ function brakes:calculateBreakForce(forcedUpdate)
     --[[
         The effective brake force in atmo depends on the atmosphere density and current speed.
         - Speed affects break force such that it increases from 10% to 100% at >=10m/s to >=100m/s
-        - Atmospheric density affects break force in a linearly.
+        - Atmospheric density affects break force linearly.
     ]]
 
     if forcedUpdate or self.updateTimer:Elapsed() > 0.1 then
@@ -202,7 +212,7 @@ function brakes:BrakeDistance(remainingDistance)
             end
         else
             distance = calcBrakeDistance(speed, total)
-            if remainingDistance > 0 and distance + warmupDistance >= remainingDistance then
+            if remainingDistance > 0 and distance >= remainingDistance then
                 engineAccelerationNeededToBrake = calcAcceleration(speed, remainingDistance)
             end
         end
@@ -210,6 +220,7 @@ function brakes:BrakeDistance(remainingDistance)
 
     self.wBrakeAcc:Set(calc.Round(deceleration, 1))
     self.wNeeded:Set(calc.Round(engineAccelerationNeededToBrake, 1))
+    self.wDistance:Set(calc.Round(distance, 1))
 
     return distance, engineAccelerationNeededToBrake
 end

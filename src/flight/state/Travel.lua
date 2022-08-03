@@ -28,7 +28,6 @@ local function new(fsm)
 end
 
 function state:Enter()
-    brakes:Set(false)
     self.rampTimer:Start()
 end
 

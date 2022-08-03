@@ -208,6 +208,7 @@ function fsm:FsmFlush(next, previous)
 
         brakes:Set(false)
 
+        -- Assume we're just going to counter gravity.
         self.acceleration = nullVec
         self.adjustAcc = nullVec
 
@@ -240,13 +241,14 @@ end
 function fsm:Move(direction, distance, maxSpeed, rampFactor)
     local vel = Velocity()
     local travelDir = vel:normalize()
-    local speedDiff = vel:len() - maxSpeed
+    local speed = vel:len()
+    local speedDiff = speed - maxSpeed
 
     self.wPointDistance:Set(calc.Round(distance, 4))
 
     local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(distance)
 
-    local needToBrake = brakeDistance >= distance or brakeAccelerationNeeded > 0
+    local needToBrake = brakeDistance >= distance
 
     if needToBrake then
         brakes:Set(true)
@@ -255,7 +257,7 @@ function fsm:Move(direction, distance, maxSpeed, rampFactor)
         -- Going too fast, brake over the next second
         -- v = v0 + a*t => a = (v - v0) / t => a = speedDiff / t
         -- Since t = 1, acceleration becomes just speedDiff
-        brakes:Set(true, speedDiff)
+        brakes:Set(true, "Too fast", speedDiff)
         self:Thrust()
     elseif speedDiff < -speedMargin then
         -- We must not saturate the engines; giving a massive acceleration
@@ -268,8 +270,8 @@ function fsm:Move(direction, distance, maxSpeed, rampFactor)
     end
 
     -- Help come to a stop if we're going in the wrong direction
-    if travelDir:dot(direction) < 0 then
-        brakes:Set(true)
+    if travelDir:dot(direction) < 0.3 then
+        brakes:Set(true, "Wrong direction")
     end
 end
 
@@ -357,7 +359,7 @@ function fsm:ApplyAcceleration(moveDirection, precision)
             ctrl.setEngineCommand(t.engines:Intersection(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
             ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
         else
-            -- Apply acceleration as a single vector, skipping the adjustment acceleration
+            -- Apply acceleration as a single vector
             local finalAcc = thrustAcc + adjustAcc
             ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
         end
@@ -392,9 +394,6 @@ function fsm:SetState(state)
     end
 
     self.current = state
-
-    -- Ensure state change doesn't cause engines to shutoff
-    self:Thrust()
 end
 
 function fsm:DisableThrust()
