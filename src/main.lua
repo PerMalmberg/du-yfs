@@ -17,10 +17,11 @@ local VERSION = "0.0.0"
 
 local function loadWarmUptime(fsm, brakes)
     local ew = settings.def.engineWarmup
-    -- Warmup time is to T50, so double it for full effect
-    local warmupTime = settingsDb:Get(ew.key, ew.default) * 2
-    brakes:SetEngineWarmupTime(warmupTime)
-    fsm:SetEngineWarmupTime(warmupTime)
+    local warmupTime = settingsDb:Get(ew.key, ew.default)
+    log:Info("Warmup time:", warmupTime)
+    -- Warmup time is to T50, so double it for full engine effect
+    brakes:SetEngineWarmupTime(warmupTime * 2)
+    fsm:SetEngineWarmupTime(warmupTime * 2)
 end
 
 runner:Execute(
