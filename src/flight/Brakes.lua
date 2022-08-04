@@ -10,6 +10,7 @@ local universe = require("du-libs:universe/Universe")()
 local engine = require("du-libs:abstraction/Engine")()
 local max = math.max
 local min = math.min
+local abs = math.abs
 
 local brakes = {}
 brakes.__index = brakes
@@ -170,6 +171,9 @@ function brakes:GravityInfluence(velocity)
     return influence
 end
 
+local last
+local on
+
 function brakes:BrakeDistance(remainingDistance)
     -- https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas
     -- distance = (v^2 - V0^2) / 2*a
@@ -195,38 +199,62 @@ function brakes:BrakeDistance(remainingDistance)
     end
 
     local distance = 0
-    local engineAccelerationNeededToBrake = 0
+    local engineBrakeAcc = 0
 
     if self.currentForce > 0 then
         local influence = self:GravityInfluence(vel)
 
-        local total = deceleration + influence
+        local availableBrakeAcc = deceleration + influence
         local warmupDistance = engineWarmupTime * speed
 
-        local engineAtmoFactor = calc.Ternary(AtmoDensity() > 0.01, AtmoDensity(), 1)
-        local availableEngineAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-vel:normalize()) * engineAtmoFactor
+        local atmosphericDensity = AtmoDensity()
+        local engineAtmoFactor = calc.Ternary(atmosphericDensity > 0.01, atmosphericDensity, 1)
+        local availableEngineAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-vel:normalize())
+        local atmoAdjustedEngineAcc = availableEngineAcc * engineAtmoFactor
 
-        if total <= 0 then
-            -- Brakes are not enough to come to a complete stop so make use of engines (or g-forces).
-            distance = calcBrakeDistance(speed, availableEngineAcc) + warmupDistance
-            if remainingDistance >= 0 then
-                engineAccelerationNeededToBrake = calcAcceleration(speed, remainingDistance)
+        local actualRemainingDistance = remainingDistance - warmupDistance
+        actualRemainingDistance = calc.Ternary(actualRemainingDistance > 0, actualRemainingDistance, remainingDistance)
+
+        local now
+
+        if availableBrakeAcc > 0 then
+            distance = calcBrakeDistance(speed, availableBrakeAcc)
+            if distance >= remainingDistance then
+                engineBrakeAcc = availableEngineAcc
+                distance = calcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
             end
-        else
-            distance = calcBrakeDistance(speed, total)
 
-            -- Will brakes be enough to stop before we overshoot?
-            if remainingDistance > 0 and distance >= remainingDistance then
-                engineAccelerationNeededToBrake = min(availableEngineAcc, calcAcceleration(speed, max(remainingDistance - warmupDistance, warmupDistance)))
+            now = true
+
+            if now ~= last then
+                last = now
+                system.print("A " .. availableBrakeAcc .. " " .. distance)
+            end
+
+        else
+            distance = calcBrakeDistance(speed, atmoAdjustedEngineAcc + availableBrakeAcc) + warmupDistance
+            engineBrakeAcc = availableEngineAcc
+            now = false
+
+            if now ~= last then
+                last = now
+                system.print("B " .. distance .. " " .. engineBrakeAcc)
             end
         end
+
+    end
+
+    local o = distance >= remainingDistance
+    if o ~= on then
+        on = o
+        system.print(tostring(o))
     end
 
     self.wBrakeAcc:Set(calc.Round(deceleration, 1))
-    self.wNeeded:Set(calc.Round(engineAccelerationNeededToBrake, 1))
+    self.wNeeded:Set(calc.Round(engineBrakeAcc, 1))
     self.wDistance:Set(calc.Round(distance, 1))
 
-    return distance, engineAccelerationNeededToBrake
+    return distance, engineBrakeAcc
 end
 
 local singleton
