@@ -244,20 +244,20 @@ function fsm:FsmFlush(next, previous)
 end
 
 ---@param direction Vec3 The direction to travel
----@param distance number The remaining distance
+---@param remainingDistance number The remaining distance
 ---@param maxSpeed number Maximum speed, m/s
 ---@param rampFactor number 0..1 A factor that limits the amount of thrust we may apply.
-function fsm:Move(direction, distance, maxSpeed, rampFactor)
+function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
     local vel = Velocity()
     local travelDir = vel:normalize()
     local speed = vel:len()
     local speedDiff = speed - maxSpeed
 
-    self.wPointDistance:Set(calc.Round(distance, 4))
+    self.wPointDistance:Set(calc.Round(remainingDistance, 4))
 
-    local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(distance)
+    local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(remainingDistance)
 
-    local needToBrake = brakeDistance >= distance
+    local needToBrake = brakeDistance >= remainingDistance
 
     if needToBrake then
         brakes:Set(true, "Distance")
@@ -272,8 +272,7 @@ function fsm:Move(direction, distance, maxSpeed, rampFactor)
         -- We must not saturate the engines; giving a massive acceleration
         -- causes non-axis aligned movement to push us off the path since engines
         -- then fire with all they got which may not result in the vector we want.
-        local movingTowardsTarget = vel:normalize():dot(direction) > 0.8
-        local acc = getAdjustedAcceleration(thrustAccLookup, direction, distance, movingTowardsTarget)
+        local acc = getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, true)
         self:Thrust(direction * acc * (rampFactor or 1))
     else
         -- Just counter gravity.
