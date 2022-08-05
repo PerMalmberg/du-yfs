@@ -2,6 +2,8 @@ local r = require("CommonRequire")
 local brakes = r.brakes
 local vehicle = r.vehicle
 local calc = r.calc
+local CalcAcceleration = calc.CalcAcceleration
+local CalcBrakeDistance = calc.CalcBrakeDistance
 local universe = r.universe
 local Vec3 = r.Vec3
 local nullVec = Vec3()
@@ -299,18 +301,10 @@ function fsm:AdjustForDeviation(chaseData, currentPos, moveDirection)
     local distance = toTarget:len()
     self.currentDeviation = toTarget
 
-    local calcBrakeDistance = function(speed, acceleration)
-        return (speed ^ 2) / (2 * acceleration)
-    end
-
-    local calcAcceleration = function(speed, remainingDistance)
-        return (speed ^ 2) / (2 * remainingDistance)
-    end
-
     local movingTowardsTarget = self.deviationAccum:Add(vel:normalize():dot(dirToTarget) > 0.8) > 0.5
 
     local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:normalize())
-    local brakeDistance = calcBrakeDistance(currSpeed, maxBrakeAcc) + warmupTime * currSpeed
+    local brakeDistance = CalcBrakeDistance(currSpeed, maxBrakeAcc) + warmupTime * currSpeed
     local speedLimit = calc.Scale(distance, 0, toleranceDistance, adjustmentSpeedMin, adjustmentSpeedMax)
 
     self.wAdjTowards:Set(movingTowardsTarget)
@@ -322,13 +316,13 @@ function fsm:AdjustForDeviation(chaseData, currentPos, moveDirection)
         -- Are we moving towards target?
         if movingTowardsTarget then
             if brakeDistance > distance or currSpeed > speedLimit then
-                self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance)
+                self.adjustAcc = -dirToTarget * CalcAcceleration(currSpeed, distance)
             elseif distance > self.lastDevDist then
                 -- Slipping away, nudge back to path
                 self.adjustAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
             elseif distance < toleranceDistance then
                 -- Add brake acc to help stop where we want
-                self.adjustAcc = -dirToTarget * calcAcceleration(currSpeed, distance)
+                self.adjustAcc = -dirToTarget * CalcAcceleration(currSpeed, distance)
             elseif currSpeed < speedLimit then
                 -- This check needs to be last so that it doesn't interfere with decelerating towards destination
                 self.adjustAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
