@@ -201,7 +201,7 @@ function brakes:BrakeDistance(remainingDistance)
     if self.currentForce > 0 then
         local influence = self:GravityInfluence(vel)
 
-        local availableBrakeAcc = deceleration + influence
+        local availableBrakeAcc = deceleration + influence -- This is what remains of the brakes after accounting for g-forces. May be negative, meaning we lack brake force.
         local warmupDistance = engineWarmupTime * speed
 
         local atmosphericDensity = AtmoDensity()
@@ -213,15 +213,18 @@ function brakes:BrakeDistance(remainingDistance)
         actualRemainingDistance = calc.Ternary(actualRemainingDistance > 0, actualRemainingDistance, remainingDistance)
 
         if availableBrakeAcc > 0 then
+            -- There is some power remaining in the brakes
             distance = calcBrakeDistance(speed, availableBrakeAcc)
             if distance >= actualRemainingDistance then
+                -- Just brakes not enough to stop within the remaining distance
                 engineBrakeAcc = availableEngineAcc
                 distance = calcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
             end
         else
+            -- Brakes are too weak to counter g-forces
             local totalAcc = atmoAdjustedEngineAcc + availableBrakeAcc
             if totalAcc < 0 then
-                -- No engine or brake available, we're in free fall
+                -- Even adding in brakes we don't have enough force to counter brakes - we're in free fall.
                 distance = remainingDistance
                 engineBrakeAcc = availableEngineAcc
             else
