@@ -109,13 +109,12 @@ local adjustAccLookup = {
 }
 
 local thrustAccLookup = {
-    { limit = 0, acc = 0.15, reverse = 0.30 },
-    { limit = 0.1, acc = 0.20, reverse = 0.30 },
+    { limit = 0, acc = 0.30, reverse = 0.30 },
+    { limit = 0.1, acc = 0.30, reverse = 0.30 },
     { limit = 0.2, acc = 0.30, reverse = 0.30 },
     { limit = 0.4, acc = 0.40, reverse = 0.30 },
     { limit = 0.8, acc = 0.50, reverse = 0.30 },
-    { limit = 1.6, acc = 0.60, reverse = 0.30 },
-    { limit = 3.2, acc = 0, reverse = 0 }
+    { limit = 1.0, acc = 0, reverse = 0 }
 }
 
 local getAdjustedAcceleration = function(accLookup, dir, distance, movingTowardsTarget)
@@ -125,15 +124,12 @@ local getAdjustedAcceleration = function(accLookup, dir, distance, movingTowards
         else break end
     end
 
-    local max
     if selected.acc == 0 then
-        max = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
+        return engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
     else
-        max = calc.Ternary(movingTowardsTarget, selected.acc, selected.reverse)
+        return calc.Ternary(movingTowardsTarget, selected.acc, selected.reverse)
     end
 
-    -- Scale the already small values over the tolerance distance.
-    return calc.Scale(distance, 0, toleranceDistance, 0.01, max)
 end
 
 local fsm = {}

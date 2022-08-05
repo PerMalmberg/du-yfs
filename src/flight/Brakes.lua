@@ -8,9 +8,6 @@ local sharedPanel = require("du-libs:panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
 local universe = require("du-libs:universe/Universe")()
 local engine = require("du-libs:abstraction/Engine")()
-local max = math.max
-local min = math.min
-local abs = math.abs
 
 local brakes = {}
 brakes.__index = brakes
@@ -38,6 +35,7 @@ local function new()
         isWithinAtmo = true,
         overrideAcc = nil,
         reason = "",
+        state = "",
         brakeGroup = EngineGroup("brake"),
         wEngaged = p:CreateValue("Engaged", ""),
         wDistance = p:CreateValue("Brake dist.", "m"),
@@ -77,7 +75,7 @@ function brakes:IsEngaged()
 end
 
 function brakes:GetReason()
-    return calc.Ternary(self.forced, "Forced", self.reason)
+    return calc.Ternary(self.forced, "Forced", self.reason) .. " " .. self.state
 end
 
 function brakes:Set(on, reason, overrideAcc)
@@ -88,6 +86,7 @@ function brakes:Set(on, reason, overrideAcc)
     else
         self.reason = "-"
         self.overrideAcc = nil
+        self.state = ""
     end
 end
 
@@ -179,10 +178,6 @@ function brakes:BrakeDistance(remainingDistance)
         return (speed ^ 2) / (2 * acceleration)
     end
 
-    local calcAcceleration = function(speed, distance)
-        return (speed ^ 2) / (2 * distance)
-    end
-
     remainingDistance = remainingDistance or 0
 
     local vel = Velocity()
@@ -213,22 +208,26 @@ function brakes:BrakeDistance(remainingDistance)
         actualRemainingDistance = calc.Ternary(actualRemainingDistance > 0, actualRemainingDistance, remainingDistance)
 
         if availableBrakeAcc > 0 then
+            self.state = "A"
             -- There is some power remaining in the brakes
             distance = calcBrakeDistance(speed, availableBrakeAcc)
             if distance >= actualRemainingDistance then
+                self.state = "B"
                 -- Just brakes not enough to stop within the remaining distance
                 engineBrakeAcc = availableEngineAcc
                 distance = calcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
             end
         else
             -- Brakes are too weak to counter g-forces
-            local totalAcc = atmoAdjustedEngineAcc + availableBrakeAcc
-            if totalAcc < 0 then
+            local remainingEngineAcc = atmoAdjustedEngineAcc + availableBrakeAcc
+            if remainingEngineAcc < 0 then
+                self.state = "C"
                 -- Even adding in brakes we don't have enough force to counter brakes - we're in free fall.
-                distance = remainingDistance
+                distance = calcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
                 engineBrakeAcc = availableEngineAcc
             else
-                distance = calcBrakeDistance(speed, totalAcc) + warmupDistance
+                self.state = "D"
+                distance = calcBrakeDistance(speed, remainingEngineAcc) + warmupDistance
                 engineBrakeAcc = availableEngineAcc
             end
         end
