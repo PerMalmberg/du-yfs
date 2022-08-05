@@ -171,9 +171,6 @@ function brakes:GravityInfluence(velocity)
     return influence
 end
 
-local last
-local on
-
 function brakes:BrakeDistance(remainingDistance)
     -- https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas
     -- distance = (v^2 - V0^2) / 2*a
@@ -215,39 +212,23 @@ function brakes:BrakeDistance(remainingDistance)
         local actualRemainingDistance = remainingDistance - warmupDistance
         actualRemainingDistance = calc.Ternary(actualRemainingDistance > 0, actualRemainingDistance, remainingDistance)
 
-        local now
-
         if availableBrakeAcc > 0 then
             distance = calcBrakeDistance(speed, availableBrakeAcc)
-            if distance >= remainingDistance then
+            if distance >= actualRemainingDistance then
                 engineBrakeAcc = availableEngineAcc
                 distance = calcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
             end
-
-            now = true
-
-            if now ~= last then
-                last = now
-                system.print("A " .. availableBrakeAcc .. " " .. distance)
-            end
-
         else
-            distance = calcBrakeDistance(speed, atmoAdjustedEngineAcc + availableBrakeAcc) + warmupDistance
-            engineBrakeAcc = availableEngineAcc
-            now = false
-
-            if now ~= last then
-                last = now
-                system.print("B " .. distance .. " " .. engineBrakeAcc)
+            local totalAcc = atmoAdjustedEngineAcc + availableBrakeAcc
+            if totalAcc < 0 then
+                -- No engine or brake available, we're in free fall
+                distance = remainingDistance
+                engineBrakeAcc = availableEngineAcc
+            else
+                distance = calcBrakeDistance(speed, totalAcc) + warmupDistance
+                engineBrakeAcc = availableEngineAcc
             end
         end
-
-    end
-
-    local o = distance >= remainingDistance
-    if o ~= on then
-        on = o
-        system.print(tostring(o))
     end
 
     self.wBrakeAcc:Set(calc.Round(deceleration, 1))
