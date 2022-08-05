@@ -5,13 +5,8 @@
 * Add unit tests for point options
 * Add unit tests for route
 * Add unit tests for route controller
-* Can we float down on brakes instead of using engines to counter acceleration? (use brake in setEngineCommand?)
-* Why doesn't Travel state accelerate when not at target speed?
-* Brakes in space? Overshoots platform
-* Brakes - get warmup time from setting
-* Engines - get warmup time from setting
 * All classes - use new class template
-* Why does the brake distance flutter while descending with the small elevator?
+* Fix brake interference with small adjustments around destination
 
 # Controls
 
@@ -72,7 +67,7 @@ flowchart TD
   Idle-->Travel
   ApprochingLast{last waypoint}
   ApproachWaypoint -- out of alignment --> ReturnToPath
-  ApproachWaypoint -- dist < brakeDist && dist > 1000 --> Travel
+  ApproachWaypoint -- dist < brakeDist && dist > 100 && time > 1s --> Travel
   ApproachWaypoint -- waypoint reached --> ApprochingLast
   ApprochingLast -- Yes --> Hold
   ApprochingLast -- No --> Travel

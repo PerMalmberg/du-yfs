@@ -3,6 +3,7 @@ local vehicle = r.vehicle
 local brakes = r.brakes
 local checks = r.checks
 require("flight/state/Require")
+local Stopwatch = require("du-libs:system/Stopwatch")
 
 local name = "ApproachWaypoint"
 
@@ -13,7 +14,8 @@ local function new(fsm)
     checks.IsTable(fsm, "fsm", name .. ":new")
 
     local o = {
-        fsm = fsm
+        fsm = fsm,
+        toTravel = Stopwatch()
     }
 
     setmetatable(o, state)
@@ -34,7 +36,18 @@ function state:Flush(next, previous, chaseData)
 
     local dist = next:DistanceTo()
     -- Don't switch if we're nearly there
-    if brakeDistance < dist and dist > 100 then
+    local withinLimit = brakeDistance < dist and dist > 100
+
+    local toTravel = self.toTravel
+    if withinLimit then
+        if not toTravel:IsRunning() then
+            toTravel:Start()
+        end
+    else
+        toTravel:Reset()
+    end
+
+    if withinLimit and toTravel:Elapsed() > 1 then
         self.fsm:SetState(Travel(self.fsm))
     elseif not self.fsm:CheckPathAlignment(currentPos, chaseData) then
         -- Are we on the the desired path?
