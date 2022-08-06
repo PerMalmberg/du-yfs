@@ -119,7 +119,7 @@ local thrustAccLookup = {
     { limit = 1.0, acc = 0, reverse = 0 }
 }
 
-local getAdjustedAcceleration = function(accLookup, dir, distance, movingTowardsTarget)
+local getAdjustedAcceleration = function(accLookup, dir, distance, movingTowardsTarget, forThrust)
     local selected
     for _, v in ipairs(accLookup) do
         if distance >= v.limit then selected = v
@@ -127,7 +127,12 @@ local getAdjustedAcceleration = function(accLookup, dir, distance, movingTowards
     end
 
     if selected.acc == 0 then
-        return engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
+        local warmupDistance = warmupTime * Velocity():len()
+        if forThrust and distance <= warmupDistance then
+            return accLookup[#accLookup - 1].acc
+        else
+            return engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
+        end
     else
         return calc.Ternary(movingTowardsTarget, selected.acc, selected.reverse)
     end
@@ -269,7 +274,7 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
         -- We must not saturate the engines; giving a massive acceleration
         -- causes non-axis aligned movement to push us off the path since engines
         -- then fire with all they got which may not result in the vector we want.
-        local acc = getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, true)
+        local acc = getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, true, true)
         self:Thrust(direction * acc * (rampFactor or 1))
     else
         -- Just counter gravity.
@@ -277,7 +282,7 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
     end
 
     -- Help come to a stop if we're going in the wrong direction
-    if travelDir:dot(direction) < 0.3 then
+    if travelDir:dot(direction) < 0 then
         brakes:Set(true, "Wrong direction")
     end
 end

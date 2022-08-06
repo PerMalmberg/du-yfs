@@ -9,7 +9,6 @@ local clamp = require("cpml/utils").clamp
 local universe = require("du-libs:universe/Universe")()
 local engine = require("du-libs:abstraction/Engine")()
 local CalcBrakeDistance = calc.CalcBrakeDistance
-local CalcBrakeAcceleration = calc.CalcBrakeAcceleration
 
 local brakes = {}
 brakes.__index = brakes
@@ -206,27 +205,28 @@ function brakes:BrakeDistance(remainingDistance)
         actualRemainingDistance = calc.Ternary(actualRemainingDistance > 0, actualRemainingDistance, remainingDistance)
 
         if availableBrakeAcc > 0 then
-            self.state = "A"
             -- There is some power remaining in the brakes
-            distance = CalcBrakeDistance(speed, availableBrakeAcc)
+            self.state = "A"
+            -- Include half the warmup distance in case we need to start using the engines.
+            distance = CalcBrakeDistance(speed, availableBrakeAcc) + warmupDistance / 2
             if distance >= actualRemainingDistance then
                 self.state = "B"
-                -- Just brakes not enough to stop within the remaining distance
+                -- Just brakes are not enough to stop within the remaining distance
                 distance = CalcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
-                engineBrakeAcc = CalcBrakeAcceleration(speed, distance)
+                engineBrakeAcc = availableEngineAcc
             end
         else
             -- Brakes are too weak to counter g-forces
             local remainingEngineAcc = atmoAdjustedEngineAcc + availableBrakeAcc
             if remainingEngineAcc < 0 then
                 self.state = "C"
-                -- Even adding in brakes we don't have enough force to counter brakes - we're in free fall.
-                distance = CalcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
-                engineBrakeAcc = CalcBrakeAcceleration(speed, distance)
+                -- Even adding in brakes we don't have enough force to counter g-forces - we're stalling.
+                distance = remainingDistance
+                engineBrakeAcc = availableEngineAcc
             else
                 self.state = "D"
-                distance = CalcBrakeDistance(speed, remainingEngineAcc) + warmupDistance
-                engineBrakeAcc = CalcBrakeAcceleration(speed, distance)
+                distance = CalcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
+                engineBrakeAcc = availableEngineAcc
             end
         end
     end
