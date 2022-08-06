@@ -2,7 +2,7 @@ local r = require("CommonRequire")
 local brakes = r.brakes
 local vehicle = r.vehicle
 local calc = r.calc
-local CalcAcceleration = calc.CalcAcceleration
+local CalcBrakeAcceleration = calc.CalcBrakeAcceleration
 local CalcBrakeDistance = calc.CalcBrakeDistance
 local universe = r.universe
 local Vec3 = r.Vec3
@@ -131,7 +131,6 @@ local getAdjustedAcceleration = function(accLookup, dir, distance, movingTowards
     else
         return calc.Ternary(movingTowardsTarget, selected.acc, selected.reverse)
     end
-
 end
 
 local fsm = {}
@@ -316,13 +315,13 @@ function fsm:AdjustForDeviation(chaseData, currentPos, moveDirection)
         -- Are we moving towards target?
         if movingTowardsTarget then
             if brakeDistance > distance or currSpeed > speedLimit then
-                self.adjustAcc = -dirToTarget * CalcAcceleration(currSpeed, distance)
+                self.adjustAcc = -dirToTarget * CalcBrakeAcceleration(currSpeed, distance)
             elseif distance > self.lastDevDist then
                 -- Slipping away, nudge back to path
                 self.adjustAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
             elseif distance < toleranceDistance then
                 -- Add brake acc to help stop where we want
-                self.adjustAcc = -dirToTarget * CalcAcceleration(currSpeed, distance)
+                self.adjustAcc = -dirToTarget * CalcBrakeAcceleration(currSpeed, distance)
             elseif currSpeed < speedLimit then
                 -- This check needs to be last so that it doesn't interfere with decelerating towards destination
                 self.adjustAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)

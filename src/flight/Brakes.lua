@@ -9,6 +9,7 @@ local clamp = require("cpml/utils").clamp
 local universe = require("du-libs:universe/Universe")()
 local engine = require("du-libs:abstraction/Engine")()
 local CalcBrakeDistance = calc.CalcBrakeDistance
+local CalcBrakeAcceleration = calc.CalcBrakeAcceleration
 
 local brakes = {}
 brakes.__index = brakes
@@ -211,8 +212,8 @@ function brakes:BrakeDistance(remainingDistance)
             if distance >= actualRemainingDistance then
                 self.state = "B"
                 -- Just brakes not enough to stop within the remaining distance
-                engineBrakeAcc = availableEngineAcc
                 distance = CalcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
+                engineBrakeAcc = CalcBrakeAcceleration(speed, distance)
             end
         else
             -- Brakes are too weak to counter g-forces
@@ -221,11 +222,11 @@ function brakes:BrakeDistance(remainingDistance)
                 self.state = "C"
                 -- Even adding in brakes we don't have enough force to counter brakes - we're in free fall.
                 distance = CalcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
-                engineBrakeAcc = availableEngineAcc
+                engineBrakeAcc = CalcBrakeAcceleration(speed, distance)
             else
                 self.state = "D"
                 distance = CalcBrakeDistance(speed, remainingEngineAcc) + warmupDistance
-                engineBrakeAcc = availableEngineAcc
+                engineBrakeAcc = CalcBrakeAcceleration(speed, distance)
             end
         end
     end

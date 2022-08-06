@@ -34,12 +34,13 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, chaseData)
+    local vel = Velocity()
     local moveDir = Velocity():normalize()
     -- Start with trying to get back to the closest point on the line
     local toLine = chaseData.nearest - Position()
     local dirToLine = toLine:normalize()
 
-    if not self.returnPointAdjusted and moveDir:dot(dirToLine) < 0.8 then
+    if not self.returnPointAdjusted and moveDir:dot(dirToLine) < 0.8 and vel:len() > 1 then
         -- Still moving away from the line, brake and give thrust
         self.fsm:Move(dirToLine, toLine:len(), next.maxSpeed)
     elseif not self.returnPointAdjusted then
