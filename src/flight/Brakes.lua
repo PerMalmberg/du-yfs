@@ -190,7 +190,9 @@ function brakes:BrakeDistance(remainingDistance)
     local distance = 0
     local engineBrakeAcc = 0
 
-    if self.currentForce > 0 then
+    if speed < calc.Kph2Mps(2) then
+        distance = 0.1
+    elseif self.currentForce > 0 then
         local influence = self:GravityInfluence(vel)
 
         local availableBrakeAcc = deceleration + influence -- This is what remains of the brakes after accounting for g-forces. May be negative, meaning we lack brake force.
@@ -213,7 +215,7 @@ function brakes:BrakeDistance(remainingDistance)
                 self.state = "B"
                 -- Just brakes are not enough to stop within the remaining distance
                 distance = CalcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
-                engineBrakeAcc = availableEngineAcc
+                engineBrakeAcc = atmoAdjustedEngineAcc
             end
         else
             -- Brakes are too weak to counter g-forces
@@ -221,12 +223,12 @@ function brakes:BrakeDistance(remainingDistance)
             if remainingEngineAcc < 0 then
                 self.state = "C"
                 -- Even adding in brakes we don't have enough force to counter g-forces - we're stalling.
-                distance = remainingDistance
+                distance = CalcBrakeDistance(speed, availableEngineAcc) + warmupDistance
                 engineBrakeAcc = availableEngineAcc
             else
                 self.state = "D"
                 distance = CalcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
-                engineBrakeAcc = availableEngineAcc
+                engineBrakeAcc = atmoAdjustedEngineAcc
             end
         end
     end
