@@ -7,20 +7,18 @@ local calc = require("du-libs:util/Calc")
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
 local universe = require("du-libs:universe/Universe")()
-local engine = require("du-libs:abstraction/Engine")()
 local CalcBrakeDistance = calc.CalcBrakeDistance
+local CalcBrakeAcceleration = calc.CalcBrakeAcceleration
+local max = math.max
 
 local brakes = {}
 brakes.__index = brakes
 
 local G = vehicle.world.G
-local AtmoDensity = vehicle.world.AtmoDensity
 local TotalMass = vehicle.mass.Total
 local Velocity = vehicle.velocity.Movement
 
-local minimumSpeedForMaxAtmoBrakeForce = 100 --m/s (360km/h) Minimum speed in atmo to reach maximum brake force
 local brakeEfficiencyFactor = 0.6 -- Assume atmospheric brakes are this efficient
-local engineWarmupTime = 1
 
 local function new()
     local ctrl = library:GetController()
@@ -31,44 +29,46 @@ local function new()
         engaged = false,
         forced = false,
         updateTimer = Stopwatch(),
-        currentForce = 0,
         totalMass = 1,
         isWithinAtmo = true,
         overrideAcc = nil,
         reason = "",
         state = "",
+        engineWarmupTime = 1,
         brakeGroup = EngineGroup("brake"),
         wEngaged = p:CreateValue("Engaged", ""),
         wDistance = p:CreateValue("Brake dist.", "m"),
         wNeeded = p:CreateValue("Needed acc.", "m/s2"),
+        wWarmupDist = p:CreateValue("Warm. dist.", "m"),
         wDeceleration = p:CreateValue("Deceleration", "m/s2"),
         wGravInfluence = p:CreateValue("Grav. Influence", "m/s2"),
         wBrakeAcc = p:CreateValue("Brake Acc.", "m/s2"),
-        wMaxBrake = p:CreateValue("Max .", "kN"),
+        wMaxBrake = p:CreateValue("Max.", "kN"),
         wAtmoDensity = p:CreateValue("Atmo. den.", ""),
-        wWithinAtmo = p:CreateValue("Within atmo", "")
+        wWithinAtmo = p:CreateValue("Within atmo", ""),
+        warmupTimer = Stopwatch()
     }
 
     setmetatable(instance, brakes)
 
     -- Do this at start to get some initial values
-    instance:calculateBreakForce(true)
     instance.updateTimer:Start()
 
     return instance
 end
 
 function brakes:BrakeUpdate()
+    self.totalMass = TotalMass()
     local pos = vehicle.position.Current()
     self.isWithinAtmo = universe:ClosestBody(pos):IsWithinAtmosphere(pos)
-    self:calculateBreakForce()
     self.wWithinAtmo:Set(self.isWithinAtmo)
     self.wEngaged:Set(self:GetReason())
     self.wDeceleration:Set(calc.Round(self:Deceleration(), 2))
+    self.wMaxBrake:Set(calc.Round(construct.getMaxBrake() / 1000, 1))
 end
 
 function brakes:SetEngineWarmupTime(t)
-    engineWarmupTime = t
+    self.engineWarmupTime = t
 end
 
 function brakes:IsEngaged()
@@ -105,41 +105,11 @@ function brakes:BrakeFlush()
     end
 end
 
-function brakes:calculateBreakForce(forcedUpdate)
-    --[[
-        The effective brake force in atmo depends on the atmosphere density and current speed.
-        - Speed affects break force such that it increases from 10% to 100% at >=10m/s to >=100m/s
-        - Atmospheric density affects break force linearly.
-    ]]
-
-    if forcedUpdate or self.updateTimer:Elapsed() > 0.1 then
-        local density = AtmoDensity()
-        self.wAtmoDensity:Set(calc.Round(density, 5))
-        self.updateTimer:Start()
-
-        self.totalMass = TotalMass()
-
-        local force = construct.getMaxBrake()
-        local speed = Velocity():len()
-
-        if force ~= nil and force > 0 then
-            if self.isWithinAtmo then
-                local speedAdjustment = clamp(speed / minimumSpeedForMaxAtmoBrakeForce, 0.1, 1)
-                force = force * speedAdjustment * density
-            end
-
-            self.currentForce = force
-        end
-
-        self.wMaxBrake:Set(calc.Round(self.currentForce / 1000, 1))
-    end
-end
-
 ---Returns the deceleration the construct is capable of in the given movement.
 ---@return number The deceleration
 function brakes:Deceleration()
     -- F = m * a => a = F / m
-    return self.currentForce / self.totalMass
+    return construct.getMaxBrake() / self.totalMass
 end
 
 function brakes:GravityInfluence(velocity)
@@ -171,6 +141,11 @@ function brakes:GravityInfluence(velocity)
     return influence
 end
 
+function brakes:GetWarmupDistance()
+    local t = self.engineWarmupTime
+    return clamp(t - self.warmupTimer:Elapsed(), 0, t) * Velocity():len()
+end
+
 function brakes:BrakeDistance(remainingDistance)
     -- https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas
     -- distance = (v^2 - V0^2) / 2*a
@@ -189,53 +164,34 @@ function brakes:BrakeDistance(remainingDistance)
 
     local distance = 0
     local engineBrakeAcc = 0
+    local warmupDist = self:GetWarmupDistance()
 
-    if speed < calc.Kph2Mps(2) then
-        distance = 0.1
-    elseif self.currentForce > 0 then
-        local influence = self:GravityInfluence(vel)
+    local brakeOnly = CalcBrakeDistance(speed, deceleration)
+    local d = calc.Ternary(remainingDistance >= warmupDist, brakeOnly + warmupDist, brakeOnly)
+    self.state = "Only brake"
 
-        local availableBrakeAcc = deceleration + influence -- This is what remains of the brakes after accounting for g-forces. May be negative, meaning we lack brake force.
-        local warmupDistance = engineWarmupTime * speed
-
-        local atmosphericDensity = AtmoDensity()
-        local engineAtmoFactor = calc.Ternary(atmosphericDensity > 0.01, atmosphericDensity, 1)
-        local availableEngineAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-vel:normalize())
-        local atmoAdjustedEngineAcc = availableEngineAcc * engineAtmoFactor
-
-        local actualRemainingDistance = remainingDistance - warmupDistance
-        actualRemainingDistance = calc.Ternary(actualRemainingDistance > 0, actualRemainingDistance, remainingDistance)
-
-        if availableBrakeAcc > 0 then
-            -- There is some power remaining in the brakes
-            self.state = "A"
-            -- Include half the warmup distance in case we need to start using the engines.
-            distance = CalcBrakeDistance(speed, availableBrakeAcc) + warmupDistance / 2
-            if distance >= actualRemainingDistance then
-                self.state = "B"
-                -- Just brakes are not enough to stop within the remaining distance
-                distance = CalcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
-                engineBrakeAcc = atmoAdjustedEngineAcc
-            end
-        else
-            -- Brakes are too weak to counter g-forces
-            local remainingEngineAcc = atmoAdjustedEngineAcc + availableBrakeAcc
-            if remainingEngineAcc < 0 then
-                self.state = "C"
-                -- Even adding in brakes we don't have enough force to counter g-forces - we're stalling.
-                distance = CalcBrakeDistance(speed, availableEngineAcc) + warmupDistance
-                engineBrakeAcc = availableEngineAcc
-            else
-                self.state = "D"
-                distance = CalcBrakeDistance(speed, atmoAdjustedEngineAcc) + warmupDistance
-                engineBrakeAcc = atmoAdjustedEngineAcc
-            end
+    if d >= remainingDistance then
+        distance = d
+    else
+        distance = brakeOnly
+        local r = max(remainingDistance, remainingDistance - warmupDist)
+        if distance >= r then
+            self.state = "With engine"
+            local required = CalcBrakeAcceleration(speed, r)
+            engineBrakeAcc = required - deceleration
         end
+    end
+
+    if engineBrakeAcc > 0 then
+        self.warmupTimer:Start()
+    else
+        self.warmupTimer:Reset()
     end
 
     self.wBrakeAcc:Set(calc.Round(deceleration, 1))
     self.wNeeded:Set(calc.Round(engineBrakeAcc, 1))
     self.wDistance:Set(calc.Round(distance, 1))
+    self.wWarmupDist:Set(calc.Round(warmupDist, 1))
 
     return distance, engineBrakeAcc
 end
