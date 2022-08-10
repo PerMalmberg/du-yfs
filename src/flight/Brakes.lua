@@ -2,7 +2,6 @@ local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Stopwatch = require("du-libs:system/Stopwatch")
 local library = require("du-libs:abstraction/Library")()
 local vehicle = require("du-libs:abstraction/Vehicle")()
-local checks = require("du-libs:debug/Checks")
 local calc = require("du-libs:util/Calc")
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
@@ -112,8 +111,7 @@ function brakes:Deceleration()
     return construct.getMaxBrake() / self.totalMass
 end
 
-function brakes:GravityInfluence(velocity)
-    checks.IsVec3(velocity, "velocity", "bakes:GravityInfluence")
+function brakes:GravityInfluence()
 
     -- When gravity is present, it reduces the available brake force in directions towards the planet and increases it when going out from the planet.
     -- Determine how much the gravity affects us by checking the alignment between our movement vector and the gravity.
