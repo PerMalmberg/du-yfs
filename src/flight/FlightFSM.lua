@@ -262,30 +262,32 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
 
     local needToBrake = brakeDistance >= remainingDistance
 
+    local thrust = nullVec
+
     if needToBrake then
         brakes:Set(true, "Distance")
-        self:Thrust(-travelDir * brakeAccelerationNeeded)
+        thrust = -travelDir * brakeAccelerationNeeded
     elseif speedDiff > 0 then
         -- Going too fast, brake over the next second
         -- v = v0 + a*t => a = (v - v0) / t => a = speedDiff / t
         -- Since t = 1, acceleration becomes just speedDiff
-        brakes:Set(true, "Maintain speed", speedDiff)
-        self:Thrust()
+        brakes:Set(true, "Reduce speed", speedDiff)
     elseif speedDiff < -speedMargin then
         -- We must not saturate the engines; giving a massive acceleration
         -- causes non-axis aligned movement to push us off the path since engines
         -- then fire with all they got which may not result in the vector we want.
         local acc = getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, true, true)
-        self:Thrust(direction * acc * (rampFactor or 1))
+        thrust = direction * acc * (rampFactor or 1)
     else
         -- Just counter gravity.
-        self:Thrust()
     end
 
     -- Help come to a stop if we're going in the wrong direction
     if travelDir:dot(direction) < 0 then
-        --brakes:Set(true, "Wrong direction")
+        brakes:Set(true, "Wrong direction")
     end
+
+    self:Thrust(thrust)
 end
 
 function fsm:CurrentDeviation()

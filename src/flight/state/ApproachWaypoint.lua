@@ -40,9 +40,7 @@ function state:Flush(next, previous, chaseData)
 
     local toTravel = self.toTravel
     if withinLimit then
-        if not toTravel:IsRunning() then
-            toTravel:Start()
-        end
+        toTravel:Start()
     else
         toTravel:Reset()
     end

@@ -56,9 +56,7 @@ function state:Flush(next, previous, chaseData)
         self.fsm:Move(toReturn:normalize(), toReturn:len(), next.maxSpeed)
 
         if toReturn:len() <= next.margin then
-            if not timer:IsRunning() then
-                timer:Start()
-            end
+            timer:Start()
 
             if timer:Elapsed() > 0.3 then
                 self.fsm:SetState(Travel(self.fsm))
