@@ -6,6 +6,7 @@ local calc = require("du-libs:util/Calc")
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
 local universe = require("du-libs:universe/Universe")()
+local engine = require("du-libs:abstraction/Engine")()
 local CalcBrakeDistance = calc.CalcBrakeDistance
 local CalcBrakeAcceleration = calc.CalcBrakeAcceleration
 local max = math.max
@@ -156,11 +157,11 @@ function brakes:BrakeDistance(remainingDistance)
 
     local deceleration = self:Deceleration()
 
-    local forcedEngine = false
+    local belowPeakSpeed = false
     if self.isWithinAtmo then
         -- Assume we only have a fraction of the brake force available
         deceleration = deceleration * brakeEfficiencyFactor
-        forcedEngine = speed < brakePeakSpeed
+        belowPeakSpeed = speed < brakePeakSpeed
     end
 
     local distance = 0
@@ -168,19 +169,19 @@ function brakes:BrakeDistance(remainingDistance)
     local warmupDist = self:GetWarmupDistance()
 
     local brakeOnly = CalcBrakeDistance(speed, deceleration)
-    local d = calc.Ternary(remainingDistance >= warmupDist, brakeOnly + warmupDist, brakeOnly)
-    self.state = "Only brake"
+    local availableEngineBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-vel:normalize()) + self:GravityInfluence()
 
-    if d >= remainingDistance then
-        distance = d
-    else
-        distance = brakeOnly
-        local r = max(1, remainingDistance - warmupDist)
-        if distance >= r or forcedEngine then
-            self.state = "With engine"
-            local required = CalcBrakeAcceleration(speed, r)
-            engineBrakeAcc = required - deceleration
-        end
+    local engineOnly = remainingDistance
+    if availableEngineBrakeAcc > 0 then
+        -- When speed is low, don't include warmup distance as that causes problems reaching the destination.
+        engineOnly = CalcBrakeDistance(speed, availableEngineBrakeAcc) + calc.Ternary(speed > calc.Kph2Mps(2), warmupDist, 0)
+    end
+
+    local effectiveBrakeDistance = calc.Ternary(belowPeakSpeed, engineOnly, brakeOnly)
+
+    if effectiveBrakeDistance >= remainingDistance then
+        distance = effectiveBrakeDistance
+        engineBrakeAcc = CalcBrakeAcceleration(speed, remainingDistance)
     end
 
     if engineBrakeAcc > 0 then
