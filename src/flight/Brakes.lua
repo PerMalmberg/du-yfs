@@ -17,6 +17,7 @@ local G = vehicle.world.G
 local TotalMass = vehicle.mass.Total
 local Velocity = vehicle.velocity.Movement
 
+local brakePeakSpeed = 100 -- The speed, at which brakes gives maximum brake force in m/s
 local brakeEfficiencyFactor = 0.6 -- Assume atmospheric brakes are this efficient
 
 local function new()
@@ -155,9 +156,11 @@ function brakes:BrakeDistance(remainingDistance)
 
     local deceleration = self:Deceleration()
 
+    local forcedEngine = false
     if self.isWithinAtmo then
         -- Assume we only have a fraction of the brake force available
         deceleration = deceleration * brakeEfficiencyFactor
+        forcedEngine = speed < brakePeakSpeed
     end
 
     local distance = 0
@@ -172,8 +175,8 @@ function brakes:BrakeDistance(remainingDistance)
         distance = d
     else
         distance = brakeOnly
-        local r = max(remainingDistance, remainingDistance - warmupDist)
-        if distance >= r then
+        local r = max(1, remainingDistance - warmupDist)
+        if distance >= r or forcedEngine then
             self.state = "With engine"
             local required = CalcBrakeAcceleration(speed, r)
             engineBrakeAcc = required - deceleration
