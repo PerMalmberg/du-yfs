@@ -426,7 +426,7 @@ function fsm:NearestPointBetweenWaypoints(wpStart, wpEnd, currentPos, ahead)
     local rabbitDistance = min(distanceFromStart + ahead, totalDiff:len())
     local rabbit = wpStart.destination + dir * rabbitDistance
 
-    if startDiff:normalize():dot(dir) < 1 then
+    if startDiff:normalize():dot(dir) < 0 then
         return { nearest = wpStart.destination, rabbit = rabbit }
     elseif startDiff:len() >= totalDiff:len() then
         return { nearest = wpEnd.destination, rabbit = rabbit }
