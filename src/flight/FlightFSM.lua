@@ -18,6 +18,7 @@ local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
 local Acceleration = vehicle.acceleration.Movement
 local abs = math.abs
+local min = math.min
 
 local longitudinal = "longitudinal"
 local vertical = "vertical"
@@ -283,7 +284,7 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
 
     -- Help come to a stop if we're going in the wrong direction
     if travelDir:dot(direction) < 0 then
-        brakes:Set(true, "Wrong direction")
+        --brakes:Set(true, "Wrong direction")
     end
 end
 
@@ -420,14 +421,17 @@ function fsm:NearestPointBetweenWaypoints(wpStart, wpEnd, currentPos, ahead)
     local nearestPoint = calc.NearestPointOnLine(wpStart.destination, dir, currentPos)
 
     ahead = (ahead or 0)
-    local point = nearestPoint + dir * ahead
-    local remaining = wpEnd.destination - point
+    local startDiff = nearestPoint - wpStart.destination
+    local distanceFromStart = startDiff:len()
+    local rabbitDistance = min(distanceFromStart + ahead, totalDiff:len())
+    local rabbit = wpStart.destination + dir * rabbitDistance
 
-    -- Is the point past the end (remaining points back towards start or we're very close to the destination)?
-    if remaining:normalize():dot(dir) < 1 or remaining:len() < 0.01 then
-        return { rabbit = wpEnd.destination, nearest = nearestPoint }
+    if startDiff:normalize():dot(dir) < 1 then
+        return { nearest = wpStart.destination, rabbit = rabbit }
+    elseif startDiff:len() >= totalDiff:len() then
+        return { nearest = wpEnd.destination, rabbit = rabbit }
     else
-        return { rabbit = point, nearest = nearestPoint }
+        return { nearest = nearestPoint, rabbit = rabbit }
     end
 end
 
