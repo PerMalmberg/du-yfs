@@ -13,6 +13,7 @@ local sharedPanel = require("du-libs:panel/SharedPanel")()
 local engine = r.engine
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Accumulator = require("du-libs:util/Accumulator")
+local PID = require("cpml/pid")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
@@ -25,6 +26,7 @@ local vertical = "vertical"
 local lateral = "lateral"
 local airfoil = "airfoil"
 local thrustTag = "thrust"
+local brakeTag = "brake"
 local Forward = vehicle.orientation.Forward
 local Right = vehicle.orientation.Right
 
@@ -38,10 +40,10 @@ end
 
 local normalModeGroup = {
     thrust = {
-        engines = EngineGroup(thrustTag, airfoil),
-        prio1Tag = airfoil,
-        prio2Tag = thrustTag,
-        prio3Tag = "",
+        engines = EngineGroup(brakeTag, thrustTag, airfoil),
+        prio1Tag = brakeTag,
+        prio2Tag = airfoil,
+        prio3Tag = thrustTag,
         antiG = AntiG
     },
     adjust = { engines = EngineGroup(),
@@ -53,14 +55,14 @@ local normalModeGroup = {
 }
 
 local forwardGroup = {
-    thrust = { engines = EngineGroup(longitudinal),
-               prio1Tag = thrustTag,
-               prio2Tag = "",
+    thrust = { engines = EngineGroup(brakeTag, longitudinal),
+               prio1Tag = brakeTag,
+               prio2Tag = thrustTag,
                prio3Tag = "",
                antiG = NoAntiG
     },
-    adjust = { engines = EngineGroup(airfoil, lateral, vertical),
-               prio1Tag = airfoil,
+    adjust = { engines = EngineGroup(brakeTag, lateral, vertical),
+               prio1Tag = brakeTag,
                prio2Tag = lateral,
                prio3Tag = vertical,
                antiG = AntiG
@@ -68,31 +70,31 @@ local forwardGroup = {
 }
 
 local rightGroup = {
-    thrust = { engines = EngineGroup(lateral),
-               prio1Tag = thrustTag,
-               prio2Tag = "",
+    thrust = { engines = EngineGroup(brakeTag, lateral),
+               prio1Tag = brakeTag,
+               prio2Tag = thrustTag,
                prio3Tag = "",
                antiG = NoAntiG
     },
-    adjust = { engines = EngineGroup(vertical, longitudinal),
-               prio1Tag = vertical,
-               prio2Tag = longitudinal,
-               prio3Tag = "",
+    adjust = { engines = EngineGroup(brakeTag, vertical, longitudinal),
+               prio1Tag = brakeTag,
+               prio2Tag = vertical,
+               prio3Tag = longitudinal,
                antiG = AntiG
     }
 }
 
 local upGroup = {
-    thrust = { engines = EngineGroup(vertical),
-               prio1Tag = vertical,
-               prio2Tag = "",
+    thrust = { engines = EngineGroup(brakeTag, vertical),
+               prio1Tag = brakeTag,
+               prio2Tag = vertical,
                prio3Tag = "",
                antiG = AntiG
     },
-    adjust = { engines = EngineGroup(lateral, longitudinal),
-               prio1Tag = vertical,
-               prio2Tag = longitudinal,
-               prio3Tag = "",
+    adjust = { engines = EngineGroup(brakeTag, lateral, longitudinal),
+               prio1Tag = brakeTag,
+               prio2Tag = vertical,
+               prio3Tag = longitudinal,
                antiG = NoAntiG
     }
 }
@@ -111,14 +113,7 @@ local adjustAccLookup = {
     { limit = 0.1, acc = 0, reverse = 0 }
 }
 
-local thrustAccLookup = {
-    { limit = 0, acc = 0.30, reverse = 0.30 },
-    { limit = 0.1, acc = 0.30, reverse = 0.30 },
-    { limit = 0.2, acc = 0.30, reverse = 0.30 },
-    { limit = 0.4, acc = 0.40, reverse = 0.30 },
-    { limit = 0.8, acc = 0.50, reverse = 0.30 },
-    { limit = 1.0, acc = 0, reverse = 0 }
-}
+
 
 local getAdjustedAcceleration = function(accLookup, dir, distance, movingTowardsTarget, forThrust)
     local selected
@@ -161,7 +156,8 @@ local function new(settings)
         adjustAcc = nullVec,
         lastDevDist = 0,
         currentDeviation = nullVec,
-        deviationAccum = Accumulator:New(10)
+        deviationAccum = Accumulator:New(10),
+        speedPid = PID(1, 0.001, 1)
     }
 
     setmetatable(instance, fsm)
@@ -253,41 +249,35 @@ end
 function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
     local vel = Velocity()
     local travelDir = vel:normalize()
-    local speed = vel:len()
-    local speedDiff = speed - maxSpeed
+    local currentSpeed = vel:len()
 
     self.wPointDistance:Set(calc.Round(remainingDistance, 4))
 
-    local brakeDistance, brakeAccelerationNeeded = brakes:BrakeDistance(remainingDistance)
-
-    local needToBrake = brakeDistance >= remainingDistance
-
-    local thrust = nullVec
-
-    if needToBrake then
-        brakes:Set(true, "Distance")
-        thrust = -travelDir * brakeAccelerationNeeded
-    elseif speedDiff > 0 then
-        -- Going too fast, brake over the next second
-        -- v = v0 + a*t => a = (v - v0) / t => a = speedDiff / t
-        -- Since t = 1, acceleration becomes just speedDiff
-        brakes:Set(true, "Reduce speed", speedDiff)
-    elseif speedDiff < -speedMargin then
-        -- We must not saturate the engines; giving a massive acceleration
-        -- causes non-axis aligned movement to push us off the path since engines
-        -- then fire with all they got which may not result in the vector we want.
-        local acc = getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, true, true)
-        thrust = direction * acc * (rampFactor or 1)
-    else
-        -- Just counter gravity.
+    -- Calculate max speed we may have with available brake force to come to a stop at the target
+    local brakeForce = brakes:Deceleration() + brakes:GravityInfluence()
+    local engineForce = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-travelDir)
+    -- v^2 = v0^2 + 2a*d, with V0=0 => v = sqrt(2a*d)
+    local CalcMaxSpeed = function(a, d)
+        return math.sqrt(2*a*d)
     end
 
-    -- Help come to a stop if we're going in the wrong direction
-    if travelDir:dot(direction) < 0 then
-        brakes:Set(true, "Wrong direction")
+    local brakeSpeed = CalcMaxSpeed(brakeForce, remainingDistance)
+    local engineSpeed = CalcMaxSpeed(engineForce, remainingDistance)
+    local targetSpeed = min(maxSpeed, brakeSpeed, engineSpeed)
+
+    local speedDiff =  targetSpeed - currentSpeed
+
+    self.speedPid:inject(speedDiff)
+
+    local thrust = self.speedPid:get()
+    local sign = calc.Sign(thrust)
+    if sign ~= 0 then
+        --local availableAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(sign * direction)
+        --thrust = sign * min(availableAcc, abs(value))
     end
 
-    self:Thrust(thrust)
+    system.print(speedDiff .. " " .. brakeSpeed .. " " .. engineSpeed .. " " .. targetSpeed .. " " .. maxSpeed)
+    self:Thrust(direction * thrust)
 end
 
 function fsm:CurrentDeviation()
@@ -355,21 +345,24 @@ function fsm:ApplyAcceleration(moveDirection, precision)
     if self.acceleration == nil then
         ctrl.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
     else
-        local groups = self:GetEngines(moveDirection, precision)
-        local t = groups.thrust
-        local a = groups.adjust
-        local thrustAcc = self.acceleration + t.antiG() - Vec3(construct.getWorldAirFrictionAcceleration())
-        local adjustAcc = (self.adjustAcc or nullVec) + a.antiG()
+        local thrustAcc = self.acceleration
+        ctrl.setEngineCommand("brake thrust", { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, "brake", "thrust", "", 0.001)
 
-        if precision then
-            -- Apply acceleration independently
-            ctrl.setEngineCommand(t.engines:Intersection(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
-            ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
-        else
-            -- Apply acceleration as a single vector
-            local finalAcc = thrustAcc + adjustAcc
-            ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
-        end
+        --local groups = self:GetEngines(moveDirection, precision)
+        --local t = groups.thrust
+        --local a = groups.adjust
+        --local thrustAcc = self.acceleration + t.antiG() - Vec3(construct.getWorldAirFrictionAcceleration())
+        --local adjustAcc = (self.adjustAcc or nullVec) + a.antiG()
+        --
+        --if precision then
+        --    -- Apply acceleration independently
+        --    ctrl.setEngineCommand(t.engines:Intersection(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
+        --    ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
+        --else
+        --    -- Apply acceleration as a single vector
+        --    local finalAcc = thrustAcc + adjustAcc
+        --    ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
+        --end
     end
 end
 
