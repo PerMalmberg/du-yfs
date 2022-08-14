@@ -30,7 +30,7 @@ local function new()
         engaged = false,
         forced = false,
         updateTimer = Stopwatch(),
-        totalMass = 1,
+        totalMass = TotalMass(),
         isWithinAtmo = true,
         overrideAcc = nil,
         reason = "",
@@ -171,13 +171,13 @@ function brakes:BrakeDistance(remainingDistance)
     local brakeOnly = CalcBrakeDistance(speed, deceleration)
     local availableEngineBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-vel:normalize()) + self:GravityInfluence()
 
-    local engineOnly = remainingDistance
+    local engineOnly = 0
     if availableEngineBrakeAcc > 0 then
         -- When speed is low, don't include warmup distance as that causes problems reaching the destination.
         engineOnly = CalcBrakeDistance(speed, availableEngineBrakeAcc) + calc.Ternary(speed > calc.Kph2Mps(2), warmupDist, 0)
     end
 
-    local effectiveBrakeDistance = calc.Ternary(belowPeakSpeed, engineOnly, brakeOnly)
+    local effectiveBrakeDistance = max(engineOnly, brakeOnly)
 
     if effectiveBrakeDistance >= remainingDistance then
         distance = effectiveBrakeDistance
