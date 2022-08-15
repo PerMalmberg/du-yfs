@@ -152,7 +152,8 @@ local function new(settings)
         wStateName = p:CreateValue("State", ""),
         wPointDistance = p:CreateValue("Point dist.", "m"),
         wAcceleration = p:CreateValue("Acceleration", "m/s2"),
-        wSpeed = p:CreateValue("Abs. speed", "m/s"),
+        wTargetSpeed = p:CreateValue("Target speed", "km/h"),
+        wSpeed = p:CreateValue("Abs. speed", "km/h"),
         wAdjTowards = p:CreateValue("Adj. towards"),
         wAdjDist = p:CreateValue("Adj. distance", "m"),
         wAdjAcc = p:CreateValue("Adj. acc", "m/s2"),
@@ -269,29 +270,31 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
     self.wPointDistance:Set(calc.Round(remainingDistance, 4))
 
     -- Calculate max speed we may have with available brake force to come to a stop at the target
-    local brakeForce = brakes:Deceleration() + brakes:GravityInfluence()
-    local engineForce = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-travelDir)
+    local brakeAcc = brakes:Deceleration() + brakes:GravityInfluence()
+    local engineAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-travelDir)
     -- v^2 = v0^2 + 2a*d, with V0=0 => v = sqrt(2a*d)
     local CalcMaxSpeed = function(acceleration, distance)
         return math.sqrt(2 * acceleration * distance)
     end
 
     -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
-    local brakeMaxSpeed = CalcMaxSpeed(brakeForce, remainingDistance)
+    local brakeMaxSpeed = CalcMaxSpeed(brakeAcc, remainingDistance)
 
     local currentSpeed = vel:len()
-    local engineMaxSpeed = CalcMaxSpeed(engineForce, max(remainingDistance, remainingDistance - self:GetEngineWarmupTime() * currentSpeed))
+    local engineMaxSpeed = CalcMaxSpeed(engineAcc, max(remainingDistance, remainingDistance - self:GetEngineWarmupTime() * currentSpeed))
 
     -- Prefer the method with highest speed; i.e. shortest brake distance
     local targetSpeed = min(maxSpeed, max(brakeMaxSpeed, engineMaxSpeed))
+    self.wTargetSpeed:Set(calc.Mps2Kph(targetSpeed))
 
-    local speedDiff =  targetSpeed - currentSpeed
+    system.print(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1) .. " " .. calc.Round(calc.Mps2Kph(engineMaxSpeed), 1))
 
     if currentSpeed > targetSpeed then
         -- Going too fast, brake over the next second
         -- v = v0 + a*t => a = (v - v0) / t => a = speedDiff / t
-        -- Since t = 1, acceleration becomes just speedDiff
-        brakes:Set(true, "Reduce speed", speedDiff)
+        -- currentSpeed - targetSpeed
+        -- Since t = 1, acceleration becomes just speed difference
+        brakes:Set(true, "Reduce speed", abs(currentSpeed - targetSpeed))
         -- QQQ Add engines if needed
         self:Thrust()
     elseif targetSpeed - currentSpeed > speedMargin then
@@ -398,7 +401,7 @@ function fsm:Update()
     local c = self.current
     if c ~= nil then
         self.wAcceleration:Set(calc.Round(Acceleration():len(), 2))
-        self.wSpeed:Set(calc.Round(Velocity():len(), 2))
+        self.wSpeed:Set(calc.Round(calc.Mps2Kph(Velocity():len()), 1))
         c:Update()
     end
 end
