@@ -6,7 +6,7 @@
 * Add unit tests for route
 * Add unit tests for route controller
 * All classes - use new class template
-* Fix brake interference with small adjustments around destination
+* Adjustment read zero distance when off from path sometimes.
 
 # Controls
 
