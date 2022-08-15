@@ -270,8 +270,9 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
     self.wPointDistance:Set(calc.Round(remainingDistance, 4))
 
     -- Calculate max speed we may have with available brake force to come to a stop at the target
-    local brakeAcc = brakes:Deceleration() + brakes:GravityInfluence()
-    local engineAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-travelDir)
+    -- Might not enough brakes or engines to counter gravity so don't go below 0
+    local brakeAcc = max(0, brakes:Deceleration() + brakes:GravityInfluence())
+    local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-travelDir) + brakes:GravityInfluence())
     -- v^2 = v0^2 + 2a*d, with V0=0 => v = sqrt(2a*d)
     local CalcMaxSpeed = function(acceleration, distance)
         return math.sqrt(2 * acceleration * distance)
@@ -284,19 +285,32 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
     local engineMaxSpeed = CalcMaxSpeed(engineAcc, max(remainingDistance, remainingDistance - self:GetEngineWarmupTime() * currentSpeed))
 
     -- Prefer the method with highest speed; i.e. shortest brake distance
-    local targetSpeed = min(maxSpeed, max(brakeMaxSpeed, engineMaxSpeed))
-    self.wTargetSpeed:Set(calc.Mps2Kph(targetSpeed))
+    local targetSpeed = min(maxSpeed, max(brakeMaxSpeed, engineMaxSpeed)) * 0.8 -- QQQ make configurable
 
-    system.print(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1) .. " " .. calc.Round(calc.Mps2Kph(engineMaxSpeed), 1))
+
+    -- Help come to a stop if we're going in the wrong direction
+    if travelDir:dot(direction) < -0.1 then
+       targetSpeed = 0
+        system.print(travelDir:dot(direction))
+    end
+
+    self.wTargetSpeed:Set(calc.Mps2Kph(targetSpeed))
 
     if currentSpeed > targetSpeed then
         -- Going too fast, brake over the next second
         -- v = v0 + a*t => a = (v - v0) / t => a = speedDiff / t
         -- currentSpeed - targetSpeed
         -- Since t = 1, acceleration becomes just speed difference
-        brakes:Set(true, "Reduce speed", abs(currentSpeed - targetSpeed))
-        -- QQQ Add engines if needed
-        self:Thrust()
+        brakes:Set(true, "Reduce speed")--, abs(currentSpeed - targetSpeed))
+        local thrust = Vec3()
+
+        local warmupDistance = self:GetEngineWarmupTime() * currentSpeed
+
+        -- If slow and going towards point
+        --if currentSpeed <= calc.Kph2Mps(60) and direction:dot(vel:normalize()) > 0 then
+            thrust = -direction * CalcBrakeAcceleration(currentSpeed, max(remainingDistance - warmupDistance, remainingDistance))
+        --end
+        self:Thrust(thrust)
     elseif targetSpeed - currentSpeed > speedMargin then
         -- We must not saturate the engines; giving a massive acceleration
         -- causes non-axis aligned movement to push us off the path since engines
@@ -306,11 +320,6 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
     else
         -- Just counter gravity.
         self:Thrust()
-    end
-
-    -- Help come to a stop if we're going in the wrong direction
-    if travelDir:dot(direction) < 0 then
-        brakes:Set(true, "Wrong direction")
     end
 end
 
