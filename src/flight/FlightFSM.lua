@@ -1,6 +1,7 @@
 local r = require("CommonRequire")
 local brakes = r.brakes
 local vehicle = r.vehicle
+local world = vehicle.world
 local calc = r.calc
 local CalcBrakeAcceleration = calc.CalcBrakeAcceleration
 local CalcBrakeDistance = calc.CalcBrakeDistance
@@ -163,7 +164,7 @@ local function new(settings)
         adjustAcc = nullVec,
         lastDevDist = 0,
         currentDeviation = nullVec,
-        deviationAccum = Accumulator:New(10)
+        deviationAccum = Accumulator:New(10, Accumulator.Truth)
     }
 
     setmetatable(instance, fsm)
@@ -270,46 +271,59 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
     self.wPointDistance:Set(calc.Round(remainingDistance, 4))
 
     -- Calculate max speed we may have with available brake force to come to a stop at the target
-    -- Might not enough brakes or engines to counter gravity so don't go below 0
+    -- Might not be enough brakes or engines to counter gravity so don't go below 0
     local brakeAcc = max(0, brakes:Deceleration() + brakes:GravityInfluence())
     local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-travelDir) + brakes:GravityInfluence())
-    -- v^2 = v0^2 + 2a*d, with V0=0 => v = sqrt(2a*d)
+
     local CalcMaxSpeed = function(acceleration, distance)
-        return math.sqrt(2 * acceleration * distance)
+        -- v^2 = v0^2 + 2a*d, with V0=0 => v = sqrt(2a*d)
+        return (2 * acceleration * distance) ^ 0.5
     end
 
-    -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
-    local brakeMaxSpeed = CalcMaxSpeed(brakeAcc, remainingDistance)
-
     local currentSpeed = vel:len()
-    local engineMaxSpeed = CalcMaxSpeed(engineAcc, max(remainingDistance, remainingDistance - self:GetEngineWarmupTime() * currentSpeed))
+    local engineMaxSpeed = CalcMaxSpeed(engineAcc, remainingDistance)
 
-    -- Prefer the method with highest speed; i.e. shortest brake distance
-    local targetSpeed = min(maxSpeed, max(brakeMaxSpeed, engineMaxSpeed)) * 0.8 -- QQQ make configurable
+    -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
+    local brakeMaxSpeed = CalcMaxSpeed(brakeAcc, remainingDistance)-- * 0.6 -- QQQ Brake efficiency
 
+    -- Assume neither brake nor engine can brake us so default to 1 km/h.
+    -- Setting it to zero locks construct in place.
+    local targetSpeed = calc.Kph2Mps(1)
+
+    if brakeMaxSpeed > 0 or engineMaxSpeed > 0 then
+        if world.IsInAtmo() and vel:len() < calc.Kph2Mps(360) then
+            -- Atmospheric brakes start giving less force at this speed, rely on engines
+            targetSpeed = engineMaxSpeed
+        else
+            -- Prefer the method with highest speed; i.e. shortest brake distance
+            targetSpeed = max(brakeMaxSpeed, engineMaxSpeed)
+        end
+    end
+
+    targetSpeed = min(maxSpeed, targetSpeed)
 
     -- Help come to a stop if we're going in the wrong direction
     if travelDir:dot(direction) < -0.1 then
        targetSpeed = 0
-        system.print(travelDir:dot(direction))
     end
 
+    --system.print(calc.Mps2Kph(targetSpeed) .. " " .. calc.Mps2Kph(brakeMaxSpeed) .. " " .. calc.Mps2Kph(engineMaxSpeed))
     self.wTargetSpeed:Set(calc.Mps2Kph(targetSpeed))
 
     if currentSpeed > targetSpeed then
-        -- Going too fast, brake over the next second
-        -- v = v0 + a*t => a = (v - v0) / t => a = speedDiff / t
-        -- currentSpeed - targetSpeed
-        -- Since t = 1, acceleration becomes just speed difference
-        brakes:Set(true, "Reduce speed")--, abs(currentSpeed - targetSpeed))
+        -- Going too fast
+        brakes:Set(true, "Reduce speed")
         local thrust = Vec3()
-
-        local warmupDistance = self:GetEngineWarmupTime() * currentSpeed
-
-        -- If slow and going towards point
-        --if currentSpeed <= calc.Kph2Mps(60) and direction:dot(vel:normalize()) > 0 then
-            thrust = -direction * CalcBrakeAcceleration(currentSpeed, max(remainingDistance - warmupDistance, remainingDistance))
-        --end
+        if direction:dot(travelDir) > 0 then
+            -- Moving towards point, brake
+            -- d = v0 * t + 0.5*a*t^2 => d - v0 * t = 0.5 * a* t^2 =>
+            -- a = (d - v0 * t) / (0.5 * t^2)
+            local time = remainingDistance / vel:len()
+            thrust = -travelDir * remainingDistance / (0.5 * time^2)
+        else
+            -- Moving away from point, accelerate towards it
+            thrust = direction * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction)
+        end
         self:Thrust(thrust)
     elseif targetSpeed - currentSpeed > speedMargin then
         -- We must not saturate the engines; giving a massive acceleration
