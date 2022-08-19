@@ -18,6 +18,8 @@ require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
 local Acceleration = vehicle.acceleration.Movement
+local utils = require("cpml/utils")
+local clamp = utils.clamp
 local abs = math.abs
 local min = math.min
 local max = math.max
@@ -273,15 +275,26 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
     -- Calculate max speed we may have with available brake force to come to a stop at the target
     -- Might not be enough brakes or engines to counter gravity so don't go below 0
     local brakeAcc = max(0, brakes:Deceleration() + brakes:GravityInfluence())
+
+    local currentSpeed = vel:len()
+
+    local function ScaleForWarmup()
+        local warmupDistance = currentSpeed * self:GetEngineWarmupTime()
+        if remainingDistance <= 0 or warmupDistance <= 0 then
+            return 1
+        end
+
+        return clamp(5 * warmupDistance / remainingDistance, 0, 1)
+    end
+
     local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-travelDir) + brakes:GravityInfluence())
 
-    local CalcMaxSpeed = function(acceleration, distance)
+    local function CalcMaxSpeed(acceleration, distance)
         -- v^2 = v0^2 + 2a*d, with V0=0 => v = sqrt(2a*d)
         return (2 * acceleration * distance) ^ 0.5
     end
 
-    local currentSpeed = vel:len()
-    local engineMaxSpeed = CalcMaxSpeed(engineAcc, remainingDistance)
+    local engineMaxSpeed = CalcMaxSpeed(engineAcc * ScaleForWarmup(), remainingDistance)
 
     -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
     local brakeMaxSpeed = CalcMaxSpeed(brakeAcc, remainingDistance)-- * 0.6 -- QQQ Brake efficiency
@@ -316,10 +329,7 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
         local thrust = Vec3()
         if direction:dot(travelDir) > 0 then
             -- Moving towards point, brake
-            -- d = v0 * t + 0.5*a*t^2 => d - v0 * t = 0.5 * a* t^2 =>
-            -- a = (d - v0 * t) / (0.5 * t^2)
-            local time = remainingDistance / vel:len()
-            thrust = -travelDir * remainingDistance / (0.5 * time^2)
+            thrust = -travelDir * engineAcc
         else
             -- Moving away from point, accelerate towards it
             thrust = direction * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction)
