@@ -1,8 +1,6 @@
 local r = require("CommonRequire")
-local brakes = r.brakes
 local checks = r.checks
 local vehicle = r.vehicle
-local engine = r.engine
 local Stopwatch = require("du-libs:system/StopWatch")
 
 local Velocity = vehicle.velocity.Movement
@@ -33,7 +31,7 @@ end
 function state:Leave()
 end
 
-function state:Flush(next, previous, chaseData)
+function state:Flush(deltaTime, next, previous, chaseData)
     local vel = Velocity()
     local moveDir = Velocity():normalize()
     -- Start with trying to get back to the closest point on the line
@@ -42,7 +40,7 @@ function state:Flush(next, previous, chaseData)
 
     if not self.returnPointAdjusted and moveDir:dot(dirToLine) < 0.8 and vel:len() > 1 then
         -- Still moving away from the line, brake and give thrust
-        self.fsm:Move(dirToLine, toLine:len(), next.maxSpeed)
+        self.fsm:Move(deltaTime, dirToLine, toLine:len(), next.maxSpeed)
     elseif not self.returnPointAdjusted then
         -- Moving to line, fix the return point to the currently closest point
         self.returnPoint = chaseData.nearest
@@ -53,7 +51,7 @@ function state:Flush(next, previous, chaseData)
         local timer = self.sw
         local toReturn = self.returnPoint - Position()
 
-        self.fsm:Move(toReturn:normalize(), toReturn:len(), next.maxSpeed)
+        self.fsm:Move(deltaTime, toReturn:normalize(), toReturn:len(), next.maxSpeed)
 
         if toReturn:len() <= next.margin then
             timer:Start()

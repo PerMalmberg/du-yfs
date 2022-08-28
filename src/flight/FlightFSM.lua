@@ -14,6 +14,7 @@ local sharedPanel = require("du-libs:panel/SharedPanel")()
 local engine = r.engine
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Accumulator = require("du-libs:util/Accumulator")
+local Stopwatch = require("du-libs:system/Stopwatch")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
@@ -164,7 +165,8 @@ local function new(settings)
         adjustAcc = nullVec,
         lastDevDist = 0,
         currentDeviation = nullVec,
-        deviationAccum = Accumulator:New(10, Accumulator.Truth)
+        deviationAccum = Accumulator:New(10, Accumulator.Truth),
+        delta = Stopwatch()
     }
 
     setmetatable(instance, fsm)
@@ -216,6 +218,16 @@ function fsm:CheckPathAlignment(currentPos, chaseData)
 end
 
 function fsm:FsmFlush(next, previous)
+    local delta = self.delta
+    local deltaTime = 0
+    if delta:IsRunning() then
+        deltaTime = delta:Elapsed()
+        delta:Restart()
+    else
+        delta:Start()
+    end
+
+
     local c = self.current
     if c ~= nil then
         local pos = CurrentPos()
@@ -227,7 +239,7 @@ function fsm:FsmFlush(next, previous)
         self.acceleration = nullVec
         self.adjustAcc = nullVec
 
-        c:Flush(next, previous, chaseData)
+        c:Flush(deltaTime, next, previous, chaseData)
         local moveDirection
 
         if c.OverrideAdjustPoint then
@@ -253,7 +265,7 @@ end
 ---@param remainingDistance number The remaining distance
 ---@param maxSpeed number Maximum speed, m/s
 ---@param rampFactor number 0..1 A factor that limits the amount of thrust we may apply.
-function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
+function fsm:Move(deltaTime, direction, remainingDistance, maxSpeed, rampFactor)
     if direction:len() == 0 then
         -- Exactly on the target
         self:Thrust()
@@ -261,6 +273,10 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
     end
 
     local vel = Velocity()
+
+    -- Look ahead at where we will be next tick. If we're decelerating, don't allow values less than 0
+    remainingDistance = remainingDistance + vel:len() * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime
+
     local travelDir = vel:normalize()
 
     if travelDir:len() <= 0 then

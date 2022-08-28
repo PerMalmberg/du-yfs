@@ -33,7 +33,7 @@ end
 function state:Leave()
 end
 
-function state:Flush(next, previous, chaseData)
+function state:Flush(deltaTime, next, previous, chaseData)
     local currentPos = CurrentPos()
 
     local directionToRabbit = (chaseData.rabbit - currentPos):normalize_inplace()
@@ -44,7 +44,7 @@ function state:Flush(next, previous, chaseData)
     else
         -- Ramp up the acceleration based on engine warmup to prevent pushing ourselves off the path.
         local mul = calc.Scale(self.rampTimer:Elapsed(), 0, self.fsm:GetEngineWarmupTime(), 0, 1)
-        self.fsm:Move(directionToRabbit, next:DistanceTo(), next.maxSpeed, mul)
+        self.fsm:Move(deltaTime, directionToRabbit, next:DistanceTo(), next.maxSpeed, mul)
     end
 end
 

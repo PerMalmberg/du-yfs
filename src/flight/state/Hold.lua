@@ -28,8 +28,8 @@ function state:Leave()
 
 end
 
-function state:Flush(next, previous, chaseData)
-    self.fsm:Move(next:DirectionTo(), next:DistanceTo(), 0.1)
+function state:Flush(deltaTime, next, previous, chaseData)
+    self.fsm:Move(deltaTime, next:DirectionTo(), next:DistanceTo(), 0.1)
 
     if next:Reached() then
         next:SetPrecisionMode(true)

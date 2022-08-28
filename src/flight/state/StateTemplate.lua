@@ -23,7 +23,7 @@ end
 function state:Leave()
 end
 
-function state:Flush(next, previous, chaseData)
+function state:Flush(deltaTime, next, previous, chaseData)
 end
 
 function state:Update()

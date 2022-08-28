@@ -6,7 +6,7 @@
 * Add unit tests for route
 * Add unit tests for route controller
 * All classes - use new class template
-* Adjustment read zero distance when off from path sometimes.
+* Adjustment read zero distance when off from path sometimes. Not always active?!?
 
 # Controls
 
