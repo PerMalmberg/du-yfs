@@ -116,12 +116,10 @@ local adjustAccLookup = {
 }
 
 local thrustAccLookup = {
-    { limit = 0, acc = 0.30, reverse = 0.30 },
-    { limit = 0.1, acc = 0.30, reverse = 0.30 },
-    { limit = 0.2, acc = 0.30, reverse = 0.30 },
-    { limit = 0.4, acc = 0.40, reverse = 0.30 },
-    { limit = 0.8, acc = 0.50, reverse = 0.30 },
-    { limit = 1.0, acc = 0, reverse = 0 }
+    { limit = 0, acc = 0.10, reverse = 0.10 },
+    { limit = 0.2, acc = 0.20, reverse = 1 },
+    { limit = 0.8, acc = 0.30, reverse = 1 },
+    { limit = 2.0, acc = 0, reverse = 0 }
 }
 
 local getAdjustedAcceleration = function(accLookup, dir, distance, movingTowardsTarget, forThrust)
@@ -332,10 +330,10 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
         local thrust = Vec3()
         if direction:dot(travelDir) > 0 then
             -- Moving towards point, brake
-            thrust = -travelDir * engineAcc
+            thrust = -travelDir * getAdjustedAcceleration(thrustAccLookup, -travelDir, remainingDistance, true, true)
         else
             -- Moving away from point, accelerate towards it
-            thrust = direction * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction)
+            thrust = direction * getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, false, true)
         end
         self:Thrust(thrust)
     elseif targetSpeed - currentSpeed > speedMargin then

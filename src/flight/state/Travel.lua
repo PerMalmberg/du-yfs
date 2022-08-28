@@ -52,6 +52,9 @@ function state:Update()
 end
 
 function state:WaypointReached(isLastWaypoint, next, previous)
+    if isLastWaypoint then
+        self.fsm:SetState(Hold(self.fsm))
+    end
 end
 
 function state:Name()
