@@ -241,7 +241,7 @@ function fsm:FsmFlush(next, previous)
 
         self:AdjustForDeviation(chaseData, pos, moveDirection)
 
-        self:ApplyAcceleration(moveDirection, next:GetPrecisionMode())
+        self:ApplyAcceleration(moveDirection, next:GetPrecisionMode(), next:DistanceTo())
 
         visual:DrawNumber(9, chaseData.rabbit)
         visual:DrawNumber(8, chaseData.nearest)
@@ -272,9 +272,12 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
 
     self.wPointDistance:Set(calc.Round(remainingDistance, 4))
 
+    local gravInfluence = abs((universe:VerticalReferenceVector() * world.G()):dot(-travelDir))
+
+
     -- Calculate max speed we may have with available brake force to come to a stop at the target
     -- Might not be enough brakes or engines to counter gravity so don't go below 0
-    local brakeAcc = max(0, brakes:Deceleration() + brakes:GravityInfluence())
+    local brakeAcc = max(0, brakes:Deceleration() - gravInfluence)
 
     local currentSpeed = vel:len()
 
@@ -287,7 +290,8 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
         return clamp(5 * warmupDistance / remainingDistance, 0, 1)
     end
 
-    local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-travelDir) + brakes:GravityInfluence())
+    -- Gravity is already taken care of for engines
+    local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-travelDir))
 
     local function CalcMaxSpeed(acceleration, distance)
         -- v^2 = v0^2 + 2a*d, with V0=0 => v = sqrt(2a*d)
@@ -316,12 +320,11 @@ function fsm:Move(direction, remainingDistance, maxSpeed, rampFactor)
     targetSpeed = min(maxSpeed, targetSpeed)
 
     -- Help come to a stop if we're going in the wrong direction
-    if travelDir:dot(direction) < -0.1 then
+    if travelDir:dot(direction) < 0 then
        targetSpeed = 0
     end
 
-    --system.print(calc.Mps2Kph(targetSpeed) .. " " .. calc.Mps2Kph(brakeMaxSpeed) .. " " .. calc.Mps2Kph(engineMaxSpeed))
-    self.wTargetSpeed:Set(calc.Mps2Kph(targetSpeed))
+    self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
 
     if currentSpeed > targetSpeed then
         -- Going too fast
@@ -408,7 +411,7 @@ function fsm:AdjustForDeviation(chaseData, currentPos, moveDirection)
     self.wAdjAcc:Set(calc.Round(self.adjustAcc:len(), 2))
 end
 
-function fsm:ApplyAcceleration(moveDirection, precision)
+function fsm:ApplyAcceleration(moveDirection, precision, remainingDistance)
     if self.acceleration == nil then
         ctrl.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
     else
@@ -417,6 +420,12 @@ function fsm:ApplyAcceleration(moveDirection, precision)
         local a = groups.adjust
         local thrustAcc = self.acceleration + t.antiG() - Vec3(construct.getWorldAirFrictionAcceleration())
         local adjustAcc = (self.adjustAcc or nullVec) + a.antiG()
+
+        -- When moving along gravity, add an extra anti-g
+      --[[  local vertRef = universe:VerticalReferenceVector()
+        if thrustAcc:normalize():dot(vertRef) > 0 and remainingDistance < 2 then
+            thrustAcc = thrustAcc - vertRef * world.G()
+        end]]
 
         if precision then
             -- Apply acceleration independently
