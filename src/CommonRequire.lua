@@ -1,6 +1,6 @@
 local n = {
     library = require("du-libs:abstraction/Library")(),
-    vehicle = require("du-libs:abstraction/Vehicle")(),
+    vehicle = require("du-libs:abstraction/Vehicle"):New(),
     calc = require("du-libs:util/Calc"),
     brakes = require("flight/Brakes")(),
     log = require("du-libs:debug/Log")(),
