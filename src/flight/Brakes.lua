@@ -6,10 +6,6 @@ local calc = require("du-libs:util/Calc")
 local sharedPanel = require("du-libs:panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
 local universe = require("du-libs:universe/Universe")()
-local engine = require("du-libs:abstraction/Engine")()
-local CalcBrakeDistance = calc.CalcBrakeDistance
-local CalcBrakeAcceleration = calc.CalcBrakeAcceleration
-local max = math.max
 
 local brakes = {}
 brakes.__index = brakes
@@ -144,58 +140,6 @@ end
 function brakes:GetWarmupDistance()
     local t = self.engineWarmupTime
     return clamp(t - self.warmupTimer:Elapsed(), 0, t) * Velocity():len()
-end
-
-function brakes:BrakeDistance(remainingDistance)
-    -- https://www.khanacademy.org/science/physics/one-dimensional-motion/kinematic-formulas/a/what-are-the-kinematic-formulas
-    -- distance = (v^2 - V0^2) / 2*a
-
-    remainingDistance = remainingDistance or 0
-
-    local vel = Velocity()
-    local speed = vel:len()
-
-    local deceleration = self:Deceleration()
-
-    local belowPeakSpeed = false
-    if self.isWithinAtmo then
-        -- Assume we only have a fraction of the brake force available
-        deceleration = deceleration * brakeEfficiencyFactor
-        belowPeakSpeed = speed < brakePeakSpeed
-    end
-
-    local distance = 0
-    local engineBrakeAcc = 0
-    local warmupDist = self:GetWarmupDistance()
-
-    local brakeOnly = CalcBrakeDistance(speed, deceleration)
-    local availableEngineBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-vel:normalize()) + self:GravityInfluence()
-
-    local engineOnly = 0
-    if availableEngineBrakeAcc > 0 then
-        -- When speed is low, don't include warmup distance as that causes problems reaching the destination.
-        engineOnly = CalcBrakeDistance(speed, availableEngineBrakeAcc) + calc.Ternary(speed > calc.Kph2Mps(2), warmupDist, 0)
-    end
-
-    local effectiveBrakeDistance = max(engineOnly, brakeOnly)
-
-    if effectiveBrakeDistance >= remainingDistance then
-        distance = effectiveBrakeDistance
-        engineBrakeAcc = CalcBrakeAcceleration(speed, remainingDistance)
-    end
-
-    if engineBrakeAcc > 0 then
-        self.warmupTimer:Start()
-    else
-        self.warmupTimer:Reset()
-    end
-
-    self.wBrakeAcc:Set(calc.Round(deceleration, 1))
-    self.wNeeded:Set(calc.Round(engineBrakeAcc, 1))
-    self.wDistance:Set(calc.Round(distance, 1))
-    self.wWarmupDist:Set(calc.Round(warmupDist, 1))
-
-    return distance, engineBrakeAcc
 end
 
 local singleton

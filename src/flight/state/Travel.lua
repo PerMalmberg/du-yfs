@@ -1,7 +1,6 @@
 local r = require("CommonRequire")
 local vehicle = r.vehicle
 local checks = r.checks
-local brakes = r.brakes
 local library = r.library
 local calc = r.calc
 require("flight/state/Require")
@@ -35,14 +34,11 @@ function state:Leave()
 end
 
 function state:Flush(next, previous, chaseData)
-    local brakeDistance, _ = brakes:BrakeDistance(next:DistanceTo())
     local currentPos = CurrentPos()
 
     local directionToRabbit = (chaseData.rabbit - currentPos):normalize_inplace()
 
-    if brakeDistance >= next:DistanceTo() then
-        self.fsm:SetState(ApproachWaypoint(self.fsm))
-    elseif not self.fsm:CheckPathAlignment(currentPos, chaseData) then
+    if not self.fsm:CheckPathAlignment(currentPos, chaseData) then
         -- Are we on the the desired path?
         self.fsm:SetState(ReturnToPath(self.fsm, chaseData.nearest))
     else

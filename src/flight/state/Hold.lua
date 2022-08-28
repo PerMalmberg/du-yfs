@@ -35,7 +35,7 @@ function state:Flush(next, previous, chaseData)
         next:SetPrecisionMode(true)
         brakes:Set(true, "Hold")
     else
-        self.fsm:SetState(ApproachWaypoint(self.fsm))
+        self.fsm:SetState(Travel(self.fsm))
     end
 end
 
