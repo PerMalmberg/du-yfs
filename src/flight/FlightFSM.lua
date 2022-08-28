@@ -241,7 +241,7 @@ function fsm:FsmFlush(next, previous)
 
         self:AdjustForDeviation(chaseData, pos, moveDirection)
 
-        self:ApplyAcceleration(moveDirection, next:GetPrecisionMode(), next:DistanceTo())
+        self:ApplyAcceleration(moveDirection, next:GetPrecisionMode())
 
         visual:DrawNumber(9, chaseData.rabbit)
         visual:DrawNumber(8, chaseData.nearest)
@@ -411,7 +411,7 @@ function fsm:AdjustForDeviation(chaseData, currentPos, moveDirection)
     self.wAdjAcc:Set(calc.Round(self.adjustAcc:len(), 2))
 end
 
-function fsm:ApplyAcceleration(moveDirection, precision, remainingDistance)
+function fsm:ApplyAcceleration(moveDirection, precision)
     if self.acceleration == nil then
         ctrl.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
     else
@@ -420,12 +420,6 @@ function fsm:ApplyAcceleration(moveDirection, precision, remainingDistance)
         local a = groups.adjust
         local thrustAcc = self.acceleration + t.antiG() - Vec3(construct.getWorldAirFrictionAcceleration())
         local adjustAcc = (self.adjustAcc or nullVec) + a.antiG()
-
-        -- When moving along gravity, add an extra anti-g
-      --[[  local vertRef = universe:VerticalReferenceVector()
-        if thrustAcc:normalize():dot(vertRef) > 0 and remainingDistance < 2 then
-            thrustAcc = thrustAcc - vertRef * world.G()
-        end]]
 
         if precision then
             -- Apply acceleration independently
