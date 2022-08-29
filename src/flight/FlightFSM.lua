@@ -286,12 +286,12 @@ function fsm:Move(deltaTime, direction, remainingDistance, maxSpeed, rampFactor)
 
     self.wPointDistance:Set(calc.Round(remainingDistance, 4))
 
-    local gravInfluence = abs((universe:VerticalReferenceVector() * world.G()):dot(-travelDir))
+    local gravInfluence = (universe:VerticalReferenceVector() * world.G()):dot(-travelDir)
 
 
     -- Calculate max speed we may have with available brake force to come to a stop at the target
     -- Might not be enough brakes or engines to counter gravity so don't go below 0
-    local brakeAcc = max(0, brakes:Deceleration() - gravInfluence)
+    local brakeAcc = max(0, brakes:Deceleration() + gravInfluence)
 
     local currentSpeed = vel:len()
 
@@ -437,12 +437,12 @@ function fsm:ApplyAcceleration(moveDirection, precision)
 
         if precision then
             -- Apply acceleration independently
-            ctrl.setEngineCommand(t.engines:Intersection(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
-            ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 0.001)
+            ctrl.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 1)
+            ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 1)
         else
             -- Apply acceleration as a single vector
             local finalAcc = thrustAcc + adjustAcc
-            ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 0.001)
+            ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 1)
         end
     end
 end
