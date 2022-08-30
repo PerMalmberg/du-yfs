@@ -15,6 +15,7 @@ local engine = r.engine
 local EngineGroup = require("du-libs:abstraction/EngineGroup")
 local Accumulator = require("du-libs:util/Accumulator")
 local Stopwatch = require("du-libs:system/Stopwatch")
+local PID = require("cpml/pid")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
@@ -166,7 +167,8 @@ local function new(settings)
         lastDevDist = 0,
         currentDeviation = nullVec,
         deviationAccum = Accumulator:New(10, Accumulator.Truth),
-        delta = Stopwatch()
+        delta = Stopwatch(),
+        speedPid = PID(0.02, 0, 0)
     }
 
     setmetatable(instance, fsm)
@@ -333,35 +335,44 @@ function fsm:Move(deltaTime, direction, remainingDistance, maxSpeed, rampFactor)
 
     targetSpeed = min(maxSpeed, targetSpeed)
 
-    -- Help come to a stop if we're going in the wrong direction
-    if travelDir:dot(direction) < 0 then
-       targetSpeed = 0
-    end
-
     self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
 
-    if currentSpeed > targetSpeed then
-        -- Going too fast
+    local pid = self.speedPid
+    local diff = targetSpeed - currentSpeed
+
+    if direction:dot(travelDir) < 0 then
+        brakes:Set(true, "Direction change") -- QQQ this prevents going down
+        pid:reset()
+    elseif diff < 0 then
         brakes:Set(true, "Reduce speed")
-        local thrust = Vec3()
-        if direction:dot(travelDir) > 0 then
-            -- Moving towards point, brake
-            thrust = -travelDir * getAdjustedAcceleration(thrustAccLookup, -travelDir, remainingDistance, true, true)
-        else
-            -- Moving away from point, accelerate towards it
-            thrust = direction * getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, false, true)
-        end
-        self:Thrust(thrust)
-    elseif targetSpeed - currentSpeed > speedMargin then
-        -- We must not saturate the engines; giving a massive acceleration
-        -- causes non-axis aligned movement to push us off the path since engines
-        -- then fire with all they got which may not result in the vector we want.
-        local acc = getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, true, true)
-        self:Thrust(direction * acc * (rampFactor or 1))
-    else
-        -- Just counter gravity.
-        self:Thrust()
+        pid:reset()
     end
+
+    pid:inject(diff)
+    self:Thrust(direction * pid:get() * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction))
+
+    --if currentSpeed > targetSpeed then
+    --    -- Going too fast
+    --    brakes:Set(true, "Reduce speed")
+    --    local thrust = Vec3()
+    --    if direction:dot(travelDir) > 0 then
+    --        -- Moving towards point, brake
+    --        thrust = -travelDir * getAdjustedAcceleration(thrustAccLookup, -travelDir, remainingDistance, true, true)
+    --    else
+    --        -- Moving away from point, accelerate towards it
+    --        thrust = direction * getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, false, true)
+    --    end
+    --    self:Thrust(thrust)
+    --elseif targetSpeed - currentSpeed > speedMargin then
+    --    -- We must not saturate the engines; giving a massive acceleration
+    --    -- causes non-axis aligned movement to push us off the path since engines
+    --    -- then fire with all they got which may not result in the vector we want.
+    --    local acc = getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, true, true)
+    --    self:Thrust(direction * acc * (rampFactor or 1))
+    --else
+    --    -- Just counter gravity.
+    --    self:Thrust()
+    --end
 end
 
 function fsm:CurrentDeviation()
