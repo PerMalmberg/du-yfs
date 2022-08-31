@@ -331,6 +331,11 @@ function fsm:Move(deltaTime, direction, remainingDistance, maxSpeed, rampFactor)
             -- Prefer the method with highest speed; i.e. shortest brake distance
             targetSpeed = max(brakeMaxSpeed, engineMaxSpeed)
         end
+
+        -- Add 25% margin when going up or down
+        if world.IsInAtmo() and abs(direction:dot(universe:VerticalReferenceVector())) > 0.707 then
+            targetSpeed = targetSpeed * 0.75
+        end
     end
 
     targetSpeed = min(maxSpeed, targetSpeed)
@@ -341,7 +346,7 @@ function fsm:Move(deltaTime, direction, remainingDistance, maxSpeed, rampFactor)
     local diff = targetSpeed - currentSpeed
 
     if direction:dot(travelDir) < 0 then
-        brakes:Set(true, "Direction change") -- QQQ this prevents going down
+        brakes:Set(true, "Direction change")
         pid:reset()
     elseif diff < 0 then
         brakes:Set(true, "Reduce speed")
