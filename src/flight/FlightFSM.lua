@@ -108,6 +108,7 @@ local adjustmentSpeedMin = calc.Kph2Mps(0.5)
 local adjustmentSpeedMax = calc.Kph2Mps(50)
 local speedMargin = calc.Kph2Mps(0.5)
 local warmupTime = 1
+local brakeEfficiencyFactor = 0.6
 
 local adjustAccLookup = {
     { limit = 0, acc = 0.15, reverse = 0.3 },
@@ -168,7 +169,7 @@ local function new(settings)
         currentDeviation = nullVec,
         deviationAccum = Accumulator:New(10, Accumulator.Truth),
         delta = Stopwatch(),
-        speedPid = PID(0.02, 0, 0)
+        speedPid = PID(0.02, 0.00005, 0.15)
     }
 
     setmetatable(instance, fsm)
@@ -317,67 +318,48 @@ function fsm:Move(deltaTime, direction, remainingDistance, maxSpeed, rampFactor)
     local engineMaxSpeed = CalcMaxSpeed(engineAcc * ScaleForWarmup(), remainingDistance)
 
     -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
-    local brakeMaxSpeed = CalcMaxSpeed(brakeAcc, remainingDistance)-- * 0.6 -- QQQ Brake efficiency
+    local brakeMaxSpeed = CalcMaxSpeed(brakeAcc, remainingDistance) * brakeEfficiencyFactor
 
     -- Assume neither brake nor engine can brake us so default to 1 km/h.
     -- Setting it to zero locks construct in place.
     local targetSpeed = calc.Kph2Mps(1)
 
     if brakeMaxSpeed > 0 or engineMaxSpeed > 0 then
-        if world.IsInAtmo() and vel:len() < calc.Kph2Mps(360) then
-            -- Atmospheric brakes start giving less force at this speed, rely on engines
-            targetSpeed = engineMaxSpeed
-        else
-            -- Prefer the method with highest speed; i.e. shortest brake distance
-            targetSpeed = max(brakeMaxSpeed, engineMaxSpeed)
-        end
+        targetSpeed = max(brakeMaxSpeed, engineMaxSpeed)
 
-        -- Add 25% margin when going up or down
-        if world.IsInAtmo() and abs(direction:dot(universe:VerticalReferenceVector())) > 0.707 then
-            targetSpeed = targetSpeed * 0.75
+        -- Add margin when going somewhat up or down and somewhat close
+        -- this works for low-speed operations, but when coming in from space we overshoot
+        if world.IsInAtmo() and abs(direction:dot(universe:VerticalReferenceVector())) > 0.2 then
+            if remainingDistance < 10 then
+                targetSpeed = targetSpeed * 0.30
+            elseif remainingDistance < 200 then
+                targetSpeed = targetSpeed * 0.50
+            end
         end
     end
 
     targetSpeed = min(maxSpeed, targetSpeed)
 
-    self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
+    system.print(maxSpeed .. " " .. engineMaxSpeed .. " " .. brakeMaxSpeed)
 
     local pid = self.speedPid
     local diff = targetSpeed - currentSpeed
+    pid:inject(diff)
 
-    if direction:dot(travelDir) < 0 then
+    if direction:dot(travelDir) < 0 and currentSpeed > calc.Kph2Mps(0.5) then
         brakes:Set(true, "Direction change")
         pid:reset()
+        targetSpeed = 0
     elseif diff < 0 then
         brakes:Set(true, "Reduce speed")
         pid:reset()
     end
 
-    pid:inject(diff)
     self:Thrust(direction * pid:get() * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction))
 
-    --if currentSpeed > targetSpeed then
-    --    -- Going too fast
-    --    brakes:Set(true, "Reduce speed")
-    --    local thrust = Vec3()
-    --    if direction:dot(travelDir) > 0 then
-    --        -- Moving towards point, brake
-    --        thrust = -travelDir * getAdjustedAcceleration(thrustAccLookup, -travelDir, remainingDistance, true, true)
-    --    else
-    --        -- Moving away from point, accelerate towards it
-    --        thrust = direction * getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, false, true)
-    --    end
-    --    self:Thrust(thrust)
-    --elseif targetSpeed - currentSpeed > speedMargin then
-    --    -- We must not saturate the engines; giving a massive acceleration
-    --    -- causes non-axis aligned movement to push us off the path since engines
-    --    -- then fire with all they got which may not result in the vector we want.
-    --    local acc = getAdjustedAcceleration(thrustAccLookup, direction, remainingDistance, true, true)
-    --    self:Thrust(direction * acc * (rampFactor or 1))
-    --else
-    --    -- Just counter gravity.
-    --    self:Thrust()
-    --end
+    self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
+
+    -- https://github.com/Dimencia/Archaegeo-Orbital-Hud/blob/7414fa08c50605936bd6a1dc3abfe503dd65a10c/src/requires/apclass.lua#L2755
 end
 
 function fsm:CurrentDeviation()
