@@ -5,6 +5,7 @@ local world = vehicle.world
 local calc = r.calc
 local CalcBrakeAcceleration = calc.CalcBrakeAcceleration
 local CalcBrakeDistance = calc.CalcBrakeDistance
+local Ternary = calc.Ternary
 local universe = r.universe
 local Vec3 = r.Vec3
 local nullVec = Vec3()
@@ -155,6 +156,7 @@ local function new(settings)
         wAdjAcc = p:CreateValue("Adj. acc", "m/s2"),
         wAdjBrakeDistance = p:CreateValue("Adj. brake dist.", "m"),
         wAdjSpeed = p:CreateValue("Adj. speed (limit)", "m/s"),
+        currentWP = nil,
         acceleration = nil,
         adjustAcc = nullVec,
         lastDevDist = 0,
@@ -222,6 +224,7 @@ function fsm:FsmFlush(next, previous)
         delta:Start()
     end
 
+    self.currentWP = next
 
     local c = self.current
     if c ~= nil then
@@ -256,16 +259,33 @@ function fsm:FsmFlush(next, previous)
     end
 end
 
----@param direction Vec3 The direction to travel
----@param remainingDistance number The remaining distance
----@param maxSpeed number Maximum speed, m/s
----@param rampFactor number 0..1 A factor that limits the amount of thrust we may apply.
-function fsm:Move(deltaTime, direction, remainingDistance, maxSpeed, rampFactor)
+function fsm:SetTemporaryWaypoint(waypoint)
+    self.temporaryWaypoint = waypoint
+end
+
+function fsm:CurrentWP()
+    return Ternary(self.temporaryWaypoint, self.temporaryWaypoint, self.currentWP)
+end
+
+---@param deltaTime number The time since last Flush
+function fsm:Move(deltaTime)
+    local wp = self:CurrentWP()
+    local direction = wp:DirectionTo()
+
     if direction:len() == 0 then
         -- Exactly on the target
         self:Thrust()
         return
     end
+
+    local remainingDistance = wp:DistanceTo()
+    local finalSpeed = wp:FinalSpeed()
+    local maxSpeed = wp:MaxSpeed()
+
+    --[[
+        accelerate to min(burnspeed, construct max, userMaxSpeed [optional], brakeSpeed)
+    ]]
+
 
     local vel = Velocity()
 
@@ -330,7 +350,7 @@ function fsm:Move(deltaTime, direction, remainingDistance, maxSpeed, rampFactor)
         end
     end
 
-    targetSpeed = min(maxSpeed, targetSpeed)
+    targetSpeed = min(finalSpeed, targetSpeed)
 
     local pid = self.speedPid
     local diff = targetSpeed - currentSpeed

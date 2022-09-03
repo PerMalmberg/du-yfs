@@ -38,6 +38,7 @@ function Input:New(flightCore)
         options = options or point:Options()
 
         options:Set(PointOptions.MAX_SPEED, speed)
+        options:Set(PointOptions.FINAL_SPEED, 0) -- Move and come to a stop
 
         point.options = options
 

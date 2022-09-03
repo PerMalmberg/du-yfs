@@ -5,6 +5,7 @@ local visual = r.visual
 local library = r.library
 local checks = r.checks
 local calc = r.calc
+local Ternary = r.calc.Ternary
 local Vec3 = r.Vec3
 local nullVec = Vec3()
 
@@ -62,7 +63,7 @@ function flightCore:GetRoutController()
 end
 
 function flightCore:CreateDefaultWP()
-    return Waypoint(vehicle.position.Current(), 0, 10, alignment.NoAdjust, alignment.NoAdjust)
+    return Waypoint(vehicle.position.Current(), 0, 0, 10, alignment.NoAdjust, alignment.NoAdjust)
 end
 
 function flightCore:NextWP()
@@ -79,16 +80,17 @@ function flightCore:NextWP()
 
     self.previousWaypoint = self.currentWaypoint
     self.waypointReachedSignaled = false
-    self.currentWaypoint = self:CreateWPFromPoint(nextPoint)
+    self.currentWaypoint = self:CreateWPFromPoint(nextPoint, route:LastPointReached())
 end
 
-function flightCore:CreateWPFromPoint(point)
+function flightCore:CreateWPFromPoint(point, lastInRoute)
     local opt = point:Options()
     local dir = Vec3(opt:Get(PointOptions.LOCK_DIRECTION, nullVec))
     local margin = opt:Get(PointOptions.MARGIN, defaultMargin)
+    local finalSpeed = Ternary(lastInRoute, 0,  opt:Get(PointOptions.FINAL_SPEED, defaultSpeed))
     local maxSpeed = opt:Get(PointOptions.MAX_SPEED, defaultSpeed)
 
-    local wp = Waypoint(point:Coordinate(), maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
+    local wp = Waypoint(point:Coordinate(), finalSpeed, maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
 
     wp:SetPrecisionMode(opt:Get(PointOptions.PRECISION, false))
 
@@ -181,7 +183,7 @@ function flightCore:FCUpdate()
                 if wp ~= nil then
                     self.wWaypointDistance:Set(calc.Round(wp:DistanceTo(), 3))
                     self.wWaypointMargin:Set(calc.Round(wp.margin, 3))
-                    self.wWaypointMaxSpeed:Set(wp.maxSpeed)
+                    self.wWaypointMaxSpeed:Set(wp.finalSpeed)
                     self.wWaypointPrecision:Set(wp:GetPrecisionMode())
                     self.wWaypointDirLock:Set(wp:DirectionLocked())
 
