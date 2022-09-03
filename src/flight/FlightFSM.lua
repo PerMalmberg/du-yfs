@@ -106,7 +106,6 @@ local upGroup = {
 local toleranceDistance = 2 -- meters. This limit affects the steepness of the acceleration curve used by the deviation adjustment
 local adjustmentSpeedMin = calc.Kph2Mps(0.5)
 local adjustmentSpeedMax = calc.Kph2Mps(50)
-local speedMargin = calc.Kph2Mps(0.5)
 local warmupTime = 1
 local brakeEfficiencyFactor = 0.6
 
@@ -116,13 +115,6 @@ local adjustAccLookup = {
     { limit = 0.03, acc = 0.30, reverse = 0.40 },
     { limit = 0.05, acc = 0.40, reverse = 0.45 },
     { limit = 0.1, acc = 0, reverse = 0 }
-}
-
-local thrustAccLookup = {
-    { limit = 0, acc = 0.10, reverse = 0.10 },
-    { limit = 0.2, acc = 0.20, reverse = 1 },
-    { limit = 0.8, acc = 0.30, reverse = 1 },
-    { limit = 2.0, acc = 0, reverse = 0 }
 }
 
 local getAdjustedAcceleration = function(accLookup, dir, distance, movingTowardsTarget, forThrust)
@@ -339,8 +331,6 @@ function fsm:Move(deltaTime, direction, remainingDistance, maxSpeed, rampFactor)
     end
 
     targetSpeed = min(maxSpeed, targetSpeed)
-
-    system.print(maxSpeed .. " " .. engineMaxSpeed .. " " .. brakeMaxSpeed)
 
     local pid = self.speedPid
     local diff = targetSpeed - currentSpeed
