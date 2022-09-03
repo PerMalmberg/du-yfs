@@ -9,10 +9,10 @@ local Vec3 = r.Vec3
 local nullVec = Vec3()
 
 local AxisControl = require("flight/AxisControl")
-local EngineGroup = require("du-libs:abstraction/EngineGroup")
+local EngineGroup = require("abstraction/EngineGroup")
 local Route = require("flight/route/Route")
 local Waypoint = require("flight/Waypoint")
-local sharedPanel = require("du-libs:panel/SharedPanel")()
+local sharedPanel = require("panel/SharedPanel")()
 local alignment = require("flight/AlignmentFunctions")
 local PointOptions = require("flight/route/PointOptions")
 require("flight/state/Require")

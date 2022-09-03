@@ -1,7 +1,7 @@
 local r = require("CommonRequire")
 local checks = r.checks
 local vehicle = r.vehicle
-local Stopwatch = require("du-libs:system/StopWatch")
+local Stopwatch = require("system/StopWatch")
 
 local Velocity = vehicle.velocity.Movement
 local Position = vehicle.position.Current

@@ -10,11 +10,11 @@ local Vec3 = r.Vec3
 local nullVec = Vec3()
 local ctrl = r.library:GetController()
 local visual = r.visual
-local sharedPanel = require("du-libs:panel/SharedPanel")()
+local sharedPanel = require("panel/SharedPanel")()
 local engine = r.engine
-local EngineGroup = require("du-libs:abstraction/EngineGroup")
-local Accumulator = require("du-libs:util/Accumulator")
-local Stopwatch = require("du-libs:system/Stopwatch")
+local EngineGroup = require("abstraction/EngineGroup")
+local Accumulator = require("util/Accumulator")
+local Stopwatch = require("system/Stopwatch")
 local PID = require("cpml/pid")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current

@@ -1,11 +1,11 @@
-local EngineGroup = require("du-libs:abstraction/EngineGroup")
-local Stopwatch = require("du-libs:system/Stopwatch")
-local library = require("du-libs:abstraction/Library")()
-local vehicle = require("du-libs:abstraction/Vehicle"):New()
-local calc = require("du-libs:util/Calc")
-local sharedPanel = require("du-libs:panel/SharedPanel")()
+local EngineGroup = require("abstraction/EngineGroup")
+local Stopwatch = require("system/Stopwatch")
+local library = require("abstraction/Library")()
+local vehicle = require("abstraction/Vehicle"):New()
+local calc = require("util/Calc")
+local sharedPanel = require("panel/SharedPanel")()
 local clamp = require("cpml/utils").clamp
-local universe = require("du-libs:universe/Universe")()
+local universe = require("universe/Universe")()
 
 local brakes = {}
 brakes.__index = brakes

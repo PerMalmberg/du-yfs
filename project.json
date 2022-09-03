@@ -1,6 +1,6 @@
 {
   "cli": {
-    "fmtVersion": 2
+    "fmtVersion": 3
   },
   "name": "Flight Core",
   "description": "Flight Core",

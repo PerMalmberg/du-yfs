@@ -4,7 +4,7 @@ local checks = r.checks
 local library = r.library
 local calc = r.calc
 require("flight/state/Require")
-local Stopwatch = require("du-libs:system/Stopwatch")
+local Stopwatch = require("system/Stopwatch")
 local CurrentPos = vehicle.position.Current
 
 local state = {}

@@ -8,7 +8,7 @@ local checks = r.checks
 local calc = r.calc
 local SignLargestAxis = calc.SignLargestAxis
 local nullVec = r.Vec3()
-local sharedPanel = require("du-libs:panel/SharedPanel")()
+local sharedPanel = require("panel/SharedPanel")()
 local PID = require("cpml/pid")
 
 local rad2deg = 180 / math.pi
