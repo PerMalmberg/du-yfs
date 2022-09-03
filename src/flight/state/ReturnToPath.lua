@@ -43,8 +43,8 @@ function state:Flush(deltaTime, next, previous, chaseData)
 
     self.fsm:Move(deltaTime)
 
+    local timer = self.sw
     if self.temporaryWP:Reached() then
-        local timer = self.sw
         timer:Start()
 
         if timer:Elapsed() > 0.3 then

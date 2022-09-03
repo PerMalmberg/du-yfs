@@ -25,7 +25,8 @@ local function new(destination, finalSpeed, maxSpeed, margin, roll, yawPitch)
     local o = {
         destination = destination,
         finalSpeed = finalSpeed,
-        maxSpeed = Ternary(maxSpeed > finalSpeed, finalSpeed, maxSpeed),
+        -- Guard against bad settings.
+        maxSpeed = Ternary(finalSpeed > maxSpeed, finalSpeed, maxSpeed),
         margin = margin,
         rollFunc = roll,
         yawPitchFunc = yawPitch,
@@ -44,6 +45,10 @@ end
 
 function waypoint:MaxSpeed()
     return self.maxSpeed
+end
+
+function waypoint:Margin()
+    return self.margin
 end
 
 function waypoint:Reached()

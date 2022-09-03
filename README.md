@@ -8,6 +8,8 @@
 * All classes - use new class template
 * Adjustment read zero distance when off from path sometimes. Not always active?!?
 
+* -- https://github.com/Dimencia/Archaegeo-Orbital-Hud/blob/7414fa08c50605936bd6a1dc3abfe503dd65a10c/src/requires/apclass.lua#L2755
+
 # Controls
 
 | Key   | Description             |

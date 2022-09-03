@@ -267,6 +267,17 @@ function fsm:CurrentWP()
     return Ternary(self.temporaryWaypoint, self.temporaryWaypoint, self.currentWP)
 end
 
+-- Calculates the max allowed speed we may have while still being able to decelerate to the endSpeed
+-- Remember to pass in a negative acceleration
+local function CalcMaxAllowedSpeed(acceleration, distance, endSpeed)
+    -- v^2 = v0^2 + 2a*d
+    -- v0^2 = v^2 - 2a*d
+    -- v0 = sqrt(v^2 - 2ad)
+
+    local v0 = (endSpeed * endSpeed - 2 * acceleration * distance) ^ 0.5
+    return v0
+end
+
 ---@param deltaTime number The time since last Flush
 function fsm:Move(deltaTime)
     local wp = self:CurrentWP()
@@ -278,19 +289,10 @@ function fsm:Move(deltaTime)
         return
     end
 
-    local remainingDistance = wp:DistanceTo()
-    local finalSpeed = wp:FinalSpeed()
-    local maxSpeed = wp:MaxSpeed()
-
-    --[[
-        accelerate to min(burnspeed, construct max, userMaxSpeed [optional], brakeSpeed)
-    ]]
-
-
     local vel = Velocity()
 
-    -- Look ahead at where we will be next tick. If we're decelerating, don't allow values less than 0
-    remainingDistance = remainingDistance + vel:len() * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime
+    -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
+    local remainingDistance = max(0, wp:DistanceTo() - (vel:len() * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
 
     local travelDir = vel:normalize()
 
@@ -302,7 +304,6 @@ function fsm:Move(deltaTime)
     self.wPointDistance:Set(calc.Round(remainingDistance, 4))
 
     local gravInfluence = (universe:VerticalReferenceVector() * world.G()):dot(-travelDir)
-
 
     -- Calculate max speed we may have with available brake force to come to a stop at the target
     -- Might not be enough brakes or engines to counter gravity so don't go below 0
@@ -322,26 +323,30 @@ function fsm:Move(deltaTime)
     -- Gravity is already taken care of for engines
     local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-travelDir))
 
-    local function CalcMaxSpeed(acceleration, distance)
-        -- v^2 = v0^2 + 2a*d, with V0=0 => v = sqrt(2a*d)
-        return (2 * acceleration * distance) ^ 0.5
-    end
-
-    local engineMaxSpeed = CalcMaxSpeed(engineAcc * ScaleForWarmup(), remainingDistance)
+    local finalSpeed = wp:FinalSpeed()
+    local engineMaxSpeed = CalcMaxAllowedSpeed(-engineAcc * ScaleForWarmup(), remainingDistance, finalSpeed)
 
     -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
-    local brakeMaxSpeed = CalcMaxSpeed(brakeAcc, remainingDistance) * brakeEfficiencyFactor
+    local brakeMaxSpeed = CalcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingDistance, finalSpeed)
 
-    -- Assume neither brake nor engine can brake us so default to 1 km/h.
-    -- Setting it to zero locks construct in place.
-    local targetSpeed = calc.Kph2Mps(1)
+    local inAtmo = world.IsInAtmo()
+
+    local targetSpeed = construct.getMaxSpeed()
+
+    if inAtmo then
+        targetSpeed = min(targetSpeed, construct.getFrictionBurnSpeed())
+    end
+
+    if wp:MaxSpeed() > 0 then
+        targetSpeed = min(targetSpeed, wp:MaxSpeed())
+    end
 
     if brakeMaxSpeed > 0 or engineMaxSpeed > 0 then
-        targetSpeed = max(brakeMaxSpeed, engineMaxSpeed)
+        targetSpeed = min(targetSpeed, max(brakeMaxSpeed, engineMaxSpeed))
 
         -- Add margin when going somewhat up or down and somewhat close
         -- this works for low-speed operations, but when coming in from space we overshoot
-        if world.IsInAtmo() and abs(direction:dot(universe:VerticalReferenceVector())) > 0.2 then
+        if finalSpeed == 0 and inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.2 then
             if remainingDistance < 10 then
                 targetSpeed = targetSpeed * 0.30
             elseif remainingDistance < 200 then
@@ -349,8 +354,6 @@ function fsm:Move(deltaTime)
             end
         end
     end
-
-    targetSpeed = min(finalSpeed, targetSpeed)
 
     local pid = self.speedPid
     local diff = targetSpeed - currentSpeed
@@ -368,8 +371,6 @@ function fsm:Move(deltaTime)
     self:Thrust(direction * pid:get() * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction))
 
     self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
-
-    -- https://github.com/Dimencia/Archaegeo-Orbital-Hud/blob/7414fa08c50605936bd6a1dc3abfe503dd65a10c/src/requires/apclass.lua#L2755
 end
 
 function fsm:CurrentDeviation()
