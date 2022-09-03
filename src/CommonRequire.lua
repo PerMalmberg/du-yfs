@@ -1,14 +1,14 @@
 local n = {
-    library = require("du-libs:abstraction/Library")(),
-    vehicle = require("du-libs:abstraction/Vehicle"):New(),
-    calc = require("du-libs:util/Calc"),
+    library = require("abstraction/Library")(),
+    vehicle = require("abstraction/Vehicle"):New(),
+    calc = require("util/Calc"),
     brakes = require("flight/Brakes")(),
-    log = require("du-libs:debug/Log")(),
+    log = require("debug/Log")(),
     utils = require("cpml/utils"),
-    universe = require("du-libs:universe/Universe")(),
-    checks = require("du-libs:debug/Checks"),
-    visual = require("du-libs:debug/Visual")(),
-    engine = require("du-libs:abstraction/Engine")(),
+    universe = require("universe/Universe")(),
+    checks = require("debug/Checks"),
+    visual = require("debug/Visual")(),
+    engine = require("abstraction/Engine")(),
     Vec3 = require("cpml/vec3")
 }
 

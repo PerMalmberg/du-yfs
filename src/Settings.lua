@@ -1,6 +1,6 @@
-local log = require("du-libs:debug/Log")()
-local cmd = require("du-libs:commandline/CommandLine")()
-require("du-libs:util/Table")
+local log = require("debug/Log")()
+local cmd = require("commandline/CommandLine")()
+require("util/Table")
 
 local singleton
 local Settings = {}

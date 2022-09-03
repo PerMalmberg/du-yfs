@@ -1,8 +1,8 @@
 local r = require("CommonRequire")
-local keys = require("du-libs:input/Keys")
-local Criteria = require("du-libs:input/Criteria")
+local keys = require("input/Keys")
+local Criteria = require("input/Criteria")
 local PointOptions = require("flight/route/PointOptions")
-local cmd = require("du-libs:commandline/CommandLine")()
+local cmd = require("commandline/CommandLine")()
 
 local log = r.log
 local vehicle = r.vehicle
@@ -19,7 +19,7 @@ function Input:New(flightCore)
     local speed = calc.Kph2Mps(150)
 
     local routeController = flightCore:GetRoutController()
-    local input = require("du-libs:input/Input")()
+    local input = require("input/Input")()
 
     input:Register(keys.option1, Criteria():LAlt():OnPress(), function()
         if player.isFrozen() == 1 then

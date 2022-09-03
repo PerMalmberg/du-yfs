@@ -1,13 +1,13 @@
 local r = require("CommonRequire")
 local log = r.log
 local RouteController = require("flight/route/Controller")
-local BDB = require("du-libs:storage/BufferedDB")
+local BDB = require("storage/BufferedDB")
 local FlightFSM = require("flight/FlightFSM")
 local FC = require("flight/FlightCore")
 local Input = require("Input")
 local Settings = require("Settings")
 
-local runner = require("du-libs:system/CoRunner")(0.5)
+local runner = require("system/CoRunner")(0.5)
 local settingsDb = BDB("routes")
 local routeDb = BDB("routes")
 local settings = Settings:New(settingsDb)
