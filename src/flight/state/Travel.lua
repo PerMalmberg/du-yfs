@@ -2,7 +2,6 @@ local r = require("CommonRequire")
 local vehicle = r.vehicle
 local checks = r.checks
 local library = r.library
-local calc = r.calc
 require("flight/state/Require")
 local Stopwatch = require("system/Stopwatch")
 local CurrentPos = vehicle.position.Current
@@ -39,8 +38,6 @@ function state:Flush(deltaTime, next, previous, chaseData)
     if not self.fsm:CheckPathAlignment(currentPos, chaseData) then
         -- Are we on the the desired path?
         self.fsm:SetState(ReturnToPath(self.fsm, chaseData.nearest))
-    else
-        self.fsm:Move(deltaTime)
     end
 end
 

@@ -65,7 +65,7 @@ function brakes:BrakeUpdate()
 end
 
 function brakes:SetEngineWarmupTime(t)
-    self.engineWarmupTime = t
+    self.engineWarmupTime = t * 2 -- Warmup time is to T50, so double it for full engine effect
 end
 
 function brakes:IsEngaged()

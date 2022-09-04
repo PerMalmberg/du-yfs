@@ -1,11 +1,7 @@
 local r = require("CommonRequire")
 local checks = r.checks
-local vehicle = r.vehicle
 local Stopwatch = require("system/Stopwatch")
 local Waypoint = require("flight/Waypoint")
-
-local Velocity = vehicle.velocity.Movement
-local Position = vehicle.position.Current
 
 local state = {}
 state.__index = state
@@ -40,8 +36,6 @@ function state:Flush(deltaTime, next, previous, chaseData)
         self.temporaryWP = Waypoint(self.returnPoint, 0, 0, next.margin, next.rollFunc, next.yawPitchFunc)
         self.fsm:SetTemporaryWaypoint(self.temporaryWP)
     end
-
-    self.fsm:Move(deltaTime)
 
     local timer = self.sw
     if self.temporaryWP:Reached() then
