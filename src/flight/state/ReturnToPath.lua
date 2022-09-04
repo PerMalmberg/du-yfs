@@ -1,10 +1,7 @@
 local r = require("CommonRequire")
 local checks = r.checks
-local vehicle = r.vehicle
 local Stopwatch = require("system/Stopwatch")
-
-local Velocity = vehicle.velocity.Movement
-local Position = vehicle.position.Current
+local Waypoint = require("flight/Waypoint")
 
 local state = {}
 state.__index = state
@@ -12,12 +9,14 @@ local name = "ReturnToPath"
 
 local function new(fsm, returnPoint)
     checks.IsTable(fsm, "fsm", name .. ":new")
+    checks.IsVec3(returnPoint, "returnPoint", name .. ":new")
 
     local o = {
         fsm = fsm,
         returnPoint = returnPoint,
         returnPointAdjusted = false,
-        sw = Stopwatch()
+        sw = Stopwatch(),
+        temporaryWP = false
     }
 
     setmetatable(o, state)
@@ -29,39 +28,24 @@ function state:Enter()
 end
 
 function state:Leave()
+    self.fsm:SetTemporaryWaypoint()
 end
 
 function state:Flush(deltaTime, next, previous, chaseData)
-    local vel = Velocity()
-    local moveDir = Velocity():normalize()
-    -- Start with trying to get back to the closest point on the line
-    local toLine = chaseData.nearest - Position()
-    local dirToLine = toLine:normalize()
-
-    if not self.returnPointAdjusted and moveDir:dot(dirToLine) < 0.8 and vel:len() > 1 then
-        -- Still moving away from the line, brake and give thrust
-        self.fsm:Move(deltaTime, dirToLine, toLine:len(), next.maxSpeed)
-    elseif not self.returnPointAdjusted then
-        -- Moving to line, fix the return point to the currently closest point
-        self.returnPoint = chaseData.nearest
-        self.returnPointAdjusted = true
+    if not self.temporaryWP then
+        self.temporaryWP = Waypoint(self.returnPoint, 0, 0, next.margin, next.rollFunc, next.yawPitchFunc)
+        self.fsm:SetTemporaryWaypoint(self.temporaryWP)
     end
 
-    if self.returnPointAdjusted then
-        local timer = self.sw
-        local toReturn = self.returnPoint - Position()
+    local timer = self.sw
+    if self.temporaryWP:Reached() then
+        timer:Start()
 
-        self.fsm:Move(deltaTime, toReturn:normalize(), toReturn:len(), next.maxSpeed)
-
-        if toReturn:len() <= next.margin then
-            timer:Start()
-
-            if timer:Elapsed() > 0.3 then
-                self.fsm:SetState(Travel(self.fsm))
-            end
-        else
-            timer:Stop()
+        if timer:Elapsed() > 0.3 then
+            self.fsm:SetState(Travel(self.fsm))
         end
+    else
+        timer:Stop()
     end
 end
 

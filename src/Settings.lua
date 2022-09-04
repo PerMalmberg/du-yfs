@@ -13,7 +13,10 @@ function Settings:New(db)
         local subscribers = {}
 
         singleton.def = {
-            engineWarmup = { key = "engineWarmup", default = 2 }
+            engineWarmup = { key = "engineWarmup", default = 2 },
+            speedP = {key = "speedp", default = 0.01},
+            speedI = {key = "speedi", default = 0.001},
+            speedD = {key = "speedd", default = 0},
         }
 
         local ensureSingle = function(data)
@@ -21,7 +24,7 @@ function Settings:New(db)
             local len = TableLen(data)
             if len ~= 2 then
                 -- commandValue and one setting
-                log:Error("Please specify a single setting " .. len)
+                log:Error("Please specify a single setting, got ", len)
                 return false
             end
 
@@ -38,6 +41,16 @@ function Settings:New(db)
             return nil, nil
         end
 
+        local function publishToSubscribers(key, value)
+            -- Notify subscribers for the key
+            local subs = subscribers[key]
+            if subs then
+                for _, f in ipairs(subs) do
+                    f(value)
+                end
+            end
+        end
+
         local setFunc = function(data)
             if not ensureSingle(data) then
                 return
@@ -45,14 +58,7 @@ function Settings:New(db)
 
             local key, value = getPair(data)
             if key ~= nil then
-                -- Notify subscribers for the key
-                local subs = subscribers[key]
-                if subs then
-                    for _, f in ipairs(subs) do
-                        f(value)
-                    end
-                end
-
+                publishToSubscribers(key, value)
                 log:Info("Setting '", key, "' to '", value, "'")
                 db:Put(key, value)
             end
@@ -80,17 +86,21 @@ function Settings:New(db)
         end
 
         function singleton:Get(key, default)
-            db:Get(key, default)
+            return db:Get(key, default)
         end
 
-        -- Don't set defaults on these - prevents detecting which setting is to be set as they all have values then.
+        function singleton:Reload()
+            for _, setting in pairs(singleton.def) do
+                local stored = singleton:Get(setting.key, setting.default)
+                publishToSubscribers(setting.key, stored)
+            end
+        end
+
         local set = cmd:Accept("set", setFunc):AsEmpty()
-        local get = cmd:Accept("get", getFunc):AsEmpty()
 
         for _, setting in pairs(singleton.def) do
+            -- Don't set defaults on these - prevents detecting which setting is to be set as they all have values then.
             set:Option("-" .. setting.key):AsNumber()
-
-            get:Option("-" .. setting.key):AsNumber():Default(setting.default)
         end
 
         setmetatable(singleton, Settings)

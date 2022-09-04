@@ -5,6 +5,7 @@ local visual = r.visual
 local library = r.library
 local checks = r.checks
 local calc = r.calc
+local Ternary = r.calc.Ternary
 local Vec3 = r.Vec3
 local nullVec = Vec3()
 
@@ -21,7 +22,7 @@ local flightCore = {}
 flightCore.__index = flightCore
 local singleton
 
-local defaultSpeed = 50 -- 50kph
+local defaultSpeed = calc.Kph2Mps(50)
 local defaultMargin = 0.1 -- m
 
 local function new(routeController, flightFSM)
@@ -43,7 +44,8 @@ local function new(routeController, flightFSM)
         waypointReachedSignaled = false,
         wWaypointDistance = p:CreateValue("Distance", "m"),
         wWaypointMargin = p:CreateValue("Margin", "m"),
-        wWaypointMaxSpeed = p:CreateValue("Max speed", "m/s"),
+        wWaypointFinalSpeed = p:CreateValue("Final speed", "km/h"),
+        wWaypointMaxSpeed = p:CreateValue("Max speed", "km/h"),
         wWaypointPrecision = p:CreateValue("Precision"),
         wWaypointDirLock = p:CreateValue("Dir lock")
     }
@@ -62,7 +64,7 @@ function flightCore:GetRoutController()
 end
 
 function flightCore:CreateDefaultWP()
-    return Waypoint(vehicle.position.Current(), 0, 10, alignment.NoAdjust, alignment.NoAdjust)
+    return Waypoint(vehicle.position.Current(), 0, 0, 10, alignment.NoAdjust, alignment.NoAdjust)
 end
 
 function flightCore:NextWP()
@@ -79,16 +81,17 @@ function flightCore:NextWP()
 
     self.previousWaypoint = self.currentWaypoint
     self.waypointReachedSignaled = false
-    self.currentWaypoint = self:CreateWPFromPoint(nextPoint)
+    self.currentWaypoint = self:CreateWPFromPoint(nextPoint, route:LastPointReached())
 end
 
-function flightCore:CreateWPFromPoint(point)
+function flightCore:CreateWPFromPoint(point, lastInRoute)
     local opt = point:Options()
     local dir = Vec3(opt:Get(PointOptions.LOCK_DIRECTION, nullVec))
     local margin = opt:Get(PointOptions.MARGIN, defaultMargin)
-    local maxSpeed = opt:Get(PointOptions.MAX_SPEED, defaultSpeed)
+    local finalSpeed = Ternary(lastInRoute, 0,  opt:Get(PointOptions.FINAL_SPEED, defaultSpeed))
+    local maxSpeed = opt:Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored).
 
-    local wp = Waypoint(point:Coordinate(), maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
+    local wp = Waypoint(point:Coordinate(), finalSpeed, maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
 
     wp:SetPrecisionMode(opt:Get(PointOptions.PRECISION, false))
 
@@ -180,8 +183,9 @@ function flightCore:FCUpdate()
                 local wp = self.currentWaypoint
                 if wp ~= nil then
                     self.wWaypointDistance:Set(calc.Round(wp:DistanceTo(), 3))
-                    self.wWaypointMargin:Set(calc.Round(wp.margin, 3))
-                    self.wWaypointMaxSpeed:Set(wp.maxSpeed)
+                    self.wWaypointMargin:Set(calc.Round(wp:Margin(), 3))
+                    self.wWaypointFinalSpeed:Set(calc.Round(calc.Kph2Mps(wp:FinalSpeed())), 1)
+                    self.wWaypointMaxSpeed:Set(calc.Round(calc.Kph2Mps(wp:MaxSpeed())), 1)
                     self.wWaypointPrecision:Set(wp:GetPrecisionMode())
                     self.wWaypointDirLock:Set(wp:DirectionLocked())
 

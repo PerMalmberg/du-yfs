@@ -1,6 +1,7 @@
 local alignment = require("flight/AlignmentFunctions")
 local r = require("CommonRequire")
 local checks = r.checks
+local Ternary = r.calc.Ternary
 local vehicle = r.vehicle
 
 local waypoint = {}
@@ -8,12 +9,14 @@ waypoint.__index = waypoint
 
 ---Creates a new Waypoint
 ---@param destination vec3 The destination
----@param maxSpeed number The maximum speed to approach the waypoint at.
+---@param finalSpeed number The final speed to reach when at the waypoint (0 if stopping is intended).
+---@param maxSpeed number The maximum speed to to travel at. Less than or equal to finalSpeed.
 ---@param margin number The number of meters to be within for the waypoint to be considered reached
 ---@param roll function Function that determines how the constrol aligns its topside (rolls)
 ---@return table
-local function new(destination, maxSpeed, margin, roll, yawPitch)
+local function new(destination, finalSpeed, maxSpeed, margin, roll, yawPitch)
     checks.IsVec3(destination, "destination", "waypoint:new")
+    checks.IsNumber(finalSpeed, "finalSpeed", "waypoint:new")
     checks.IsNumber(maxSpeed, "maxSpeed", "waypoint:new")
     checks.IsNumber(margin, "margin", "waypoint:new")
     checks.IsFunction(roll, "roll", "waypoint:new")
@@ -21,7 +24,9 @@ local function new(destination, maxSpeed, margin, roll, yawPitch)
 
     local o = {
         destination = destination,
-        maxSpeed = maxSpeed,
+        finalSpeed = finalSpeed,
+        -- Guard against bad settings.
+        maxSpeed = Ternary(finalSpeed > maxSpeed, finalSpeed, maxSpeed),
         margin = margin,
         rollFunc = roll,
         yawPitchFunc = yawPitch,
@@ -32,6 +37,18 @@ local function new(destination, maxSpeed, margin, roll, yawPitch)
     setmetatable(o, waypoint)
 
     return o
+end
+
+function waypoint:FinalSpeed()
+    return self.finalSpeed
+end
+
+function waypoint:MaxSpeed()
+    return self.maxSpeed
+end
+
+function waypoint:Margin()
+    return self.margin
 end
 
 function waypoint:Reached()

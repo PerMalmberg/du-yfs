@@ -2,7 +2,6 @@ local r = require("CommonRequire")
 local vehicle = r.vehicle
 local checks = r.checks
 local library = r.library
-local calc = r.calc
 require("flight/state/Require")
 local Stopwatch = require("system/Stopwatch")
 local CurrentPos = vehicle.position.Current
@@ -36,15 +35,9 @@ end
 function state:Flush(deltaTime, next, previous, chaseData)
     local currentPos = CurrentPos()
 
-    local directionToRabbit = (chaseData.rabbit - currentPos):normalize_inplace()
-
     if not self.fsm:CheckPathAlignment(currentPos, chaseData) then
         -- Are we on the the desired path?
         self.fsm:SetState(ReturnToPath(self.fsm, chaseData.nearest))
-    else
-        -- Ramp up the acceleration based on engine warmup to prevent pushing ourselves off the path.
-        local mul = calc.Scale(self.rampTimer:Elapsed(), 0, self.fsm:GetEngineWarmupTime(), 0, 1)
-        self.fsm:Move(deltaTime, directionToRabbit, next:DistanceTo(), next.maxSpeed, mul)
     end
 end
 
