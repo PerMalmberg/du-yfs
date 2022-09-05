@@ -168,7 +168,7 @@ local function new(settings)
         deviationAccum = Accumulator:New(10, Accumulator.Truth),
         delta = Stopwatch(),
         --speedPid = PID(0.01, 0.001, 0.0) -- Large
-        speedPid = PID(0.08, 0.00015, 0.0) -- Small
+        speedPid = PID(0.08, 0.0001, 0.1), -- Small
     }
 
     setmetatable(instance, fsm)
@@ -316,14 +316,13 @@ function fsm:Move(deltaTime)
     -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
     local remainingDistance = max(0, wp:DistanceTo() - (vel:len() * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
 
-    local travelDir = vel:normalize()
+    local velocityNormal = vel:normalize()
 
     self.wPointDistance:Set(calc.Round(remainingDistance, 4))
 
-    local gravInfluence = (universe:VerticalReferenceVector() * world.G()):dot(-travelDir)
-
     -- Calculate max speed we may have with available brake force to come to a stop at the target
     -- Might not be enough brakes or engines to counter gravity so don't go below 0
+    local gravInfluence = (universe:VerticalReferenceVector() * world.G()):dot(-velocityNormal)
     local brakeAcc = max(0, brakes:Deceleration() + gravInfluence)
 
     local currentSpeed = vel:len()
@@ -338,7 +337,7 @@ function fsm:Move(deltaTime)
     end
 
     -- Gravity is already taken care of for engines
-    local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-travelDir))
+    local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-velocityNormal))
 
     local finalSpeed = wp:FinalSpeed()
     local engineMaxSpeed = CalcMaxAllowedSpeed(-engineAcc * ScaleForWarmup(), remainingDistance, finalSpeed)
@@ -360,20 +359,22 @@ function fsm:Move(deltaTime)
         targetSpeed = min(targetSpeed, wp:MaxSpeed())
     end
 
-    if inAtmo and currentSpeed < 100 and brakeMaxSpeed > 0 then
-        -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
-        targetSpeed = min(targetSpeed, brakeMaxSpeed)
-    elseif brakeMaxSpeed > 0 or engineMaxSpeed > 0 then
-       targetSpeed = min(targetSpeed, max(brakeMaxSpeed, engineMaxSpeed))
+    -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
+    local atmoBrakeCutoff = inAtmo and currentSpeed <= 100
+
+    if engineMaxSpeed > 0 then
+        if brakeMaxSpeed > 0 and not atmoBrakeCutoff then
+            targetSpeed = min(targetSpeed, max(engineMaxSpeed, brakeMaxSpeed))
+        else
+            targetSpeed = min(targetSpeed, engineMaxSpeed)
+        end
     end
 
-    -- Add margin when going mostly up or down and somewhat close
+    -- Add margin based off distance when going mostly up or down and somewhat close
     if finalSpeed == 0 and inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.7 then
         if remainingDistance > 5 then
-            if remainingDistance < 300 then
-                targetSpeed = targetSpeed * 0.40
-            elseif remainingDistance < 1000 then
-                targetSpeed = targetSpeed * 0.50
+            if remainingDistance < 500 then
+                targetSpeed = min(targetSpeed, remainingDistance / 2)
             end
         end
     end
@@ -382,10 +383,10 @@ function fsm:Move(deltaTime)
     local diff = targetSpeed - currentSpeed
     pid:inject(diff)
 
-    if direction:dot(travelDir) < 0 and currentSpeed > calc.Kph2Mps(5) --[[This speed check causes construct to glide from target pos]] then
+    if direction:dot(velocityNormal) < 0 --[[ and currentSpeed > calc.Kph2Mps(5)]] --[[This speed check causes construct to glide from target pos]] then
         brakes:Set(true, "Direction change")
-        pid:reset()
-        targetSpeed = 0
+        --pid:reset()
+        --targetSpeed = 0
     elseif diff < 0 then
         -- v = v0 + a*t
         -- a = (v - v0) / t
