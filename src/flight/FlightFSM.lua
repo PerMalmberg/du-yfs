@@ -168,7 +168,7 @@ local function new(settings)
         deviationAccum = Accumulator:New(10, Accumulator.Truth),
         delta = Stopwatch(),
         --speedPid = PID(0.01, 0.001, 0.0) -- Large
-        speedPid = PID(0.08, 0.0001, 0.1), -- Small
+        speedPid = PID(0.08, 0.0005, 0.1), -- Small
     }
 
     setmetatable(instance, fsm)
@@ -371,11 +371,9 @@ function fsm:Move(deltaTime)
     end
 
     -- Add margin based off distance when going mostly up or down and somewhat close
-    if finalSpeed == 0 and inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.7 then
-        if remainingDistance > 5 then
-            if remainingDistance < 500 then
-                targetSpeed = min(targetSpeed, remainingDistance / 2)
-            end
+    if inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.7 then
+        if remainingDistance < 1000 then
+            targetSpeed = min(targetSpeed, remainingDistance / 2)
         end
     end
 
