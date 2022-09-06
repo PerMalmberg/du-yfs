@@ -92,10 +92,14 @@ function brakes:Forced(on)
     self.forced = on
 end
 
+function brakes:FinalDeceleration()
+    return -Velocity():normalize() * (self.overrideAcc or self:Deceleration())
+end
+
 function brakes:BrakeFlush()
     -- The brake vector must point against the direction of travel.
     if self:IsEngaged() then
-        local brakeVector = -Velocity():normalize() * (self.overrideAcc or self:Deceleration())
+        local brakeVector = self:FinalDeceleration()
         self.ctrl.setEngineCommand(self.brakeGroup:Intersection(), { brakeVector:unpack() }, 1, 1, "", "", "", 0.001)
     else
         self.ctrl.setEngineCommand(self.brakeGroup:Intersection(), { 0, 0, 0 }, 1, 1, "", "", "", 0.001)

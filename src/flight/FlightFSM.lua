@@ -390,8 +390,21 @@ function fsm:Move(deltaTime)
         end
     end
 
+    local counterBrake = Vec3()
+
+    if brakes:IsEngaged() then
+        --[[ From NQ Support:
+            "The speed is projected on the horizontal plane of the construct. And we add a brake force in that plane
+            in the opposite direction of that projected speed, which induces a vertical force when the ship has a pitch."
+
+            So to counter this stupidity (why not apply the brake force opposite of the velocity?!) we calculate the brake resulting
+            brake force on the vertical vector.
+        ]]
+        counterBrake = brakes:FinalDeceleration():project_on(universe:VerticalReferenceVector())
+    end
+
     -- QQQ Can we ramp up the acceleration and remove this clamping?
-    self:Thrust(direction * clamp(pid:get(), -0.5, 0.5) * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction))
+    self:Thrust(direction * clamp(pid:get(), -0.5, 0.5) * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + counterBrake)
 
     self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
 end
