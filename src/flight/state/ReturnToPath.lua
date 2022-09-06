@@ -49,10 +49,6 @@ function state:Flush(deltaTime, next, previous, chaseData)
     end
 end
 
-function state:OverrideAdjustPoint()
-    return self.returnPoint
-end
-
 function state:Update()
 end
 

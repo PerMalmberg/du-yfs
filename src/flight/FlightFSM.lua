@@ -258,14 +258,7 @@ function fsm:FsmFlush(next, previous)
         self.adjustAcc = nullVec
 
         c:Flush(deltaTime, next, previous, chaseData)
-        local moveDirection
-
-        if c.OverrideAdjustPoint then
-            chaseData.nearest = c:OverrideAdjustPoint()
-            moveDirection = (chaseData.nearest - pos):normalize_inplace()
-        else
-            moveDirection = next:DirectionTo()
-        end
+        local moveDirection = next:DirectionTo()
 
         self:Move(deltaTime)
 
@@ -397,7 +390,8 @@ function fsm:Move(deltaTime)
         end
     end
 
-    self:Thrust(direction * pid:get() * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction))
+    -- QQQ Can we ramp up the acceleration and remove this clamping?
+    self:Thrust(direction * clamp(pid:get(), -0.5, 0.5) * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction))
 
     self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
 end
