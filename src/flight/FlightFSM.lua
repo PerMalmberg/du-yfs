@@ -397,8 +397,8 @@ function fsm:Move(deltaTime)
             "The speed is projected on the horizontal plane of the construct. And we add a brake force in that plane
             in the opposite direction of that projected speed, which induces a vertical force when the ship has a pitch."
 
-            So to counter this stupidity (why not apply the brake force opposite of the velocity?!) we calculate the brake resulting
-            brake force on the vertical vector.
+            So to counter this stupidity (why not apply the brake force opposite of the velocity?!) we calculate the resulting
+            brake acceleration on the vertical vector.
         ]]
         counterBrake = brakes:FinalDeceleration():project_on(universe:VerticalReferenceVector())
     end
