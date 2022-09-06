@@ -392,7 +392,7 @@ function fsm:Move(deltaTime)
 
     local counterBrake = Vec3()
 
-    if brakes:IsEngaged() then
+    if inAtmo and brakes:IsEngaged() then
         --[[ From NQ Support:
             "The speed is projected on the horizontal plane of the construct. And we add a brake force in that plane
             in the opposite direction of that projected speed, which induces a vertical force when the ship has a pitch."
