@@ -93,7 +93,11 @@ function brakes:Forced(on)
 end
 
 function brakes:FinalDeceleration()
-    return -Velocity():normalize() * (self.overrideAcc or self:Deceleration())
+    if self.forced then
+        return -Velocity():normalize() * self:Deceleration()
+    else
+        return -Velocity():normalize() * (self.overrideAcc or self:Deceleration())
+    end
 end
 
 function brakes:BrakeFlush()
