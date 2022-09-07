@@ -168,7 +168,8 @@ local function new(settings)
         deviationAccum = Accumulator:New(10, Accumulator.Truth),
         delta = Stopwatch(),
         --speedPid = PID(0.01, 0.001, 0.0) -- Large
-        speedPid = PID(0.08, 0.0005, 0.1), -- Small
+        speedPid = PID(0.008, 0, 0.1), -- Small
+        brakePid = PID(1.1, 0, 0.5)
     }
 
     setmetatable(instance, fsm)
@@ -371,24 +372,14 @@ function fsm:Move(deltaTime)
     end
 
     local pid = self.speedPid
+    local brakePid = self.brakePid
+
     local diff = targetSpeed - currentSpeed
     pid:inject(diff)
+    brakePid:inject(-diff)
 
-    if direction:dot(velocityNormal) < 0 --[[ and currentSpeed > calc.Kph2Mps(5)]] --[[This speed check causes construct to glide from target pos]] then
-        brakes:Set(true, "Direction change")
-        --pid:reset()
-        --targetSpeed = 0
-    elseif diff < 0 then
-        -- v = v0 + a*t
-        -- a = (v - v0) / t
-        local timeLeft = remainingDistance / currentSpeed
-        if timeLeft > 1 then
-            -- Break over the next second. Use abs(), to provide directionless acceleration value.
-            brakes:Set(true, "Reduce speed", abs(diff))
-        else
-            brakes:Set(true, "Reduce speed")
-        end
-    end
+    -- QQQ How do we stop it going the wrong way quicker?
+    -- direction:dot(velocityNormal) < 0 doesn't work well?!?
 
     local counterBrake = Vec3()
 
@@ -400,13 +391,23 @@ function fsm:Move(deltaTime)
             So to counter this stupidity (why not apply the brake force opposite of the velocity?!) we calculate the resulting
             brake acceleration on the vertical vector.
         ]]
-        counterBrake = brakes:FinalDeceleration():project_on(universe:VerticalReferenceVector())
+        --counterBrake = brakes:FinalDeceleration():project_on(universe:VerticalReferenceVector())
     end
 
     -- Don't let the pid value go outside -1 ... 1 - that would cause the calculated thrust to get
     -- skewed outside its intended values and push us off the path.
     local pidValue = clamp(pid:get(), -1, 1)
+
+    if remainingDistance < 3 then
+        pidValue = pidValue / 5
+    end
+
     self:Thrust(direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + counterBrake)
+
+    -- https://github.com/Archaegeo/Archaegeo-Orbital-Hud/blob/7798675312c91c43486c08781c4a8a128341c918/src/requires/apclass.lua#L2758
+    local brakeValue = clamp(brakePid:get(), 0, 1)
+
+    brakes:Set(true, "...", brakeValue * brakes:Deceleration())
 
     self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
 end
