@@ -403,8 +403,10 @@ function fsm:Move(deltaTime)
         counterBrake = brakes:FinalDeceleration():project_on(universe:VerticalReferenceVector())
     end
 
-    -- QQQ Can we ramp up the acceleration and remove this clamping?
-    self:Thrust(direction * clamp(pid:get(), -0.5, 0.5) * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + counterBrake)
+    -- Don't let the pid value go outside -1 ... 1 - that would cause the calculated thrust to get
+    -- skewed outside its intended values and push us off the path.
+    local pidValue = clamp(pid:get(), -1, 1)
+    self:Thrust(direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + counterBrake)
 
     self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
 end
