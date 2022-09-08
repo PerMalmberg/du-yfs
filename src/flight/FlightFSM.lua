@@ -385,6 +385,11 @@ function fsm:Move(deltaTime)
 
     local counterBrake = Vec3()
 
+    -- https://github.com/Archaegeo/Archaegeo-Orbital-Hud/blob/7798675312c91c43486c08781c4a8a128341c918/src/requires/apclass.lua#L2758
+    local brakeValue = clamp(brakePid:get(), 0, 1)
+
+    brakes:Set(true, brakeValue * brakes:Deceleration())
+
     if inAtmo and brakes:IsEngaged() then
         --[[ From NQ Support:
             "The speed is projected on the horizontal plane of the construct. And we add a brake force in that plane
@@ -406,10 +411,6 @@ function fsm:Move(deltaTime)
 
     self:Thrust(direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + counterBrake)
 
-    -- https://github.com/Archaegeo/Archaegeo-Orbital-Hud/blob/7798675312c91c43486c08781c4a8a128341c918/src/requires/apclass.lua#L2758
-    local brakeValue = clamp(brakePid:get(), 0, 1)
-
-    brakes:Set(true, brakeValue * brakes:Deceleration())
 
     self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
 end
