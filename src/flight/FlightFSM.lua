@@ -375,6 +375,7 @@ function fsm:Move(deltaTime)
 
     local diff = targetSpeed - currentSpeed
     pid:inject(diff)
+    brakePid:inject(-diff)
 
     -- QQQ How do we stop it going the wrong way quicker?
     -- direction:dot(velocityNormal) < 0 doesn't work well?!?
