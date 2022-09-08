@@ -177,7 +177,6 @@ local function new(settings)
 
     settings:RegisterCallback("engineWarmup", function(value)
         instance:SetEngineWarmupTime(value)
-        brakes:SetEngineWarmupTime(value)
     end)
 
     settings:RegisterCallback("speedp", function(value)
@@ -376,7 +375,6 @@ function fsm:Move(deltaTime)
 
     local diff = targetSpeed - currentSpeed
     pid:inject(diff)
-    brakePid:inject(-diff)
 
     -- QQQ How do we stop it going the wrong way quicker?
     -- direction:dot(velocityNormal) < 0 doesn't work well?!?
@@ -407,7 +405,7 @@ function fsm:Move(deltaTime)
     -- https://github.com/Archaegeo/Archaegeo-Orbital-Hud/blob/7798675312c91c43486c08781c4a8a128341c918/src/requires/apclass.lua#L2758
     local brakeValue = clamp(brakePid:get(), 0, 1)
 
-    brakes:Set(true, "...", brakeValue * brakes:Deceleration())
+    brakes:Set(true, brakeValue * brakes:Deceleration())
 
     self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
 end
