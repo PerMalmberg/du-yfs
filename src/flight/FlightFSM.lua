@@ -373,12 +373,15 @@ function fsm:Move(deltaTime)
     local pid = self.speedPid
     local brakePid = self.brakePid
 
+    if direction:dot(velocityNormal) < 0 then
+        -- Moving in the wrong direction
+        targetSpeed = calc.Kph2Mps(remainingDistance)
+    end
+
     local diff = targetSpeed - currentSpeed
+
     pid:inject(diff)
     brakePid:inject(-diff)
-
-    -- QQQ How do we stop it going the wrong way quicker?
-    -- direction:dot(velocityNormal) < 0 doesn't work well?!?
 
     local counterBrake = Vec3()
 
@@ -390,7 +393,7 @@ function fsm:Move(deltaTime)
             So to counter this stupidity (why not apply the brake force opposite of the velocity?!) we calculate the resulting
             brake acceleration on the vertical vector.
         ]]
-        --counterBrake = brakes:FinalDeceleration():project_on(universe:VerticalReferenceVector())
+        counterBrake = brakes:FinalDeceleration():project_on(universe:VerticalReferenceVector())
     end
 
     -- Don't let the pid value go outside -1 ... 1 - that would cause the calculated thrust to get
