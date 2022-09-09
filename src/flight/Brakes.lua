@@ -39,40 +39,25 @@ function Brake:Instance()
         brakeGroup = EngineGroup("brake"),
     }
 
-    function s:BrakeUpdate()
-        s.totalMass = TotalMass()
-        wDeceleration:Set(calc.Round(s:RawAvailableDeceleration(), 2))
-        wCurrentDec:Set(calc.Round(deceleration, 2))
+    ---Returns the deceleration the construct is capable of in the given movement.
+    ---@return number The deceleration
+    local function rawAvailableDeceleration()
+        -- F = m * a => a = F / m
+        return construct.getMaxBrake() / s.totalMass
     end
 
-    function s:Forced(on)
-        s.forced = on
-    end
-
-    function s:FinalDeceleration()
+    local function finalDeceleration()
         if s.forced then
-            return -Velocity():normalize() * s:RawAvailableDeceleration()
+            return -Velocity():normalize() * rawAvailableDeceleration()
         else
             return -Velocity():normalize() * deceleration
         end
     end
 
-    function s:BrakeFlush()
-        -- The brake vector must point against the direction of travel.
-        local brakeVector = s:FinalDeceleration()
-        s.ctrl.setEngineCommand(s.brakeGroup:Intersection(), { brakeVector:unpack() }, 1, 1, "", "", "", 0.001)
-    end
-
-    ---Returns the deceleration the construct is capable of in the given movement.
-    ---@return number The deceleration
-    function s:RawAvailableDeceleration()
-        -- F = m * a => a = F / m
-        return construct.getMaxBrake() / s.totalMass
-    end
-
-    function s:GravityInfluencedAvailableDeceleration()
-        local gravInfluence = (universe:VerticalReferenceVector() * G()):dot(-Velocity():normalize())
-        return max(0, s:RawAvailableDeceleration() + gravInfluence)
+    function s:BrakeUpdate()
+        s.totalMass = TotalMass()
+        wDeceleration:Set(calc.Round(rawAvailableDeceleration(), 2))
+        wCurrentDec:Set(calc.Round(deceleration, 2))
     end
 
     local function brakeCounter()
@@ -85,10 +70,25 @@ function Brake:Instance()
         ]]
         local res = nullVec
         if IsInAtmo() then
-            res = s:FinalDeceleration():project_on(universe:VerticalReferenceVector())
+            res = finalDeceleration():project_on(universe:VerticalReferenceVector())
         end
 
         return res
+    end
+
+    function s:Forced(on)
+        s.forced = on
+    end
+
+    function s:BrakeFlush()
+        -- The brake vector must point against the direction of travel.
+        local brakeVector = finalDeceleration()
+        s.ctrl.setEngineCommand(s.brakeGroup:Intersection(), { brakeVector:unpack() }, 1, 1, "", "", "", 0.001)
+    end
+
+    function s:GravityInfluencedAvailableDeceleration()
+        local gravInfluence = (universe:VerticalReferenceVector() * G()):dot(-Velocity():normalize())
+        return max(0, rawAvailableDeceleration() + gravInfluence)
     end
 
     ---@param targetSpeed number The desired speed
@@ -100,7 +100,7 @@ function Brake:Instance()
 
         local brakeValue = clamp(pid:get(), 0, 1)
 
-        deceleration = brakeValue * s:RawAvailableDeceleration()
+        deceleration = brakeValue * rawAvailableDeceleration()
 
         return brakeCounter()
     end
