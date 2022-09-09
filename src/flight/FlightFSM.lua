@@ -367,23 +367,13 @@ function FlightFSM:New(settings)
         adjustmentAcc = nullVec
     end
 
-    ---@param deltaTime number The time since last Flush
-    function s:Move(deltaTime)
-        local wp = s:CurrentWP()
-        local direction = wp:DirectionTo()
+    local function getSpeedLimit(deltaTime, velocity, direction, maxSpeed, finalSpeed, distanceToTarget)
 
-        if wp:DistanceTo() == 0 then
-            -- Exactly on the target
-            acceleration = nullVec
-            return
-        end
-
-        local vel = Velocity()
-
+        local currentSpeed = velocity:len()
         -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
-        local remainingDistance = max(0, wp:DistanceTo() - (vel:len() * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
+        local remainingDistance = max(0, distanceToTarget - (currentSpeed * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
 
-        local velocityNormal = vel:normalize()
+        local velocityNormal = velocity:normalize()
 
         wPointDistance:Set(calc.Round(remainingDistance, 4))
 
@@ -391,7 +381,6 @@ function FlightFSM:New(settings)
         -- Might not be enough brakes or engines to counter gravity so don't go below 0
         local brakeAcc = brakes:GravityInfluencedAvailableDeceleration()
 
-        local currentSpeed = vel:len()
 
         local function ScaleForWarmup()
             local warmupDistance = currentSpeed * s:GetEngineWarmupTime()
@@ -405,7 +394,6 @@ function FlightFSM:New(settings)
         -- Gravity is already taken care of for engines
         local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-velocityNormal))
 
-        local finalSpeed = wp:FinalSpeed()
         local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc * ScaleForWarmup(), remainingDistance, finalSpeed)
         wEngineMaxSpeed:Set(calc.Round(calc.Mps2Kph(engineMaxSpeed), 1))
 
@@ -421,8 +409,8 @@ function FlightFSM:New(settings)
             targetSpeed = min(targetSpeed, construct.getFrictionBurnSpeed())
         end
 
-        if wp:MaxSpeed() > 0 then
-            targetSpeed = min(targetSpeed, wp:MaxSpeed())
+        if maxSpeed > 0 then
+            targetSpeed = min(targetSpeed, maxSpeed)
         end
 
         -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
@@ -448,17 +436,37 @@ function FlightFSM:New(settings)
             targetSpeed = calc.Kph2Mps(remainingDistance)
         end
 
-        local brakeCounter = brakes:Feed(targetSpeed, currentSpeed)
+        return targetSpeed
+    end
 
-        speedPid:inject(targetSpeed - currentSpeed)
+    ---@param deltaTime number The time since last Flush
+    function s:Move(deltaTime)
+        local wp = s:CurrentWP()
+        local direction = wp:DirectionTo()
+        local remainingDistance = wp:DistanceTo()
+
+        if remainingDistance == 0 then
+            -- Exactly on the target
+            acceleration = nullVec
+            return
+        end
+
+        local velocity = Velocity()
+        local currentSpeed = velocity:len()
+
+        local speedLimit = getSpeedLimit(deltaTime, velocity, direction, wp:MaxSpeed(), wp:FinalSpeed(), remainingDistance)
+
+        local brakeCounter = brakes:Feed(speedLimit, currentSpeed)
+
+        speedPid:inject(speedLimit - currentSpeed)
 
         -- Don't let the pid value go outside -1 ... 1 - that would cause the calculated thrust to get
         -- skewed outside its intended values and push us off the path.
         local pidValue = clamp(speedPid:get(), -1, 1)
 
-        acceleration =direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
+        acceleration = direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
 
-        wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
+        wTargetSpeed:Set(calc.Round(calc.Mps2Kph(speedLimit), 2))
     end
 
 
