@@ -27,7 +27,7 @@ runner:Execute(
                 coroutine.yield()
             end
 
-            local fsm = FlightFSM(settings)
+            local fsm = FlightFSM:New(settings)
             settings:Reload()
 
             local fc = FC(RouteController(routeDb), fsm)
