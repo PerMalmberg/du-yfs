@@ -219,6 +219,78 @@ function FlightFSM:New(settings)
         return res
     end
 
+    local function getSpeedLimit(deltaTime, velocity, direction, maxSpeed, finalSpeed, distanceToTarget)
+
+        local currentSpeed = velocity:len()
+        -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
+        local remainingDistance = max(0, distanceToTarget - (currentSpeed * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
+
+        local velocityNormal = velocity:normalize()
+
+        wPointDistance:Set(calc.Round(remainingDistance, 4))
+
+        -- Calculate max speed we may have with available brake force to come to a stop at the target
+        -- Might not be enough brakes or engines to counter gravity so don't go below 0
+        local brakeAcc = brakes:GravityInfluencedAvailableDeceleration()
+
+
+        local function ScaleForWarmup()
+            local warmupDistance = currentSpeed * s:GetEngineWarmupTime()
+            if remainingDistance <= 0 or warmupDistance <= 0 then
+                return 1
+            end
+
+            return clamp(5 * warmupDistance / remainingDistance, 0, 1)
+        end
+
+        -- Gravity is already taken care of for engines
+        local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-velocityNormal))
+
+        local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc * ScaleForWarmup(), remainingDistance, finalSpeed)
+        wEngineMaxSpeed:Set(calc.Round(calc.Mps2Kph(engineMaxSpeed), 1))
+
+        -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
+        local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingDistance, finalSpeed)
+        wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
+
+        local inAtmo = world.IsInAtmo()
+
+        local targetSpeed = construct.getMaxSpeed()
+
+        if inAtmo then
+            targetSpeed = min(targetSpeed, construct.getFrictionBurnSpeed())
+        end
+
+        if maxSpeed > 0 then
+            targetSpeed = min(targetSpeed, maxSpeed)
+        end
+
+        -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
+        local atmoBrakeCutoff = inAtmo and currentSpeed <= 100
+
+        if engineMaxSpeed > 0 then
+            if brakeMaxSpeed > 0 and not atmoBrakeCutoff then
+                targetSpeed = min(targetSpeed, max(engineMaxSpeed, brakeMaxSpeed))
+            else
+                targetSpeed = min(targetSpeed, engineMaxSpeed)
+            end
+        end
+
+        -- Add margin based off distance when going mostly up or down and somewhat close
+        if inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.7 then
+            if remainingDistance < 1000 then
+                targetSpeed = min(targetSpeed, remainingDistance / 2)
+            end
+        end
+
+        if direction:dot(velocityNormal) < 0 then
+            -- Moving in the wrong direction
+            targetSpeed = calc.Kph2Mps(remainingDistance)
+        end
+
+        return targetSpeed
+    end
+
     local function adjustForDeviation(chaseData, currentPos, moveDirection)
         -- Add counter to deviation from optimal path
         local plane = moveDirection:normalize()
@@ -365,78 +437,6 @@ function FlightFSM:New(settings)
     function s:NullThrust()
         acceleration = nullVec
         adjustmentAcc = nullVec
-    end
-
-    local function getSpeedLimit(deltaTime, velocity, direction, maxSpeed, finalSpeed, distanceToTarget)
-
-        local currentSpeed = velocity:len()
-        -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
-        local remainingDistance = max(0, distanceToTarget - (currentSpeed * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
-
-        local velocityNormal = velocity:normalize()
-
-        wPointDistance:Set(calc.Round(remainingDistance, 4))
-
-        -- Calculate max speed we may have with available brake force to come to a stop at the target
-        -- Might not be enough brakes or engines to counter gravity so don't go below 0
-        local brakeAcc = brakes:GravityInfluencedAvailableDeceleration()
-
-
-        local function ScaleForWarmup()
-            local warmupDistance = currentSpeed * s:GetEngineWarmupTime()
-            if remainingDistance <= 0 or warmupDistance <= 0 then
-                return 1
-            end
-
-            return clamp(5 * warmupDistance / remainingDistance, 0, 1)
-        end
-
-        -- Gravity is already taken care of for engines
-        local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-velocityNormal))
-
-        local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc * ScaleForWarmup(), remainingDistance, finalSpeed)
-        wEngineMaxSpeed:Set(calc.Round(calc.Mps2Kph(engineMaxSpeed), 1))
-
-        -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
-        local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingDistance, finalSpeed)
-        wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
-
-        local inAtmo = world.IsInAtmo()
-
-        local targetSpeed = construct.getMaxSpeed()
-
-        if inAtmo then
-            targetSpeed = min(targetSpeed, construct.getFrictionBurnSpeed())
-        end
-
-        if maxSpeed > 0 then
-            targetSpeed = min(targetSpeed, maxSpeed)
-        end
-
-        -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
-        local atmoBrakeCutoff = inAtmo and currentSpeed <= 100
-
-        if engineMaxSpeed > 0 then
-            if brakeMaxSpeed > 0 and not atmoBrakeCutoff then
-                targetSpeed = min(targetSpeed, max(engineMaxSpeed, brakeMaxSpeed))
-            else
-                targetSpeed = min(targetSpeed, engineMaxSpeed)
-            end
-        end
-
-        -- Add margin based off distance when going mostly up or down and somewhat close
-        if inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.7 then
-            if remainingDistance < 1000 then
-                targetSpeed = min(targetSpeed, remainingDistance / 2)
-            end
-        end
-
-        if direction:dot(velocityNormal) < 0 then
-            -- Moving in the wrong direction
-            targetSpeed = calc.Kph2Mps(remainingDistance)
-        end
-
-        return targetSpeed
     end
 
     ---@param deltaTime number The time since last Flush
