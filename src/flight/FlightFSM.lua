@@ -165,9 +165,9 @@ function FlightFSM:New(settings)
     local wAdjAcc = a:CreateValue("Adj. acc", "m/s2")
     local wAdjBrakeDistance = a:CreateValue("Adj. brake dist.", "m")
     local wAdjSpeed = a:CreateValue("Adj. speed (limit)", "m/s")
-    local currentWP = nil
-    local acceleration = nil
-    local adjustAcc = nullVec
+    local currentWP
+    local acceleration
+    local adjustmentAcc = nullVec
     local lastDevDist = 0
     local currentDeviation = nullVec
     local deviationAccum = Accumulator:New(10, Accumulator.Truth)
@@ -248,32 +248,32 @@ function FlightFSM:New(settings)
             -- Are we moving towards target?
             if movingTowardsTarget then
                 if brakeDistance > distance or currSpeed > speedLimit then
-                    adjustAcc = -dirToTarget * CalcBrakeAcceleration(currSpeed, distance)
+                    adjustmentAcc = -dirToTarget * CalcBrakeAcceleration(currSpeed, distance)
                 elseif distance > lastDevDist then
                     -- Slipping away, nudge back to path
-                    adjustAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                    adjustmentAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
                 elseif distance < toleranceDistance then
                     -- Add brake acc to help stop where we want
-                    adjustAcc = -dirToTarget * CalcBrakeAcceleration(currSpeed, distance)
+                    adjustmentAcc = -dirToTarget * CalcBrakeAcceleration(currSpeed, distance)
                 elseif currSpeed < speedLimit then
                     -- This check needs to be last so that it doesn't interfere with decelerating towards destination
-                    adjustAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                    adjustmentAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
                 end
             else
                 -- Counter current movement, if any
                 if currSpeed > 0.1 then
-                    adjustAcc = -vel:normalize() * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                    adjustmentAcc = -vel:normalize() * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
                 else
-                    adjustAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                    adjustmentAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
                 end
             end
         else
-            adjustAcc = nullVec
+            adjustmentAcc = nullVec
         end
 
         lastDevDist = distance
 
-        wAdjAcc:Set(calc.Round(adjustAcc:len(), 2))
+        wAdjAcc:Set(calc.Round(adjustmentAcc:len(), 2))
     end
 
     local function applyAcceleration(moveDirection, precision)
@@ -282,14 +282,14 @@ function FlightFSM:New(settings)
         else
             local groups = getEngines(moveDirection, precision)
             local t = groups.thrust
-            local a = groups.adjust
+            local adj = groups.adjust
             local thrustAcc = acceleration + t.antiG() - Vec3(construct.getWorldAirFrictionAcceleration())
-            local adjustAcc = (adjustAcc or nullVec) + a.antiG()
+            local adjustAcc = (adjustmentAcc or nullVec) + adj.antiG()
 
             if precision then
                 -- Apply acceleration independently
                 ctrl.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 1)
-                ctrl.setEngineCommand(a.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, a.prio1Tag, a.prio2Tag, a.prio3Tag, 1)
+                ctrl.setEngineCommand(adj.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, adj.prio1Tag, adj.prio2Tag, adj.prio3Tag, 1)
             else
                 -- Apply acceleration as a single vector
                 local finalAcc = thrustAcc + adjustAcc
@@ -316,7 +316,7 @@ function FlightFSM:New(settings)
 
             -- Assume we're just going to counter gravity.
             acceleration = nullVec
-            adjustAcc = nullVec
+            adjustmentAcc = nullVec
 
             c:Flush(deltaTime, next, previous, chaseData)
             local moveDirection = next:DirectionTo()
@@ -359,12 +359,12 @@ function FlightFSM:New(settings)
 
     function s:DisableThrust()
         acceleration = nil
-        adjustAcc = nil
+        adjustmentAcc = nil
     end
 
     function s:NullThrust()
         acceleration = nullVec
-        adjustAcc = nullVec
+        adjustmentAcc = nullVec
     end
 
     ---@param deltaTime number The time since last Flush
