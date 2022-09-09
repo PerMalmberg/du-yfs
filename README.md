@@ -8,7 +8,8 @@
 * All classes - use new class template
 * Save finalSpeed in route
 * Adjustment read zero distance when off from path sometimes. Not always active?!?
-* 'move -u 10 -f 50' dips just before reaching end
+* 45 downward angle causes drops when brakes are enabled.
+* Use PID for precision movement.
 
 * -- https://github.com/Dimencia/Archaegeo-Orbital-Hud/blob/7414fa08c50605936bd6a1dc3abfe503dd65a10c/src/requires/apclass.lua#L2755
 

@@ -5,8 +5,14 @@ local calc = require("util/Calc")
 local sharedPanel = require("panel/SharedPanel")()
 local universe = require("universe/Universe")()
 local nullVec = require("cpml/vec3")()
+local PID = require("cpml/pid")
+local IsInAtmo = vehicle.world.IsInAtmo
 local TotalMass = vehicle.mass.Total
 local Velocity = vehicle.velocity.Movement
+local G = vehicle.world.G
+local utils = require("cpml/utils")
+local clamp = utils.clamp
+local max = math.max
 
 local Brake = {}
 Brake.__index = Brake
@@ -20,38 +26,23 @@ function Brake:Instance()
     
     local ctrl = library:GetController()
     local p = sharedPanel:Get("Brakes")
-    
+    local pid = PID(1.1, 0, 0.5)
+    local deceleration = 0
+    local wDeceleration = p:CreateValue("Max deceleration", "m/s2")
+    local wCurrentDec = p:CreateValue("Brake dec.", "m/s2")
+
     local s = {
         ctrl = ctrl,
         engaged = false,
         forced = false,
         totalMass = TotalMass(),
-        isWithinAtmo = true,
-        overrideAcc = nil,
         brakeGroup = EngineGroup("brake"),
-        wDeceleration = p:CreateValue("Deceleration", "m/s2"),
-        wWithinAtmo = p:CreateValue("Within atmo", ""),
     }
 
     function s:BrakeUpdate()
         s.totalMass = TotalMass()
-        local pos = vehicle.position.Current()
-        s.isWithinAtmo = universe:ClosestBody(pos):IsWithinAtmosphere(pos)
-        s.wWithinAtmo:Set(s.isWithinAtmo)
-        s.wDeceleration:Set(calc.Round(s:Deceleration(), 2))
-    end
-
-    function s:IsEngaged()
-        return s.enabled or s.forced
-    end
-
-    function s:Set(on, overrideAcc)
-        s.enabled = on
-        if on then
-            s.overrideAcc = overrideAcc
-        else
-            s.overrideAcc = nil
-        end
+        wDeceleration:Set(calc.Round(s:RawAvailableDeceleration(), 2))
+        wCurrentDec:Set(calc.Round(deceleration, 2))
     end
 
     function s:Forced(on)
@@ -59,32 +50,59 @@ function Brake:Instance()
     end
 
     function s:FinalDeceleration()
-        if not s:IsEngaged() then
-            return nullVec
-        end
-
         if s.forced then
-            return -Velocity():normalize() * s:Deceleration()
+            return -Velocity():normalize() * s:RawAvailableDeceleration()
         else
-            return -Velocity():normalize() * (s.overrideAcc or s:Deceleration())
+            return -Velocity():normalize() * deceleration
         end
     end
 
     function s:BrakeFlush()
         -- The brake vector must point against the direction of travel.
-        if s:IsEngaged() then
-            local brakeVector = s:FinalDeceleration()
-            s.ctrl.setEngineCommand(s.brakeGroup:Intersection(), { brakeVector:unpack() }, 1, 1, "", "", "", 0.001)
-        else
-            s.ctrl.setEngineCommand(s.brakeGroup:Intersection(), { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
-        end
+        local brakeVector = s:FinalDeceleration()
+        s.ctrl.setEngineCommand(s.brakeGroup:Intersection(), { brakeVector:unpack() }, 1, 1, "", "", "", 0.001)
     end
 
     ---Returns the deceleration the construct is capable of in the given movement.
     ---@return number The deceleration
-    function s:Deceleration()
+    function s:RawAvailableDeceleration()
         -- F = m * a => a = F / m
         return construct.getMaxBrake() / s.totalMass
+    end
+
+    function s:GravityInfluencedAvailableDeceleration()
+        local gravInfluence = (universe:VerticalReferenceVector() * G()):dot(-Velocity():normalize())
+        return max(0, s:RawAvailableDeceleration() + gravInfluence)
+    end
+
+    local function brakeCounter()
+        --[[ From NQ Support:
+            "The speed is projected on the horizontal plane of the construct. And we add a brake force in that plane
+            in the opposite direction of that projected speed, which induces a vertical force when the ship has a pitch."
+
+            So to counter this stupidity (why not apply the brake force opposite of the velocity?!) we calculate the resulting
+            brake acceleration on the vertical vector and add that to the thrust vector.
+        ]]
+        local res = nullVec
+        if IsInAtmo() then
+            res = s:FinalDeceleration():project_on(universe:VerticalReferenceVector())
+        end
+
+        return res
+    end
+
+    ---@param targetSpeed number The desired speed
+    ---@param currentSpeed number The current speed
+    ---@return Vec3 The thrust needed to counter the thrust induced by the braking operation
+    function s:Feed(targetSpeed, currentSpeed)
+        local diff = targetSpeed - currentSpeed
+        pid:inject(-diff) -- Negate to make PID become positive when we have too high speed.
+
+        local brakeValue = clamp(pid:get(), 0, 1)
+
+        deceleration = brakeValue * s:RawAvailableDeceleration()
+
+        return brakeCounter()
     end
     
     instance = setmetatable(s, Brake)

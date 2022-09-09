@@ -169,7 +169,6 @@ local function new(settings)
         delta = Stopwatch(),
         --speedPid = PID(0.01, 0.001, 0.0) -- Large
         speedPid = PID(0.008, 0, 0.1), -- Small
-        brakePid = PID(1.1, 0, 0.5)
     }
 
     setmetatable(instance, fsm)
@@ -251,8 +250,6 @@ function fsm:FsmFlush(next, previous)
         local pos = CurrentPos()
         local chaseData = self:NearestPointBetweenWaypoints(previous, next, pos, 6)
 
-        brakes:Set(false)
-
         -- Assume we're just going to counter gravity.
         self.acceleration = nullVec
         self.adjustAcc = nullVec
@@ -315,8 +312,7 @@ function fsm:Move(deltaTime)
 
     -- Calculate max speed we may have with available brake force to come to a stop at the target
     -- Might not be enough brakes or engines to counter gravity so don't go below 0
-    local gravInfluence = (universe:VerticalReferenceVector() * world.G()):dot(-velocityNormal)
-    local brakeAcc = max(0, brakes:Deceleration() + gravInfluence)
+    local brakeAcc = brakes:GravityInfluencedAvailableDeceleration()
 
     local currentSpeed = vel:len()
 
@@ -371,46 +367,21 @@ function fsm:Move(deltaTime)
     end
 
     local pid = self.speedPid
-    local brakePid = self.brakePid
 
     if direction:dot(velocityNormal) < 0 then
         -- Moving in the wrong direction
         targetSpeed = calc.Kph2Mps(remainingDistance)
     end
 
-    local diff = targetSpeed - currentSpeed
+    local brakeCounter = brakes:Feed(targetSpeed, currentSpeed)
 
-    pid:inject(diff)
-    brakePid:inject(-diff)
-
-    local counterBrake = Vec3()
-
-    -- https://github.com/Archaegeo/Archaegeo-Orbital-Hud/blob/7798675312c91c43486c08781c4a8a128341c918/src/requires/apclass.lua#L2758
-    local brakeValue = clamp(brakePid:get(), 0, 1)
-
-    brakes:Set(true, brakeValue * brakes:Deceleration())
-
-    if inAtmo and brakes:IsEngaged() then
-        --[[ From NQ Support:
-            "The speed is projected on the horizontal plane of the construct. And we add a brake force in that plane
-            in the opposite direction of that projected speed, which induces a vertical force when the ship has a pitch."
-
-            So to counter this stupidity (why not apply the brake force opposite of the velocity?!) we calculate the resulting
-            brake acceleration on the vertical vector.
-        ]]
-        counterBrake = brakes:FinalDeceleration():project_on(universe:VerticalReferenceVector())
-    end
+    pid:inject(targetSpeed - currentSpeed)
 
     -- Don't let the pid value go outside -1 ... 1 - that would cause the calculated thrust to get
     -- skewed outside its intended values and push us off the path.
     local pidValue = clamp(pid:get(), -1, 1)
 
-    if remainingDistance < 3 then
-        pidValue = pidValue / 5
-    end
-
-    self:Thrust(direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + counterBrake)
-
+    self:Thrust(direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter)
 
     self.wTargetSpeed:Set(calc.Round(calc.Mps2Kph(targetSpeed), 2))
 end
