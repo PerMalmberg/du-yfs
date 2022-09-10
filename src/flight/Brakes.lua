@@ -88,6 +88,7 @@ function Brake:Instance()
 
     function s:GravityInfluencedAvailableDeceleration()
         local gravInfluence = (universe:VerticalReferenceVector() * G()):dot(-Velocity():normalize())
+        -- Might not be enough brakes to counter gravity so don't go below 0
         return max(0, rawAvailableDeceleration() + gravInfluence)
     end
 

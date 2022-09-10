@@ -216,6 +216,29 @@ function FlightFSM:New(settings)
         return res
     end
 
+    local function adjustDistanceForDeadZone(remainingDistance)
+        local adjusted = remainingDistance
+
+        local pos = CurrentPos()
+        local body = universe:ClosestBody(pos)
+
+        if body.Atmosphere.Present then
+            local threshold = 0.7 -- Consider this this much of the atmosphere as a volume where we can't brake.
+            local distanceToBody = (body.Geography.Center - pos):len()
+            local distanceBetweenTargetAndBody = (body.Geography.Center - currentWP.destination):len()
+            local deadZoneEndAltitude = body.Atmosphere.Radius - body.Atmosphere.Thickness * threshold
+            local isOutsideOrInUpperAtmosphere = distanceToBody > deadZoneEndAltitude
+            local targetIsBelowUpperAtmosphere = distanceBetweenTargetAndBody < deadZoneEndAltitude
+
+            if isOutsideOrInUpperAtmosphere and targetIsBelowUpperAtmosphere then
+                -- The target point may be high up in the atmosphere so prevent negative values
+                adjusted = max(remainingDistance, remainingDistance - body.Atmosphere.Thickness * threshold)
+            end
+        end
+
+        return adjusted
+    end
+
     local function getSpeedLimit(deltaTime, velocity, direction, maxSpeed, finalSpeed, distanceToTarget)
 
         local currentSpeed = velocity:len()
@@ -227,27 +250,20 @@ function FlightFSM:New(settings)
         wPointDistance:Set(calc.Round(remainingDistance, 4))
 
         -- Calculate max speed we may have with available brake force to come to a stop at the target
-        -- Might not be enough brakes or engines to counter gravity so don't go below 0
-        local brakeAcc = brakes:GravityInfluencedAvailableDeceleration()
 
+        local warmupDistance = currentSpeed * s:GetEngineWarmupTime() + 0.5 * Acceleration():len() * s:GetEngineWarmupTime() * s:GetEngineWarmupTime()
 
-        local function ScaleForWarmup()
-            local warmupDistance = currentSpeed * s:GetEngineWarmupTime()
-            if remainingDistance <= 0 or warmupDistance <= 0 then
-                return 1
-            end
+        local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-direction))
 
-            return clamp(5 * warmupDistance / remainingDistance, 0, 1)
-        end
+        local remainingWithoutDeadZone = adjustDistanceForDeadZone(remainingDistance)
 
-        -- Gravity is already taken care of for engines
-        local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-velocityNormal))
-
-        local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc * ScaleForWarmup(), remainingDistance, finalSpeed)
+        local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc, max(remainingWithoutDeadZone, remainingWithoutDeadZone - warmupDistance), finalSpeed)
         wEngineMaxSpeed:Set(calc.Round(calc.Mps2Kph(engineMaxSpeed), 1))
 
+        local brakeAcc = brakes:GravityInfluencedAvailableDeceleration()
+
         -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
-        local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingDistance, finalSpeed)
+        local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingWithoutDeadZone, finalSpeed)
         wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
 
         local inAtmo = world.IsInAtmo()
@@ -275,7 +291,9 @@ function FlightFSM:New(settings)
 
         -- Add margin based off distance when going mostly up or down and somewhat close
         if inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.7 then
-            if remainingDistance < 1000 then
+            if remainingDistance < 500 then
+                targetSpeed = min(targetSpeed, remainingDistance / 2.5)
+            elseif remainingDistance < 1000 then
                 targetSpeed = min(targetSpeed, remainingDistance / 2.5)
             end
         end
