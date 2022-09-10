@@ -173,7 +173,7 @@ function FlightFSM:New(settings)
     local delta = Stopwatch()
     local temporaryWaypoint
     --speedPid = PID(0.01, 0.001, 0.0) -- Large
-    local speedPid = PID(0.008, 0, 0.1) -- Small
+    local speedPid = PID(0.01, 0, 10) -- Small
 
     local s = {
     }
@@ -276,7 +276,7 @@ function FlightFSM:New(settings)
         -- Add margin based off distance when going mostly up or down and somewhat close
         if inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.7 then
             if remainingDistance < 1000 then
-                targetSpeed = min(targetSpeed, remainingDistance / 2)
+                targetSpeed = min(targetSpeed, remainingDistance / 2.5)
             end
         end
 
@@ -300,7 +300,7 @@ function FlightFSM:New(settings)
         local toTarget = calc.ProjectPointOnPlane(plane, currentPos, chaseData.nearest) - calc.ProjectPointOnPlane(plane, currentPos, currentPos)
         local dirToTarget = toTarget:normalize()
         local distance = toTarget:len()
-        
+
         local movingTowardsTarget = deviationAccum:Add(vel:normalize():dot(dirToTarget) > 0.8) > 0.5
 
         local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:normalize())
@@ -452,7 +452,7 @@ function FlightFSM:New(settings)
 
         local speedLimit = getSpeedLimit(deltaTime, velocity, direction, wp:MaxSpeed(), wp:FinalSpeed(), remainingDistance)
 
-        local brakeCounter = brakes:Feed(speedLimit, currentSpeed)
+        local brakeCounter = brakes:Feed(Ternary(direction:dot(velocity:normalize()) < 0, 0, speedLimit), currentSpeed)
 
         speedPid:inject(speedLimit - currentSpeed)
 
