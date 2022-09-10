@@ -169,7 +169,6 @@ function FlightFSM:New(settings)
     local acceleration
     local adjustmentAcc = nullVec
     local lastDevDist = 0
-    local currentDeviation = nullVec
     local deviationAccum = Accumulator:New(10, Accumulator.Truth)
     local delta = Stopwatch()
     local temporaryWaypoint
@@ -178,8 +177,6 @@ function FlightFSM:New(settings)
 
     local s = {
     }
-
-
 
     function s:SetState(state)
         if current ~= nil then
@@ -303,8 +300,7 @@ function FlightFSM:New(settings)
         local toTarget = calc.ProjectPointOnPlane(plane, currentPos, chaseData.nearest) - calc.ProjectPointOnPlane(plane, currentPos, currentPos)
         local dirToTarget = toTarget:normalize()
         local distance = toTarget:len()
-        currentDeviation = toTarget
-
+        
         local movingTowardsTarget = deviationAccum:Add(vel:normalize():dot(dirToTarget) > 0.8) > 0.5
 
         local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:normalize())
