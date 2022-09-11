@@ -3,7 +3,6 @@ local vehicle = r.vehicle
 local checks = r.checks
 local library = r.library
 require("flight/state/Require")
-local Stopwatch = require("system/Stopwatch")
 local CurrentPos = vehicle.position.Current
 
 local state = {}
@@ -17,7 +16,6 @@ local function new(fsm)
     local o = {
         fsm = fsm,
         core = library:GetCoreUnit(),
-        rampTimer = Stopwatch()
     }
 
     setmetatable(o, state)
@@ -26,7 +24,6 @@ local function new(fsm)
 end
 
 function state:Enter()
-    self.rampTimer:Start()
 end
 
 function state:Leave()

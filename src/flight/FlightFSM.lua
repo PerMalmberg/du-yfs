@@ -197,8 +197,9 @@ function FlightFSM:New(settings)
         warmupTime = t  * 2 -- Warmup time is to T50, so double it for full engine effect
     end
 
-    function s:GetEngineWarmupTime()
-        return warmupTime
+    local function warmupDistance()
+        local t = warmupTime
+        return Velocity():len() * t + 0.5 * Acceleration():dot(Velocity():normalize()) * t * t
     end
 
     function s:CheckPathAlignment(currentPos, chaseData)
@@ -243,21 +244,18 @@ function FlightFSM:New(settings)
 
         local currentSpeed = velocity:len()
         -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
+        -- This is inaccurate if acceleration isn't in the same direction as our movement vector, but it is gives a safe value.
         local remainingDistance = max(0, distanceToTarget - (currentSpeed * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
-
-        local velocityNormal = velocity:normalize()
 
         wPointDistance:Set(calc.Round(remainingDistance, 4))
 
-        -- Calculate max speed we may have with available brake force to come to a stop at the target
-
-        local warmupDistance = currentSpeed * s:GetEngineWarmupTime() + 0.5 * Acceleration():len() * s:GetEngineWarmupTime() * s:GetEngineWarmupTime()
+        -- Calculate max speed we may have with available brake force to come to reach the final speed.
 
         local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-direction))
 
         local remainingWithoutDeadZone = adjustDistanceForDeadZone(remainingDistance)
 
-        local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc, max(remainingWithoutDeadZone, remainingWithoutDeadZone - warmupDistance), finalSpeed)
+        local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc, remainingWithoutDeadZone, finalSpeed)
         wEngineMaxSpeed:Set(calc.Round(calc.Mps2Kph(engineMaxSpeed), 1))
 
         local brakeAcc = brakes:GravityInfluencedAvailableDeceleration()
@@ -291,16 +289,10 @@ function FlightFSM:New(settings)
 
         -- Add margin based off distance when going mostly up or down and somewhat close
         if inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.7 then
-            if remainingDistance < 500 then
-                targetSpeed = min(targetSpeed, remainingDistance / 2.5)
-            elseif remainingDistance < 1000 then
-                targetSpeed = min(targetSpeed, remainingDistance / 2.5)
+            if remainingDistance < 1000 then
+                targetSpeed = min(targetSpeed, calc.Kph2Mps(remainingDistance / 2))
+                targetSpeed = max(targetSpeed, calc.Kph2Mps(1))
             end
-        end
-
-        if direction:dot(velocityNormal) < 0 then
-            -- Moving in the wrong direction
-            targetSpeed = calc.Kph2Mps(remainingDistance)
         end
 
         return targetSpeed
@@ -410,7 +402,6 @@ function FlightFSM:New(settings)
             s:Move(deltaTime)
 
             adjustForDeviation(chaseData, pos, moveDirection)
-
             applyAcceleration(moveDirection, next:GetPrecisionMode())
 
             visual:DrawNumber(9, chaseData.rabbit)
@@ -459,12 +450,6 @@ function FlightFSM:New(settings)
         local direction = wp:DirectionTo()
         local remainingDistance = wp:DistanceTo()
 
-        if remainingDistance == 0 then
-            -- Exactly on the target
-            acceleration = nullVec
-            return
-        end
-
         local velocity = Velocity()
         local currentSpeed = velocity:len()
 
@@ -474,9 +459,9 @@ function FlightFSM:New(settings)
 
         speedPid:inject(speedLimit - currentSpeed)
 
-        -- Don't let the pid value go outside -1 ... 1 - that would cause the calculated thrust to get
-        -- skewed outside its intended values and push us off the path.
-        local pidValue = clamp(speedPid:get(), -1, 1)
+        -- Don't let the pid value go outside 0 ... 1 - that would cause the calculated thrust to get
+        -- skewed outside its intended values and push us off the path, or make us fall when holding position (if pid gets <0)
+        local pidValue = clamp(speedPid:get(), 0, 1)
 
         acceleration = direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
 
