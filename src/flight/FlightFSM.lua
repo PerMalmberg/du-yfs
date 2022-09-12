@@ -157,6 +157,7 @@ function FlightFSM:New(settings)
     local wPointDistance = p:CreateValue("Point dist.", "m")
     local wAcceleration = p:CreateValue("Acceleration", "m/s2")
     local wTargetSpeed = p:CreateValue("Target speed", "km/h")
+    local wFinalSpeed = p:CreateValue("Final speed")
     local wBrakeMaxSpeed = p:CreateValue("Brake Max Speed", "km/h")
     local wEngineMaxSpeed = p:CreateValue("Engine Max Speed", "km/h")
     local wSpeed = a:CreateValue("Abs. speed", "km/h")
@@ -240,6 +241,15 @@ function FlightFSM:New(settings)
         return adjusted
     end
 
+    local function evaluateNewLimit(currentLimit, newLimit, reason)
+        if newLimit < currentLimit then
+            wTargetSpeed:Set(string.format("%.1f (%s)", calc.Mps2Kph(newLimit), reason))
+            return newLimit
+        end
+
+        return currentLimit
+    end
+
     local function getSpeedLimit(deltaTime, velocity, direction, maxSpeed, finalSpeed, distanceToTarget)
 
         local currentSpeed = velocity:len()
@@ -249,9 +259,32 @@ function FlightFSM:New(settings)
 
         wPointDistance:Set(calc.Round(remainingDistance, 4))
 
-        -- Calculate max speed we may have with available brake force to come to reach the final speed.
+        -- Calculate max speed we may have with available brake force to to reach the final speed.
+        local targetSpeed = evaluateNewLimit(math.maxinteger, construct.getMaxSpeed(), "Max")
 
         local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-direction))
+
+        -- If we're passing through or into atmosphere, reduce speed before we reach it
+        local pos = CurrentPos()
+        local body = universe:ClosestBody(pos)
+        local finalOverrideMsg
+
+        if body.Atmosphere.Present then
+            local passesThroughAtmo, _, distanceToAtmo = calc.LineIntersectSphere(pos, velocity:normalize(), body.Geography.Center, body.Atmosphere.Radius)
+            if passesThroughAtmo then
+                if distanceToAtmo == 0 then
+                    -- We're already in atmo
+                    targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed(), "Atmo")
+                elseif distanceToAtmo < remainingDistance then
+                    -- Override to ensure slowdown before we hit atmo
+                    finalSpeed = construct.getFrictionBurnSpeed()
+                    remainingDistance = distanceToAtmo
+                    finalOverrideMsg = string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), remainingDistance)
+                end
+            end
+        end
+
+        wFinalSpeed:Set(finalOverrideMsg or 0)
 
         local remainingWithoutDeadZone = adjustDistanceForDeadZone(remainingDistance)
 
@@ -264,34 +297,27 @@ function FlightFSM:New(settings)
         local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingWithoutDeadZone, finalSpeed)
         wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
 
-        local inAtmo = world.IsInAtmo()
-
-        local targetSpeed = construct.getMaxSpeed()
-
-        if inAtmo then
-            targetSpeed = min(targetSpeed, construct.getFrictionBurnSpeed())
-        end
-
         if maxSpeed > 0 then
-            targetSpeed = min(targetSpeed, maxSpeed)
+            targetSpeed = evaluateNewLimit(targetSpeed, maxSpeed, "Route")
         end
+
+        local inAtmo = world.IsInAtmo()
 
         -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
         local atmoBrakeCutoff = inAtmo and currentSpeed <= 100
 
         if engineMaxSpeed > 0 then
             if brakeMaxSpeed > 0 and not atmoBrakeCutoff then
-                targetSpeed = min(targetSpeed, max(engineMaxSpeed, brakeMaxSpeed))
+                targetSpeed = evaluateNewLimit(targetSpeed, min(targetSpeed, max(engineMaxSpeed, brakeMaxSpeed)), "Brake/Engine")
             else
-                targetSpeed = min(targetSpeed, engineMaxSpeed)
+                targetSpeed = evaluateNewLimit(targetSpeed, min(targetSpeed, engineMaxSpeed), "Engine")
             end
         end
 
         -- Add margin based off distance when going mostly up or down and somewhat close
         if inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.7 then
             if remainingDistance < 1000 then
-                targetSpeed = min(targetSpeed, calc.Kph2Mps(remainingDistance / 2))
-                targetSpeed = max(targetSpeed, calc.Kph2Mps(1))
+                targetSpeed = evaluateNewLimit(targetSpeed, max(calc.Kph2Mps(remainingDistance / 2), calc.Kph2Mps(1)), "Distance")
             end
         end
 
@@ -464,10 +490,7 @@ function FlightFSM:New(settings)
         local pidValue = clamp(speedPid:get(), 0, 1)
 
         acceleration = direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
-
-        wTargetSpeed:Set(calc.Round(calc.Mps2Kph(speedLimit), 2))
     end
-
 
     settings:RegisterCallback("engineWarmup", function(value)
         s:SetEngineWarmupTime(value)
