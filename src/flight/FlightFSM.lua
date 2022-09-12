@@ -225,7 +225,7 @@ function FlightFSM:New(settings)
         local body = universe:ClosestBody(pos)
 
         if body.Atmosphere.Present then
-            local threshold = 0.7 -- Consider this this much of the atmosphere as a volume where we can't brake.
+            local threshold = 0.7 -- Consider this much of the atmosphere as a volume where we can't brake.
             local distanceToBody = (body.Geography.Center - pos):len()
             local distanceBetweenTargetAndBody = (body.Geography.Center - currentWP.destination):len()
             local deadZoneEndAltitude = body.Atmosphere.Radius - body.Atmosphere.Thickness * threshold
@@ -478,10 +478,12 @@ function FlightFSM:New(settings)
 
         local velocity = Velocity()
         local currentSpeed = velocity:len()
+        local motionDirection = velocity:normalize()
 
         local speedLimit = getSpeedLimit(deltaTime, velocity, direction, wp:MaxSpeed(), wp:FinalSpeed(), remainingDistance)
 
-        local brakeCounter = brakes:Feed(Ternary(direction:dot(velocity:normalize()) < 0, 0, speedLimit), currentSpeed)
+        local wrongDir = direction:dot(motionDirection) < 0
+        local brakeCounter = brakes:Feed(Ternary(wrongDir, 0, speedLimit), currentSpeed)
 
         speedPid:inject(speedLimit - currentSpeed)
 
@@ -489,7 +491,12 @@ function FlightFSM:New(settings)
         -- skewed outside its intended values and push us off the path, or make us fall when holding position (if pid gets <0)
         local pidValue = clamp(speedPid:get(), 0, 1)
 
-        acceleration = direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
+        -- When we're not moving in the direction we should, counter movement with all we got.
+        if wrongDir and currentSpeed > calc.Kph2Mps(20) then
+            acceleration = -motionDirection * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-motionDirection) + brakeCounter
+        else
+            acceleration = direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
+        end
     end
 
     settings:RegisterCallback("engineWarmup", function(value)
