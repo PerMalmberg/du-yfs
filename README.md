@@ -10,7 +10,7 @@
 * Adjustment read zero distance when off from path sometimes. Not always active?!?
 * 45 downward angle causes drops when brakes are enabled.
 * Use PID for precision movement.
-* Catch when construct moves the wrong way
+* Up and down movement still too fast with heavy load, even with the distance-based speed adjustment. Observation: Can't brake fast enough.
 
 * -- https://github.com/Dimencia/Archaegeo-Orbital-Hud/blob/7414fa08c50605936bd6a1dc3abfe503dd65a10c/src/requires/apclass.lua#L2755
 

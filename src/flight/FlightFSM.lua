@@ -19,6 +19,7 @@ local EngineGroup = require("abstraction/EngineGroup")
 local Accumulator = require("util/Accumulator")
 local Stopwatch = require("system/Stopwatch")
 local PID = require("cpml/pid")
+local Ray = require("util/Ray")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
@@ -266,12 +267,11 @@ function FlightFSM:New(settings)
 
         -- If we're passing through or into atmosphere, reduce speed before we reach it
         local pos = CurrentPos()
-        local body = universe:ClosestBody(pos)
-        local finalOverrideMsg
+        local firstBody = universe:CurrentGalaxy():BodiesInPath(Ray:New(pos, velocity:normalize()))[1]
 
-        if body.Atmosphere.Present then
-            local passesThroughAtmo, _, distanceToAtmo = calc.LineIntersectSphere(pos, velocity:normalize(), body.Geography.Center, body.Atmosphere.Radius)
-            if passesThroughAtmo then
+        if firstBody then
+            if firstBody.Atmosphere.Present then
+                local distanceToAtmo = firstBody:DistanceToAtmo(pos)
                 if distanceToAtmo == 0 then
                     -- We're already in atmo
                     targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed(), "Atmo")
@@ -279,12 +279,14 @@ function FlightFSM:New(settings)
                     -- Override to ensure slowdown before we hit atmo
                     finalSpeed = construct.getFrictionBurnSpeed()
                     remainingDistance = distanceToAtmo
-                    finalOverrideMsg = string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), remainingDistance)
                 end
+            else
+                -- This is a potential place to prevent crashing into the ground, but that'd mean we won't allow
+                -- going beneath the surface of the planet without additional information
             end
         end
 
-        wFinalSpeed:Set(finalOverrideMsg or 0)
+        wFinalSpeed:Set(string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), remainingDistance))
 
         local remainingWithoutDeadZone = adjustDistanceForDeadZone(remainingDistance)
 
