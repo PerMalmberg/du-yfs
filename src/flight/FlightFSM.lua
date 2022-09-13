@@ -29,6 +29,7 @@ local clamp = utils.clamp
 local abs = math.abs
 local min = math.min
 local max = math.max
+local MAX_INT = math.maxinteger
 
 local longitudinal = "longitudinal"
 local vertical = "vertical"
@@ -159,6 +160,7 @@ function FlightFSM:New(settings)
     local wAcceleration = p:CreateValue("Acceleration", "m/s2")
     local wTargetSpeed = p:CreateValue("Target speed", "km/h")
     local wFinalSpeed = p:CreateValue("Final speed")
+    local wSpeedDiff = p:CreateValue("Speed diff", "km/h")
     local wBrakeMaxSpeed = p:CreateValue("Brake Max Speed", "km/h")
     local wEngineMaxSpeed = p:CreateValue("Engine Max Speed", "km/h")
     local wSpeed = a:CreateValue("Abs. speed", "km/h")
@@ -219,31 +221,35 @@ function FlightFSM:New(settings)
         return res
     end
 
-    local function adjustDistanceForDeadZone(remainingDistance)
+    local function adjustForDeadZone(remainingDistance, body)
         local adjusted = remainingDistance
 
         local pos = CurrentPos()
-        local body = universe:ClosestBody(pos)
+
+        local speedDecrease = 0
 
         if body.Atmosphere.Present then
             local threshold = 0.7 -- Consider this much of the atmosphere as a volume where we can't brake.
             local distanceToBody = (body.Geography.Center - pos):len()
             local distanceBetweenTargetAndBody = (body.Geography.Center - currentWP.destination):len()
-            local deadZoneEndAltitude = body.Atmosphere.Radius - body.Atmosphere.Thickness * threshold
+            local deadZoneThickness = body.Atmosphere.Thickness * threshold
+            local deadZoneEndAltitude = body.Atmosphere.Radius - deadZoneThickness
             local isOutsideOrInUpperAtmosphere = distanceToBody > deadZoneEndAltitude
             local targetIsBelowUpperAtmosphere = distanceBetweenTargetAndBody < deadZoneEndAltitude
 
             if isOutsideOrInUpperAtmosphere and targetIsBelowUpperAtmosphere then
                 -- The target point may be high up in the atmosphere so prevent negative values
-                adjusted = max(remainingDistance, remainingDistance - body.Atmosphere.Thickness * threshold)
+                adjusted = max(remainingDistance, remainingDistance - deadZoneThickness)
+                -- V^2 = V0^2 + 2ad, we only want the speed increase so v = sqrt(2ad) for the thickness of the dead zone.
+                speedDecrease = (2 * body.Physics.Gravity * deadZoneThickness)^0.5
             end
         end
 
-        return adjusted
+        return adjusted, speedDecrease
     end
 
     local function evaluateNewLimit(currentLimit, newLimit, reason)
-        if newLimit < currentLimit then
+        if newLimit > 0 and newLimit < currentLimit then
             wTargetSpeed:Set(string.format("%.1f (%s)", calc.Mps2Kph(newLimit), reason))
             return newLimit
         end
@@ -261,24 +267,28 @@ function FlightFSM:New(settings)
         wPointDistance:Set(calc.Round(remainingDistance, 4))
 
         -- Calculate max speed we may have with available brake force to to reach the final speed.
-        local targetSpeed = evaluateNewLimit(math.maxinteger, construct.getMaxSpeed(), "Max")
-
-        local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-direction))
+        local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Max")
 
         -- If we're passing through or into atmosphere, reduce speed before we reach it
         local pos = CurrentPos()
         local firstBody = universe:CurrentGalaxy():BodiesInPath(Ray:New(pos, velocity:normalize()))[1]
+
+        local inAtmo = false
 
         if firstBody then
             if firstBody.Atmosphere.Present then
                 local distanceToAtmo = firstBody:DistanceToAtmo(pos)
                 if distanceToAtmo == 0 then
                     -- We're already in atmo
+                    inAtmo = true
                     targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed(), "Atmo")
+                    remainingDistance, _ = adjustForDeadZone(remainingDistance, firstBody)
                 elseif distanceToAtmo < remainingDistance then
-                    -- Override to ensure slowdown before we hit atmo
+                    -- Override to ensure slowdown before we hit atmo and assume we're going to fall into the dead zone.
+                    local speedDecreaseForDeadZone
+                    remainingDistance, speedDecreaseForDeadZone = adjustForDeadZone(distanceToAtmo, firstBody)
                     finalSpeed = construct.getFrictionBurnSpeed()
-                    remainingDistance = distanceToAtmo
+                    finalSpeed = max(finalSpeed, finalSpeed - speedDecreaseForDeadZone)
                 end
             else
                 -- This is a potential place to prevent crashing into the ground, but that'd mean we won't allow
@@ -288,22 +298,20 @@ function FlightFSM:New(settings)
 
         wFinalSpeed:Set(string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), remainingDistance))
 
-        local remainingWithoutDeadZone = adjustDistanceForDeadZone(remainingDistance)
+        local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-direction))
+        local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc, remainingDistance, finalSpeed)
 
-        local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc, remainingWithoutDeadZone, finalSpeed)
         wEngineMaxSpeed:Set(calc.Round(calc.Mps2Kph(engineMaxSpeed), 1))
 
         local brakeAcc = brakes:GravityInfluencedAvailableDeceleration()
 
         -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
-        local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingWithoutDeadZone, finalSpeed)
+        local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingDistance, finalSpeed)
         wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
 
         if maxSpeed > 0 then
             targetSpeed = evaluateNewLimit(targetSpeed, maxSpeed, "Route")
         end
-
-        local inAtmo = world.IsInAtmo()
 
         -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
         local atmoBrakeCutoff = inAtmo and currentSpeed <= 100
@@ -318,9 +326,7 @@ function FlightFSM:New(settings)
 
         -- Add margin based off distance when going mostly up or down and somewhat close
         if inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.7 then
-            if remainingDistance < 1000 then
-                targetSpeed = evaluateNewLimit(targetSpeed, max(calc.Kph2Mps(remainingDistance / 2), calc.Kph2Mps(1)), "Distance")
-            end
+            targetSpeed = targetSpeed / 2
         end
 
         return targetSpeed
