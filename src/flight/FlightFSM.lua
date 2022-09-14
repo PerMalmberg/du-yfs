@@ -503,7 +503,8 @@ function FlightFSM:New(settings)
         local diff = speedLimit - currentSpeed
         wSpeedDiff:Set(calc.Round(calc.Mps2Kph(diff), 1))
 
-        speedPid:inject(diff)
+        -- Feed the pid with 1/10:th to give it a wider working range.
+        speedPid:inject(diff / 10)
 
         -- Don't let the pid value go outside 0 ... 1 - that would cause the calculated thrust to get
         -- skewed outside its intended values and push us off the path, or make us fall when holding position (if pid gets <0)
