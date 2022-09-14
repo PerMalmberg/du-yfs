@@ -2,7 +2,6 @@ local r = require("CommonRequire")
 local log = r.log
 local brakes = r.brakes
 local vehicle = r.vehicle
-local world = vehicle.world
 local G = vehicle.world.G
 local calc = r.calc
 local CalcBrakeAcceleration = calc.CalcBrakeAcceleration
@@ -99,7 +98,7 @@ function FlightFSM:New(settings)
             if forThrust and distance <= warmupDistance then
                 return accLookup[#accLookup - 1].acc
             else
-                return engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir)
+                return engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir, false)
             end
         else
             return calc.Ternary(movingTowardsTarget, selected.acc, selected.reverse)
@@ -177,7 +176,7 @@ function FlightFSM:New(settings)
     local delta = Stopwatch()
     local temporaryWaypoint
     --speedPid = PID(0.01, 0.001, 0.0) -- Large
-    local speedPid = PID(0.01, 0, 10) -- Small
+    local speedPid = PID(0.1, 0, 0.01) -- Small
 
     local s = {
     }
@@ -257,7 +256,8 @@ function FlightFSM:New(settings)
         return currentLimit
     end
 
-    local function getSpeedLimit(deltaTime, velocity, direction, maxSpeed, finalSpeed, distanceToTarget)
+    local function getSpeedLimit(deltaTime, velocity, direction, waypoint)
+        local maxSpeed, finalSpeed, distanceToTarget = waypoint:MaxSpeed(), waypoint:FinalSpeed(), waypoint:DistanceTo()
 
         local currentSpeed = velocity:len()
         -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
@@ -281,6 +281,7 @@ function FlightFSM:New(settings)
                 if distanceToAtmo == 0 then
                     -- We're already in atmo
                     inAtmo = true
+
                     targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed(), "Atmo")
                     remainingDistance, _ = adjustForDeadZone(remainingDistance, firstBody)
                 elseif distanceToAtmo < remainingDistance then
@@ -298,12 +299,16 @@ function FlightFSM:New(settings)
 
         wFinalSpeed:Set(string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), remainingDistance))
 
-        local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-direction))
+        -- When we're moving up we don't want to consider the influence the atmosphere has one engines as doing so makes
+        -- us unable to get out of atmo as engines turn off prematurely.
+        local considerAtmoInfluenceOnEngines = direction:dot(universe:VerticalReferenceVector()) > 0.7
+
+        local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-direction, considerAtmoInfluenceOnEngines))
         local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc, remainingDistance, finalSpeed)
 
         wEngineMaxSpeed:Set(calc.Round(calc.Mps2Kph(engineMaxSpeed), 1))
 
-        local brakeAcc = brakes:GravityInfluencedAvailableDeceleration()
+        local brakeAcc = brakes:AvailableDeceleration()
 
         -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
         local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingDistance, finalSpeed)
@@ -313,20 +318,23 @@ function FlightFSM:New(settings)
             targetSpeed = evaluateNewLimit(targetSpeed, maxSpeed, "Route")
         end
 
-        -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
-        local atmoBrakeCutoff = inAtmo and currentSpeed <= 100
-
         if engineMaxSpeed > 0 then
-            if brakeMaxSpeed > 0 and not atmoBrakeCutoff then
-                targetSpeed = evaluateNewLimit(targetSpeed, min(targetSpeed, max(engineMaxSpeed, brakeMaxSpeed)), "Brake/Engine")
-            else
-                targetSpeed = evaluateNewLimit(targetSpeed, min(targetSpeed, engineMaxSpeed), "Engine")
-            end
+            targetSpeed = evaluateNewLimit(targetSpeed, engineMaxSpeed, "Engine")
         end
 
-        -- Add margin based off distance when going mostly up or down and somewhat close
-        if inAtmo and abs(direction:dot(universe:VerticalReferenceVector())) > 0.7 then
-            targetSpeed = targetSpeed / 2
+        if brakeMaxSpeed > 0 then
+            local atmoBrakeCutoff = inAtmo and currentSpeed <= 100
+            -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
+            if atmoBrakeCutoff then
+                -- Break harder
+                brakeMaxSpeed = brakeMaxSpeed / 2
+            end
+            targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brakes")
+        end
+
+        -- When we want to leave atmo, override target speed.
+        if inAtmo and not firstBody:IsInAtmo(waypoint.destination) then
+            targetSpeed = evaluateNewLimit(MAX_INT, construct.getFrictionBurnSpeed(), "Leave atmo")
         end
 
         return targetSpeed
@@ -347,7 +355,7 @@ function FlightFSM:New(settings)
 
         local movingTowardsTarget = deviationAccum:Add(vel:normalize():dot(dirToTarget) > 0.8) > 0.5
 
-        local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:normalize())
+        local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:normalize(), false)
         local brakeDistance = CalcBrakeDistance(currSpeed, maxBrakeAcc) + warmupTime * currSpeed
         local speedLimit = calc.Scale(distance, 0, toleranceDistance, adjustmentSpeedMin, adjustmentSpeedMax)
 
@@ -482,18 +490,20 @@ function FlightFSM:New(settings)
     function s:Move(deltaTime)
         local wp = s:CurrentWP()
         local direction = wp:DirectionTo()
-        local remainingDistance = wp:DistanceTo()
 
         local velocity = Velocity()
         local currentSpeed = velocity:len()
         local motionDirection = velocity:normalize()
 
-        local speedLimit = getSpeedLimit(deltaTime, velocity, direction, wp:MaxSpeed(), wp:FinalSpeed(), remainingDistance)
+        local speedLimit = getSpeedLimit(deltaTime, velocity, direction, wp)
 
         local wrongDir = direction:dot(motionDirection) < 0
         local brakeCounter = brakes:Feed(Ternary(wrongDir, 0, speedLimit), currentSpeed)
 
-        speedPid:inject(speedLimit - currentSpeed)
+        local diff = speedLimit - currentSpeed
+        wSpeedDiff:Set(calc.Round(calc.Mps2Kph(diff), 1))
+
+        speedPid:inject(diff)
 
         -- Don't let the pid value go outside 0 ... 1 - that would cause the calculated thrust to get
         -- skewed outside its intended values and push us off the path, or make us fall when holding position (if pid gets <0)

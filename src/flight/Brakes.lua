@@ -26,7 +26,7 @@ function Brake:Instance()
     
     local ctrl = library:GetController()
     local p = sharedPanel:Get("Brakes")
-    local pid = PID(1.1, 0, 0.5)
+    local pid = PID(0.5, 0, 0.5)
     local deceleration = 0
     local wDeceleration = p:CreateValue("Max deceleration", "m/s2")
     local wCurrentDec = p:CreateValue("Brake dec.", "m/s2")
@@ -90,6 +90,10 @@ function Brake:Instance()
         local gravInfluence = (universe:VerticalReferenceVector() * G()):dot(-Velocity():normalize())
         -- Might not be enough brakes to counter gravity so don't go below 0
         return max(0, rawAvailableDeceleration() + gravInfluence)
+    end
+
+    function s:AvailableDeceleration()
+        return rawAvailableDeceleration()
     end
 
     ---@param targetSpeed number The desired speed
