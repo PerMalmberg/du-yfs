@@ -38,7 +38,7 @@ local function new(routeController, flightFSM)
         roll = AxisControl(AxisControlRoll),
         yaw = AxisControl(AxisControlYaw),
         flightFSM = flightFSM,
-        route = Route(),
+        route = Route:New(),
         currentWaypoint = nil, -- The positions we want to move to
         previousWaypoint = nil, -- Previous waypoint
         waypointReachedSignaled = false,

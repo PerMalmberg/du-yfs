@@ -33,7 +33,7 @@ function controller:LoadRoute(name)
         return nil
     end
 
-    local route = Route()
+    local route = Route:New()
 
     for _, point in ipairs(data) do
         local p = Point:New(point.pos, point.waypointRef, PointOptions:New(point.options))
@@ -91,7 +91,7 @@ function controller:StoreRoute(name, route)
     local routes = self.db:Get(NAMED_ROUTES) or {}
     local data = {}
 
-    for _, p in ipairs(route.points) do
+    for _, p in ipairs(route:Points()) do
         table.insert(data, p:Persist())
     end
 
@@ -134,7 +134,7 @@ end
 
 function controller:ActivateRoute(name)
     if name == nil then
-        self.current = Route()
+        self.current = Route:New()
         return false
     end
 
@@ -159,7 +159,7 @@ function controller:CreateRoute(name)
         return false
     end
 
-    self.edit = Route()
+    self.edit = Route:New()
     self.editName = name
 
     log:Info("Route '", name, "' created (but not yet saved)")

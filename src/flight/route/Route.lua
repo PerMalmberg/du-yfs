@@ -10,87 +10,80 @@ local vehicle = r.vehicle
 local universe = r.universe
 local Point = require("flight/route/Point")
 
-local route = {}
-route.__index = route
+---@class Route Represents a route
+local Route = {}
+Route.__index = Route
 
-function route:AddPos(positionString)
-    checks.IsString(positionString, "positionString", "route:AddPos")
+function Route:New()
+    local s = {}
 
-    local pos = universe:ParsePosition(positionString)
+    local points = {}
+    local currentPointIx = 1
 
-    if pos == nil then
-        log:Error("Could not add position to route")
-        return nil
+    function s:Points()
+        return points
     end
 
-    return self:AddPoint(Point:New(pos:AsPosString()))
-end
+    function s:AddPos(positionString)
+        checks.IsString(positionString, "positionString", "route:AddPos")
 
-function route:AddCoordinate(coord)
-    checks.IsVec3(coord, "coord", "route:AddCoordinate")
+        local pos = universe:ParsePosition(positionString)
 
-    return self:AddPoint(Point:New(universe:CreatePos(coord):AsPosString()))
-end
+        if pos == nil then
+            log:Error("Could not add position to route")
+            return nil
+        end
 
-function route:AddWaypointRef(name)
-    return self:AddPoint(Point:New("", name))
-end
-
-function route:AddCurrentPos()
-    return self:AddCoordinate(vehicle.position.Current())
-end
-
-function route:AddPoint(point)
-    table.insert(self.points, point)
-    return point
-end
-
-function route:Clear()
-    self.points = {}
-    self.currentPointIx = 1
-end
-
----@return Point Returns the next point in the route or nil if it is the last.
-function route:Next()
-    if self:LastPointReached() then
-        return nil
+        return s:AddPoint(Point:New(pos:AsPosString()))
     end
 
-    local p = self.points[self.currentPointIx]
-    self.currentPointIx = self.currentPointIx + 1
+    function s:AddCoordinate(coord)
+        checks.IsVec3(coord, "coord", "route:AddCoordinate")
 
-    return p
-end
-
-function route:Dump()
-    for _, p in ipairs(self.points) do
-        log:Info(p:Persist())
+        return s:AddPoint(Point:New(universe:CreatePos(coord):AsPosString()))
     end
-end
 
-function route:LastPointReached()
-    return self.currentPointIx > #self.points
-end
+    function s:AddWaypointRef(name)
+        return s:AddPoint(Point:New("", name))
+    end
 
-local function new()
-    local instance = {
-        points = {},
+    function s:AddCurrentPos()
+        return s:AddCoordinate(vehicle.position.Current())
+    end
+
+    function s:AddPoint(point)
+        table.insert(points, point)
+        return point
+    end
+
+    function s:Clear()
+        points = {}
         currentPointIx = 1
-    }
+    end
 
-    setmetatable(instance, route)
+    ---@return Point Returns the next point in the route or nil if it is the last.
+    function s:Next()
+        if s:LastPointReached() then
+            return nil
+        end
 
-    return instance
+        local p = points[currentPointIx]
+        currentPointIx = currentPointIx + 1
+
+        return p
+    end
+
+    function s:Dump()
+        for _, p in ipairs(points) do
+            log:Info(p:Persist())
+        end
+    end
+
+    function s:LastPointReached()
+        return currentPointIx > #points
+    end
+
+    return setmetatable(s, Route)
 end
 
--- The module
-return setmetatable(
-        {
-            new = new
-        },
-        {
-            __call = function(_, ...)
-                return new(...)
-            end
-        }
-)
+return Route
