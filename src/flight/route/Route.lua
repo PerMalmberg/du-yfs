@@ -23,17 +23,17 @@ function route:AddPos(positionString)
         return nil
     end
 
-    return self:AddPoint(Point(pos:AsPosString()))
+    return self:AddPoint(Point:New(pos:AsPosString()))
 end
 
 function route:AddCoordinate(coord)
     checks.IsVec3(coord, "coord", "route:AddCoordinate")
 
-    return self:AddPoint(Point(universe:CreatePos(coord):AsPosString()))
+    return self:AddPoint(Point:New(universe:CreatePos(coord):AsPosString()))
 end
 
 function route:AddWaypointRef(name)
-    return self:AddPoint(Point("", name))
+    return self:AddPoint(Point:New("", name))
 end
 
 function route:AddCurrentPos()

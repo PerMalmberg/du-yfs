@@ -36,7 +36,7 @@ function controller:LoadRoute(name)
     local route = Route()
 
     for _, point in ipairs(data) do
-        local p = Point(point.pos, point.waypointRef, PointOptions:New(point.options))
+        local p = Point:New(point.pos, point.waypointRef, PointOptions:New(point.options))
 
         if p:HasWaypointRef() then
             local wpName = p:WaypointRef()
@@ -102,9 +102,9 @@ end
 
 ---@param name string The name of the waypoint
 ---@param pos string A ::pos string
-function controller:StoreWaypoint(name, pos, options)
+function controller:StoreWaypoint(name, pos)
     local waypoints = self.db:Get(NAMED_POINTS) or {}
-    local p = Point(pos)
+    local p = Point:New(pos)
     waypoints[name] = p:Persist()
 
     self.db:Put(NAMED_POINTS, waypoints)
@@ -120,7 +120,7 @@ function controller:LoadWaypoint(name)
         return nil
     end
 
-    return Point(point.pos)
+    return Point:New(point.pos)
 end
 
 ---@return Point Returns the next point in the route or nil if it is the last.
