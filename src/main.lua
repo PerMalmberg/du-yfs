@@ -30,7 +30,7 @@ runner:Execute(
             local fsm = FlightFSM:New(settings)
             settings:Reload()
 
-            local fc = FC(RouteController(routeDb), fsm)
+            local fc = FC(RouteController:Instance(routeDb), fsm)
             fc:ReceiveEvents()
             Input:New(fc)
 
