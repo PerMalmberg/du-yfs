@@ -8,7 +8,6 @@ local PointOptions = require("flight/route/PointOptions")
 local Point = {}
 Point.__index = Point
 
-
 function Point:New(pos, waypointRef, options)
     local s = {}
 
@@ -47,7 +46,6 @@ function Point:New(pos, waypointRef, options)
     function s:Options()
         return opt
     end
-
 
     return setmetatable(s, Point)
 end
