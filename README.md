@@ -10,7 +10,7 @@
 * Adjustment read zero distance when off from path sometimes. Not always active?!?
 * 45 downward angle causes drops when brakes are enabled.
 * Use PID for precision movement.
-* Need to prevent acceleration when moving down and warmup distance is >= remaining distance so that engines are kept on.
+
 
 
 
