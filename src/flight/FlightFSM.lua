@@ -169,55 +169,21 @@ function FlightFSM:New(settings)
     local wAdjBrakeDistance = a:CreateValue("Adj. brake dist.", "m")
     local wAdjSpeed = a:CreateValue("Adj. speed (limit)", "m/s")
     local currentWP
+    local temporaryWaypoint
     local acceleration
     local adjustmentAcc = nullVec
     local lastDevDist = 0
     local deviationAccum = Accumulator:New(10, Accumulator.Truth)
     local delta = Stopwatch()
-    local temporaryWaypoint
     --speedPid = PID(0.01, 0.001, 0.0) -- Large
     local speedPid = PID(0.1, 0, 0.01) -- Small
 
     local s = {
     }
 
-    function s:SetState(state)
-        if current ~= nil then
-            current:Leave()
-        end
 
-        if state == nil then
-            wStateName:Set("No state!")
-        else
-            wStateName:Set(state:Name())
-            state:Enter()
-        end
-
-        current = state
-    end
-
-    function s:SetEngineWarmupTime(t)
-        warmupTime = t  * 2 -- Warmup time is to T50, so double it for full engine effect
-    end
-
-    local function warmupDistance()
-        local t = warmupTime
-        return Velocity():len() * t + 0.5 * Acceleration():dot(Velocity():normalize()) * t * t
-    end
-
-    function s:CheckPathAlignment(currentPos, chaseData)
-        local res = true
-
-        local vel = Velocity()
-        local speed = vel:len()
-
-        local toNearest = chaseData.nearest - currentPos
-
-        if speed > 1 then
-            res = toNearest:len() < toleranceDistance
-        end
-
-        return res
+    local function selectWP()
+        return Ternary(temporaryWaypoint, temporaryWaypoint, currentWP)
     end
 
     local function adjustForDeadZone(remainingDistance, body)
@@ -230,7 +196,7 @@ function FlightFSM:New(settings)
         if body.Atmosphere.Present then
             local threshold = 0.7 -- Consider this much of the atmosphere as a volume where we can't brake.
             local distanceToBody = (body.Geography.Center - pos):len()
-            local distanceBetweenTargetAndBody = (body.Geography.Center - currentWP.destination):len()
+            local distanceBetweenTargetAndBody = (body.Geography.Center - selectWP().destination):len()
             local deadZoneThickness = body.Atmosphere.Thickness * threshold
             local deadZoneEndAltitude = body.Atmosphere.Radius - deadZoneThickness
             local isOutsideOrInUpperAtmosphere = distanceToBody > deadZoneEndAltitude
@@ -418,6 +384,37 @@ function FlightFSM:New(settings)
         end
     end
 
+    ---@param deltaTime number The time since last Flush
+    local function move(deltaTime, waypoint)
+        local direction = waypoint:DirectionTo()
+
+        local velocity = Velocity()
+        local currentSpeed = velocity:len()
+        local motionDirection = velocity:normalize()
+
+        local speedLimit = getSpeedLimit(deltaTime, velocity, direction, waypoint)
+
+        local wrongDir = direction:dot(motionDirection) < 0
+        local brakeCounter = brakes:Feed(Ternary(wrongDir, 0, speedLimit), currentSpeed)
+
+        local diff = speedLimit - currentSpeed
+        wSpeedDiff:Set(calc.Round(calc.Mps2Kph(diff), 1))
+
+        -- Feed the pid with 1/10:th to give it a wider working range.
+        speedPid:inject(diff / 10)
+
+        -- Don't let the pid value go outside 0 ... 1 - that would cause the calculated thrust to get
+        -- skewed outside its intended values and push us off the path, or make us fall when holding position (if pid gets <0)
+        local pidValue = clamp(speedPid:get(), 0, 1)
+
+        -- When we're not moving in the direction we should, counter movement with all we got.
+        if wrongDir and currentSpeed > calc.Kph2Mps(20) then
+            acceleration = -motionDirection * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-motionDirection) + brakeCounter
+        else
+            acceleration = direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
+        end
+    end
+
     function s:FsmFlush(next, previous)
         local deltaTime = 0
         if delta:IsRunning() then
@@ -429,22 +426,24 @@ function FlightFSM:New(settings)
 
         currentWP = next
 
+        local selectedWP = selectWP()
+
         local c = current
         if c ~= nil then
             local pos = CurrentPos()
-            local chaseData = nearestPointBetweenWaypoints(previous, next, pos, 6)
+            local chaseData = nearestPointBetweenWaypoints(previous, selectedWP, pos, 6)
 
             -- Assume we're just going to counter gravity.
             acceleration = nullVec
             adjustmentAcc = nullVec
 
-            c:Flush(deltaTime, next, previous, chaseData)
-            local moveDirection = next:DirectionTo()
+            c:Flush(deltaTime, selectedWP, previous, chaseData)
+            local moveDirection = selectedWP:DirectionTo()
 
-            s:Move(deltaTime)
+            move(deltaTime, selectedWP)
 
             adjustForDeviation(chaseData, pos, moveDirection)
-            applyAcceleration(moveDirection, next:GetPrecisionMode())
+            applyAcceleration(moveDirection, selectedWP:GetPrecisionMode())
 
             visual:DrawNumber(9, chaseData.rabbit)
             visual:DrawNumber(8, chaseData.nearest)
@@ -454,13 +453,49 @@ function FlightFSM:New(settings)
         end
     end
 
+    function s:SetState(state)
+        if current ~= nil then
+            current:Leave()
+        end
+
+        if state == nil then
+            wStateName:Set("No state!")
+        else
+            wStateName:Set(state:Name())
+            state:Enter()
+        end
+
+        current = state
+    end
+
+    function s:SetEngineWarmupTime(t)
+        warmupTime = t  * 2 -- Warmup time is to T50, so double it for full engine effect
+    end
+
+    local function warmupDistance()
+        local t = warmupTime
+        return Velocity():len() * t + 0.5 * Acceleration():dot(Velocity():normalize()) * t * t
+    end
+
+    function s:CheckPathAlignment(currentPos, chaseData)
+        local res = true
+
+        local vel = Velocity()
+        local speed = vel:len()
+
+        local toNearest = chaseData.nearest - currentPos
+
+        if speed > 1 then
+            res = toNearest:len() < toleranceDistance
+        end
+
+        return res
+    end
+
     function s:SetTemporaryWaypoint(waypoint)
         temporaryWaypoint = waypoint
     end
 
-    function s:CurrentWP()
-        return Ternary(temporaryWaypoint, temporaryWaypoint, currentWP)
-    end
 
     function s:Update()
         if current ~= nil then
@@ -484,38 +519,6 @@ function FlightFSM:New(settings)
     function s:NullThrust()
         acceleration = nullVec
         adjustmentAcc = nullVec
-    end
-
-    ---@param deltaTime number The time since last Flush
-    function s:Move(deltaTime)
-        local wp = s:CurrentWP()
-        local direction = wp:DirectionTo()
-
-        local velocity = Velocity()
-        local currentSpeed = velocity:len()
-        local motionDirection = velocity:normalize()
-
-        local speedLimit = getSpeedLimit(deltaTime, velocity, direction, wp)
-
-        local wrongDir = direction:dot(motionDirection) < 0
-        local brakeCounter = brakes:Feed(Ternary(wrongDir, 0, speedLimit), currentSpeed)
-
-        local diff = speedLimit - currentSpeed
-        wSpeedDiff:Set(calc.Round(calc.Mps2Kph(diff), 1))
-
-        -- Feed the pid with 1/10:th to give it a wider working range.
-        speedPid:inject(diff / 10)
-
-        -- Don't let the pid value go outside 0 ... 1 - that would cause the calculated thrust to get
-        -- skewed outside its intended values and push us off the path, or make us fall when holding position (if pid gets <0)
-        local pidValue = clamp(speedPid:get(), 0, 1)
-
-        -- When we're not moving in the direction we should, counter movement with all we got.
-        if wrongDir and currentSpeed > calc.Kph2Mps(20) then
-            acceleration = -motionDirection * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-motionDirection) + brakeCounter
-        else
-            acceleration = direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
-        end
     end
 
     settings:RegisterCallback("engineWarmup", function(value)
