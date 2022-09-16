@@ -274,12 +274,18 @@ function Input:New(flightCore)
         routeController:StoreWaypoint(data.commandValue, pos)
     end
 
-    cmd:Accept("save-position-as", saveAsWaypoint):AsString():Mandatory()
+    cmd:Accept("pos-save-as", saveAsWaypoint):AsString():Mandatory()
+
+    cmd:Accept("pos-list", function(_)
+        for _, data in ipairs(routeController:GetWaypoints()) do
+            log:Info(data.name, ": ", data.point:Pos())
+        end
+    end)
 
     cmd :Accept("route-dump", function(data)
-        local r = routeController:CurrentEdit()
-        if r then
-            r:Dump()
+        local curr = routeController:CurrentEdit()
+        if curr then
+            curr:Dump()
         end
     end):AsString()
 

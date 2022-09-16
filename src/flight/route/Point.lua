@@ -1,5 +1,6 @@
 local universe = require("CommonRequire").universe
 local PointOptions = require("flight/route/PointOptions")
+local checks = require("debug/Checks")
 
 -- This class represents a position and behavior in a route.
 -- Keep data as small as possible.
@@ -9,6 +10,13 @@ local Point = {}
 Point.__index = Point
 
 function Point:New(pos, waypointRef, options)
+    options = options or PointOptions:New()
+    waypointRef = waypointRef or ""
+
+    checks.IsString(pos, "pos", "Point:New")
+    checks.IsString(waypointRef, "waypointRef", "Point:New")
+    checks.IsTable(options, "options", "Point:New")
+
     local s = {}
 
     local position = pos -- ::pos string
@@ -32,6 +40,7 @@ function Point:New(pos, waypointRef, options)
     end
 
     function s:Persist()
+        -- this table determines how points are stored
         return {
             pos = opt,
             waypointRef = wpRef or "",

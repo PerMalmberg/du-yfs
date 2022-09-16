@@ -126,8 +126,28 @@ function Controller:Instance(bufferedDB)
         log:Info("Waypoint saved as '", name, "'")
     end
 
-    function s:LoadWaypoint(name)
-        local waypoints = db:Get(NAMED_POINTS) or {}
+    function s:GetWaypoints()
+        local namedPositions = db:Get(NAMED_POINTS) or {}
+
+        local names = {}
+
+        -- Create a list of the names
+        for name, _ in pairs(namedPositions) do
+            table.insert(names, name)
+        end
+
+        table.sort(names)
+
+        local res = {}
+        for _, name in pairs(names) do
+            table.insert(res,{name = name, point = s:LoadWaypoint(name, namedPositions)})
+        end
+
+        return res
+    end
+
+    function s:LoadWaypoint(name, waypoints)
+        waypoints = waypoints or db:Get(NAMED_POINTS) or {}
         local point = waypoints[name]
 
         if point == nil then

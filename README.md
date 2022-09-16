@@ -10,7 +10,7 @@
 * Adjustment read zero distance when off from path sometimes. Not always active?!?
 * 45 downward angle causes drops when brakes are enabled.
 * Use PID for precision movement.
-
+* Why doesn't it accelerate when moving up/down just 100m?
 
 
 
@@ -63,7 +63,8 @@
 |                       | -lockdir           | boolean | Y        | if true, locks the direction during the approach to that which the construct had when the command was issued. |
 |                       | -margin            | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.  |
 | route-dump            |                    |         |          | Dumps the current route to the console                                                                        |
-| save-position-as      | name of waypoint   |         | N        | Save the current position as a named waypoint for later use in a route                                        |
+| pos-save-as           | name of waypoint   |         | N        | Save the current position as a named waypoint for later use in a route                                        |
+| pos-list              |                    |         |          | Lists the saved positions                                                                                     |
 | set                   |                    |         |          | Sets the specified setting to the specified value                                                             |
 |                       | -engineWarmup      | seconds | Y        | Sets the engine warmup time (T50). Set this to that of the engine with longes warmup.                         |
 | get                   | <same as 'set'>    |         |          | Displays the value of the specified value                                                                     |
