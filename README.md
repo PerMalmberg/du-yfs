@@ -11,6 +11,7 @@
 * 45 downward angle causes drops when brakes are enabled.
 * Use PID for precision movement.
 * Why doesn't it accelerate when moving up/down just 100m?
+* Saving routes is broken, it saves "function: ADDRESS..." instead of the data.
 
 
 
