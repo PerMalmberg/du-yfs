@@ -2,23 +2,23 @@ local PointOptions = {}
 PointOptions.__index = PointOptions
 
 function PointOptions:New(optionData)
-    local self = {
+    local s = {
         options = optionData or {}
     }
 
-    function self:Set(opt, value)
-        self.options[opt] = value
+    function s:Set(opt, value)
+        s.options[opt] = value
     end
 
-    function self:Get(opt, default)
-        return self.options[opt] or default
+    function s:Get(opt, default)
+        return s.options[opt] or default
     end
 
-    function self:Data()
-        return self.options
+    function s:Data()
+        return s.options
     end
 
-    return setmetatable(self, PointOptions)
+    return setmetatable(s, PointOptions)
 end
 
 PointOptions.LOCK_DIRECTION = "lockDir" -- unit vector in world coordinates in format {x,y,z}. Causes the direction of the construct to be locked to the direction stored in the point throughout the approach to the point.
