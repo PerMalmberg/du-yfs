@@ -1,4 +1,3 @@
-local universe = require("CommonRequire").universe
 local PointOptions = require("flight/route/PointOptions")
 local checks = require("debug/Checks")
 
@@ -23,6 +22,7 @@ function Point:New(pos, waypointRef, options)
     local wpRef = waypointRef or ""
     local opt = options or PointOptions:New()
 
+    ---@return string A ::pos{} string
     function s:Pos()
         return position
     end
@@ -42,14 +42,10 @@ function Point:New(pos, waypointRef, options)
     function s:Persist()
         -- this table determines how points are stored
         return {
-            pos = opt,
+            pos = position,
             waypointRef = wpRef or "",
             options = opt:Data() or {}
         }
-    end
-
-    function s:Coordinate()
-        return universe:ParsePosition(position):Coordinates()
     end
 
     function s:Options()

@@ -1,4 +1,5 @@
 local r = require("CommonRequire")
+local universe = r.universe
 local brakes = r.brakes
 local vehicle = r.vehicle
 local visual = r.visual
@@ -91,7 +92,8 @@ function flightCore:CreateWPFromPoint(point, lastInRoute)
     local finalSpeed = Ternary(lastInRoute, 0,  opt:Get(PointOptions.FINAL_SPEED, defaultSpeed))
     local maxSpeed = opt:Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored).
 
-    local wp = Waypoint(point:Coordinate(), finalSpeed, maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
+    local coordinate = universe:ParsePosition(point:Pos()):Coordinates()
+    local wp = Waypoint(coordinate, finalSpeed, maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
 
     wp:SetPrecisionMode(opt:Get(PointOptions.PRECISION, false))
 

@@ -3,5 +3,6 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/external/du-libs" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external/du-lua-examples" vcs="Git" />
   </component>
 </project>
