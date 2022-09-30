@@ -53,23 +53,29 @@ function FlightFSM:New(settings)
 
     local normalModeGroup = {
         thrust = {
-            engines = EngineGroup(thrustTag, airfoil), prio1Tag = airfoil, prio2Tag = thrustTag, prio3Tag = "", antiG = antiG },
-            adjust = { engines = EngineGroup(), prio1Tag = "", prio2Tag = "", prio3Tag = "", antiG = noAntiG }
+            engines = EngineGroup(thrustTag, airfoil), prio1Tag = airfoil, prio2Tag = thrustTag, prio3Tag = "",
+            antiG = antiG
+        },
+        adjust = { engines = EngineGroup(), prio1Tag = "", prio2Tag = "", prio3Tag = "", antiG = noAntiG }
     }
 
     local forwardGroup = {
-        thrust = { engines = EngineGroup(longitudinal), prio1Tag = thrustTag, prio2Tag = "", prio3Tag = "", antiG = noAntiG },
-        adjust = { engines = EngineGroup(airfoil, lateral, vertical), prio1Tag = airfoil, prio2Tag = lateral, prio3Tag = vertical, antiG = antiG }
+        thrust = { engines = EngineGroup(longitudinal), prio1Tag = thrustTag, prio2Tag = "", prio3Tag = "",
+            antiG = noAntiG },
+        adjust = { engines = EngineGroup(airfoil, lateral, vertical), prio1Tag = airfoil, prio2Tag = lateral,
+            prio3Tag = vertical, antiG = antiG }
     }
 
     local rightGroup = {
         thrust = { engines = EngineGroup(lateral), prio1Tag = thrustTag, prio2Tag = "", prio3Tag = "", antiG = noAntiG },
-        adjust = { engines = EngineGroup(vertical, longitudinal), prio1Tag = vertical, prio2Tag = longitudinal, prio3Tag = "", antiG = antiG }
+        adjust = { engines = EngineGroup(vertical, longitudinal), prio1Tag = vertical, prio2Tag = longitudinal,
+            prio3Tag = "", antiG = antiG }
     }
 
     local upGroup = {
         thrust = { engines = EngineGroup(vertical), prio1Tag = vertical, prio2Tag = "", prio3Tag = "", antiG = antiG },
-        adjust = { engines = EngineGroup(lateral, longitudinal), prio1Tag = vertical, prio2Tag = longitudinal, prio3Tag = "", antiG = noAntiG }
+        adjust = { engines = EngineGroup(lateral, longitudinal), prio1Tag = vertical, prio2Tag = longitudinal,
+            prio3Tag = "", antiG = noAntiG }
     }
 
     local adjustAccLookup = {
@@ -206,7 +212,7 @@ function FlightFSM:New(settings)
                 -- The target point may be high up in the atmosphere so prevent negative values
                 adjusted = max(remainingDistance, remainingDistance - deadZoneThickness)
                 -- V^2 = V0^2 + 2ad, we only want the speed increase so v = sqrt(2ad) for the thickness of the dead zone.
-                speedDecrease = (2 * body.Physics.Gravity * deadZoneThickness)^0.5
+                speedDecrease = (2 * body.Physics.Gravity * deadZoneThickness) ^ 0.5
             end
         end
 
@@ -228,7 +234,8 @@ function FlightFSM:New(settings)
         local currentSpeed = velocity:len()
         -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
         -- This is inaccurate if acceleration isn't in the same direction as our movement vector, but it is gives a safe value.
-        local remainingDistance = max(0, distanceToTarget - (currentSpeed * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
+        local remainingDistance = max(0,
+            distanceToTarget - (currentSpeed * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
 
         wPointDistance:Set(calc.Round(remainingDistance, 4))
 
@@ -237,7 +244,7 @@ function FlightFSM:New(settings)
 
         -- If we're passing through or into atmosphere, reduce speed before we reach it
         local pos = CurrentPos()
-        local firstBody = universe:CurrentGalaxy():BodiesInPath(Ray:New(pos, velocity:normalize()))[1]
+        local firstBody = universe:CurrentGalaxy():BodiesInPath(Ray.New(pos, velocity:normalize()))[1]
 
         local inAtmo = false
 
@@ -269,7 +276,8 @@ function FlightFSM:New(settings)
         -- us unable to get out of atmo as engines turn off prematurely.
         local considerAtmoInfluenceOnEngines = direction:dot(universe:VerticalReferenceVector()) > 0.7
 
-        local engineAcc = max(0, engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-direction, considerAtmoInfluenceOnEngines))
+        local engineAcc = max(0,
+            engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-direction, considerAtmoInfluenceOnEngines))
         local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc, remainingDistance, finalSpeed)
 
         wEngineMaxSpeed:Set(calc.Round(calc.Mps2Kph(engineMaxSpeed), 1))
@@ -315,13 +323,15 @@ function FlightFSM:New(settings)
         local targetPoint = chaseData.nearest
 
         local toTargetWorld = targetPoint - currentPos
-        local toTarget = calc.ProjectPointOnPlane(plane, currentPos, chaseData.nearest) - calc.ProjectPointOnPlane(plane, currentPos, currentPos)
+        local toTarget = calc.ProjectPointOnPlane(plane, currentPos, chaseData.nearest) -
+            calc.ProjectPointOnPlane(plane, currentPos, currentPos)
         local dirToTarget = toTarget:normalize()
         local distance = toTarget:len()
 
         local movingTowardsTarget = deviationAccum:Add(vel:normalize():dot(dirToTarget) > 0.8) > 0.5
 
-        local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:normalize(), false)
+        local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:normalize(),
+            false)
         local brakeDistance = CalcBrakeDistance(currSpeed, maxBrakeAcc) + warmupTime * currSpeed
         local speedLimit = calc.Scale(distance, 0, toleranceDistance, adjustmentSpeedMin, adjustmentSpeedMax)
 
@@ -337,20 +347,24 @@ function FlightFSM:New(settings)
                     adjustmentAcc = -dirToTarget * CalcBrakeAcceleration(currSpeed, distance)
                 elseif distance > lastDevDist then
                     -- Slipping away, nudge back to path
-                    adjustmentAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                    adjustmentAcc = dirToTarget *
+                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
                 elseif distance < toleranceDistance then
                     -- Add brake acc to help stop where we want
                     adjustmentAcc = -dirToTarget * CalcBrakeAcceleration(currSpeed, distance)
                 elseif currSpeed < speedLimit then
                     -- This check needs to be last so that it doesn't interfere with decelerating towards destination
-                    adjustmentAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                    adjustmentAcc = dirToTarget *
+                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
                 end
             else
                 -- Counter current movement, if any
                 if currSpeed > 0.1 then
-                    adjustmentAcc = -vel:normalize() * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                    adjustmentAcc = -vel:normalize() *
+                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
                 else
-                    adjustmentAcc = dirToTarget * getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                    adjustmentAcc = dirToTarget *
+                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
                 end
             end
         else
@@ -374,12 +388,15 @@ function FlightFSM:New(settings)
 
             if precision then
                 -- Apply acceleration independently
-                ctrl.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 1)
-                ctrl.setEngineCommand(adj.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, adj.prio1Tag, adj.prio2Tag, adj.prio3Tag, 1)
+                ctrl.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag,
+                    t.prio2Tag, t.prio3Tag, 1)
+                ctrl.setEngineCommand(adj.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, adj.prio1Tag,
+                    adj.prio2Tag, adj.prio3Tag, 1)
             else
                 -- Apply acceleration as a single vector
                 local finalAcc = thrustAcc + adjustAcc
-                ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag, t.prio3Tag, 1)
+                ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag
+                    , t.prio3Tag, 1)
             end
         end
     end
@@ -409,9 +426,11 @@ function FlightFSM:New(settings)
 
         -- When we're not moving in the direction we should, counter movement with all we got.
         if wrongDir and currentSpeed > calc.Kph2Mps(20) then
-            acceleration = -motionDirection * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-motionDirection) + brakeCounter
+            acceleration = -motionDirection *
+                engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-motionDirection) + brakeCounter
         else
-            acceleration = direction * pidValue * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
+            acceleration = direction * pidValue *
+                engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
         end
     end
 
@@ -469,7 +488,7 @@ function FlightFSM:New(settings)
     end
 
     function s:SetEngineWarmupTime(t)
-        warmupTime = t  * 2 -- Warmup time is to T50, so double it for full engine effect
+        warmupTime = t * 2 -- Warmup time is to T50, so double it for full engine effect
     end
 
     local function warmupDistance()
@@ -495,7 +514,6 @@ function FlightFSM:New(settings)
     function s:SetTemporaryWaypoint(waypoint)
         temporaryWaypoint = waypoint
     end
-
 
     function s:Update()
         if current ~= nil then
@@ -540,7 +558,7 @@ function FlightFSM:New(settings)
         log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d)
     end)
 
-    
+
     s:SetState(Idle(s))
 
     return setmetatable(s, FlightFSM)
