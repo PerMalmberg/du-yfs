@@ -94,21 +94,6 @@ function Input:New(flightCore)
 
     local start = vehicle.position.Current()
 
-    input:Register(keys.option7, Criteria():OnPress(), function()
-        routeController:ActivateRoute()
-        local route = routeController:CurrentRoute()
-        local opt = route:AddPos("::pos{0,2,7.7063,78.0886,39.7209}"):Options()
-        opt:Set(PointOptions.MAX_SPEED, calc.Kph2Mps(40))
-        opt:Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
-
-        opt = route:AddPos("::pos{0,2,7.7097,78.0763,38.9275}"):Options()
-        opt:Set(PointOptions.MAX_SPEED, calc.Kph2Mps(100))
-        opt:Set(PointOptions.MARGIN, 1)
-
-        opt = route:AddPos("::pos{0,2,7.6924,78.0694,36.1659}"):Options()
-        flightCore:StartFlight()
-    end)
-
     input:Register(keys.option8, Criteria():OnPress(), function()
         routeController:ActivateRoute()
         local route = routeController:CurrentRoute()
@@ -165,7 +150,8 @@ function Input:New(flightCore)
         routeController:ActivateRoute()
         local route = routeController:CurrentRoute()
         local pos = vehicle.position.Current()
-        local point = route:AddCoordinate(pos + vehicle.orientation.Forward() * data.f + vehicle.orientation.Right() * data.r - universe:VerticalReferenceVector() * data.u)
+        local point = route:AddCoordinate(pos + vehicle.orientation.Forward() * data.f +
+            vehicle.orientation.Right() * data.r - universe:VerticalReferenceVector() * data.u)
         point.options = createOptions(data)
 
         flightCore:StartFlight()
@@ -233,7 +219,7 @@ function Input:New(flightCore)
         routeController:DeleteRoute(data.commandValue)
     end
 
-    cmd :Accept("route-activate", function(data)
+    cmd:Accept("route-activate", function(data)
         if routeController:ActivateRoute(data.commandValue) then
             flightCore:StartFlight()
         end
@@ -282,7 +268,7 @@ function Input:New(flightCore)
         end
     end)
 
-    cmd :Accept("route-dump", function(data)
+    cmd:Accept("route-dump", function(data)
         local curr = routeController:CurrentEdit()
         if curr then
             curr:Dump()

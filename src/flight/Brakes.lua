@@ -1,9 +1,8 @@
 local EngineGroup = require("abstraction/EngineGroup")
-local library = require("abstraction/Library")()
 local vehicle = require("abstraction/Vehicle"):New()
 local calc = require("util/Calc")
 local sharedPanel = require("panel/SharedPanel")()
-local universe = require("universe/Universe")()
+local universe = require("universe/Universe").Instance()
 local nullVec = require("cpml/vec3")()
 local PID = require("cpml/pid")
 local IsInAtmo = vehicle.world.IsInAtmo
@@ -23,8 +22,7 @@ function Brake:Instance()
     if instance then
         return instance
     end
-    
-    local ctrl = library:GetController()
+
     local p = sharedPanel:Get("Brakes")
     local pid = PID(0.5, 0, 0.5)
     local deceleration = 0
@@ -32,7 +30,6 @@ function Brake:Instance()
     local wCurrentDec = p:CreateValue("Brake dec.", "m/s2")
 
     local s = {
-        ctrl = ctrl,
         engaged = false,
         forced = false,
         totalMass = TotalMass(),
@@ -83,7 +80,7 @@ function Brake:Instance()
     function s:BrakeFlush()
         -- The brake vector must point against the direction of travel.
         local brakeVector = finalDeceleration()
-        s.ctrl.setEngineCommand(s.brakeGroup:Intersection(), { brakeVector:unpack() }, 1, 1, "", "", "", 0.001)
+        unit.setEngineCommand(s.brakeGroup:Intersection(), { brakeVector:unpack() }, 1, 1, "", "", "", 0.001)
     end
 
     function s:GravityInfluencedAvailableDeceleration()
@@ -109,7 +106,7 @@ function Brake:Instance()
 
         return brakeCounter()
     end
-    
+
     instance = setmetatable(s, Brake)
     return instance
 end

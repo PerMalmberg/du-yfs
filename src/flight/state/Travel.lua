@@ -1,7 +1,6 @@
 local r = require("CommonRequire")
 local vehicle = r.vehicle
 local checks = r.checks
-local library = r.library
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 
@@ -15,7 +14,7 @@ local function new(fsm)
 
     local o = {
         fsm = fsm,
-        core = library:GetCoreUnit(),
+        core = library.getCoreUnit(),
     }
 
     setmetatable(o, state)
@@ -52,12 +51,12 @@ function state:Name()
 end
 
 return setmetatable(
-        {
-            new = new
-        },
-        {
-            __call = function(_, ...)
-                return new(...)
-            end
-        }
+    {
+        new = new
+    },
+    {
+        __call = function(_, ...)
+            return new(...)
+        end
+    }
 )

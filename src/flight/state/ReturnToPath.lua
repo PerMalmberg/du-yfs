@@ -15,7 +15,7 @@ local function new(fsm, returnPoint)
         fsm = fsm,
         returnPoint = returnPoint,
         returnPointAdjusted = false,
-        sw = Stopwatch(),
+        sw = Stopwatch.New(),
         temporaryWP = false
     }
 
@@ -60,12 +60,12 @@ function state:Name()
 end
 
 return setmetatable(
-        {
-            new = new
-        },
-        {
-            __call = function(_, ...)
-                return new(...)
-            end
-        }
+    {
+        new = new
+    },
+    {
+        __call = function(_, ...)
+            return new(...)
+        end
+    }
 )

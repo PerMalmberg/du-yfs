@@ -29,7 +29,6 @@ local defaultMargin = 0.1 -- m
 local function new(routeController, flightFSM)
     local p = sharedPanel:Get("Waypoint")
     local instance = {
-        ctrl = library:GetController(),
         routeController = routeController,
         thrustGroup = EngineGroup("thrust"),
         autoStabilization = nil,
@@ -89,11 +88,12 @@ function flightCore:CreateWPFromPoint(point, lastInRoute)
     local opt = point:Options()
     local dir = Vec3(opt:Get(PointOptions.LOCK_DIRECTION, nullVec))
     local margin = opt:Get(PointOptions.MARGIN, defaultMargin)
-    local finalSpeed = Ternary(lastInRoute, 0,  opt:Get(PointOptions.FINAL_SPEED, defaultSpeed))
+    local finalSpeed = Ternary(lastInRoute, 0, opt:Get(PointOptions.FINAL_SPEED, defaultSpeed))
     local maxSpeed = opt:Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored).
 
     local coordinate = universe:ParsePosition(point:Pos()):Coordinates()
-    local wp = Waypoint(coordinate, finalSpeed, maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference, alignment.YawPitchKeepOrthogonalToVerticalReference)
+    local wp = Waypoint(coordinate, finalSpeed, maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference,
+        alignment.YawPitchKeepOrthogonalToVerticalReference)
 
     wp:SetPrecisionMode(opt:Get(PointOptions.PRECISION, false))
 
@@ -178,30 +178,30 @@ end
 
 function flightCore:FCUpdate()
     local status, err, _ = xpcall(
-            function()
-                self.flightFSM:Update()
-                brakes:BrakeUpdate()
+        function()
+            self.flightFSM:Update()
+            brakes:BrakeUpdate()
 
-                local wp = self.currentWaypoint
-                if wp ~= nil then
-                    self.wWaypointDistance:Set(calc.Round(wp:DistanceTo(), 3))
-                    self.wWaypointMargin:Set(calc.Round(wp:Margin(), 3))
-                    self.wWaypointFinalSpeed:Set(calc.Round(calc.Kph2Mps(wp:FinalSpeed())), 1)
-                    self.wWaypointMaxSpeed:Set(calc.Round(calc.Kph2Mps(wp:MaxSpeed())), 1)
-                    self.wWaypointPrecision:Set(wp:GetPrecisionMode())
-                    self.wWaypointDirLock:Set(wp:DirectionLocked())
+            local wp = self.currentWaypoint
+            if wp ~= nil then
+                self.wWaypointDistance:Set(calc.Round(wp:DistanceTo(), 3))
+                self.wWaypointMargin:Set(calc.Round(wp:Margin(), 3))
+                self.wWaypointFinalSpeed:Set(calc.Round(calc.Kph2Mps(wp:FinalSpeed())), 1)
+                self.wWaypointMaxSpeed:Set(calc.Round(calc.Kph2Mps(wp:MaxSpeed())), 1)
+                self.wWaypointPrecision:Set(wp:GetPrecisionMode())
+                self.wWaypointDirLock:Set(wp:DirectionLocked())
 
-                    local diff = wp.destination - self.previousWaypoint.destination
-                    local len = diff:len()
-                    local dir = diff:normalize()
-                    visual:DrawNumber(1, self.previousWaypoint.destination)
-                    visual:DrawNumber(2, self.previousWaypoint.destination + dir * len / 4)
-                    visual:DrawNumber(3, self.previousWaypoint.destination + dir * len / 2)
-                    visual:DrawNumber(4, self.previousWaypoint.destination + dir * 3 * len / 4)
-                    visual:DrawNumber(5, wp.destination)
-                end
-            end,
-            traceback
+                local diff = wp.destination - self.previousWaypoint.destination
+                local len = diff:len()
+                local dir = diff:normalize()
+                visual:DrawNumber(1, self.previousWaypoint.destination)
+                visual:DrawNumber(2, self.previousWaypoint.destination + dir * len / 4)
+                visual:DrawNumber(3, self.previousWaypoint.destination + dir * len / 2)
+                visual:DrawNumber(4, self.previousWaypoint.destination + dir * 3 * len / 4)
+                visual:DrawNumber(5, wp.destination)
+            end
+        end,
+        traceback
     )
 
     if not status then
@@ -212,36 +212,36 @@ end
 
 function flightCore:FCFlush()
     local status, err, _ = xpcall(
-            function()
-                local route = self.routeController:CurrentRoute()
-                local wp = self.currentWaypoint
+        function()
+            local route = self.routeController:CurrentRoute()
+            local wp = self.currentWaypoint
 
-                if wp and route then
-                    if wp:Reached() then
-                        if not self.waypointReachedSignaled then
-                            self.waypointReachedSignaled = true
-                            self.flightFSM:WaypointReached(route:LastPointReached(), wp, self.previousWaypoint)
+            if wp and route then
+                if wp:Reached() then
+                    if not self.waypointReachedSignaled then
+                        self.waypointReachedSignaled = true
+                        self.flightFSM:WaypointReached(route:LastPointReached(), wp, self.previousWaypoint)
 
-                            wp:LockDirection(vehicle.orientation.Forward())
-                        end
-
-                        -- Switch to next waypoint
-                        self:NextWP()
-                    else
-                        -- When we go out of range, reset signal so that we get it again when we're back on the waypoint.
-                        self.waypointReachedSignaled = false
+                        wp:LockDirection(vehicle.orientation.Forward())
                     end
 
-                    self:Align()
-                    self.flightFSM:FsmFlush(self.currentWaypoint, self.previousWaypoint)
+                    -- Switch to next waypoint
+                    self:NextWP()
+                else
+                    -- When we go out of range, reset signal so that we get it again when we're back on the waypoint.
+                    self.waypointReachedSignaled = false
                 end
 
-                self.pitch:AxisFlush(false)
-                self.roll:AxisFlush(false)
-                self.yaw:AxisFlush(true)
-                brakes:BrakeFlush()
-            end,
-            traceback
+                self:Align()
+                self.flightFSM:FsmFlush(self.currentWaypoint, self.previousWaypoint)
+            end
+
+            self.pitch:AxisFlush(false)
+            self.roll:AxisFlush(false)
+            self.yaw:AxisFlush(true)
+            brakes:BrakeFlush()
+        end,
+        traceback
     )
 
     if not status then
@@ -252,15 +252,15 @@ end
 
 -- The module
 return setmetatable(
-        {
-            new = new
-        },
-        {
-            __call = function(_, ...)
-                if singleton == nil then
-                    singleton = new(...)
-                end
-                return singleton
+    {
+        new = new
+    },
+    {
+        __call = function(_, ...)
+            if singleton == nil then
+                singleton = new(...)
             end
-        }
+            return singleton
+        end
+    }
 )

@@ -42,7 +42,6 @@ local function new(axis)
 
     local instance = {
         controlledAxis = axis,
-        ctrl = library.GetController(),
         updateHandlerId = nil,
         wAngle = nil,
         wSpeed = nil,
@@ -147,7 +146,8 @@ function control:AxisFlush(apply)
 
         self.pid:inject(offset)
 
-        finalAcceleration[self.controlledAxis] = self:Normal() * self.pid:get() * deg2rad * calc.Ternary(movingTowardsTarget, 0.5, 1)
+        finalAcceleration[self.controlledAxis] = self:Normal() * self.pid:get() * deg2rad *
+            calc.Ternary(movingTowardsTarget, 0.5, 1)
     end
 
     if apply then
@@ -156,8 +156,9 @@ function control:AxisFlush(apply)
 end
 
 function control:Apply()
-    local acc = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] + finalAcceleration[AxisControlYaw]
-    self.ctrl.setEngineCommand("torque", { 0, 0, 0 }, { acc:unpack() }, 1, 1, "", "", "")
+    local acc = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] +
+        finalAcceleration[AxisControlYaw]
+    unit.setEngineCommand("torque", { 0, 0, 0 }, { acc:unpack() }, 1, 1, "", "", "")
 end
 
 function control:Update()
@@ -166,12 +167,12 @@ function control:Update()
 end
 
 return setmetatable(
-        {
-            new = new
-        },
-        {
-            __call = function(_, ...)
-                return new(...)
-            end
-        }
+    {
+        new = new
+    },
+    {
+        __call = function(_, ...)
+            return new(...)
+        end
+    }
 )

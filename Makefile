@@ -7,6 +7,14 @@ LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/src/?.lua
 LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/src/builtin/du_provided/?.lua
 LUA_PATH := $(LUA_PATH);$(PWD)/external/du-lua-examples/api-mockup/?.lua
 
+LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/external/du-unit-testing/src/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/external/du-unit-testing/src/mocks/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/external/du-unit-testing/external/du-luac/lua/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/external/du-unit-testing/external/du-lua-examples/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/external/du-unit-testing/external/du-lua-examples/api-mockup/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/external/du-unit-testing/external/du-lua-examples/api-mockup/utils/?.lua
+
+
 all: release
 
 lua_path:

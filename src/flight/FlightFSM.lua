@@ -10,7 +10,6 @@ local Ternary = calc.Ternary
 local universe = r.universe
 local Vec3 = r.Vec3
 local nullVec = Vec3()
-local ctrl = r.library:GetController()
 local visual = r.visual
 local sharedPanel = require("panel/SharedPanel")()
 local engine = r.engine
@@ -180,7 +179,9 @@ function FlightFSM:New(settings)
     local adjustmentAcc = nullVec
     local lastDevDist = 0
     local deviationAccum = Accumulator:New(10, Accumulator.Truth)
-    local delta = Stopwatch()
+
+    local delta = Stopwatch.New()
+
     --speedPid = PID(0.01, 0.001, 0.0) -- Large
     local speedPid = PID(0.1, 0, 0.01) -- Small
 
@@ -378,7 +379,7 @@ function FlightFSM:New(settings)
 
     local function applyAcceleration(moveDirection, precision)
         if acceleration == nil then
-            ctrl.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
+            unit.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
         else
             local groups = getEngines(moveDirection, precision)
             local t = groups.thrust
@@ -388,14 +389,14 @@ function FlightFSM:New(settings)
 
             if precision then
                 -- Apply acceleration independently
-                ctrl.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag,
+                unit.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag,
                     t.prio2Tag, t.prio3Tag, 1)
-                ctrl.setEngineCommand(adj.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, adj.prio1Tag,
+                unit.setEngineCommand(adj.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, adj.prio1Tag,
                     adj.prio2Tag, adj.prio3Tag, 1)
             else
                 -- Apply acceleration as a single vector
                 local finalAcc = thrustAcc + adjustAcc
-                ctrl.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag
+                unit.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag
                     , t.prio3Tag, 1)
             end
         end
