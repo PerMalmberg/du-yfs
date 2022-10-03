@@ -24,7 +24,7 @@ local settings = Settings:New(settingsDb)
 local NAME = "Yoarii's Flight System"
 local VERSION = "0.0.0"
 
-Task.New(function()
+Task.New("Main", function()
     log:Info(NAME)
     log:Info("v", VERSION)
 
@@ -34,7 +34,6 @@ Task.New(function()
     while not settingsDb:IsLoaded() or not routeDb:IsLoaded() do
         coroutine.yield()
     end
-    log:Info("-1")
 
     local fsm = FlightFSM:New(settings)
     settings:Reload()
@@ -44,5 +43,5 @@ Task.New(function()
 end):Then(function()
     log:Info("Ready.")
 end):Catch(function(t)
-    log:Error(t:Result())
+    log:Error(t:Name(), t:Result())
 end)
