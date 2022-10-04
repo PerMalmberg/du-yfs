@@ -34,7 +34,7 @@ function Input:New(flightCore)
     local function move(reference, distance, options)
         routeController:ActivateRoute()
         local route = routeController:CurrentRoute()
-        local point = route:AddCoordinate(vehicle.position.Current() + reference * distance)
+        local point = route.AddCoordinate(vehicle.position.Current() + reference * distance)
         options = options or point:Options()
 
         options:Set(PointOptions.MAX_SPEED, speed)
@@ -98,8 +98,8 @@ function Input:New(flightCore)
         routeController:ActivateRoute()
         local route = routeController:CurrentRoute()
 
-        route:AddCoordinate(start - universe:VerticalReferenceVector() * 2)
-        route:AddCoordinate(start - universe:VerticalReferenceVector() * 100)
+        route.AddCoordinate(start - universe:VerticalReferenceVector() * 2)
+        route.AddCoordinate(start - universe:VerticalReferenceVector() * 100)
 
         flightCore:StartFlight()
     end)
@@ -107,7 +107,7 @@ function Input:New(flightCore)
     input:Register(keys.option9, Criteria():OnPress(), function()
         routeController:ActivateRoute()
         local route = routeController:CurrentRoute()
-        local point = route:AddCoordinate(start)
+        local point = route.AddCoordinate(start)
         point:Options():Set(PointOptions.MAX_SPEED, speed)
 
         flightCore:StartFlight()
@@ -150,7 +150,7 @@ function Input:New(flightCore)
         routeController:ActivateRoute()
         local route = routeController:CurrentRoute()
         local pos = vehicle.position.Current()
-        local point = route:AddCoordinate(pos + vehicle.orientation.Forward() * data.f +
+        local point = route.AddCoordinate(pos + vehicle.orientation.Forward() * data.f +
             vehicle.orientation.Right() * data.r - universe:VerticalReferenceVector() * data.u)
         point.options = createOptions(data)
 
@@ -175,7 +175,7 @@ function Input:New(flightCore)
     local strafeFunc = function(data)
         routeController:ActivateRoute()
         local route = routeController:CurrentRoute()
-        local point = route:AddCoordinate(vehicle.position.Current() + vehicle.orientation.Right() * data.commandValue)
+        local point = route.AddCoordinate(vehicle.position.Current() + vehicle.orientation.Right() * data.commandValue)
         local p = PointOptions:New()
         point.options = p
         p:Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
@@ -235,7 +235,7 @@ function Input:New(flightCore)
             return
         end
 
-        local point = route:AddCurrentPos()
+        local point = route.AddCurrentPos()
         point.options = createOptions(data)
     end
 
@@ -247,7 +247,7 @@ function Input:New(flightCore)
 
         if ref then
             local route = routeController:CurrentEdit()
-            local p = route:AddWaypointRef(data.commandValue)
+            local p = route.AddWaypointRef(data.commandValue)
             p.options = createOptions(data)
         end
     end
@@ -267,13 +267,6 @@ function Input:New(flightCore)
             log:Info(data.name, ": ", data.point:Pos())
         end
     end)
-
-    cmd:Accept("route-dump", function(data)
-        local curr = routeController:CurrentEdit()
-        if curr then
-            curr:Dump()
-        end
-    end):AsString()
 
     return setmetatable(self, Input)
 end

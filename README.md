@@ -12,6 +12,7 @@
 * Use PID for precision movement.
 * Why doesn't it accelerate when moving up/down just 100m?
 * Saving routes is broken, it saves "function: ADDRESS..." instead of the data.
+* Sometimes doesn't detect waypoint reached in return to path state.
 
 
 

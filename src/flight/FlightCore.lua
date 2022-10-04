@@ -3,7 +3,6 @@ local universe = r.universe
 local brakes = r.brakes
 local vehicle = r.vehicle
 local visual = r.visual
-local library = r.library
 local checks = r.checks
 local calc = r.calc
 local Ternary = r.calc.Ternary
@@ -38,7 +37,7 @@ local function new(routeController, flightFSM)
         roll = AxisControl(AxisControlRoll),
         yaw = AxisControl(AxisControlYaw),
         flightFSM = flightFSM,
-        route = Route:New(),
+        route = Route.New(),
         currentWaypoint = nil, -- The positions we want to move to
         previousWaypoint = nil, -- Previous waypoint
         waypointReachedSignaled = false,
@@ -74,14 +73,14 @@ function flightCore:NextWP()
         return
     end
 
-    local nextPoint = route:Next()
+    local nextPoint = route.Next()
     if nextPoint == nil then
         return
     end
 
     self.previousWaypoint = self.currentWaypoint
     self.waypointReachedSignaled = false
-    self.currentWaypoint = self:CreateWPFromPoint(nextPoint, route:LastPointReached())
+    self.currentWaypoint = self:CreateWPFromPoint(nextPoint, route.LastPointReached())
 end
 
 function flightCore:CreateWPFromPoint(point, lastInRoute)
@@ -220,7 +219,7 @@ function flightCore:FCFlush()
                 if wp:Reached() then
                     if not self.waypointReachedSignaled then
                         self.waypointReachedSignaled = true
-                        self.flightFSM:WaypointReached(route:LastPointReached(), wp, self.previousWaypoint)
+                        self.flightFSM:WaypointReached(route.LastPointReached(), wp, self.previousWaypoint)
 
                         wp:LockDirection(vehicle.orientation.Forward())
                     end

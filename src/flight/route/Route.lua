@@ -2,31 +2,43 @@
     A route holds a series of Point that each contains the data needed to create a Waypoint.
     When loaded, additional points may be inserted to to create a route that is smooth to fly
     and that doesn't pass through a planetary body. Extra points are not persisted.
-]]--
-local r = require("CommonRequire")
-local log = r.log
-local checks = r.checks
-local vehicle = r.vehicle
-local universe = r.universe
+]] --
+local vehicle = require("abstraction/Vehicle"):New()
+local log = require("debug/Log")()
+local universe = require("universe/Universe").Instance()
 local Point = require("flight/route/Point")
 
 ---@class Route Represents a route
+---@field New fun():Route
+---@field Points fun():Point[]
+---@field AddPos fun(positionString:string):Point
+---@field AddCoordinate fun(coord:Vec3):Point
+---@field AddWaypointRef fun(namedWaypoint:string):Point
+---@field AddCurrentPos fun():Point
+---@field AddPoint fun(sp:Point)
+---@field Clear fun()
+---@field Next fun():Point|nil
+---@field LastPointReached fun():boolean
+
+
 local Route = {}
 Route.__index = Route
 
-function Route:New()
+---Creates a new route
+---@return Route
+function Route.New()
     local s = {}
 
-    local points = {}
+    local points = {} ---@type Point[]
     local currentPointIx = 1
 
-    function s:Points()
+    ---Returns all the points in the route
+    ---@return Point[]
+    function s.Points()
         return points
     end
 
-    function s:AddPos(positionString)
-        checks.IsString(positionString, "positionString", "route:AddPos")
-
+    function s.AddPos(positionString)
         local pos = universe:ParsePosition(positionString)
 
         if pos == nil then
@@ -34,36 +46,47 @@ function Route:New()
             return nil
         end
 
-        return s:AddPoint(Point:New(pos:AsPosString()))
+        return s.AddPoint(Point.New(pos:AsPosString()))
     end
 
-    function s:AddCoordinate(coord)
-        checks.IsVec3(coord, "coord", "route:AddCoordinate")
-
-        return s:AddPoint(Point:New(universe:CreatePos(coord):AsPosString()))
+    ---Adds a coordinate to the route
+    ---@param coord Vec3
+    ---@return Point
+    function s.AddCoordinate(coord)
+        return s.AddPoint(Point.New(universe:CreatePos(coord):AsPosString()))
     end
 
-    function s:AddWaypointRef(name)
-        return s:AddPoint(Point:New("", name))
+    ---Adds a named waypoint to the route
+    ---@param name string
+    ---@return Point
+    function s.AddWaypointRef(name)
+        return s.AddPoint(Point.New("", name))
     end
 
-    function s:AddCurrentPos()
-        return s:AddCoordinate(vehicle.position.Current())
+    ---Adds the current postion to the route
+    ---@return Point
+    function s.AddCurrentPos()
+        return s.AddCoordinate(vehicle.position.Current())
     end
 
-    function s:AddPoint(point)
+    ---Adds a Point to the route
+    ---@param point Point
+    ---@return Point
+    function s.AddPoint(point)
         table.insert(points, point)
         return point
     end
 
-    function s:Clear()
+    ---Clears the route
+    function s.Clear()
         points = {}
         currentPointIx = 1
     end
 
-    ---@return Point Returns the next point in the route or nil if it is the last.
-    function s:Next()
-        if s:LastPointReached() then
+    ---Returns the next point in the route or nil if it is the last.
+    ---@return Point|nil
+    function s.Next()
+        if s.LastPointReached() then
             return nil
         end
 
@@ -73,13 +96,7 @@ function Route:New()
         return p
     end
 
-    function s:Dump()
-        for _, p in ipairs(points) do
-            log:Info(p:Persist())
-        end
-    end
-
-    function s:LastPointReached()
+    function s.LastPointReached()
         return currentPointIx > #points
     end
 
