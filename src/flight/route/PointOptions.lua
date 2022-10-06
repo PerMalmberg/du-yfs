@@ -2,7 +2,7 @@
 ---@field New fun():PointOptions Creates a new PointOptions
 ---@field Set fun(name:string, value:any) Sets an option value
 ---@field Get fun(defaultValue:any): any a Gets an option value
----@field Data fun():table Gets the options as a table
+---@field Data fun():table<string, any> Gets the options as a table
 
 local PointOptions = {}
 PointOptions.__index = PointOptions
@@ -27,7 +27,7 @@ function PointOptions.New(optionData)
         return options[opt] or default
     end
 
-    ---@return table # The options as a table
+    ---@return table<string, any> # The options as a table
     function s.Data()
         return options
     end

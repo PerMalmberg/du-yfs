@@ -25,9 +25,9 @@ Point.__index = Point
 function Point.New(pos, waypointRef, options)
     local s = {}
 
-    local position = pos -- ::pos string
+    local position = pos -- ::pos{} string
     local wpRef = waypointRef
-    local opt = options or PointOptions:New()
+    local opt = options or PointOptions.New()
 
     ---@return string A ::pos{} string
     function s.Pos()

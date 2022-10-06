@@ -1,4 +1,6 @@
 local env = require("environment")
+local assert = require("luassert")
+local stub = require("luassert.stub")
 require("util/Table")
 
 local function runTicks()
@@ -16,8 +18,16 @@ describe("Controller", function()
     it("Can create a route", function()
         local Controller = require("flight/route/Controller")
 
+        local dataBank = Databank()
 
-        local db = BufferedDB.New(Databank())
+        stub(dataBank, "getKeyList")
+        stub(dataBank, "getStringValue")
+
+        dataBank.getKeyList.on_call_with().returns({})
+        dataBank.getStringValue.on_call_with(Controller.NAMED_POINTS).returns({})
+        dataBank.getStringValue.on_call_with(Controller.NAMED_POINTS).returns({})
+
+        local db = BufferedDB.New(dataBank)
         db:BeginLoad()
         local c = Controller.Instance(db)
 
@@ -35,6 +45,5 @@ describe("Controller", function()
 
         assert.are_equal(2, TableLen(r.Points()))
         c.SaveRoute()
-        assert.is_nil(c.CurrentEdit())
     end)
 end)
