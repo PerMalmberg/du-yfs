@@ -45,5 +45,24 @@ describe("Controller", function()
 
         assert.are_equal(2, TableLen(r.Points()))
         c.SaveRoute()
+
+        c.CreateRoute("test2")
+        r = c.CurrentEdit()
+        r.AddCurrentPos()
+        assert.are_equal(1, TableLen(r.Points()))
+        c.SaveRoute()
+
+        c.LoadRoute("test")
+        r = c.CurrentEdit()
+        assert.are_equal(2, TableLen(r.Points()))
+
+        assert.is_nil(c.CurrentRoute())
+        c.ActivateRoute("test")
+        r = c.CurrentRoute()
+        assert.are_equal(2, TableLen(r.Points()))
+
+        c.ActivateRoute("test2")
+        r = c.CurrentRoute()
+        assert.are_equal(1, TableLen(r.Points()))
     end)
 end)

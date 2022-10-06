@@ -15,7 +15,7 @@ local log = require("debug/Log")()
 ---@field StoreWaypoint fun(name:string, pos:string)
 ---@field GetWaypoints fun():NamedWaypoint[]
 ---@field LoadWaypoint fun(name:string, waypoints?:table<string,Point>):Point|nil
----@field CurrentRoute fun():Point|nil
+---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
 ---@field ActivateRoute fun(name:string):boolean
 ---@field CreateRoute fun(name:string):boolean
