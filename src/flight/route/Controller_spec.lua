@@ -32,6 +32,10 @@ describe("Controller", function()
         runTicks()
     end
 
+    it("Is singelton", function()
+        assert.are_equal(c, Controller.Instance(db))
+    end)
+
     it("Can create a route", function()
         assert.is_nil(c.CreateRoute(nil))
 
