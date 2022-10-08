@@ -225,20 +225,16 @@ function Controller.Instance(bufferedDB)
     ---@param name string
     ---@return boolean
     function s.ActivateRoute(name)
-        if name == nil then
-            current = Route.New()
-            return false
-        end
-
         if editName ~= nil and name == editName and edit ~= nil then
             log:Info("Activating route currently being edited, forcing save.")
             s.StoreRoute(editName, edit)
         end
 
-        local r = s.LoadRoute(name)
+        current = s.LoadRoute(name)
 
-        if r ~= nil then
-            current = r
+        if current == nil then
+            return false
+        else
             log:Info("Route activated: ", name)
         end
 

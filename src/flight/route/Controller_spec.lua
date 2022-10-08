@@ -33,6 +33,9 @@ describe("Controller", function()
     end
 
     it("Can create a route", function()
+        assert.is_nil(c.CreateRoute(nil))
+
+
         c.CreateRoute("test")
         local r = c.CurrentEdit()
         assert.is_not_nil(r)
@@ -89,11 +92,15 @@ describe("Controller", function()
         assert.are_equal(2, #r.Points())
     end)
 
-    it("Can handles missing waypoints", function()
+    it("Can handle missing waypoints", function()
         local r = c.CreateRoute("a route")
         assert.is_not_nil(r.AddWaypointRef("a non exsting point"))
         c.SaveRoute()
         r = c.LoadRoute("a route")
         assert.is_nil(r)
+    end)
+
+    it("It doesn't activate non-existing routes", function()
+        assert.is_false(c.ActivateRoute(nil))
     end)
 end)
