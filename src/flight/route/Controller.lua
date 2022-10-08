@@ -2,6 +2,8 @@ local Point = require("flight/route/Point")
 local PointOptions = require("flight/route/PointOptions")
 local Route = require("flight/route/Route")
 local log = require("debug/Log")()
+local universe = require("universe/Universe").Instance()
+require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}
 ---@alias WaypointMap table<string,Point>
@@ -12,14 +14,15 @@ local log = require("debug/Log")()
 ---@field LoadRoute fun(name:string):Route|nil
 ---@field DeleteRoute fun(name:string)
 ---@field StoreRoute fun(name:string, route:Route)
----@field StoreWaypoint fun(name:string, pos:string)
+---@field StoreWaypoint fun(name:string, pos:string):boolean
 ---@field GetWaypoints fun():NamedWaypoint[]
 ---@field LoadWaypoint fun(name:string, waypoints?:table<string,Point>):Point|nil
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
 ---@field ActivateRoute fun(name:string):boolean
----@field CreateRoute fun(name:string):boolean
+---@field CreateRoute fun(name:string):Route|nil
 ---@field SaveRoute fun()
+---@field Count fun():integer
 
 local Controller = {}
 Controller.__index = Controller
@@ -56,6 +59,12 @@ function Controller.Instance(bufferedDB)
         end
 
         return res
+    end
+
+    ---Returns the number of routes
+    ---@return integer
+    function s.Count()
+        return TableLen(s.GetRouteNames())
     end
 
     ---Loads a named route
@@ -144,13 +153,22 @@ function Controller.Instance(bufferedDB)
     ---Stores a waypoint under the given name
     ---@param name string The name of the waypoint
     ---@param pos string A ::pos string
+    ---@return boolean
     function s.StoreWaypoint(name, pos)
+        local p = universe:ParsePosition(pos)
+        if p == nil then return false end
+        if name == nil or string.len(name) == 0 then
+            log:Error("No name provided")
+            return false
+        end
+
         local waypoints = db:Get(Controller.NAMED_POINTS) or {}
         local p = Point.New(pos)
         waypoints[name] = p:Persist()
 
         db:Put(Controller.NAMED_POINTS, waypoints)
         log:Info("Waypoint saved as '", name, "'")
+        return true
     end
 
     ---Returns a list of all waypiints
@@ -181,14 +199,14 @@ function Controller.Instance(bufferedDB)
     ---@return Point|nil
     function s.LoadWaypoint(name, waypoints)
         waypoints = waypoints or db:Get(Controller.NAMED_POINTS) or {}
-        local point = waypoints[name]
+        local pointData = waypoints[name]
 
-        if point == nil then
+        if pointData == nil then
             log:Error("No waypoint by name '", name, "' found.")
             return nil
         end
 
-        return Point.New(point.Pos())
+        return Point.LoadFromPOD(pointData)
     end
 
     ---Returns the current route or nil if none is active
@@ -229,18 +247,18 @@ function Controller.Instance(bufferedDB)
 
     ---Creates a route
     ---@param name string
-    ---@return boolean
+    ---@return Route|nil
     function s.CreateRoute(name)
         if name == nil or #name == 0 then
             log:Error("No name provided for route")
-            return false
+            return nil
         end
 
         edit = Route:New()
         editName = name
 
         log:Info("Route '", name, "' created (but not yet saved)")
-        return true
+        return edit
     end
 
     ---Saves the currently added route

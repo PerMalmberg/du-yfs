@@ -13,7 +13,7 @@ local Point = require("flight/route/Point")
 ---@field Points fun():Point[]
 ---@field AddPos fun(positionString:string):Point
 ---@field AddCoordinate fun(coord:Vec3):Point
----@field AddWaypointRef fun(namedWaypoint:string):Point
+---@field AddWaypointRef fun(namedWaypoint:string):Point|nil
 ---@field AddCurrentPos fun():Point
 ---@field AddPoint fun(sp:Point)
 ---@field Clear fun()
@@ -58,8 +58,11 @@ function Route.New()
 
     ---Adds a named waypoint to the route
     ---@param name string
-    ---@return Point
+    ---@return Point|nil
     function s.AddWaypointRef(name)
+        if name == nil or #name == 0 then
+            return nil
+        end
         return s.AddPoint(Point.New("", name))
     end
 

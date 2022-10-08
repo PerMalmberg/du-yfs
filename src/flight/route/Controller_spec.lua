@@ -12,29 +12,27 @@ end
 describe("Controller", function()
     env.Prepare()
     require("api-mockup/databank")
+    local Controller = require("flight/route/Controller")
 
     local BufferedDB = require("storage/BufferedDB")
 
+    local dataBank = Databank()
+
+    stub(dataBank, "getKeyList")
+    stub(dataBank, "getStringValue")
+
+    dataBank.getKeyList.on_call_with().returns({})
+    dataBank.getStringValue.on_call_with(Controller.NAMED_POINTS).returns({})
+
+    local db = BufferedDB.New(dataBank)
+    db:BeginLoad()
+    local c = Controller.Instance(db)
+
+    while not db:IsLoaded() do
+        runTicks()
+    end
+
     it("Can create a route", function()
-        local Controller = require("flight/route/Controller")
-
-        local dataBank = Databank()
-
-        stub(dataBank, "getKeyList")
-        stub(dataBank, "getStringValue")
-
-        dataBank.getKeyList.on_call_with().returns({})
-        dataBank.getStringValue.on_call_with(Controller.NAMED_POINTS).returns({})
-        dataBank.getStringValue.on_call_with(Controller.NAMED_POINTS).returns({})
-
-        local db = BufferedDB.New(dataBank)
-        db:BeginLoad()
-        local c = Controller.Instance(db)
-
-        while not db:IsLoaded() do
-            runTicks()
-        end
-
         c.CreateRoute("test")
         local r = c.CurrentEdit()
         assert.is_not_nil(r)
@@ -64,5 +62,38 @@ describe("Controller", function()
         c.ActivateRoute("test2")
         r = c.CurrentRoute()
         assert.are_equal(1, TableLen(r.Points()))
+    end)
+
+    it("Can delete routes", function()
+        local count = c.Count()
+        c.CreateRoute("todelete")
+        assert.are_equal(count, c.Count()) -- Not yet saved so not counted
+        c.SaveRoute()
+        assert.are_equal(count + 1, c.Count())
+        c.DeleteRoute("todelete")
+        assert.are_equal(count, c.Count())
+    end)
+
+    it("Cannot load route that does not exist", function()
+        assert.is_nil(c.LoadRoute("doesn't exist"))
+    end)
+
+    it("Can load routes with waypoints in it", function()
+        assert.is_true(c.StoreWaypoint("a point", "::pos{0,2,2.9093,65.4697,34.7070}"))
+        assert.is_true(c.StoreWaypoint("a second point", "::pos{0,2,2.9093,65.4697,34.7070}"))
+        local r = c.CreateRoute("a route")
+        assert.is_not_nil(r.AddWaypointRef("a point"))
+        assert.is_not_nil(r.AddWaypointRef("a second point"))
+        c.SaveRoute()
+        r = c.LoadRoute("a route")
+        assert.are_equal(2, #r.Points())
+    end)
+
+    it("Can handles missing waypoints", function()
+        local r = c.CreateRoute("a route")
+        assert.is_not_nil(r.AddWaypointRef("a non exsting point"))
+        c.SaveRoute()
+        r = c.LoadRoute("a route")
+        assert.is_nil(r)
     end)
 end)
