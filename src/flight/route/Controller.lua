@@ -171,7 +171,7 @@ function Controller.Instance(bufferedDB)
         return true
     end
 
-    ---Returns a list of all waypiints
+    ---Returns a list of all waypoints
     ---@return NamedWaypoint[]
     function s.GetWaypoints()
         local namedPositions = db:Get(Controller.NAMED_POINTS) or {}
@@ -190,7 +190,7 @@ function Controller.Instance(bufferedDB)
             table.insert(res, { name = name, point = s.LoadWaypoint(name, namedPositions) })
         end
 
-        return res[1]
+        return res
     end
 
     ---Loads a waypoint by the given name

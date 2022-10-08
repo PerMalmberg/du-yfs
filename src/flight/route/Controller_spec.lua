@@ -81,6 +81,18 @@ describe("Controller", function()
         assert.is_nil(c.LoadRoute("doesn't exist"))
     end)
 
+    it("Can get waypoints", function()
+        assert.are_equal(0, TableLen(c.GetWaypoints()))
+        assert.is_true(c.StoreWaypoint("b", "::pos{0,2,2.9093,65.4697,34.7070}"))
+        assert.is_true(c.StoreWaypoint("a", "::pos{0,2,2.9093,65.4697,34.7070}"))
+        assert.is_true(c.StoreWaypoint("c", "::pos{0,2,2.9093,65.4697,34.7070}"))
+        assert.are_equal(3, TableLen(c.GetWaypoints()))
+        assert.are_equal("a", c.GetWaypoints()[1].name)
+        assert.are_equal("b", c.GetWaypoints()[2].name)
+        assert.are_equal("c", c.GetWaypoints()[3].name)
+
+    end)
+
     it("Can load routes with waypoints in it", function()
         assert.is_true(c.StoreWaypoint("a point", "::pos{0,2,2.9093,65.4697,34.7070}"))
         assert.is_true(c.StoreWaypoint("a second point", "::pos{0,2,2.9093,65.4697,34.7070}"))
