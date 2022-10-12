@@ -9,7 +9,7 @@ require("util/Table")
 ---@alias WaypointMap table<string,Point>
 ---@module "storage/BufferedDB"
 
----@class Controller Route Controller
+---@class Controller
 ---@field GetRouteNames fun()string[]
 ---@field LoadRoute fun(name:string):Route|nil
 ---@field DeleteRoute fun(name:string)
@@ -49,7 +49,7 @@ function Controller.Instance(bufferedDB)
     ---Returns the the name of all routes, with "(editing)" appended to the one currently being edited.
     ---@return string[]
     function s.GetRouteNames()
-        local routes = db:Get(Controller.NAMED_ROUTES) or {}
+        local routes = db.Get(Controller.NAMED_ROUTES) or {}
         local res = {} ---@type string[]
         for name, _ in pairs(routes) do
             if name == editName then
@@ -71,7 +71,7 @@ function Controller.Instance(bufferedDB)
     ---@param name string The name of the route to load
     ---@return Route|nil
     function s.LoadRoute(name)
-        local routes = db:Get(Controller.NAMED_ROUTES) or {}
+        local routes = db.Get(Controller.NAMED_ROUTES) or {}
         local data = routes[name]
 
         if data == nil then
@@ -84,8 +84,8 @@ function Controller.Instance(bufferedDB)
         for _, point in ipairs(data) do
             local p = Point.New(point.pos, point.waypointRef, PointOptions.New(point.options))
 
-            if p:HasWaypointRef() then
-                local wpName = p:WaypointRef()
+            if p.HasWaypointRef() then
+                local wpName = p.WaypointRef()
                 log:Debug("Loading waypoint reference '", wpName, "'")
                 local wp = s.LoadWaypoint(wpName)
                 if wp == nil then
@@ -110,7 +110,7 @@ function Controller.Instance(bufferedDB)
     ---Deletes the named route
     ---@param name string
     function s.DeleteRoute(name)
-        local routes = db:Get(Controller.NAMED_ROUTES) or {}
+        local routes = db.Get(Controller.NAMED_ROUTES) or {}
         local route = routes[name]
 
         if route == nil then
@@ -119,7 +119,7 @@ function Controller.Instance(bufferedDB)
         end
 
         routes[name] = nil
-        db:Put(Controller.NAMED_ROUTES, routes)
+        db.Put(Controller.NAMED_ROUTES, routes)
         log:Info("Route '", name, "' deleted")
 
         if name == editName then
@@ -138,7 +138,7 @@ function Controller.Instance(bufferedDB)
             return
         end
 
-        local routes = db:Get(Controller.NAMED_ROUTES) or {}
+        local routes = db.Get(Controller.NAMED_ROUTES) or {}
         local data = {}
 
         for _, p in ipairs(route.Points()) do
@@ -146,7 +146,7 @@ function Controller.Instance(bufferedDB)
         end
 
         routes[name] = data
-        db:Put(Controller.NAMED_ROUTES, routes)
+        db.Put(Controller.NAMED_ROUTES, routes)
         log:Info("Route '", name, "' saved.")
     end
 
@@ -155,18 +155,17 @@ function Controller.Instance(bufferedDB)
     ---@param pos string A ::pos string
     ---@return boolean
     function s.StoreWaypoint(name, pos)
-        local p = universe:ParsePosition(pos)
+        local p = universe.ParsePosition(pos)
         if p == nil then return false end
         if name == nil or string.len(name) == 0 then
             log:Error("No name provided")
             return false
         end
 
-        local waypoints = db:Get(Controller.NAMED_POINTS) or {}
-        local p = Point.New(pos)
-        waypoints[name] = p:Persist()
+        local waypoints = db.Get(Controller.NAMED_POINTS) or {}
+        waypoints[name] = Point.New(pos).Persist()
 
-        db:Put(Controller.NAMED_POINTS, waypoints)
+        db.Put(Controller.NAMED_POINTS, waypoints)
         log:Info("Waypoint saved as '", name, "'")
         return true
     end
@@ -174,7 +173,7 @@ function Controller.Instance(bufferedDB)
     ---Returns a list of all waypoints
     ---@return NamedWaypoint[]
     function s.GetWaypoints()
-        local namedPositions = db:Get(Controller.NAMED_POINTS) or {}
+        local namedPositions = db.Get(Controller.NAMED_POINTS) or {}
 
         local names = {}
 
@@ -198,7 +197,7 @@ function Controller.Instance(bufferedDB)
     ---@param waypoints? WaypointMap An optional table to load from
     ---@return Point|nil
     function s.LoadWaypoint(name, waypoints)
-        waypoints = waypoints or db:Get(Controller.NAMED_POINTS) or {}
+        waypoints = waypoints or db.Get(Controller.NAMED_POINTS) or {}
         local pointData = waypoints[name]
 
         if pointData == nil then

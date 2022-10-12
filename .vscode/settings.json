@@ -1,3 +1,10 @@
 {
-    "$schema": "https://raw.githubusercontent.com/sumneko/vscode-lua/master/setting/schema.json"
+    "Lua.runtime.path": [
+        "?.lua",
+        "?/init.lua",
+        "src/?.lua"
+    ],
+    "Lua.workspace.library": [
+        "external/du-libs/"
+    ]
 }

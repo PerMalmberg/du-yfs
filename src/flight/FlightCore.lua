@@ -18,6 +18,10 @@ local alignment = require("flight/AlignmentFunctions")
 local PointOptions = require("flight/route/PointOptions")
 require("flight/state/Require")
 
+---@module "flight/route/Controller"
+
+---@class FlightCore
+
 local flightCore = {}
 flightCore.__index = flightCore
 local singleton
@@ -25,6 +29,10 @@ local singleton
 local defaultSpeed = calc.Kph2Mps(50)
 local defaultMargin = 0.1 -- m
 
+---comment
+---@param routeController Controller
+---@param flightFSM FlightFSM
+---@return FlightCore
 local function new(routeController, flightFSM)
     local p = sharedPanel:Get("Waypoint")
     local instance = {

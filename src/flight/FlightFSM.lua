@@ -37,10 +37,16 @@ local thrustTag = "thrust"
 local Forward = vehicle.orientation.Forward
 local Right = vehicle.orientation.Right
 
+---@class FlightFSM
+---@field New fun(settings:Settings):FlightFSM
+
 local FlightFSM = {}
 FlightFSM.__index = FlightFSM
 
-function FlightFSM:New(settings)
+---Creates a new FligtFSM
+---@param settings Settings
+---@return FlightFSM
+function FlightFSM.New(settings)
 
     local function antiG()
         return -universe:VerticalReferenceVector() * G()
@@ -389,15 +395,15 @@ function FlightFSM:New(settings)
 
             if precision then
                 -- Apply acceleration independently
-                unit.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag,
+                unit.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
                     t.prio2Tag, t.prio3Tag, 1)
-                unit.setEngineCommand(adj.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, 1, 1, adj.prio1Tag,
-                    adj.prio2Tag, adj.prio3Tag, 1)
+                unit.setEngineCommand(adj.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, true, true,
+                    adj.prio1Tag, adj.prio2Tag, adj.prio3Tag, 1)
             else
                 -- Apply acceleration as a single vector
                 local finalAcc = thrustAcc + adjustAcc
-                unit.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, 1, 1, t.prio1Tag, t.prio2Tag
-                    , t.prio3Tag, 1)
+                unit.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
+                    t.prio2Tag, t.prio3Tag, 1)
             end
         end
     end
@@ -488,8 +494,8 @@ function FlightFSM:New(settings)
         current = state
     end
 
-    function s:SetEngineWarmupTime(t)
-        warmupTime = t * 2 -- Warmup time is to T50, so double it for full engine effect
+    function s:SetEngineWarmupTime(time)
+        warmupTime = time * 2 -- Warmup time is to T50, so double it for full engine effect
     end
 
     local function warmupDistance()
@@ -540,25 +546,24 @@ function FlightFSM:New(settings)
         adjustmentAcc = nullVec
     end
 
-    settings:RegisterCallback("engineWarmup", function(value)
+    settings.RegisterCallback("engineWarmup", function(value)
         s:SetEngineWarmupTime(value)
     end)
 
-    settings:RegisterCallback("speedp", function(value)
+    settings.RegisterCallback("speedp", function(value)
         speedPid = PID(value, speedPid.i, speedPid.d)
         log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d)
     end)
 
-    settings:RegisterCallback("speedi", function(value)
+    settings.RegisterCallback("speedi", function(value)
         speedPid = PID(speedPid.p, value, speedPid.d)
         log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d)
     end)
 
-    settings:RegisterCallback("speedd", function(value)
+    settings.RegisterCallback("speedd", function(value)
         speedPid = PID(speedPid.p, speedPid.i, value)
         log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d)
     end)
-
 
     s:SetState(Idle(s))
 

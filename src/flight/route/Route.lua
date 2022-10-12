@@ -38,8 +38,11 @@ function Route.New()
         return points
     end
 
+    ---Adds a ::pos{} string
+    ---@param positionString string
+    ---@return Point|nil
     function s.AddPos(positionString)
-        local pos = universe:ParsePosition(positionString)
+        local pos = universe.ParsePosition(positionString)
 
         if pos == nil then
             log:Error("Could not add position to route")
@@ -53,7 +56,7 @@ function Route.New()
     ---@param coord Vec3
     ---@return Point
     function s.AddCoordinate(coord)
-        return s.AddPoint(Point.New(universe:CreatePos(coord):AsPosString()))
+        return s.AddPoint(Point.New(universe.CreatePos(coord):AsPosString()))
     end
 
     ---Adds a named waypoint to the route
