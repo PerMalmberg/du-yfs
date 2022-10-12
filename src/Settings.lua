@@ -101,7 +101,6 @@ function Settings.New(db)
         function singleton.Reload()
             for _, setting in pairs(singleton.def) do
                 local stored = singleton.Get(setting.key, setting.default)
-                system.print(setting.key .. " " .. stored)
                 publishToSubscribers(setting.key, stored)
             end
         end
