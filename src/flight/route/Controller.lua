@@ -20,6 +20,7 @@ require("util/Table")
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
 ---@field ActivateRoute fun(name:string):boolean
+---@field ActivateTempRoute fun():Route
 ---@field CreateRoute fun(name:string):Route|nil
 ---@field SaveRoute fun()
 ---@field Count fun():integer
@@ -224,6 +225,10 @@ function Controller.Instance(bufferedDB)
     ---@param name string
     ---@return boolean
     function s.ActivateRoute(name)
+        if not name or string.len(name) == 0 then
+            log:Error("No route name provided")
+            return false
+        end
         if editName ~= nil and name == editName and edit ~= nil then
             log:Info("Activating route currently being edited, forcing save.")
             s.StoreRoute(editName, edit)
@@ -240,6 +245,13 @@ function Controller.Instance(bufferedDB)
         return true
     end
 
+    ---Activate a temporary, empty, route
+    ---@return Route
+    function s.ActivateTempRoute()
+        current = Route.New()
+        return current
+    end
+
     ---Creates a route
     ---@param name string
     ---@return Route|nil
@@ -249,7 +261,7 @@ function Controller.Instance(bufferedDB)
             return nil
         end
 
-        edit = Route:New()
+        edit = Route.New()
         editName = name
 
         log:Info("Route '", name, "' created (but not yet saved)")

@@ -39,8 +39,7 @@ function InputHandler.New(flightCore)
     end)
 
     local function move(reference, distance, options)
-        routeController.ActivateRoute()
-        local route = routeController.CurrentRoute()
+        local route = routeController.ActivateTempRoute()
         local point = route.AddCoordinate(vehicle.position.Current() + reference * distance)
         options = options or point:Options()
 
@@ -69,18 +68,18 @@ function InputHandler.New(flightCore)
     end)
 
     input.Register(keys.straferight, Criteria.New().OnRepeat(), function()
-        local options = PointOptions:New()
+        local options = PointOptions.New()
         options.Set(PointOptions.MAX_SPEED, speed)
         options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward().unpack() })
         move(vehicle.orientation.Right(), step, options)
     end)
 
     input.Register(keys.up, Criteria.New().OnRepeat(), function()
-        move(-universe:VerticalReferenceVector(), step)
+        move(-universe.VerticalReferenceVector(), step)
     end)
 
     input.Register(keys.down, Criteria.New().OnRepeat(), function()
-        move(-universe:VerticalReferenceVector(), -step)
+        move(-universe.VerticalReferenceVector(), -step)
     end)
 
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
@@ -101,21 +100,10 @@ function InputHandler.New(flightCore)
 
     local start = vehicle.position.Current()
 
-    input.Register(keys.option8, Criteria.New().OnPress(), function()
-        routeController.ActivateRoute()
-        local route = routeController.CurrentRoute()
-
-        route.AddCoordinate(start - universe:VerticalReferenceVector() * 2)
-        route.AddCoordinate(start - universe:VerticalReferenceVector() * 100)
-
-        flightCore:StartFlight()
-    end)
-
     input.Register(keys.option9, Criteria.New().OnPress(), function()
-        routeController.ActivateRoute()
-        local route = routeController.CurrentRoute()
+        local route = routeController.ActivateTempRoute()
         local point = route.AddCoordinate(start)
-        point:Options().Set(PointOptions.MAX_SPEED, speed)
+        point.Options().Set(PointOptions.MAX_SPEED, speed)
 
         flightCore:StartFlight()
     end)
@@ -135,14 +123,14 @@ function InputHandler.New(flightCore)
     cmd.Accept("speed", speedFunc).AsNumber().Mandatory()
 
     local function addPointOptions(c)
-        c:Option("-precision").AsBoolean().Default(false)
-        c:Option("-lockdir").AsBoolean().Default(false)
-        c:Option("-maxspeed").AsNumber().Default(speed)
-        c:Option("-margin").AsNumber().Default(0.1)
+        c.Option("-precision").AsBoolean().Default(false)
+        c.Option("-lockdir").AsBoolean().Default(false)
+        c.Option("-maxspeed").AsNumber().Default(speed)
+        c.Option("-margin").AsNumber().Default(0.1)
     end
 
     local function createOptions(data)
-        local opt = PointOptions:New()
+        local opt = PointOptions.New()
         opt.Set(PointOptions.PRECISION, data.precision)
         opt.Set(PointOptions.MAX_SPEED, calc.Kph2Mps(data.maxspeed))
         opt.Set(PointOptions.MARGIN, data.margin)
@@ -154,11 +142,10 @@ function InputHandler.New(flightCore)
     end
 
     local moveFunc = function(data)
-        routeController.ActivateRoute()
-        local route = routeController.CurrentRoute()
+        local route = routeController.ActivateTempRoute()
         local pos = vehicle.position.Current()
         local point = route.AddCoordinate(pos + vehicle.orientation.Forward() * data.f +
-            vehicle.orientation.Right() * data.r - universe:VerticalReferenceVector() * data.u)
+            vehicle.orientation.Right() * data.r - universe.VerticalReferenceVector() * data.u)
         point.options = createOptions(data)
 
         flightCore:StartFlight()
@@ -180,10 +167,9 @@ function InputHandler.New(flightCore)
     cmd.Accept("turn", turnFunc).AsNumber()
 
     local strafeFunc = function(data)
-        routeController.ActivateRoute()
-        local route = routeController.CurrentRoute()
+        local route = routeController.ActivateTempRoute()
         local point = route.AddCoordinate(vehicle.position.Current() + vehicle.orientation.Right() * data.commandValue)
-        local p = PointOptions:New()
+        local p = PointOptions.New()
         point.options = p
         p.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
         p.Set(PointOptions.MAX_SPEED, data.maxspeed or speed)
@@ -263,7 +249,7 @@ function InputHandler.New(flightCore)
     addPointOptions(addNamed)
 
     local saveAsWaypoint = function(data)
-        local pos = universe:CreatePos(vehicle.position.Current()).AsPosString()
+        local pos = universe.CreatePos(vehicle.position.Current()).AsPosString()
         routeController.StoreWaypoint(data.commandValue, pos)
     end
 
