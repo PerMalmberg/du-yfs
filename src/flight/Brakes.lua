@@ -80,7 +80,8 @@ function Brake:Instance()
     function s:BrakeFlush()
         -- The brake vector must point against the direction of travel.
         local brakeVector = finalDeceleration()
-        unit.setEngineCommand(s.brakeGroup:Intersection(), { brakeVector:unpack() }, 1, 1, "", "", "", 0.001)
+        unit.setEngineCommand(s.brakeGroup:Intersection(), { brakeVector:unpack() }, { 0, 0, 0 }, true, true,
+            "", "", "", 0.001)
     end
 
     function s:GravityInfluencedAvailableDeceleration()

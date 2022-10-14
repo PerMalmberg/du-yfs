@@ -22,7 +22,7 @@ local routeDb = BufferedDB.New(routeLink)
 local settings = Settings.New(settingsDb)
 
 local NAME = "Yoarii's Flight System"
-local VERSION = "0.0.2"
+local VERSION = "0.0.4"
 
 Task.New("Main", function()
     log:Info(NAME)

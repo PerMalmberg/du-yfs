@@ -235,6 +235,12 @@ function FlightFSM.New(settings)
         return currentLimit
     end
 
+    ---Gets the maximum speed we may have and still be able to stop
+    ---@param deltaTime number Time since last tick, seconds
+    ---@param velocity vec3 Current velocity
+    ---@param direction vec3 Direction we want to travel
+    ---@param waypoint Waypoint Current waypoint
+    ---@return number
     local function getSpeedLimit(deltaTime, velocity, direction, waypoint)
         local maxSpeed, finalSpeed, distanceToTarget = waypoint:MaxSpeed(), waypoint:FinalSpeed(), waypoint:DistanceTo()
 
@@ -251,7 +257,7 @@ function FlightFSM.New(settings)
 
         -- If we're passing through or into atmosphere, reduce speed before we reach it
         local pos = CurrentPos()
-        local firstBody = universe:CurrentGalaxy():BodiesInPath(Ray.New(pos, velocity:normalize()))[1]
+        local firstBody = universe.CurrentGalaxy():BodiesInPath(Ray.New(pos, velocity:normalize()))[1]
 
         local inAtmo = false
 
@@ -281,7 +287,7 @@ function FlightFSM.New(settings)
 
         -- When we're moving up we don't want to consider the influence the atmosphere has one engines as doing so makes
         -- us unable to get out of atmo as engines turn off prematurely.
-        local considerAtmoInfluenceOnEngines = direction:dot(universe:VerticalReferenceVector()) > 0.7
+        local considerAtmoInfluenceOnEngines = direction:dot(universe.VerticalReferenceVector()) > 0.7
 
         local engineAcc = max(0,
             engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-direction, considerAtmoInfluenceOnEngines))
@@ -293,7 +299,6 @@ function FlightFSM.New(settings)
 
         -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
         local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingDistance, finalSpeed)
-        wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
 
         if maxSpeed > 0 then
             targetSpeed = evaluateNewLimit(targetSpeed, maxSpeed, "Route")
@@ -313,8 +318,10 @@ function FlightFSM.New(settings)
             targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brakes")
         end
 
+        wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
+
         -- When we want to leave atmo, override target speed.
-        if inAtmo and not firstBody:IsInAtmo(waypoint.destination) then
+        if firstBody and inAtmo and not firstBody:IsInAtmo(waypoint.destination) then
             targetSpeed = evaluateNewLimit(MAX_INT, construct.getFrictionBurnSpeed(), "Leave atmo")
         end
 
@@ -431,7 +438,7 @@ function FlightFSM.New(settings)
         -- skewed outside its intended values and push us off the path, or make us fall when holding position (if pid gets <0)
         local pidValue = clamp(speedPid:get(), 0, 1)
 
-        -- When we're not moving in the direction we should, counter movement with all we got.
+        -- When we're not moving in the direction we should counter movement with all we got.
         if wrongDir and currentSpeed > calc.Kph2Mps(20) then
             acceleration = -motionDirection *
                 engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-motionDirection) + brakeCounter

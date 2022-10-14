@@ -4,6 +4,9 @@ local checks = r.checks
 local Ternary = r.calc.Ternary
 local vehicle = r.vehicle
 
+---@class Waypoint
+
+
 local waypoint = {}
 waypoint.__index = waypoint
 
@@ -99,12 +102,12 @@ function waypoint:YawAndPitch(previousWaypoint)
 end
 
 return setmetatable(
-        {
-            new = new
-        },
-        {
-            __call = function(_, ...)
-                return new(...)
-            end
-        }
+    {
+        new = new
+    },
+    {
+        __call = function(_, ...)
+            return new(...)
+        end
+    }
 )
