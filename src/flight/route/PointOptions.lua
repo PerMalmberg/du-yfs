@@ -1,7 +1,7 @@
 ---@class PointOptions
 ---@field New fun():PointOptions Creates a new PointOptions
 ---@field Set fun(name:string, value:any) Sets an option value
----@field Get fun(defaultValue:any): any a Gets an option value
+---@field Get fun(opt:string, defaultValue:any): any a Gets an option value
 ---@field Data fun():table<string, any> Gets the options as a table
 
 local PointOptions = {}

@@ -9,7 +9,7 @@ require("util/Table")
 ---@alias WaypointMap table<string,Point>
 ---@module "storage/BufferedDB"
 
----@class Controller
+---@class RouteController
 ---@field GetRouteNames fun()string[]
 ---@field LoadRoute fun(name:string):Route|nil
 ---@field DeleteRoute fun(name:string)
@@ -25,17 +25,17 @@ require("util/Table")
 ---@field SaveRoute fun()
 ---@field Count fun():integer
 
-local Controller = {}
-Controller.__index = Controller
+local RouteController = {}
+RouteController.__index = RouteController
 local singleton
 
-Controller.NAMED_POINTS = "NamedPoints"
-Controller.NAMED_ROUTES = "NamedRoutes"
+RouteController.NAMED_POINTS = "NamedPoints"
+RouteController.NAMED_ROUTES = "NamedRoutes"
 
 ---Create a new route controller instance
 ---@param bufferedDB BufferedDB
----@return Controller
-function Controller.Instance(bufferedDB)
+---@return RouteController
+function RouteController.Instance(bufferedDB)
     if singleton then
         return singleton
     end
@@ -50,7 +50,7 @@ function Controller.Instance(bufferedDB)
     ---Returns the the name of all routes, with "(editing)" appended to the one currently being edited.
     ---@return string[]
     function s.GetRouteNames()
-        local routes = db.Get(Controller.NAMED_ROUTES) or {}
+        local routes = db.Get(RouteController.NAMED_ROUTES) or {}
         local res = {} ---@type string[]
         for name, _ in pairs(routes) do
             if name == editName then
@@ -72,7 +72,7 @@ function Controller.Instance(bufferedDB)
     ---@param name string The name of the route to load
     ---@return Route|nil
     function s.LoadRoute(name)
-        local routes = db.Get(Controller.NAMED_ROUTES) or {}
+        local routes = db.Get(RouteController.NAMED_ROUTES) or {}
         local data = routes[name]
 
         if data == nil then
@@ -111,7 +111,7 @@ function Controller.Instance(bufferedDB)
     ---Deletes the named route
     ---@param name string
     function s.DeleteRoute(name)
-        local routes = db.Get(Controller.NAMED_ROUTES) or {}
+        local routes = db.Get(RouteController.NAMED_ROUTES) or {}
         local route = routes[name]
 
         if route == nil then
@@ -120,7 +120,7 @@ function Controller.Instance(bufferedDB)
         end
 
         routes[name] = nil
-        db.Put(Controller.NAMED_ROUTES, routes)
+        db.Put(RouteController.NAMED_ROUTES, routes)
         log:Info("Route '", name, "' deleted")
 
         if name == editName then
@@ -139,7 +139,7 @@ function Controller.Instance(bufferedDB)
             return
         end
 
-        local routes = db.Get(Controller.NAMED_ROUTES) or {}
+        local routes = db.Get(RouteController.NAMED_ROUTES) or {}
         local data = {}
 
         for _, p in ipairs(route.Points()) do
@@ -147,7 +147,7 @@ function Controller.Instance(bufferedDB)
         end
 
         routes[name] = data
-        db.Put(Controller.NAMED_ROUTES, routes)
+        db.Put(RouteController.NAMED_ROUTES, routes)
         log:Info("Route '", name, "' saved.")
     end
 
@@ -163,10 +163,10 @@ function Controller.Instance(bufferedDB)
             return false
         end
 
-        local waypoints = db.Get(Controller.NAMED_POINTS) or {}
+        local waypoints = db.Get(RouteController.NAMED_POINTS) or {}
         waypoints[name] = Point.New(pos).Persist()
 
-        db.Put(Controller.NAMED_POINTS, waypoints)
+        db.Put(RouteController.NAMED_POINTS, waypoints)
         log:Info("Waypoint saved as '", name, "'")
         return true
     end
@@ -174,7 +174,7 @@ function Controller.Instance(bufferedDB)
     ---Returns a list of all waypoints
     ---@return NamedWaypoint[]
     function s.GetWaypoints()
-        local namedPositions = db.Get(Controller.NAMED_POINTS) or {}
+        local namedPositions = db.Get(RouteController.NAMED_POINTS) or {}
 
         local names = {}
 
@@ -198,7 +198,7 @@ function Controller.Instance(bufferedDB)
     ---@param waypoints? WaypointMap An optional table to load from
     ---@return Point|nil
     function s.LoadWaypoint(name, waypoints)
-        waypoints = waypoints or db.Get(Controller.NAMED_POINTS) or {}
+        waypoints = waypoints or db.Get(RouteController.NAMED_POINTS) or {}
         local pointData = waypoints[name]
 
         if pointData == nil then
@@ -277,8 +277,8 @@ function Controller.Instance(bufferedDB)
         end
     end
 
-    singleton = setmetatable(s, Controller)
+    singleton = setmetatable(s, RouteController)
     return singleton
 end
 
-return Controller
+return RouteController

@@ -9,10 +9,10 @@ local function runTicks()
     end
 end
 
-describe("Controller", function()
+describe("RouteController", function()
     env.Prepare()
     require("api-mockup/databank")
-    local Controller = require("flight/route/Controller")
+    local RouteController = require("flight/route/RouteController")
 
     local BufferedDB = require("storage/BufferedDB")
 
@@ -22,18 +22,18 @@ describe("Controller", function()
     stub(dataBank, "getStringValue")
 
     dataBank.getKeyList.on_call_with().returns({})
-    dataBank.getStringValue.on_call_with(Controller.NAMED_POINTS).returns({})
+    dataBank.getStringValue.on_call_with(RouteController.NAMED_POINTS).returns({})
 
     local db = BufferedDB.New(dataBank)
     db:BeginLoad()
-    local c = Controller.Instance(db)
+    local c = RouteController.Instance(db)
 
     while not db:IsLoaded() do
         runTicks()
     end
 
     it("Is singelton", function()
-        assert.are_equal(c, Controller.Instance(db))
+        assert.are_equal(c, RouteController.Instance(db))
     end)
 
     it("Can create a route", function()

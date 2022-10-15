@@ -4,6 +4,7 @@ local Criteria = require("input/Criteria")
 local PointOptions = require("flight/route/PointOptions")
 local CommandLine = require("commandline/CommandLine")
 local Input = require("input/Input")
+local utils = r.utils
 
 local log = r.log
 local vehicle = r.vehicle
@@ -24,7 +25,7 @@ function InputHandler.New(flightCore)
     local step = 50
     local speed = calc.Kph2Mps(150)
 
-    local routeController = flightCore:GetRoutController()
+    local routeController = flightCore.GetRoutController()
     local cmd = CommandLine.Instance()
     local input = Input.Instance()
 
@@ -262,7 +263,7 @@ function InputHandler.New(flightCore)
     end)
 
     cmd.Accept("set-base", function(_)
-
+        routeController.StoreWaypoint()
     end)
 
     return setmetatable(s, InputHandler)

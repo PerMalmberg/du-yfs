@@ -1,2 +1,2 @@
 APP_NAME = "Yoarii's Flight System"
-APP_VERSION = "0.0.23"
+APP_VERSION = "0.0.27"
