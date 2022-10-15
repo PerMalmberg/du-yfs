@@ -6,6 +6,7 @@ local FlightFSM = require("flight/FlightFSM")
 local FC = require("flight/FlightCore")
 local InputHandler = require("InputHandler")
 local Settings = require("Settings")
+require("version")
 
 local Task = require("system/Task")
 
@@ -21,12 +22,9 @@ local settingsDb = BufferedDB.New(settingLink)
 local routeDb = BufferedDB.New(routeLink)
 local settings = Settings.New(settingsDb)
 
-local NAME = "Yoarii's Flight System"
-local VERSION = "0.0.4"
-
 Task.New("Main", function()
-    log:Info(NAME)
-    log:Info("v", VERSION)
+    log:Info(APP_NAME)
+    log:Info("v", APP_VERSION)
 
     settingsDb.BeginLoad()
     routeDb.BeginLoad()
