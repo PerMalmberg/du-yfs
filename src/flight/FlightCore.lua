@@ -56,7 +56,7 @@ function FlightCore.New(routeController, flightFSM)
     local wWaypointDirLock = p:CreateValue("Dir lock")
 
     local function createDefaultWP()
-        return Waypoint(vehicle.position.Current(), 0, 0, 10, alignment.NoAdjust, alignment.NoAdjust)
+        return Waypoint.New(vehicle.position.Current(), 0, 0, 10, alignment.NoAdjust, alignment.NoAdjust)
     end
 
     -- Setup start waypoints to prevent nil values
@@ -99,13 +99,14 @@ function FlightCore.New(routeController, flightFSM)
         local maxSpeed = opt.Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored).
 
         local coordinate = universe.ParsePosition(point.Pos()).Coordinates()
-        local wp = Waypoint(coordinate, finalSpeed, maxSpeed, margin, alignment.RollTopsideAwayFromVerticalReference,
+        local wp = Waypoint.New(coordinate, finalSpeed, maxSpeed, margin,
+            alignment.RollTopsideAwayFromVerticalReference,
             alignment.YawPitchKeepOrthogonalToVerticalReference)
 
-        wp:SetPrecisionMode(opt.Get(PointOptions.PRECISION, false))
+        wp.SetPrecisionMode(opt.Get(PointOptions.PRECISION, false))
 
         if dir ~= nullVec then
-            wp:LockDirection(dir)
+            wp.LockDirection(dir, false)
         end
 
         return wp
@@ -144,7 +145,7 @@ function FlightCore.New(routeController, flightFSM)
             local direction = vehicle.orientation.Forward()
             direction = calc.RotateAroundAxis(direction, nullVec, degrees, axis)
 
-            currentWp:LockDirection(direction, true)
+            currentWp.LockDirection(direction, true)
         end
     end
 
@@ -170,7 +171,7 @@ function FlightCore.New(routeController, flightFSM)
         local waypoint = currentWaypoint
         local prev = previousWaypoint
 
-        local target = waypoint:YawAndPitch(prev)
+        local target = waypoint.YawAndPitch(prev)
 
         if target ~= nil then
             visual:DrawNumber(6, target + vehicle.orientation.Forward() * 1)
@@ -181,7 +182,7 @@ function FlightCore.New(routeController, flightFSM)
             pitch:Disable()
         end
 
-        local topSideAlignment = waypoint:Roll(prev)
+        local topSideAlignment = waypoint.Roll(prev)
         if topSideAlignment ~= nil then
             roll:SetTarget(topSideAlignment)
         else
@@ -197,21 +198,21 @@ function FlightCore.New(routeController, flightFSM)
 
                 local wp = currentWaypoint
                 if wp ~= nil then
-                    wWaypointDistance:Set(calc.Round(wp:DistanceTo(), 3))
-                    wWaypointMargin:Set(calc.Round(wp:Margin(), 3))
-                    wWaypointFinalSpeed:Set(calc.Round(calc.Kph2Mps(wp:FinalSpeed())), 1)
-                    wWaypointMaxSpeed:Set(calc.Round(calc.Kph2Mps(wp:MaxSpeed())), 1)
-                    wWaypointPrecision:Set(wp:GetPrecisionMode())
-                    wWaypointDirLock:Set(wp:DirectionLocked())
+                    wWaypointDistance:Set(calc.Round(wp.DistanceTo(), 3))
+                    wWaypointMargin:Set(calc.Round(wp.Margin(), 3))
+                    wWaypointFinalSpeed:Set(calc.Round(calc.Kph2Mps(wp.FinalSpeed())), 1)
+                    wWaypointMaxSpeed:Set(calc.Round(calc.Kph2Mps(wp.MaxSpeed())), 1)
+                    wWaypointPrecision:Set(wp.GetPrecisionMode())
+                    wWaypointDirLock:Set(wp.DirectionLocked())
 
-                    local diff = wp.destination - previousWaypoint.destination
+                    local diff = wp.Destination() - previousWaypoint.Destination()
                     local len = diff:len()
                     local dir = diff:normalize()
-                    visual:DrawNumber(1, previousWaypoint.destination)
-                    visual:DrawNumber(2, previousWaypoint.destination + dir * len / 4)
-                    visual:DrawNumber(3, previousWaypoint.destination + dir * len / 2)
-                    visual:DrawNumber(4, previousWaypoint.destination + dir * 3 * len / 4)
-                    visual:DrawNumber(5, wp.destination)
+                    visual:DrawNumber(1, previousWaypoint.Destination())
+                    visual:DrawNumber(2, previousWaypoint.Destination() + dir * len / 4)
+                    visual:DrawNumber(3, previousWaypoint.Destination() + dir * len / 2)
+                    visual:DrawNumber(4, previousWaypoint.Destination() + dir * 3 * len / 4)
+                    visual:DrawNumber(5, wp.Destination())
                 end
             end,
             traceback
@@ -230,12 +231,12 @@ function FlightCore.New(routeController, flightFSM)
                 local wp = currentWaypoint
 
                 if wp and route then
-                    if wp:Reached() then
+                    if wp.Reached() then
                         if not waypointReachedSignaled then
                             waypointReachedSignaled = true
-                            flightFSM:WaypointReached(route.LastPointReached(), wp, self.previousWaypoint)
+                            flightFSM:WaypointReached(route.LastPointReached(), wp, previousWaypoint)
 
-                            wp:LockDirection(vehicle.orientation.Forward())
+                            wp.LockDirection(vehicle.orientation.Forward())
                         end
 
                         -- Switch to next waypoint

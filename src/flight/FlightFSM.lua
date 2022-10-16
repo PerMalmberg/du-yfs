@@ -145,21 +145,27 @@ function FlightFSM.New(settings)
         return v0
     end
 
+    ---Calculates the nearest point between two waypoints
+    ---@param wpStart Waypoint
+    ---@param wpEnd Waypoint
+    ---@param currentPos vec3
+    ---@param ahead number
+    ---@return vec3
     local function nearestPointBetweenWaypoints(wpStart, wpEnd, currentPos, ahead)
-        local totalDiff = wpEnd.destination - wpStart.destination
+        local totalDiff = wpEnd.Destination() - wpStart.Destination()
         local dir = totalDiff:normalize()
-        local nearestPoint = calc.NearestPointOnLine(wpStart.destination, dir, currentPos)
+        local nearestPoint = calc.NearestPointOnLine(wpStart.Destination(), dir, currentPos)
 
         ahead = (ahead or 0)
-        local startDiff = nearestPoint - wpStart.destination
+        local startDiff = nearestPoint - wpStart.Destination()
         local distanceFromStart = startDiff:len()
         local rabbitDistance = min(distanceFromStart + ahead, totalDiff:len())
-        local rabbit = wpStart.destination + dir * rabbitDistance
+        local rabbit = wpStart.Destination() + dir * rabbitDistance
 
         if startDiff:normalize():dot(dir) < 0 then
-            return { nearest = wpStart.destination, rabbit = rabbit }
+            return { nearest = wpStart.Destination(), rabbit = rabbit }
         elseif startDiff:len() >= totalDiff:len() then
-            return { nearest = wpEnd.destination, rabbit = rabbit }
+            return { nearest = wpEnd.Destination(), rabbit = rabbit }
         else
             return { nearest = nearestPoint, rabbit = rabbit }
         end
@@ -218,7 +224,7 @@ function FlightFSM.New(settings)
         if body.Atmosphere.Radius > 0 then
             local threshold = 0.7 -- Consider this much of the atmosphere as a volume where we can't brake.
             local distanceToBody = body.DistanceToHighestPossibleSurface(pos)
-            local distanceBetweenTargetAndBody = body.DistanceToHighestPossibleSurface(selectWP().destination)
+            local distanceBetweenTargetAndBody = body.DistanceToHighestPossibleSurface(selectWP().Destination())
             local deadZoneThickness = body.Atmosphere.Thickness * threshold
             local deadZoneEndAltitude = body.Atmosphere.Radius - deadZoneThickness
             local isOutsideOrInUpperAtmosphere = distanceToBody > deadZoneEndAltitude
@@ -256,13 +262,13 @@ function FlightFSM.New(settings)
     ---@param waypoint Waypoint Current waypoint
     ---@return number
     local function getSpeedLimit(deltaTime, velocity, direction, waypoint)
-        local finalSpeed = waypoint:FinalSpeed()
+        local finalSpeed = waypoint.FinalSpeed()
 
         local currentSpeed = velocity:len()
         -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
         -- This is inaccurate if acceleration isn't in the same direction as our movement vector, but it is gives a safe value.
         local remainingDistance = max(0,
-            waypoint:DistanceTo() - (currentSpeed * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
+            waypoint.DistanceTo() - (currentSpeed * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
 
         -- Calculate max speed we may have with available brake force to to reach the final speed.
 
@@ -321,7 +327,7 @@ function FlightFSM.New(settings)
         end
 
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Max")
-        targetSpeed = evaluateNewLimit(targetSpeed, waypoint:MaxSpeed(), "Route")
+        targetSpeed = evaluateNewLimit(targetSpeed, waypoint.MaxSpeed(), "Route")
         targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brakes")
         --targetSpeed = evaluateNewLimit(targetSpeed, engineMaxSpeed, "Engine")
 
@@ -329,7 +335,7 @@ function FlightFSM.New(settings)
         targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed(), "Burn speed")
 
         -- When we want to leave atmo, override target speed.
-        if firstBody and inAtmo and not firstBody:IsInAtmo(waypoint.destination) then
+        if firstBody and inAtmo and not firstBody:IsInAtmo(waypoint.Destination()) then
             targetSpeed = evaluateNewLimit(MAX_INT, construct.getFrictionBurnSpeed(), "Leave atmo")
         end
 
@@ -488,7 +494,7 @@ function FlightFSM.New(settings)
             move(deltaTime, selectedWP)
 
             adjustForDeviation(chaseData, pos, moveDirection)
-            applyAcceleration(moveDirection, selectedWP:GetPrecisionMode())
+            applyAcceleration(moveDirection, selectedWP.GetPrecisionMode())
 
             visual:DrawNumber(9, chaseData.rabbit)
             visual:DrawNumber(8, chaseData.nearest)

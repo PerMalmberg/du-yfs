@@ -1,113 +1,147 @@
 local alignment = require("flight/AlignmentFunctions")
 local r = require("CommonRequire")
-local checks = r.checks
 local Ternary = r.calc.Ternary
 local vehicle = r.vehicle
 
 ---@class Waypoint
+---@field New fun():Waypoint
+---@field FinalSpeed fun():number
+---@field MaxSpeed fun():number
+---@field Margin fun():number
+---@field Reached fun():boolean
+---@field Destination fun():vec3
+---@field DistanceTo fun():number
+---@field DirectionTo fun():vec3
+---@field GetPrecisionMode fun():boolean
+---@field SetPrecisionMode fun(v:boolean)
+---@field LockDirection fun(direction:vec3, forced:boolean)
+---@field DirectionLocked fun():boolean
+---@field Roll fun(previouss.Waypoint)
+---@field YawAndPitch fun(previous:Waypoint)
+---@field YawPitchDirection fun():vec3
 
-
-local waypoint = {}
-waypoint.__index = waypoint
+local Waypoint = {}
+Waypoint.__index = Waypoint
 
 ---Creates a new Waypoint
 ---@param destination vec3 The destination
 ---@param finalSpeed number The final speed to reach when at the waypoint (0 if stopping is intended).
 ---@param maxSpeed number The maximum speed to to travel at. Less than or equal to finalSpeed.
 ---@param margin number The number of meters to be within for the waypoint to be considered reached
----@param roll function Function that determines how the constrol aligns its topside (rolls)
----@return table
-local function new(destination, finalSpeed, maxSpeed, margin, roll, yawPitch)
-    checks.IsVec3(destination, "destination", "waypoint:new")
-    checks.IsNumber(finalSpeed, "finalSpeed", "waypoint:new")
-    checks.IsNumber(maxSpeed, "maxSpeed", "waypoint:new")
-    checks.IsNumber(margin, "margin", "waypoint:new")
-    checks.IsFunction(roll, "roll", "waypoint:new")
-    checks.IsFunction(yawPitch, "yawPitch", "waypoint:new")
-
-    local o = {
+---@param rollFunc AlignmentFunction Function that determines how the constrol aligns its topside (rolls)
+---@param yawPitchFunc AlignmentFunction
+---@return Waypoint
+function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPitchFunc)
+    local s = {
         destination = destination,
         finalSpeed = finalSpeed,
-        -- Guard against bad settings.
-        maxSpeed = Ternary(finalSpeed > maxSpeed, finalSpeed, maxSpeed),
+        maxSpeed = Ternary(finalSpeed > maxSpeed, finalSpeed, maxSpeed), ---@type number -- Guard against bad settings.
         margin = margin,
-        rollFunc = roll,
-        yawPitchFunc = yawPitch,
-        yawPitchDirection = nil, -- Fixed target direction, vec3
+        rollFunc = rollFunc,
+        yawPitchFunc = yawPitchFunc,
+        yawPitchDirection = nil, ---@type vec3 -- Fixed target direction
         precisionMode = false
     }
 
-    setmetatable(o, waypoint)
-
-    return o
-end
-
-function waypoint:FinalSpeed()
-    return self.finalSpeed
-end
-
-function waypoint:MaxSpeed()
-    return self.maxSpeed
-end
-
-function waypoint:Margin()
-    return self.margin
-end
-
-function waypoint:Reached()
-    return self:DistanceTo() <= self.margin
-end
-
-function waypoint:DistanceTo()
-    return (self.destination - vehicle.position.Current()):len()
-end
-
-function waypoint:DirectionTo()
-    return (self.destination - vehicle.position.Current()):normalize_inplace()
-end
-
-function waypoint:GetPrecisionMode()
-    return self.precisionMode
-end
-
-function waypoint:SetPrecisionMode(value)
-    self.precisionMode = value
-end
-
-function waypoint:LockDirection(direction, forced)
-    if self.yawPitchDirection == nil or forced then
-        self.yawPitchDirection = direction
-        self.yawPitchFunc = alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference
-    end
-end
-
-function waypoint:DirectionLocked()
-    return self.yawPitchDirection ~= nil
-end
-
-function waypoint:Roll(previousWaypoint)
-    if self.rollFunc ~= nil then
-        return self.rollFunc(self, previousWaypoint)
+    ---Gets the destination
+    ---@return vec3
+    function s.Destination()
+        return s.destination
     end
 
-    return nil
-end
-
-function waypoint:YawAndPitch(previousWaypoint)
-    if self.yawPitchFunc ~= nil then
-        return self.yawPitchFunc(self, previousWaypoint)
+    ---Gets the yaw/pitch direction
+    ---@return vec3
+    function s.YawPitchDirection()
+        return s.yawPitchDirection
     end
 
-    return nil
-end
+    ---Gets the final speed for the waypoint
+    ---@return number
+    function s.FinalSpeed()
+        return s.finalSpeed
+    end
 
-return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
+    ---Gets the max speed for the waypoint
+    ---@return number
+    function s.MaxSpeed()
+        return s.maxSpeed
+    end
+
+    ---Gets the margin for the waypoint
+    ---@return number
+    function s.Margin()
+        return s.margin
+    end
+
+    ---Indicates if the waypoint has been reached.
+    ---@return boolean
+    function s.Reached()
+        return s.DistanceTo() <= s.margin
+    end
+
+    ---Gets the distance to the waypoint
+    ---@return number
+    function s.DistanceTo()
+        return (s.destination - vehicle.position.Current()):len()
+    end
+
+    ---Gets the direction to the waypoint
+    ---@return vec3
+    function s.DirectionTo()
+        return (s.destination - vehicle.position.Current()):normalize_inplace()
+    end
+
+    ---Indicates of precision mode is active
+    ---@return boolean
+    function s.GetPrecisionMode()
+        return s.precisionMode
+    end
+
+    ---Sets precision modde
+    ---@param value boolean
+    function s.SetPrecisionMode(value)
+        s.precisionMode = value
+    end
+
+    ---Locks the direction
+    ---@param direction vec3 The direction to lock towards
+    ---@param forced boolean If true, overrides existing lock
+    function s.LockDirection(direction, forced)
+        if s.yawPitchDirection == nil or forced then
+            s.yawPitchDirection = direction
+            s.yawPitchFunc = alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference
         end
-    }
-)
+    end
+
+    ---Indicates of the direction is locked
+    ---@return boolean
+    function s.DirectionLocked()
+        return s.yawPitchDirection ~= nil
+    end
+
+    ---Performs the roll applicable for this waypoint
+    ---@param previousWaypoint Waypoint
+    ---@return vec3|nil
+    function s.Roll(previousWaypoint)
+        if s.rollFunc ~= nil then
+            return s.rollFunc(s, previousWaypoint)
+        end
+
+        return nil
+    end
+
+    ---Performs the way and pitch applicable for this waypoint
+    ---@param previousWaypoint Waypoint
+    ---@return vec3|nil
+    function s.YawAndPitch(previousWaypoint)
+        if s.yawPitchFunc ~= nil then
+            return s.yawPitchFunc(s, previousWaypoint)
+        end
+
+        return nil
+    end
+
+    return setmetatable(s, Waypoint)
+end
+
+return Waypoint

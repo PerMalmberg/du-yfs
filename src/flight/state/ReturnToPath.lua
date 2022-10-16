@@ -31,14 +31,19 @@ function state:Leave()
     self.fsm:SetTemporaryWaypoint()
 end
 
+---Flush
+---@param deltaTime number
+---@param next Waypoint
+---@param previous Waypoint
+---@param chaseData table
 function state:Flush(deltaTime, next, previous, chaseData)
     if not self.temporaryWP then
-        self.temporaryWP = Waypoint(self.returnPoint, 0, 0, next.margin, next.rollFunc, next.yawPitchFunc)
+        self.temporaryWP = Waypoint.New(self.returnPoint, 0, 0, next.Margin(), next.Roll, next.YawAndPitch)
         self.fsm:SetTemporaryWaypoint(self.temporaryWP)
     end
 
     local timer = self.sw
-    if self.temporaryWP:Reached() then
+    if self.temporaryWP.Reached() then
         timer:Start()
 
         if timer:Elapsed() > 0.3 then

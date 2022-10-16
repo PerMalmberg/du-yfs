@@ -29,7 +29,7 @@ function state:Leave()
 end
 
 function state:Flush(deltaTime, next, previous, chaseData)
-    if next:Reached() then
+    if next.Reached() then
         next:SetPrecisionMode(true)
     else
         self.fsm:SetState(Travel(self.fsm))
@@ -47,12 +47,12 @@ function state:Name()
 end
 
 return setmetatable(
-        {
-            new = new
-        },
-        {
-            __call = function(_, ...)
-                return new(...)
-            end
-        }
+    {
+        new = new
+    },
+    {
+        __call = function(_, ...)
+            return new(...)
+        end
+    }
 )
