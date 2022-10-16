@@ -15,10 +15,13 @@ local brakes = r.brakes
 ---@module "flight/FlightCore"
 
 ---@class InputHandler
----@field New fun(flightCore:FlightCore)
+---@field New fun(flightCore.FlightCore)
 local InputHandler = {}
 InputHandler.__index = InputHandler
 
+---Creates a new InputHandler
+---@param flightCore FlightCore
+---@return InputHandler
 function InputHandler.New(flightCore)
     local s = {}
 
@@ -49,7 +52,7 @@ function InputHandler.New(flightCore)
 
         point.options = options
 
-        flightCore:StartFlight()
+        flightCore.StartFlight()
     end
 
     input.Register(keys.forward, Criteria.New().OnRepeat(), function()
@@ -63,7 +66,7 @@ function InputHandler.New(flightCore)
     input.Register(keys.strafeleft, Criteria.New().OnRepeat(), function()
         local options = PointOptions.New()
         options.Set(PointOptions.MAX_SPEED, speed)
-        options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward().unpack() })
+        options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
 
         move(-vehicle.orientation.Right(), step, options)
     end)
@@ -71,7 +74,7 @@ function InputHandler.New(flightCore)
     input.Register(keys.straferight, Criteria.New().OnRepeat(), function()
         local options = PointOptions.New()
         options.Set(PointOptions.MAX_SPEED, speed)
-        options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward().unpack() })
+        options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
         move(vehicle.orientation.Right(), step, options)
     end)
 
@@ -84,11 +87,11 @@ function InputHandler.New(flightCore)
     end)
 
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
-        flightCore:Turn(1, vehicle.orientation.Up())
+        flightCore.Turn(1, vehicle.orientation.Up())
     end)
 
     input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
-        flightCore:Turn(-1, vehicle.orientation.Up())
+        flightCore.Turn(-1, vehicle.orientation.Up())
     end)
 
     input.Register(keys.brake, Criteria.New().OnPress(), function()
@@ -106,7 +109,7 @@ function InputHandler.New(flightCore)
         local point = route.AddCoordinate(start)
         point.Options().Set(PointOptions.MAX_SPEED, speed)
 
-        flightCore:StartFlight()
+        flightCore.StartFlight()
     end)
 
     local stepFunc = function(data)
@@ -149,10 +152,10 @@ function InputHandler.New(flightCore)
             vehicle.orientation.Right() * data.r - universe.VerticalReferenceVector() * data.u)
         point.options = createOptions(data)
 
-        flightCore:StartFlight()
+        flightCore.StartFlight()
     end
 
-    local moveCmd = cmd.Accept("move", moveFunc).AsString()
+    local moveCmd = cmd.Accept("move", moveFunc)
     moveCmd.Option("-u").AsNumber().Mandatory().Default(0)
     moveCmd.Option("-r").AsNumber().Mandatory().Default(0)
     moveCmd.Option("-f").AsNumber().Mandatory().Default(0)
@@ -162,7 +165,7 @@ function InputHandler.New(flightCore)
         -- Turn in the expected way, i.e. clockwise on positive values.
         local angle = -data.commandValue
 
-        flightCore:Turn(angle, vehicle.orientation.Up(), vehicle.position.Current())
+        flightCore.Turn(angle, vehicle.orientation.Up(), vehicle.position.Current())
     end
 
     cmd.Accept("turn", turnFunc).AsNumber()
@@ -175,7 +178,7 @@ function InputHandler.New(flightCore)
         p.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
         p.Set(PointOptions.MAX_SPEED, data.maxspeed or speed)
 
-        flightCore:StartFlight()
+        flightCore.StartFlight()
     end
 
     local strafeCmd = cmd.Accept("strafe", strafeFunc).AsNumber()
@@ -189,7 +192,7 @@ function InputHandler.New(flightCore)
         end
     end
 
-    cmd.Accept("route-list", listRoutes).AsString()
+    cmd.Accept("route-list", listRoutes)
 
     local loadRoute = function(data)
         routeController.LoadRoute(data.commandValue)
@@ -213,11 +216,15 @@ function InputHandler.New(flightCore)
         routeController.DeleteRoute(data.commandValue)
     end
 
-    cmd.Accept("route-activate", function(data)
-        if routeController.ActivateRoute(data.commandValue) then
-            flightCore:StartFlight()
+    local routeActivate = cmd.Accept("route-activate", function(data)
+        local reverse = calc.Ternary(data.reverse or false, RouteOrder.REVERSED, RouteOrder.FORWARD) ---@type RouteOrder
+
+        if routeController.ActivateRoute(data.commandValue, reverse) then
+            flightCore.StartFlight()
+            log:Info("Flight started")
         end
     end).AsString().Mandatory()
+    routeActivate.Option("reverse").AsEmptyBoolean()
 
     cmd.Accept("route-delete", deleteRoute).AsString()
 
@@ -260,10 +267,6 @@ function InputHandler.New(flightCore)
         for _, data in ipairs(routeController.GetWaypoints()) do
             log:Info(data.name, ": ", data.point:Pos())
         end
-    end)
-
-    cmd.Accept("set-base", function(_)
-        routeController.StoreWaypoint()
     end)
 
     return setmetatable(s, InputHandler)

@@ -23,7 +23,7 @@ require("flight/state/Require")
 ---@field GetRoutController fun():RouteController
 ---@field NextWP fun()
 ---@field StartFlight fun()
----@field Turn fun(axis:vec3, rotationPoint:vec3):vec3
+---@field Turn fun(degrees:number, axis:vec3):vec3
 ---@field StopEvents fun()
 
 local FlightCore = {}
@@ -133,18 +133,13 @@ function FlightCore.New(routeController, flightFSM)
     ---Rotates all waypoints around the axis with the given angle
     ---@param degrees number The angle to turn
     ---@param axis vec3
-    ---@param rotationPoint vec3
-    function s.Turn(degrees, axis, rotationPoint)
+    function s.Turn(degrees, axis)
         checks.IsNumber(degrees, "degrees", "s.RotateWaypoints")
         checks.IsVec3(axis, "axis", "s.RotateWaypoints")
 
         local currentWp = currentWaypoint
         if currentWp then
-            rotationPoint = rotationPoint or vehicle.position.Current()
-            -- Find new direction
-            local direction = vehicle.orientation.Forward()
-            direction = calc.RotateAroundAxis(direction, nullVec, degrees, axis)
-
+            local direction = calc.RotateAroundAxis(vehicle.orientation.Forward(), nullVec, degrees, axis)
             currentWp.LockDirection(direction, true)
         end
     end

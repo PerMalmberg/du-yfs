@@ -39,7 +39,6 @@ describe("RouteController", function()
     it("Can create a route", function()
         assert.is_nil(c.CreateRoute(nil))
 
-
         c.CreateRoute("test")
         local r = c.CurrentEdit()
         assert.is_not_nil(r)
@@ -118,5 +117,33 @@ describe("RouteController", function()
 
     it("It doesn't activate non-existing routes", function()
         assert.is_false(c.ActivateRoute(nil))
+    end)
+
+    it("Can activate a route in reverse", function()
+        local positions = {
+            "::pos{0,2,2.9093,65.4697,34.7071}",
+            "::pos{0,2,2.9093,65.4697,34.7072}",
+            "::pos{0,2,2.9093,65.4697,34.7073}",
+        }
+
+        assert.is_true(c.StoreWaypoint("A", positions[1]))
+        assert.is_true(c.StoreWaypoint("B", positions[2]))
+        assert.is_true(c.StoreWaypoint("C", positions[3]))
+
+        local r = c.CreateRoute("forward")
+        assert.is_not_nil(r.AddWaypointRef("A"))
+        assert.is_not_nil(r.AddWaypointRef("B"))
+        assert.is_not_nil(r.AddWaypointRef("C"))
+        assert.is_true(c.SaveRoute())
+
+        assert.is_true(c.ActivateRoute("forward", RouteOrder.REVERSED))
+        r = c.CurrentRoute()
+        local p = r.Next()
+
+        assert.are_equal("C", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("B", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("A", p.WaypointRef())
     end)
 end)

@@ -13,16 +13,16 @@ require("util/Table")
 ---@field GetRouteNames fun()string[]
 ---@field LoadRoute fun(name:string):Route|nil
 ---@field DeleteRoute fun(name:string)
----@field StoreRoute fun(name:string, route:Route)
+---@field StoreRoute fun(name:string, route:Route):boolean
 ---@field StoreWaypoint fun(name:string, pos:string):boolean
 ---@field GetWaypoints fun():NamedWaypoint[]
 ---@field LoadWaypoint fun(name:string, waypoints?:table<string,Point>):Point|nil
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
----@field ActivateRoute fun(name:string):boolean
+---@field ActivateRoute fun(name:string, order:RouteOrder|nil):boolean
 ---@field ActivateTempRoute fun():Route
 ---@field CreateRoute fun(name:string):Route|nil
----@field SaveRoute fun()
+---@field SaveRoute fun():boolean
 ---@field Count fun():integer
 
 local RouteController = {}
@@ -72,6 +72,7 @@ function RouteController.Instance(bufferedDB)
     ---@param name string The name of the route to load
     ---@return Route|nil
     function s.LoadRoute(name)
+
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
         local data = routes[name]
 
@@ -105,6 +106,7 @@ function RouteController.Instance(bufferedDB)
         editName = name
 
         log:Info("Route '", name, "' loaded")
+
         return route
     end
 
@@ -133,10 +135,11 @@ function RouteController.Instance(bufferedDB)
     ---Store the route under the given name
     ---@param name string The name to store the route as
     ---@param route Route The route to store
+    ---@return boolean
     function s.StoreRoute(name, route)
         if not edit then
             log:Error("Cannot save, no route currently being edited")
-            return
+            return false
         end
 
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
@@ -149,6 +152,7 @@ function RouteController.Instance(bufferedDB)
         routes[name] = data
         db.Put(RouteController.NAMED_ROUTES, routes)
         log:Info("Route '", name, "' saved.")
+        return true
     end
 
     ---Stores a waypoint under the given name
@@ -223,8 +227,11 @@ function RouteController.Instance(bufferedDB)
 
     ---Activate the route by the given name
     ---@param name string
+    ---@param order RouteOrder|nil The order the route shall be followed
     ---@return boolean
-    function s.ActivateRoute(name)
+    function s.ActivateRoute(name, order)
+        order = order or RouteOrder.FORWARD
+
         if not name or string.len(name) == 0 then
             log:Error("No route name provided")
             return false
@@ -240,6 +247,11 @@ function RouteController.Instance(bufferedDB)
             return false
         else
             log:Info("Route activated: ", name)
+        end
+
+        if order == RouteOrder.REVERSED then
+            log:Info("Reversing route '", name, "'")
+            current.Reverse()
         end
 
         return true
@@ -268,13 +280,17 @@ function RouteController.Instance(bufferedDB)
         return edit
     end
 
-    ---Saves the currently added route
+    ---Saves the currently edited route
+    ---@return boolean
     function s.SaveRoute()
+        local res = false
         if edit and editName ~= nil then
-            s.StoreRoute(editName, edit)
+            res = s.StoreRoute(editName, edit)
         else
             log:Error("No route currently opened for edit.")
         end
+
+        return res
     end
 
     singleton = setmetatable(s, RouteController)

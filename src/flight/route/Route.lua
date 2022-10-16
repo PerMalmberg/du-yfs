@@ -7,6 +7,7 @@ local vehicle = require("abstraction/Vehicle"):New()
 local log = require("debug/Log")()
 local universe = require("universe/Universe").Instance()
 local Point = require("flight/route/Point")
+require("util/Table")
 
 ---@class Route Represents a route
 ---@field New fun():Route
@@ -19,7 +20,13 @@ local Point = require("flight/route/Point")
 ---@field Clear fun()
 ---@field Next fun():Point|nil
 ---@field LastPointReached fun():boolean
+---@field Reverse fun()
 
+---@enum RouteOrder
+RouteOrder = {
+    FORWARD = 1,
+    REVERSED = 2
+}
 
 local Route = {}
 Route.__index = Route
@@ -104,6 +111,10 @@ function Route.New()
 
     function s.LastPointReached()
         return currentPointIx > #points
+    end
+
+    function s.Reverse()
+        ReverseInplace(points)
     end
 
     return setmetatable(s, Route)
