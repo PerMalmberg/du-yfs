@@ -1,58 +1,57 @@
 local r = require("CommonRequire")
-local brakes = r.brakes
 local checks = r.checks
-require("flight/state/Require")
 
-local state = {}
-state.__index = state
+---@module "flight/state/Travel"
+
+---@class Hold
+---@field Enter fun()
+---@field Leave fun()
+---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, chaseData:ChaseData)
+---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
+---@field Update fun()
+---@field Name fun():string
+
+local Hold = {}
+Hold.__index = Hold
 
 local name = "Hold"
 
-local function new(fsm)
-    checks.IsTable(fsm, "fsm", name .. ":new")
+---Creates a new Hold state
+---@param fsm FlightFSM
+---@return Hold
+function Hold.New(fsm)
 
-    local o = {
-        fsm = fsm
-    }
+    local s = {}
 
-    setmetatable(o, state)
+    function s.Enter()
 
-    return o
-end
-
-function state:Enter()
-
-end
-
-function state:Leave()
-
-end
-
-function state:Flush(deltaTime, next, previous, chaseData)
-    if next.Reached() then
-        next:SetPrecisionMode(true)
-    else
-        self.fsm:SetState(Travel(self.fsm))
     end
-end
 
-function state:Update()
-end
+    function s.Leave()
 
-function state:WaypointReached(isLastWaypoint, next, previous)
-end
+    end
 
-function state:Name()
-    return name
-end
-
-return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
+    function s.Flush(deltaTime, next, previous, chaseData)
+        if next.Reached() then
+            next.SetPrecisionMode(true)
+        else
+            fsm.SetState(Travel.New(fsm))
         end
-    }
-)
+    end
+
+    function s.Update()
+    end
+
+    function s.WaypointReached(isLastWaypoint, next, previous)
+    end
+
+    function s.Name()
+        return name
+    end
+
+    setmetatable(s, Hold)
+
+    return s
+end
+
+return Hold

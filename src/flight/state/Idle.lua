@@ -1,48 +1,46 @@
 local checks = require("CommonRequire").checks
 
-local state = {}
-state.__index = state
+---@class Idle
+---@field Enter fun()
+---@field Leave fun()
+---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, chaseData:ChaseData)
+---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
+---@field Update fun()
+---@field Name fun():string
+
+local Idle = {}
+Idle.__index = Idle
 
 local name = "Idle"
 
-local function new(fsm)
+---Creates a new Idle state
+---@param fsm FlightFSM
+---@return Idle
+function Idle.New(fsm)
     checks.IsTable(fsm, "fsm", name .. ":new")
-    local o = {
-        fsm = fsm
-    }
+    local s = {}
 
-    setmetatable(o, state)
+    function s.Enter()
+    end
 
-    return o
+    function s.Leave()
+    end
+
+    function s.Flush(deltaTime, next, previous, chaseData)
+        fsm.DisableThrust()
+    end
+
+    function s.Update()
+    end
+
+    function s.WaypointReached(isLastWaypoint, next, previous)
+    end
+
+    function s.Name()
+        return name
+    end
+
+    return setmetatable(s, Idle)
 end
 
-function state:Enter()
-end
-
-function state:Leave()
-end
-
-function state:Flush(deltaTime, next, previous, chaseData)
-    self.fsm:DisableThrust()
-end
-
-function state:Update()
-end
-
-function state:WaypointReached(isLastWaypoint, next, previous)
-end
-
-function state:Name()
-    return name
-end
-
-return setmetatable(
-        {
-            new = new
-        },
-        {
-            __call = function(_, ...)
-                return new(...)
-            end
-        }
-)
+return Idle

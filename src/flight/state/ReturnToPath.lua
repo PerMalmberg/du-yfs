@@ -3,74 +3,65 @@ local checks = r.checks
 local Stopwatch = require("system/Stopwatch")
 local Waypoint = require("flight/Waypoint")
 
-local state = {}
-state.__index = state
+---@class ReturnToPath
+---@field Enter fun()
+---@field Leave fun()
+---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, chaseData:ChaseData)
+---@field Update fun()
+---@field Name fun():string
+
+local ReturnToPath = {}
+ReturnToPath.__index = ReturnToPath
 local name = "ReturnToPath"
 
-local function new(fsm, returnPoint)
+function ReturnToPath.New(fsm, returnPoint)
     checks.IsTable(fsm, "fsm", name .. ":new")
     checks.IsVec3(returnPoint, "returnPoint", name .. ":new")
 
-    local o = {
-        fsm = fsm,
-        returnPoint = returnPoint,
-        returnPointAdjusted = false,
-        sw = Stopwatch.New(),
-        temporaryWP = false
-    }
+    local s = {}
+    local sw = Stopwatch.New()
+    local temporaryWP = nil ---@type Waypoint
 
-    setmetatable(o, state)
-
-    return o
-end
-
-function state:Enter()
-end
-
-function state:Leave()
-    self.fsm:SetTemporaryWaypoint()
-end
-
----Flush
----@param deltaTime number
----@param next Waypoint
----@param previous Waypoint
----@param chaseData table
-function state:Flush(deltaTime, next, previous, chaseData)
-    if not self.temporaryWP then
-        self.temporaryWP = Waypoint.New(self.returnPoint, 0, 0, next.Margin(), next.Roll, next.YawAndPitch)
-        self.fsm:SetTemporaryWaypoint(self.temporaryWP)
+    function s.Enter()
     end
 
-    local timer = self.sw
-    if self.temporaryWP.Reached() then
-        timer:Start()
-
-        if timer:Elapsed() > 0.3 then
-            self.fsm:SetState(Travel(self.fsm))
-        end
-    else
-        timer:Stop()
+    function s.Leave()
+        fsm.SetTemporaryWaypoint()
     end
-end
 
-function state:Update()
-end
-
-function state:WaypointReached(isLastWaypoint, next, previous)
-end
-
-function state:Name()
-    return name
-end
-
-return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
+    ---Flush
+    ---@param deltaTime number
+    ---@param next Waypoint
+    ---@param previous Waypoint
+    ---@param chaseData table
+    function s.Flush(deltaTime, next, previous, chaseData)
+        if not temporaryWP then
+            temporaryWP = Waypoint.New(returnPoint, 0, 0, next.Margin(), next.Roll, next.YawAndPitch)
+            fsm.SetTemporaryWaypoint(temporaryWP)
         end
-    }
-)
+
+        if temporaryWP.Reached() then
+            sw.Start()
+
+            if sw.Elapsed() > 0.3 then
+                fsm.SetState(Travel.New(fsm))
+            end
+        else
+            sw.Stop()
+        end
+    end
+
+    function s.Update()
+    end
+
+    function s.WaypointReached(isLastWaypoint, next, previous)
+    end
+
+    function s.Name()
+        return name
+    end
+
+    return setmetatable(s, ReturnToPath)
+end
+
+return ReturnToPath

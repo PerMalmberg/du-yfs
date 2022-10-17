@@ -1,62 +1,49 @@
 local r = require("CommonRequire")
 local vehicle = r.vehicle
-local checks = r.checks
-require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 
-local state = {}
-state.__index = state
+---@class Travel
+
+local Travel = {}
+Travel.__index = Travel
 
 local name = "Travel"
 
-local function new(fsm)
-    checks.IsTable(fsm, "fsm", name .. ":new")
+---Creates a new Travel state
+---@param fsm FlightFSM
+---@return Travel
+function Travel.New(fsm)
+    local s = {}
 
-    local o = {
-        fsm = fsm,
-        core = library.getCoreUnit(),
-    }
-
-    setmetatable(o, state)
-
-    return o
-end
-
-function state:Enter()
-end
-
-function state:Leave()
-end
-
-function state:Flush(deltaTime, next, previous, chaseData)
-    local currentPos = CurrentPos()
-
-    if not self.fsm:CheckPathAlignment(currentPos, chaseData) then
-        -- Are we on the the desired path?
-        self.fsm:SetState(ReturnToPath(self.fsm, chaseData.nearest))
+    function s.Enter()
     end
-end
 
-function state:Update()
-end
-
-function state:WaypointReached(isLastWaypoint, next, previous)
-    if isLastWaypoint then
-        self.fsm:SetState(Hold(self.fsm))
+    function s.Leave()
     end
-end
 
-function state:Name()
-    return name
-end
+    function s.Flush(deltaTime, next, previous, chaseData)
+        local currentPos = CurrentPos()
 
-return setmetatable(
-    {
-        new = new
-    },
-    {
-        __call = function(_, ...)
-            return new(...)
+        if not fsm.CheckPathAlignment(currentPos, chaseData) then
+            -- Are we on the the desired path?
+            fsm.SetState(ReturnToPath.New(fsm, chaseData.nearest))
         end
-    }
-)
+    end
+
+    function s.Update()
+    end
+
+    function s:WaypointReached(isLastWaypoint, next, previous)
+        if isLastWaypoint then
+            fsm.SetState(Hold.New(fsm))
+        end
+    end
+
+    function s.Name()
+        return name
+    end
+
+    return setmetatable(s, Travel)
+end
+
+return Travel

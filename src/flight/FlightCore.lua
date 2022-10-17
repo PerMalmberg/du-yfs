@@ -124,9 +124,9 @@ function FlightCore.New(routeController, flightFSM)
 
         -- Don't start unless we have a destination.
         if currentWaypoint then
-            fsm:SetState(Travel(fsm))
+            fsm.SetState(Travel.New(fsm))
         else
-            fsm:SetState(Hold(fsm))
+            fsm.SetState(Hold.New(fsm))
         end
     end
 
@@ -188,7 +188,7 @@ function FlightCore.New(routeController, flightFSM)
     function s.fcUpdate()
         local status, err, _ = xpcall(
             function()
-                flightFSM:Update()
+                flightFSM.Update()
                 brakes:BrakeUpdate()
 
                 local wp = currentWaypoint
@@ -229,9 +229,9 @@ function FlightCore.New(routeController, flightFSM)
                     if wp.Reached() then
                         if not waypointReachedSignaled then
                             waypointReachedSignaled = true
-                            flightFSM:WaypointReached(route.LastPointReached(), wp, previousWaypoint)
+                            flightFSM.WaypointReached(route.LastPointReached(), wp, previousWaypoint)
 
-                            wp.LockDirection(vehicle.orientation.Forward())
+                            wp.LockDirection(vehicle.orientation.Forward(), false)
                         end
 
                         -- Switch to next waypoint
@@ -242,7 +242,7 @@ function FlightCore.New(routeController, flightFSM)
                     end
 
                     align()
-                    flightFSM:FsmFlush(currentWaypoint, previousWaypoint)
+                    flightFSM.FsmFlush(currentWaypoint, previousWaypoint)
                 end
 
                 pitch:AxisFlush(false)

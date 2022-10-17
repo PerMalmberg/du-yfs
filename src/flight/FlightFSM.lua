@@ -37,8 +37,18 @@ local thrustTag = "thrust"
 local Forward = vehicle.orientation.Forward
 local Right = vehicle.orientation.Right
 
+---@alias ChaseData { nearest:vec3, rabbit:vec3 }
+
 ---@class FlightFSM
 ---@field New fun(settings:Settings):FlightFSM
+---@field FsmFlush fun(next:Waypoint, previous:Waypoint)
+---@field SetState fun(newState:FlightState)
+---@field SetEngineWarmupTime fun(t50:number)
+---@field CheckPathAlignment fun(currentPos:vec3, chaseData:ChaseData)
+---@field SetTemporaryWaypoint fun(wp:Waypoint)
+---@field Update fun()
+---@field DisableThrust fun()
+---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
 
 local FlightFSM = {}
 FlightFSM.__index = FlightFSM
@@ -97,7 +107,7 @@ function FlightFSM.New(settings)
     local warmupTime = 1
     local brakeEfficiencyFactor = 0.6
 
-    local getAdjustedAcceleration = function(accLookup, dir, distance, movingTowardsTarget, forThrust)
+    local function getAdjustedAcceleration(accLookup, dir, distance, movingTowardsTarget, forThrust)
         local selected
         for _, v in ipairs(accLookup) do
             if distance >= v.limit then selected = v
@@ -150,7 +160,7 @@ function FlightFSM.New(settings)
     ---@param wpEnd Waypoint
     ---@param currentPos vec3
     ---@param ahead number
-    ---@return vec3
+    ---@return ChaseData
     local function nearestPointBetweenWaypoints(wpStart, wpEnd, currentPos, ahead)
         local totalDiff = wpEnd.Destination() - wpStart.Destination()
         local dir = totalDiff:normalize()
@@ -202,10 +212,11 @@ function FlightFSM.New(settings)
     --speedPid = PID(0.01, 0.001, 0.0) -- Large
     local speedPid = PID(0.1, 0, 0.01) -- Small
 
-    local s = {
-    }
+    local s = {}
 
 
+    ---Selects the waypoint to go to
+    ---@return Waypoint
     local function selectWP()
         return Ternary(temporaryWaypoint, temporaryWaypoint, currentWP)
     end
@@ -410,7 +421,7 @@ function FlightFSM.New(settings)
 
     local function applyAcceleration(moveDirection, precision)
         if acceleration == nil then
-            unit.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, 1, 1, "", "", "", 0.001)
+            unit.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 0.001)
         else
             local groups = getEngines(moveDirection, precision)
             local t = groups.thrust
@@ -466,13 +477,16 @@ function FlightFSM.New(settings)
         end
     end
 
-    function s:FsmFlush(next, previous)
+    ---Flush method for the FSM
+    ---@param next Waypoint
+    ---@param previous Waypoint
+    function s.FsmFlush(next, previous)
         local deltaTime = 0
-        if delta:IsRunning() then
-            deltaTime = delta:Elapsed()
-            delta:Restart()
+        if delta.IsRunning() then
+            deltaTime = delta.Elapsed()
+            delta.Restart()
         else
-            delta:Start()
+            delta.Start()
         end
 
         currentWP = next
@@ -488,8 +502,8 @@ function FlightFSM.New(settings)
             acceleration = nullVec
             adjustmentAcc = nullVec
 
-            c:Flush(deltaTime, selectedWP, previous, chaseData)
-            local moveDirection = selectedWP:DirectionTo()
+            c.Flush(deltaTime, selectedWP, previous, chaseData)
+            local moveDirection = selectedWP.DirectionTo()
 
             move(deltaTime, selectedWP)
 
@@ -504,22 +518,26 @@ function FlightFSM.New(settings)
         end
     end
 
-    function s:SetState(state)
+    ---Sets a new state
+    ---@param state FlightState
+    function s.SetState(state)
         if current ~= nil then
-            current:Leave()
+            current.Leave()
         end
 
         if state == nil then
             wStateName:Set("No state!")
         else
             wStateName:Set(state:Name())
-            state:Enter()
+            state.Enter()
         end
 
         current = state
     end
 
-    function s:SetEngineWarmupTime(time)
+    ---Sets the engine warmup time
+    ---@param time number
+    function s.SetEngineWarmupTime(time)
         warmupTime = time * 2 -- Warmup time is to T50, so double it for full engine effect
     end
 
@@ -528,7 +546,11 @@ function FlightFSM.New(settings)
         return Velocity():len() * t + 0.5 * Acceleration():dot(Velocity():normalize()) * t * t
     end
 
-    function s:CheckPathAlignment(currentPos, chaseData)
+    ---Checks if we're still on the path
+    ---@param currentPos vec3
+    ---@param chaseData ChaseData
+    ---@return boolean
+    function s.CheckPathAlignment(currentPos, chaseData)
         local res = true
 
         local vel = Velocity()
@@ -543,36 +565,34 @@ function FlightFSM.New(settings)
         return res
     end
 
-    function s:SetTemporaryWaypoint(waypoint)
+    ---Sets a temporary waypoint
+    ---@param waypoint Waypoint
+    function s.SetTemporaryWaypoint(waypoint)
         temporaryWaypoint = waypoint
     end
 
-    function s:Update()
+    function s.Update()
         if current ~= nil then
             wAcceleration:Set(calc.Round(Acceleration():len(), 2))
             wSpeed:Set(calc.Round(calc.Mps2Kph(Velocity():len()), 1))
-            current:Update()
+            current.Update()
         end
     end
 
-    function s:WaypointReached(isLastWaypoint, next, previous)
+    function s.WaypointReached(isLastWaypoint, next, previous)
         if current ~= nil then
-            current:WaypointReached(isLastWaypoint, next, previous)
+            current.WaypointReached(isLastWaypoint, next, previous)
         end
     end
 
-    function s:DisableThrust()
+    ---Disables all thrust
+    function s.DisableThrust()
         acceleration = nil
         adjustmentAcc = nil
     end
 
-    function s:NullThrust()
-        acceleration = nullVec
-        adjustmentAcc = nullVec
-    end
-
     settings.RegisterCallback("engineWarmup", function(value)
-        s:SetEngineWarmupTime(value)
+        s.SetEngineWarmupTime(value)
     end)
 
     settings.RegisterCallback("speedp", function(value)
@@ -590,7 +610,7 @@ function FlightFSM.New(settings)
         log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d)
     end)
 
-    s:SetState(Idle(s))
+    s.SetState(Idle.New(s))
 
     return setmetatable(s, FlightFSM)
 end

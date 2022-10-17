@@ -1,48 +1,46 @@
 local r = require("CommonRequire")
 local checks = r.checks
 
-local state = {}
-state.__index = state
+---@class FlightState
+---@field Enter fun()
+---@field Leave fun()
+---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, chaseData:ChaseData)
+---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
+---@field Update fun()
+---@field Name fun():string
+
+
+local State = {}
+State.__index = State
 local name = "NameOfState"
 
 local function new(fsm)
     checks.IsTable(fsm, "fsm", name .. ":new")
 
-    local o = {
-        fsm = fsm
-    }
+    local s = {}
 
-    setmetatable(o, state)
+    function s.Enter()
+    end
+
+    function s.Leave()
+    end
+
+    function s.Flush(deltaTime, next, previous, chaseData)
+    end
+
+    function s.Update()
+    end
+
+    function s.WaypointReached(isLastWaypoint, next, previous)
+    end
+
+    function s.Name()
+        return name
+    end
+
+    setmetatable(o, State)
 
     return o
 end
 
-function state:Enter()
-end
-
-function state:Leave()
-end
-
-function state:Flush(deltaTime, next, previous, chaseData)
-end
-
-function state:Update()
-end
-
-function state:WaypointReached(isLastWaypoint, next, previous)
-end
-
-function state:Name()
-    return name
-end
-
-return setmetatable(
-        {
-            new = new
-        },
-        {
-            __call = function(_, ...)
-                return new(...)
-            end
-        }
-)
+return State
