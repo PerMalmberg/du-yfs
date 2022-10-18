@@ -154,7 +154,7 @@ function InputHandler.New(flightCore)
         local pos = vehicle.position.Current()
         local point = route.AddCoordinate(pos + vehicle.orientation.Forward() * data.f +
             vehicle.orientation.Right() * data.r - universe.VerticalReferenceVector() * data.u)
-        point.options = createOptions(data)
+        point.SetOptions(createOptions(data))
 
         flightCore.StartFlight()
     end
@@ -188,39 +188,31 @@ function InputHandler.New(flightCore)
     local strafeCmd = cmd.Accept("strafe", strafeFunc).AsNumber()
     strafeCmd.Option("-maxspeed").AsNumber()
 
-    local listRoutes = function(data)
+    cmd.Accept("route-list", function(data)
         local routes = routeController.GetRouteNames()
         log:Info(#routes, " available routes")
         for _, r in ipairs(routes) do
             log:Info(r)
         end
-    end
+    end)
 
-    cmd.Accept("route-list", listRoutes)
-
-    local loadRoute = function(data)
+    cmd.Accept("route-load", function(data)
         routeController.LoadRoute(data.commandValue)
-    end
+    end).AsString()
 
-    cmd.Accept("route-load", loadRoute).AsString()
-
-    local createRoute = function(data)
+    cmd.Accept("route-create", function(data)
         routeController.CreateRoute(data.commandValue)
-    end
+    end).AsString().Mandatory()
 
-    cmd.Accept("route-create", createRoute).AsString().Mandatory()
-
-    local routeSave = function(data)
+    cmd.Accept("route-save", function(data)
         routeController.SaveRoute()
-    end
+    end).AsEmpty()
 
-    cmd.Accept("route-save", routeSave).AsString()
-
-    local deleteRoute = function(data)
+    cmd.Accept("route-delete", function(data)
         routeController.DeleteRoute(data.commandValue)
-    end
+    end).AsString().Mandatory()
 
-    local routeActivate = cmd.Accept("route-activate", function(data)
+    cmd.Accept("route-activate", function(data)
         local reverse = calc.Ternary(data.reverse or false, RouteOrder.REVERSED, RouteOrder.FORWARD) ---@type RouteOrder
 
         if routeController.ActivateRoute(data.commandValue, reverse) then
@@ -228,11 +220,10 @@ function InputHandler.New(flightCore)
             log:Info("Flight started")
         end
     end).AsString().Mandatory()
-    routeActivate.Option("reverse").AsEmptyBoolean()
+        .Option("reverse").AsEmptyBoolean()
 
-    cmd.Accept("route-delete", deleteRoute).AsString()
 
-    local addCurrentPos = function(data)
+    local addCurrentToRoute = cmd.Accept("route-add-current-pos", function(data)
         local route = routeController.CurrentEdit()
 
         if not route then
@@ -241,31 +232,26 @@ function InputHandler.New(flightCore)
         end
 
         local point = route.AddCurrentPos()
-        point.options = createOptions(data)
-    end
+        point.SetOptions(createOptions(data))
+    end).AsEmpty()
 
-    local addCurrentToRoute = cmd.Accept("route-add-current-pos", addCurrentPos).AsString()
     addPointOptions(addCurrentToRoute)
 
-    local addNamedPos = function(data)
+    local addNamed = cmd.Accept("route-add-named-pos", function(data)
         local ref = routeController.LoadWaypoint(data.commandValue)
 
         if ref then
             local route = routeController.CurrentEdit()
             local p = route.AddWaypointRef(data.commandValue)
-            p.options = createOptions(data)
+            p.SetOptions(createOptions(data))
         end
-    end
-
-    local addNamed = cmd.Accept("route-add-named-pos", addNamedPos).AsString()
+    end).AsString()
     addPointOptions(addNamed)
 
-    local saveAsWaypoint = function(data)
+    cmd.Accept("pos-save-as", function(data)
         local pos = universe.CreatePos(vehicle.position.Current()).AsPosString()
         routeController.StoreWaypoint(data.commandValue, pos)
-    end
-
-    cmd.Accept("pos-save-as", saveAsWaypoint).AsString().Mandatory()
+    end).AsString().Mandatory()
 
     cmd.Accept("pos-list", function(_)
         for _, data in ipairs(routeController.GetWaypoints()) do
