@@ -42,15 +42,19 @@ function InputHandler.New(flightCore)
         end
     end)
 
+    ---Initiates a movement
+    ---@param reference vec3
+    ---@param distance number
+    ---@param options PointOptions|nil
     local function move(reference, distance, options)
         local route = routeController.ActivateTempRoute()
         local point = route.AddCoordinate(vehicle.position.Current() + reference * distance)
-        options = options or point:Options()
+        local opt = options or point.Options()
 
-        options:Set(PointOptions.MAX_SPEED, speed)
-        options:Set(PointOptions.FINAL_SPEED, 0) -- Move and come to a stop
+        opt.Set(PointOptions.MAX_SPEED, speed)
+        opt.Set(PointOptions.FINAL_SPEED, 0) -- Move and come to a stop
 
-        point.options = options
+        point.SetOptions(opt)
 
         flightCore.StartFlight()
     end

@@ -304,16 +304,7 @@ function FlightFSM.New(settings)
             wDistToAtmo:Set(calc.Round(distanceToAtmo, 1))
         end
 
-        -- When we're moving up we don't want to consider the influence the atmosphere has on engines as doing so makes
-        -- us unable to get out of atmo as engines turn off prematurely.
-        local considerAtmoInfluenceOnEngines = direction:dot(universe.VerticalReferenceVector()) > 0.7
-
-        local gravityInfluence = Velocity():normalize():dot(-universe.VerticalReferenceVector())
-        if gravityInfluence < 0 then
-            gravityInfluence = 0
-        end
-
-        local brakeAcc = brakes:AvailableDeceleration() - G() * gravityInfluence
+        local brakeAcc = brakes:AvailableDeceleration()
 
         -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
         local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingDistance, finalSpeed)

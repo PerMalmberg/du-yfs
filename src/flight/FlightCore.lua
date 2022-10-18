@@ -106,7 +106,7 @@ function FlightCore.New(routeController, flightFSM)
         wp.SetPrecisionMode(opt.Get(PointOptions.PRECISION, false))
 
         if dir ~= nullVec then
-            wp.LockDirection(dir, false)
+            wp.LockDirection(dir, true)
         end
 
         return wp

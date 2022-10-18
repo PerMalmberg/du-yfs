@@ -7,13 +7,14 @@ local PointOptions = require("flight/route/PointOptions")
 
 ---@class Point Represents a point/waypoint in a route
 ---@field New fun(pos:string, waypointRef?:string, options?:PointOptions):Point
----@field Pos fun():string Returns the ::pos{} string
----@field HasWaypointRef fun(s):boolean Returns true if the point has a waypoint reference
----@field WaypointRef fun():string|nil Returns the waypoint reference, if any
----@field SetWaypointRef fun(ref:string) Sets the waypoint reference.
----@field Persist fun():PointPOD Returns an opaque table suitable to serialize and store.
----@field Options fun():PointOptions Returns the options for this point
----@field LoadFromPOD fun(source:PointPOD):Point Loads a Point from a POD
+---@field Pos fun():string
+---@field HasWaypointRef fun(s):boolean
+---@field WaypointRef fun():string|nil
+---@field SetWaypointRef fun(ref:string)
+---@field Persist fun():PointPOD
+---@field Options fun():PointOptions
+---@field SetOptions fun(newOptions:PointOptions)
+---@field LoadFromPOD fun(source:PointPOD):Point
 local Point = {}
 Point.__index = Point
 
@@ -59,7 +60,7 @@ function Point.New(pos, waypointRef, options)
         pod = {
             pos = position,
             waypointRef = wpRef,
-            opt = opt:Data() or {}
+            opt = opt.Data() or {}
         }
 
         return pod
@@ -69,6 +70,12 @@ function Point.New(pos, waypointRef, options)
     ---@return PointOptions
     function s.Options()
         return opt
+    end
+
+    ---Sets new options
+    ---@param newOptions PointOptions
+    function s.SetOptions(newOptions)
+        opt = newOptions
     end
 
     return setmetatable(s, Point)

@@ -16,8 +16,8 @@ local vehicle = r.vehicle
 ---@field SetPrecisionMode fun(v:boolean)
 ---@field LockDirection fun(direction:vec3, forced:boolean)
 ---@field DirectionLocked fun():boolean
----@field Roll fun(previouss.Waypoint)
----@field YawAndPitch fun(previous:Waypoint)
+---@field Roll fun(previouss.Waypoint):vec3
+---@field YawAndPitch fun(previous:Waypoint):vec3
 ---@field YawPitchDirection fun():vec3
 
 local Waypoint = {}
