@@ -192,7 +192,6 @@ function FlightFSM.New(settings)
     local wFinalSpeed = p:CreateValue("Final speed")
     local wSpeedDiff = p:CreateValue("Speed diff", "km/h")
     local wBrakeMaxSpeed = p:CreateValue("Brake Max Speed", "km/h")
-    local wEngineMaxSpeed = p:CreateValue("Engine Max Speed", "km/h")
     local wDistToAtmo = p:CreateValue("Atmo dist.", "m")
     local wSpeed = a:CreateValue("Abs. speed", "km/h")
     local wAdjTowards = a:CreateValue("Adj. towards")
@@ -309,10 +308,6 @@ function FlightFSM.New(settings)
         -- us unable to get out of atmo as engines turn off prematurely.
         local considerAtmoInfluenceOnEngines = direction:dot(universe.VerticalReferenceVector()) > 0.7
 
-        local engineAcc = max(0,
-            engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-direction, considerAtmoInfluenceOnEngines))
-        local engineMaxSpeed = calcMaxAllowedSpeed(-engineAcc, remainingDistance, finalSpeed)
-
         local gravityInfluence = Velocity():normalize():dot(-universe.VerticalReferenceVector())
         if gravityInfluence < 0 then
             gravityInfluence = 0
@@ -340,7 +335,6 @@ function FlightFSM.New(settings)
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Max")
         targetSpeed = evaluateNewLimit(targetSpeed, waypoint.MaxSpeed(), "Route")
         targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brakes")
-        --targetSpeed = evaluateNewLimit(targetSpeed, engineMaxSpeed, "Engine")
 
         --- Don't allow us to burn
         targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed(), "Burn speed")
@@ -351,7 +345,6 @@ function FlightFSM.New(settings)
         end
 
         wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
-        wEngineMaxSpeed:Set(calc.Round(calc.Mps2Kph(engineMaxSpeed), 1))
         wPointDistance:Set(calc.Round(remainingDistance, 1))
 
         return targetSpeed
