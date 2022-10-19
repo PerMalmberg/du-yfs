@@ -29,6 +29,7 @@ local min = math.min
 local max = math.max
 local MAX_INT = math.maxinteger
 
+local brakeCutoffSpeed = 100 -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
 local longitudinal = "longitudinal"
 local vertical = "vertical"
 local lateral = "lateral"
@@ -309,26 +310,31 @@ function FlightFSM.New(settings)
         -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
         local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingDistance, finalSpeed)
 
-        if brakeMaxSpeed > 0 then
-            if direction:dot(universe.VerticalReferenceVector()) > 0.7 then
-                local brakeCutoffSpeed = 100 -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
-                --- To ensure that engines have enough time to warmup, we start braking harder at double the cutoff speed.
-                local brakeStartSpeed = brakeCutoffSpeed * 2
-                local atmoBrakeCutoff = inAtmo and currentSpeed <= brakeStartSpeed
-
-                if atmoBrakeCutoff then
-                    -- Break harder
-                    brakeMaxSpeed = brakeMaxSpeed / 2
-                end
-            end
-        end
-
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Max")
         targetSpeed = evaluateNewLimit(targetSpeed, waypoint.MaxSpeed(), "Route")
         targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brakes")
 
         --- Don't allow us to burn
-        targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed(), "Burn speed")
+        if inAtmo then
+            targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed(), "Burn speed")
+        end
+
+        -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
+        -- when we come to a stand still. To ensure that engines have enough time to warmup
+        -- we start braking harder at double the cutoff speed when moving vertically, both up and down
+        -- to also ensure that engines don't cut off when coming to a stop.
+        local brakeStartSpeed = brakeCutoffSpeed * 2
+        if abs(direction:dot(universe.VerticalReferenceVector())) > 0.7 then
+            if inAtmo and currentSpeed <= brakeStartSpeed then
+                -- Break harder
+                brakeMaxSpeed = brakeMaxSpeed / 2
+            end
+
+            -- We only want to apply this extra brake if we're actually above allowed speed.
+            if brakeMaxSpeed > finalSpeed then
+                targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Approaching")
+            end
+        end
 
         -- When we want to leave atmo, override target speed.
         if firstBody and inAtmo and not firstBody:IsInAtmo(waypoint.Destination()) then
@@ -429,6 +435,7 @@ function FlightFSM.New(settings)
     end
 
     ---@param deltaTime number The time since last Flush
+    ---@param waypoint Waypoint
     local function move(deltaTime, waypoint)
         local direction = waypoint:DirectionTo()
 

@@ -1,19 +1,7 @@
 # Todo
 
-* Route not loading speed?
-* Add unit tests for route point
-* Add unit tests for point options
-* Add unit tests for route
-* Add unit tests for route controller
-* All classes - use new class template
-* Save finalSpeed in route
-* Adjustment read zero distance when off from path sometimes. Not always active?!?
-* 45 downward angle causes drops when brakes are enabled.
-* Use PID for precision movement.
-* Why doesn't it accelerate when moving up/down just 100m?
-* Saving routes is broken, it saves "function: ADDRESS..." instead of the data.
 * Sometimes doesn't detect waypoint reached in return to path state.
-
+*
 
 
 * -- https://github.com/Dimencia/Archaegeo-Orbital-Hud/blob/7414fa08c50605936bd6a1dc3abfe503dd65a10c/src/requires/apclass.lua#L2755
