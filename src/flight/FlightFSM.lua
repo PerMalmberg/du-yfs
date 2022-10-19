@@ -323,19 +323,12 @@ function FlightFSM.New(settings)
 
         -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
         -- when we come to a stand still. To ensure that engines have enough time to warmup
-        -- we start braking harder at double the cutoff speed when moving vertically, both up and down
-        -- to also ensure that engines don't cut off when coming to a stop.
+        -- we start braking harder at double the cutoff speed when moving vertically, both up and down.
         local brakeStartSpeed = brakeCutoffSpeed * 2
         if abs(direction:dot(universe.VerticalReferenceVector())) > 0.7 then
-            local reduced = 0
-            if inAtmo and currentSpeed <= brakeStartSpeed then
+            if inAtmo and targetSpeed <= brakeStartSpeed then
                 -- Break harder
-                reduced = targetSpeed / 2
-            end
-
-            -- We only want to apply this extra brake if we're actually above allowed speed.
-            if reduced < targetSpeed then
-                targetSpeed = evaluateNewLimit(targetSpeed, reduced, "Approaching")
+                targetSpeed = evaluateNewLimit(targetSpeed, targetSpeed / 2, "Approaching")
             end
         end
 
