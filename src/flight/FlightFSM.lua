@@ -299,19 +299,21 @@ function FlightFSM.New(settings)
                 local speedDecreaseForDeadZone
                 remainingDistance, speedDecreaseForDeadZone = adjustForDeadZone(remainingDistance, firstBody)
                 finalSpeed = max(0, construct.getFrictionBurnSpeed() - speedDecreaseForDeadZone)
+                remainingDistance = distanceToAtmo
                 wFinalSpeed:Set(string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), distanceToAtmo))
             end
 
             wDistToAtmo:Set(calc.Round(distanceToAtmo, 1))
+        else
+            wDistToAtmo:Set("-")
         end
 
-        local brakeAcc = brakes:AvailableDeceleration()
+        local brakeMaxSpeed = calcMaxAllowedSpeed(-brakes:AvailableDeceleration() * brakeEfficiencyFactor,
+            remainingDistance, finalSpeed)
 
-        -- When we're standing still we get no brake speed since brakes gives no force (in atmosphere)
-        local brakeMaxSpeed = calcMaxAllowedSpeed(-brakeAcc * brakeEfficiencyFactor, remainingDistance, finalSpeed)
-
-        local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Max")
+        local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
         targetSpeed = evaluateNewLimit(targetSpeed, waypoint.MaxSpeed(), "Route")
+
         targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brakes")
 
         --- Don't allow us to burn
@@ -325,14 +327,15 @@ function FlightFSM.New(settings)
         -- to also ensure that engines don't cut off when coming to a stop.
         local brakeStartSpeed = brakeCutoffSpeed * 2
         if abs(direction:dot(universe.VerticalReferenceVector())) > 0.7 then
+            local reduced = 0
             if inAtmo and currentSpeed <= brakeStartSpeed then
                 -- Break harder
-                brakeMaxSpeed = brakeMaxSpeed / 2
+                reduced = targetSpeed / 2
             end
 
             -- We only want to apply this extra brake if we're actually above allowed speed.
-            if brakeMaxSpeed > finalSpeed then
-                targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Approaching")
+            if reduced < targetSpeed then
+                targetSpeed = evaluateNewLimit(targetSpeed, reduced, "Approaching")
             end
         end
 
