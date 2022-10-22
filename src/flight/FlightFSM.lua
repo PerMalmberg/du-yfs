@@ -37,6 +37,7 @@ local airfoil = "airfoil"
 local thrustTag = "thrust"
 local Forward = vehicle.orientation.Forward
 local Right = vehicle.orientation.Right
+local OneKphPh = calc.Kph2Mps(1)
 
 ---@alias ChaseData { nearest:vec3, rabbit:vec3 }
 
@@ -106,7 +107,13 @@ function FlightFSM.New(settings)
     local adjustmentSpeedMin = calc.Kph2Mps(0.5)
     local adjustmentSpeedMax = calc.Kph2Mps(50)
     local warmupTime = 1
-    local brakeEfficiencyFactor = 0.6
+
+    local atmoBrakeEfficiencyFactor = 0.6
+
+    local function warmupDistance()
+        -- Note, this doesn't take acceleration into account
+        return Velocity():len() * warmupTime
+    end
 
     local function getAdjustedAcceleration(accLookup, dir, distance, movingTowardsTarget, forThrust)
         local selected
@@ -116,8 +123,7 @@ function FlightFSM.New(settings)
         end
 
         if selected.acc == 0 then
-            local warmupDistance = warmupTime * Velocity():len()
-            if forThrust and distance <= warmupDistance then
+            if forThrust and distance <= warmupDistance() then
                 return accLookup[#accLookup - 1].acc
             else
                 return engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir, false)
@@ -193,6 +199,7 @@ function FlightFSM.New(settings)
     local wFinalSpeed = p:CreateValue("Final speed")
     local wSpeedDiff = p:CreateValue("Speed diff", "km/h")
     local wBrakeMaxSpeed = p:CreateValue("Brake Max Speed", "km/h")
+    local wPid = p:CreateValue("Pid")
     local wDistToAtmo = p:CreateValue("Atmo dist.", "m")
     local wSpeed = a:CreateValue("Abs. speed", "km/h")
     local wAdjTowards = a:CreateValue("Adj. towards")
@@ -308,6 +315,8 @@ function FlightFSM.New(settings)
             wDistToAtmo:Set("-")
         end
 
+        local brakeEfficiency = Ternary(inAtmo, atmoBrakeEfficiencyFactor, 1)
+
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
         targetSpeed = evaluateNewLimit(targetSpeed,
             Ternary(waypoint.MaxSpeed() == 0, construct.getMaxSpeed(), waypoint.MaxSpeed()), "Route")
@@ -321,7 +330,8 @@ function FlightFSM.New(settings)
             targetSpeed = evaluateNewLimit(targetSpeed, 0, "Hold")
             wBrakeMaxSpeed:Set(0)
         else
-            local brakeMaxSpeed = calcMaxAllowedSpeed(-brakes:AvailableDeceleration() * brakeEfficiencyFactor,
+            local brakeMaxSpeed = calcMaxAllowedSpeed(
+                -brakes:GravityInfluencedAvailableDeceleration() * brakeEfficiency,
                 remainingDistance, finalSpeed)
 
             -- When standing still, we get no brake speed as brakes give no force at all.
@@ -330,31 +340,35 @@ function FlightFSM.New(settings)
             end
 
             wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
-        end
 
-        -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
-        -- when we come to a stand still. To ensure that engines have enough time to warmup
-        -- we start braking harder at double the cutoff speed when moving vertically, both up and down
-        -- to also ensure that engines don't cut off as we near the target from below.
-        local brakeStartSpeed = brakeCutoffSpeed * 2
-        if abs(direction:dot(universe.VerticalReferenceVector())) > 0.7 then
-            if inAtmo and targetSpeed <= brakeStartSpeed then
-                -- Break harder
-                targetSpeed = evaluateNewLimit(targetSpeed, targetSpeed / 2, "Approaching")
+            if inAtmo and abs(direction:dot(vehicle.world.GravityDirection())) > 0.7 and
+                brakeMaxSpeed <= brakeCutoffSpeed * 2 then
+                -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
+                -- when we come to a stand still. To ensure that engines have enough time to warmup as well as
+                -- don't abruptly cut off, we enforce a linear slowdown, down to the final speed.
+
+                -- 1000m -> 500kph, 500m -> 250kph etc.
+                local distanceBasedSpeedLimit = calc.Kph2Mps(remainingDistance * 0.8)
+                distanceBasedSpeedLimit = max(distanceBasedSpeedLimit, finalSpeed)
+                if distanceBasedSpeedLimit < OneKphPh then
+                    distanceBasedSpeedLimit = OneKphPh
+                end
+
+                targetSpeed = evaluateNewLimit(targetSpeed, distanceBasedSpeedLimit, "Approaching")
             end
         end
 
-        local brakDistance = CalcBrakeDistance(currentSpeed, brakes:AvailableDeceleration() * brakeEfficiencyFactor)
+        --[[ local brakDistance = CalcBrakeDistance(currentSpeed, brakes:AvailableDeceleration() * brakeEfficiency)
         if brakDistance >= remainingDistance * 0.8 then
             targetSpeed = evaluateNewLimit(targetSpeed, 0, "Full stop")
-        end
+        end ]]
 
         -- When we want to leave atmo, override target speed.
-        if firstBody and inAtmo and not firstBody:IsInAtmo(waypoint.Destination()) then
+        --[[ if firstBody and inAtmo and not firstBody:IsInAtmo(waypoint.Destination()) then
             targetSpeed = evaluateNewLimit(MAX_INT, construct.getFrictionBurnSpeed(), "Leave atmo")
-        end
+        end ]]
 
-        wPointDistance:Set(calc.Round(remainingDistance, 1))
+        wPointDistance:Set(calc.Round(remainingDistance, 2))
 
         return targetSpeed
     end
@@ -470,7 +484,9 @@ function FlightFSM.New(settings)
         -- skewed outside its intended values and push us off the path, or make us fall when holding position (if pid gets <0)
         local pidValue = clamp(speedPid:get(), 0, 1)
 
-        -- When we're not moving in the direction we should counter movement with all we got.
+        wPid:Set(calc.Round(pidValue, 5))
+
+        -- When we're not moving in the direction we should, counter movement with all we got.
         if wrongDir and currentSpeed > calc.Kph2Mps(20) then
             acceleration = -motionDirection *
                 engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-motionDirection) + brakeCounter
@@ -544,11 +560,6 @@ function FlightFSM.New(settings)
         warmupTime = time * 2 -- Warmup time is to T50, so double it for full engine effect
     end
 
-    local function warmupDistance()
-        local t = warmupTime
-        return Velocity():len() * t + 0.5 * Acceleration():dot(Velocity():normalize()) * t * t
-    end
-
     ---Checks if we're still on the path
     ---@param currentPos vec3
     ---@param chaseData ChaseData
@@ -596,21 +607,27 @@ function FlightFSM.New(settings)
 
     settings.RegisterCallback("engineWarmup", function(value)
         s.SetEngineWarmupTime(value)
+        log:Info("Engine warmup:", value)
     end)
 
     settings.RegisterCallback("speedp", function(value)
-        speedPid = PID(value, speedPid.i, speedPid.d)
-        log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d)
+        speedPid = PID(value, speedPid.i, speedPid.d, speedPid.amortization)
+        log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d, " A:", speedPid.amortization)
     end)
 
     settings.RegisterCallback("speedi", function(value)
-        speedPid = PID(speedPid.p, value, speedPid.d)
-        log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d)
+        speedPid = PID(speedPid.p, value, speedPid.d, speedPid.amortization)
+        log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d, " A:", speedPid.amortization)
     end)
 
     settings.RegisterCallback("speedd", function(value)
-        speedPid = PID(speedPid.p, speedPid.i, value)
-        log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d)
+        speedPid = PID(speedPid.p, speedPid.i, value, speedPid.amortization)
+        log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d, " A:", speedPid.amortization)
+    end)
+
+    settings.RegisterCallback("speeda", function(value)
+        speedPid = PID(speedPid.p, speedPid.i, speedPid.d, value)
+        log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d, " A:", speedPid.amortization)
     end)
 
     s.SetState(Idle.New(s))

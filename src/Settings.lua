@@ -25,8 +25,9 @@ function Settings.New(db)
         singleton.def = {
             engineWarmup = { key = "engineWarmup", default = 2 },
             speedP = { key = "speedp", default = 0.01 },
-            speedI = { key = "speedi", default = 0.001 },
-            speedD = { key = "speedd", default = 0 },
+            speedI = { key = "speedi", default = 0.0 },
+            speedD = { key = "speedd", default = 0.01 },
+            speeda = { key = "speeda", default = 0.99 }
         }
 
         local ensureSingle = function(data)

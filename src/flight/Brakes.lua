@@ -8,6 +8,7 @@ local PID = require("cpml/pid")
 local IsInAtmo = vehicle.world.IsInAtmo
 local TotalMass = vehicle.mass.Total
 local Velocity = vehicle.velocity.Movement
+local GravityDirection = vehicle.world.GravityDirection
 local G = vehicle.world.G
 local utils = require("cpml/utils")
 local clamp = utils.clamp
@@ -24,10 +25,12 @@ function Brake:Instance()
     end
 
     local p = sharedPanel:Get("Brakes")
-    local pid = PID(0.5, 0, 0.5)
+    local pid = PID(1, 0, 0.01)
     local deceleration = 0
     local wDeceleration = p:CreateValue("Max deceleration", "m/s2")
     local wCurrentDec = p:CreateValue("Brake dec.", "m/s2")
+    local wMass = p:CreateValue("Mass", "T")
+    local wPid = p:CreateValue("Pid")
 
     local s = {
         engaged = false,
@@ -55,6 +58,7 @@ function Brake:Instance()
         s.totalMass = TotalMass()
         wDeceleration:Set(calc.Round(rawAvailableDeceleration(), 2))
         wCurrentDec:Set(calc.Round(deceleration, 2))
+        wMass:Set(calc.Round(s.totalMass / 1000, 1))
     end
 
     local function brakeCounter()
@@ -85,7 +89,7 @@ function Brake:Instance()
     end
 
     function s:GravityInfluencedAvailableDeceleration()
-        local gravInfluence = (universe:VerticalReferenceVector() * G()):dot(-Velocity():normalize())
+        local gravInfluence = (GravityDirection() * G()):dot(-Velocity():normalize())
         -- Might not be enough brakes to counter gravity so don't go below 0
         return max(0, rawAvailableDeceleration() + gravInfluence)
     end
@@ -102,6 +106,7 @@ function Brake:Instance()
         pid:inject(-diff) -- Negate to make PID become positive when we have too high speed.
 
         local brakeValue = clamp(pid:get(), 0, 1)
+        wPid:Set(calc.Round(brakeValue, 4))
 
         deceleration = brakeValue * rawAvailableDeceleration()
 

@@ -1,5 +1,5 @@
 local n = {
-    vehicle = require("abstraction/Vehicle"):New(),
+    vehicle = require("abstraction/Vehicle").New(),
     calc = require("util/Calc"),
     brakes = require("flight/Brakes"):Instance(),
     log = require("debug/Log")(),
@@ -7,7 +7,7 @@ local n = {
     universe = require("universe/Universe").Instance(),
     checks = require("debug/Checks"),
     visual = require("debug/Visual")(),
-    engine = require("abstraction/Engine")(),
+    engine = require("abstraction/Engine").Instance(),
     Vec3 = require("cpml/vec3")
 }
 
