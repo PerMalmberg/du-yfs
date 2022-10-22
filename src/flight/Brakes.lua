@@ -57,7 +57,7 @@ function Brake:Instance()
     function s:BrakeUpdate()
         s.totalMass = TotalMass()
         wDeceleration:Set(calc.Round(rawAvailableDeceleration(), 2))
-        wCurrentDec:Set(calc.Round(deceleration, 2))
+        wCurrentDec:Set(calc.Round(construct.getCurrentBrake() / s.totalMass, 2))
         wMass:Set(calc.Round(s.totalMass / 1000, 1))
     end
 
@@ -89,7 +89,7 @@ function Brake:Instance()
     end
 
     function s:GravityInfluencedAvailableDeceleration()
-        local gravInfluence = (GravityDirection() * G()):dot(-Velocity():normalize())
+        local gravInfluence = (GravityDirection() * G()):dot(Velocity():normalize())
         -- Might not be enough brakes to counter gravity so don't go below 0
         return max(0, rawAvailableDeceleration() + gravInfluence)
     end

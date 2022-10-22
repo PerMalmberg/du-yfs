@@ -345,7 +345,7 @@ function FlightFSM.New(settings)
                 brakeMaxSpeed <= brakeCutoffSpeed * 2 then
                 -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
                 -- when we come to a stand still. To ensure that engines have enough time to warmup as well as
-                -- don't abruptly cut off, we enforce a linear slowdown, down to the final speed.
+                -- don't abruptly cut off when going upwards, we enforce a linear slowdown, down to the final speed.
 
                 -- 1000m -> 500kph, 500m -> 250kph etc.
                 local distanceBasedSpeedLimit = calc.Kph2Mps(remainingDistance * 0.8)
