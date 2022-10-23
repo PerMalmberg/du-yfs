@@ -17,6 +17,7 @@ require("util/Table")
 ---@field StoreWaypoint fun(name:string, pos:string):boolean
 ---@field GetWaypoints fun():NamedWaypoint[]
 ---@field LoadWaypoint fun(name:string, waypoints?:table<string,Point>):Point|nil
+---@field DeleteWaypoint fun(name:string):boolean
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
 ---@field ActivateRoute fun(name:string, order:RouteOrder|nil):boolean
@@ -211,6 +212,21 @@ function RouteController.Instance(bufferedDB)
         end
 
         return Point.LoadFromPOD(pointData)
+    end
+
+    ---Deletes a waypoint
+    ---@param name string
+    function s.DeleteWaypoint(name)
+        waypoints = waypoints or db.Get(RouteController.NAMED_POINTS) or {}
+        local found = waypoints[name] ~= nil
+        if found then
+            waypoints[name] = nil
+            db.Put(RouteController.NAMED_POINTS, waypoints)
+        else
+            log:Error("No waypoint by name '", name, "' found.")
+        end
+
+        return found
     end
 
     ---Returns the current route or nil if none is active

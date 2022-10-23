@@ -212,6 +212,19 @@ function InputHandler.New(flightCore)
         routeController.DeleteRoute(data.commandValue)
     end).AsString().Mandatory()
 
+    cmd.Accept("route-print", function(data)
+        local route = routeController.CurrentEdit()
+        if route == nil then
+            log:Error("No route being edited")
+            return
+        end
+
+        for i, p in ipairs(route.Points()) do
+            log:Info(i, ":", calc.Ternary(p.HasWaypointRef(), p.WaypointRef(), p.Pos()))
+        end
+
+    end)
+
     cmd.Accept("route-activate", function(data)
         local reverse = calc.Ternary(data.reverse or false, RouteOrder.REVERSED, RouteOrder.FORWARD) ---@type RouteOrder
 
@@ -258,6 +271,22 @@ function InputHandler.New(flightCore)
             log:Info(data.name, ": ", data.point:Pos())
         end
     end)
+
+    cmd.Accept("pos-delete", function(data)
+        if routeController.DeleteWaypoint(data.commandValue) then
+            log:Info("Waypoint deleted")
+        end
+    end).AsString().Mandatory()
+
+    local rel = cmd.Accept("pos-create-along-gravity", function(data)
+        local pos = vehicle.position.Current() - universe.VerticalReferenceVector() * data.u
+        local posStr = universe.CreatePos(pos).AsPosString()
+        if routeController.StoreWaypoint(data.commandValue, posStr) then
+            log:Info("Stored postion ", posStr, " as ", data.commandValue)
+        end
+    end).AsString().Mandatory()
+    rel.Option("-u").AsNumber().Mandatory()
+
 
     return setmetatable(s, InputHandler)
 end
