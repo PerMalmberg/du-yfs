@@ -261,8 +261,13 @@ function InputHandler.New(flightCore)
 
         if ref then
             local route = routeController.CurrentEdit()
-            local p = route.AddWaypointRef(data.commandValue)
-            p.SetOptions(createOptions(data))
+            if route == nil then
+                log:Error("No route open for edit")
+            else
+                local p = route.AddWaypointRef(data.commandValue)
+                p.SetOptions(createOptions(data))
+                log:Info("Added position to route")
+            end
         end
     end).AsString()
     addPointOptions(addNamed)
