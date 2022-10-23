@@ -1,7 +1,7 @@
 # Todo
 
 * Sometimes doesn't detect waypoint reached in return to path state.
-* Why doesn't it accelerate? To heavy causes bad math?
+* Routes not loaded with all options? - Max speed not honoured
 
 
 * -- https://github.com/Dimencia/Archaegeo-Orbital-Hud/blob/7414fa08c50605936bd6a1dc3abfe503dd65a10c/src/requires/apclass.lua#L2755

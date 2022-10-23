@@ -1,5 +1,4 @@
 local r = require("CommonRequire")
-local library = r.library
 local vehicle = r.vehicle
 local G = vehicle.world.G
 local AngVel = vehicle.velocity.localized.Angular

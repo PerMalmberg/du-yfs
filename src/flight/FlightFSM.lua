@@ -1,6 +1,6 @@
 local r = require("CommonRequire")
 local log = r.log
-local brakes = r.brakes
+local brakes = require("flight/Brakes"):Instance()
 local vehicle = r.vehicle
 local G = vehicle.world.G
 local calc = r.calc
@@ -315,8 +315,9 @@ function FlightFSM.New(settings)
         local brakeEfficiency = Ternary(inAtmo, atmoBrakeEfficiencyFactor, 1)
 
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
-        targetSpeed = evaluateNewLimit(targetSpeed,
-            Ternary(waypoint.MaxSpeed() == 0, construct.getMaxSpeed(), waypoint.MaxSpeed()), "Route")
+        if waypoint.MaxSpeed() > 0 then
+            targetSpeed = evaluateNewLimit(targetSpeed, waypoint.MaxSpeed(), "Route")
+        end
 
         --- Don't allow us to burn
         if inAtmo then

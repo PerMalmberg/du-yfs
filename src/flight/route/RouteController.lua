@@ -85,7 +85,7 @@ function RouteController.Instance(bufferedDB)
         local route = Route.New()
 
         for _, point in ipairs(data) do
-            local p = Point.New(point.pos, point.waypointRef, PointOptions.New(point.options))
+            local p = Point.LoadFromPOD(point)
 
             if p.HasWaypointRef() then
                 local wpName = p.WaypointRef()
@@ -97,7 +97,7 @@ function RouteController.Instance(bufferedDB)
                 end
 
                 -- Replace the point
-                p = Point.New(wp.Pos(), p.WaypointRef(), p.Options())
+                p = Point.New(wp.Pos(), wpName, p.Options())
             end
 
             route.AddPoint(p)

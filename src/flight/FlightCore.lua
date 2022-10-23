@@ -1,6 +1,5 @@
 local r = require("CommonRequire")
 local universe = r.universe
-local brakes = r.brakes
 local vehicle = r.vehicle
 local visual = r.visual
 local checks = r.checks
@@ -11,7 +10,6 @@ local nullVec = Vec3()
 
 local AxisControl = require("flight/AxisControl")
 local Waypoint = require("flight/Waypoint")
-local sharedPanel = require("panel/SharedPanel")()
 local alignment = require("flight/AlignmentFunctions")
 local PointOptions = require("flight/route/PointOptions")
 require("flight/state/Require")
@@ -25,6 +23,8 @@ require("flight/state/Require")
 ---@field StartFlight fun()
 ---@field Turn fun(degrees:number, axis:vec3):vec3
 ---@field StopEvents fun()
+---@field CreateWPFromPoint fun(p:Point):Waypoint
+
 
 local FlightCore = {}
 FlightCore.__index = FlightCore
@@ -34,11 +34,38 @@ local defaultSpeed = calc.Kph2Mps(50)
 local defaultMargin = 0.1 -- m
 
 
+---Creates a waypoint from a point
+---@param point Point
+---@param lastInRoute boolean
+---@return Waypoint
+function FlightCore.CreateWPFromPoint(point, lastInRoute)
+    local opt = point.Options()
+    local dir = Vec3(opt.Get(PointOptions.LOCK_DIRECTION, nullVec))
+    local margin = opt.Get(PointOptions.MARGIN, defaultMargin)
+    local finalSpeed = Ternary(lastInRoute, 0, opt.Get(PointOptions.FINAL_SPEED, defaultSpeed))
+    local maxSpeed = opt.Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored).
+
+    local coordinate = universe.ParsePosition(point.Pos()).Coordinates()
+    local wp = Waypoint.New(coordinate, finalSpeed, maxSpeed, margin,
+        alignment.RollTopsideAwayFromVerticalReference,
+        alignment.YawPitchKeepOrthogonalToVerticalReference)
+
+    wp.SetPrecisionMode(opt.Get(PointOptions.PRECISION, false))
+
+    if dir ~= nullVec then
+        wp.LockDirection(dir, true)
+    end
+
+    return wp
+end
+
 ---Creates a new FlightCore
 ---@param routeController RouteController
 ---@param flightFSM FlightFSM
 ---@return FlightCore
 function FlightCore.New(routeController, flightFSM)
+    local brakes = require("flight/Brakes"):Instance()
+    local sharedPanel = require("panel/SharedPanel")()
     local p = sharedPanel:Get("Waypoint")
     local s = {}
 
@@ -85,31 +112,6 @@ function FlightCore.New(routeController, flightFSM)
         previousWaypoint = currentWaypoint
         waypointReachedSignaled = false
         currentWaypoint = s.CreateWPFromPoint(nextPoint, route.LastPointReached())
-    end
-
-    ---Creates a waypoint from a point
-    ---@param point Point
-    ---@param lastInRoute boolean
-    ---@return Waypoint
-    function s.CreateWPFromPoint(point, lastInRoute)
-        local opt = point.Options()
-        local dir = Vec3(opt.Get(PointOptions.LOCK_DIRECTION, nullVec))
-        local margin = opt.Get(PointOptions.MARGIN, defaultMargin)
-        local finalSpeed = Ternary(lastInRoute, 0, opt.Get(PointOptions.FINAL_SPEED, defaultSpeed))
-        local maxSpeed = opt.Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored).
-
-        local coordinate = universe.ParsePosition(point.Pos()).Coordinates()
-        local wp = Waypoint.New(coordinate, finalSpeed, maxSpeed, margin,
-            alignment.RollTopsideAwayFromVerticalReference,
-            alignment.YawPitchKeepOrthogonalToVerticalReference)
-
-        wp.SetPrecisionMode(opt.Get(PointOptions.PRECISION, false))
-
-        if dir ~= nullVec then
-            wp.LockDirection(dir, true)
-        end
-
-        return wp
     end
 
     ---Starts the flight

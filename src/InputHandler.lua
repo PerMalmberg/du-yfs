@@ -10,7 +10,7 @@ local log = r.log
 local vehicle = r.vehicle
 local calc = r.calc
 local universe = r.universe
-local brakes = r.brakes
+local brakes = require("flight/Brakes"):Instance()
 
 ---@module "flight/FlightCore"
 
@@ -221,6 +221,11 @@ function InputHandler.New(flightCore)
 
         for i, p in ipairs(route.Points()) do
             log:Info(i, ":", calc.Ternary(p.HasWaypointRef(), p.WaypointRef(), p.Pos()))
+
+            local opts = p.Options()
+            for k, v in pairs(opts.Data()) do
+                system.print(string.format(" - %s: %s", k, tostring(v)))
+            end
         end
 
     end)
@@ -246,6 +251,7 @@ function InputHandler.New(flightCore)
 
         local point = route.AddCurrentPos()
         point.SetOptions(createOptions(data))
+        log:Info("Added current position to route")
     end).AsEmpty()
 
     addPointOptions(addCurrentToRoute)
@@ -263,7 +269,9 @@ function InputHandler.New(flightCore)
 
     cmd.Accept("pos-save-as", function(data)
         local pos = universe.CreatePos(vehicle.position.Current()).AsPosString()
-        routeController.StoreWaypoint(data.commandValue, pos)
+        if routeController.StoreWaypoint(data.commandValue, pos) then
+            log:Info("Position saved as ", data.commandValue)
+        end
     end).AsString().Mandatory()
 
     cmd.Accept("pos-list", function(_)

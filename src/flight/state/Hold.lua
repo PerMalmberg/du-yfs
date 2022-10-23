@@ -1,6 +1,3 @@
-local r = require("CommonRequire")
-local checks = r.checks
-
 ---@module "flight/state/Travel"
 
 ---@class Hold

@@ -1,6 +1,3 @@
-local r = require("CommonRequire")
-local checks = r.checks
-
 ---@class FlightState
 ---@field Enter fun()
 ---@field Leave fun()
@@ -16,7 +13,6 @@ State.__index = State
 local name = "NameOfState"
 
 local function new(fsm)
-    checks.IsTable(fsm, "fsm", name .. ":new")
 
     local s = {}
 
