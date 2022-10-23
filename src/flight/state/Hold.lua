@@ -49,6 +49,10 @@ function Hold.New(fsm)
         return name
     end
 
+    function s.InhibitsThrust()
+        return false
+    end
+
     setmetatable(s, Hold)
 
     return s

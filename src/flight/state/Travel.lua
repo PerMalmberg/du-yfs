@@ -43,6 +43,10 @@ function Travel.New(fsm)
         return name
     end
 
+    function s.InhibitsThrust()
+        return false
+    end
+
     return setmetatable(s, Travel)
 end
 

@@ -49,7 +49,6 @@ local OneKphPh = calc.Kph2Mps(1)
 ---@field CheckPathAlignment fun(currentPos:vec3, chaseData:ChaseData)
 ---@field SetTemporaryWaypoint fun(wp:Waypoint)
 ---@field Update fun()
----@field DisableThrust fun()
 ---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
 
 local FlightFSM = {}
@@ -188,7 +187,7 @@ function FlightFSM.New(settings)
         end
     end
 
-    local current
+    local currentState ---@type FlightState
 
     local p = sharedPanel:Get("Movement")
     local a = sharedPanel:Get("Adjustment")
@@ -209,8 +208,6 @@ function FlightFSM.New(settings)
     local wAdjSpeed = a:CreateValue("Adj. speed (limit)", "m/s")
     local currentWP
     local temporaryWaypoint
-    local acceleration
-    local adjustmentAcc = nullVec
     local lastDevDist = 0
     local deviationAccum = Accumulator:New(10, Accumulator.Truth)
 
@@ -358,21 +355,16 @@ function FlightFSM.New(settings)
             end
         end
 
-        --[[ local brakDistance = CalcBrakeDistance(currentSpeed, brakes:AvailableDeceleration() * brakeEfficiency)
-        if brakDistance >= remainingDistance * 0.8 then
-            targetSpeed = evaluateNewLimit(targetSpeed, 0, "Full stop")
-        end ]]
-
-        -- When we want to leave atmo, override target speed.
-        --[[ if firstBody and inAtmo and not firstBody:IsInAtmo(waypoint.Destination()) then
-            targetSpeed = evaluateNewLimit(MAX_INT, construct.getFrictionBurnSpeed(), "Leave atmo")
-        end ]]
-
         wPointDistance:Set(calc.Round(remainingDistance, 2))
 
         return targetSpeed
     end
 
+    ---Adjust for deviation from the desired path
+    ---@param chaseData ChaseData
+    ---@param currentPos vec3
+    ---@param moveDirection vec3
+    ---@return vec3
     local function adjustForDeviation(chaseData, currentPos, moveDirection)
         -- Add counter to deviation from optimal path
         local plane = moveDirection:normalize()
@@ -398,6 +390,8 @@ function FlightFSM.New(settings)
         wAdjDist:Set(calc.Round(distance, 4))
         wAdjBrakeDistance:Set(calc.Round(brakeDistance))
         wAdjSpeed:Set(calc.Round(currSpeed, 1) .. "(" .. calc.Round(speedLimit, 1) .. ")")
+
+        local adjustmentAcc = nullVec ---@type vec3
 
         if distance > 0 then
             -- Are we moving towards target?
@@ -426,42 +420,47 @@ function FlightFSM.New(settings)
                         getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
                 end
             end
-        else
-            adjustmentAcc = nullVec
         end
 
         lastDevDist = distance
 
         wAdjAcc:Set(calc.Round(adjustmentAcc:len(), 2))
+        return adjustmentAcc
     end
 
-    local function applyAcceleration(moveDirection, precision)
+    ---Applies the acceleration to the engines
+    ---@param acceleration vec3|nil
+    ---@param adjustmentAcc vec3
+    ---@param precision boolean If true, use precision mode
+    local function applyAcceleration(acceleration, adjustmentAcc, precision)
         if acceleration == nil then
-            unit.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 0.001)
-        else
-            local groups = getEngines(moveDirection, precision)
-            local t = groups.thrust
-            local adj = groups.adjust
-            local thrustAcc = acceleration + t.antiG() - Vec3(construct.getWorldAirFrictionAcceleration())
-            local adjustAcc = (adjustmentAcc or nullVec) + adj.antiG()
+            unit.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
+            return
+        end
 
-            if precision then
-                -- Apply acceleration independently
-                unit.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
-                    t.prio2Tag, t.prio3Tag, 1)
-                unit.setEngineCommand(adj.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, true, true,
-                    adj.prio1Tag, adj.prio2Tag, adj.prio3Tag, 1)
-            else
-                -- Apply acceleration as a single vector
-                local finalAcc = thrustAcc + adjustAcc
-                unit.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
-                    t.prio2Tag, t.prio3Tag, 1)
-            end
+        local groups = getEngines(acceleration, precision)
+        local t = groups.thrust
+        local adj = groups.adjust
+        local thrustAcc = acceleration + t.antiG() - Vec3(construct.getWorldAirFrictionAcceleration())
+        local adjustAcc = (adjustmentAcc) + adj.antiG()
+
+        if precision then
+            -- Apply acceleration independently
+            unit.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
+                t.prio2Tag, t.prio3Tag, 1)
+            unit.setEngineCommand(adj.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, true, true,
+                adj.prio1Tag, adj.prio2Tag, adj.prio3Tag, 1)
+        else
+            -- Apply acceleration as a single vector
+            local finalAcc = thrustAcc + adjustAcc
+            unit.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
+                t.prio2Tag, t.prio3Tag, 1)
         end
     end
 
     ---@param deltaTime number The time since last Flush
-    ---@param waypoint Waypoint
+    ---@param waypoint Waypoint The next waypoint
+    ---@return vec3
     local function move(deltaTime, waypoint)
         local direction = waypoint:DirectionTo()
 
@@ -486,6 +485,8 @@ function FlightFSM.New(settings)
 
         wPid:Set(calc.Round(pidValue, 5))
 
+        local acceleration
+
         -- When we're not moving in the direction we should, counter movement with all we got.
         if wrongDir and currentSpeed > calc.Kph2Mps(20) then
             acceleration = -motionDirection *
@@ -494,6 +495,8 @@ function FlightFSM.New(settings)
             acceleration = direction * pidValue *
                 engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
         end
+
+        return acceleration
     end
 
     ---Flush method for the FSM
@@ -510,48 +513,44 @@ function FlightFSM.New(settings)
 
         currentWP = next
 
-        local selectedWP = selectWP()
+        if currentState.InhibitsThrust() then
+            applyAcceleration(nil, nullVec, false)
+        else
+            local selectedWP = selectWP()
 
-        local c = current
-        if c ~= nil then
             local pos = CurrentPos()
             local chaseData = nearestPointBetweenWaypoints(previous, selectedWP, pos, 6)
 
-            -- Assume we're just going to counter gravity.
-            acceleration = nullVec
-            adjustmentAcc = nullVec
-
-            c.Flush(deltaTime, selectedWP, previous, chaseData)
+            currentState.Flush(deltaTime, selectedWP, previous, chaseData)
             local moveDirection = selectedWP.DirectionTo()
 
-            move(deltaTime, selectedWP)
+            local acceleration = move(deltaTime, selectedWP)
+            local adjustmentAcc = adjustForDeviation(chaseData, pos, moveDirection)
 
-            adjustForDeviation(chaseData, pos, moveDirection)
-            applyAcceleration(moveDirection, selectedWP.GetPrecisionMode())
+            applyAcceleration(acceleration, adjustmentAcc, selectedWP.GetPrecisionMode())
 
             visual:DrawNumber(9, chaseData.rabbit)
             visual:DrawNumber(8, chaseData.nearest)
             visual:DrawNumber(0, pos + (acceleration or nullVec):normalize() * 8)
-        else
-            applyAcceleration(nullVec, false)
         end
     end
 
     ---Sets a new state
     ---@param state FlightState
     function s.SetState(state)
-        if current ~= nil then
-            current.Leave()
+        if currentState ~= nil then
+            currentState.Leave()
         end
 
         if state == nil then
             wStateName:Set("No state!")
+            return
         else
             wStateName:Set(state:Name())
             state.Enter()
         end
 
-        current = state
+        currentState = state
     end
 
     ---Sets the engine warmup time
@@ -586,23 +585,17 @@ function FlightFSM.New(settings)
     end
 
     function s.Update()
-        if current ~= nil then
+        if currentState ~= nil then
             wAcceleration:Set(calc.Round(Acceleration():len(), 2))
             wSpeed:Set(calc.Round(calc.Mps2Kph(Velocity():len()), 1))
-            current.Update()
+            currentState.Update()
         end
     end
 
     function s.WaypointReached(isLastWaypoint, next, previous)
-        if current ~= nil then
-            current.WaypointReached(isLastWaypoint, next, previous)
+        if currentState ~= nil then
+            currentState.WaypointReached(isLastWaypoint, next, previous)
         end
-    end
-
-    ---Disables all thrust
-    function s.DisableThrust()
-        acceleration = nil
-        adjustmentAcc = nil
     end
 
     settings.RegisterCallback("engineWarmup", function(value)

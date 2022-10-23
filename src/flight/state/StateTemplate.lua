@@ -6,6 +6,7 @@ local checks = r.checks
 ---@field Leave fun()
 ---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, chaseData:ChaseData)
 ---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
+---@field InhibitsThrust fun():boolean
 ---@field Update fun()
 ---@field Name fun():string
 
@@ -36,6 +37,11 @@ local function new(fsm)
 
     function s.Name()
         return name
+    end
+
+    ---Inihibits thrust
+    function s.InhibitsThrust()
+        return false
     end
 
     setmetatable(o, State)

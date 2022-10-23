@@ -27,7 +27,7 @@ function Idle.New(fsm)
     end
 
     function s.Flush(deltaTime, next, previous, chaseData)
-        fsm.DisableThrust()
+
     end
 
     function s.Update()
@@ -38,6 +38,10 @@ function Idle.New(fsm)
 
     function s.Name()
         return name
+    end
+
+    function s.InhibitsThrust()
+        return true
     end
 
     return setmetatable(s, Idle)

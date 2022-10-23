@@ -243,6 +243,9 @@ function FlightCore.New(routeController, flightFSM)
 
                     align()
                     flightFSM.FsmFlush(currentWaypoint, previousWaypoint)
+                else
+                    --- This is a workaround for engines remembering their states from a previous session; shut down all engines.
+                    unit.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
                 end
 
                 pitch:AxisFlush(false)

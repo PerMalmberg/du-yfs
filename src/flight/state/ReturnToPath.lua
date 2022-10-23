@@ -61,6 +61,10 @@ function ReturnToPath.New(fsm, returnPoint)
         return name
     end
 
+    function s.InhibitsThrust()
+        return false
+    end
+
     return setmetatable(s, ReturnToPath)
 end
 
