@@ -89,9 +89,11 @@ function Brake:Instance()
     end
 
     function s:GravityInfluencedAvailableDeceleration()
-        local gravInfluence = (GravityDirection() * G()):dot(Velocity():normalize())
+        local dot = GravityDirection():dot(Velocity():normalize())
+        local movingTowardsGravityWell = dot > 0
+        local influence = calc.Ternary(movingTowardsGravityWell, -1, 1)
         -- Might not be enough brakes to counter gravity so don't go below 0
-        return max(0, rawAvailableDeceleration() + gravInfluence)
+        return max(0, rawAvailableDeceleration() + influence * dot * G())
     end
 
     function s:AvailableDeceleration()
