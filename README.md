@@ -1,8 +1,10 @@
 # Todo
 
 * Sometimes doesn't detect waypoint reached in return to path state.
-* Routes not loaded with all options? - Max speed not honoured
-
+* No brake force - refuses to move
+* Atmo entry - make it more linear instead of nearly stopping on the edge
+* More natural manual control
+* Fix overshoot when turning
 
 * -- https://github.com/Dimencia/Archaegeo-Orbital-Hud/blob/7414fa08c50605936bd6a1dc3abfe503dd65a10c/src/requires/apclass.lua#L2755
 

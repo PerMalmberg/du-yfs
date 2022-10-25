@@ -22,6 +22,7 @@ require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
 local Acceleration = vehicle.acceleration.Movement
+local GravityDirection = vehicle.world.GravityDirection
 local utils = require("cpml/utils")
 local clamp = utils.clamp
 local abs = math.abs
@@ -30,6 +31,7 @@ local max = math.max
 local MAX_INT = math.maxinteger
 
 local brakeCutoffSpeed = 100 -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
+local linearThreshold = brakeCutoffSpeed * 2
 local longitudinal = "longitudinal"
 local vertical = "vertical"
 local lateral = "lateral"
@@ -38,6 +40,7 @@ local thrustTag = "thrust"
 local Forward = vehicle.orientation.Forward
 local Right = vehicle.orientation.Right
 local OneKphPh = calc.Kph2Mps(1)
+local deadZoneFactor = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
 
 ---@alias ChaseData { nearest:vec3, rabbit:vec3 }
 
@@ -196,6 +199,7 @@ function FlightFSM.New(settings)
     local wAcceleration = p:CreateValue("Acceleration", "m/s2")
     local wTargetSpeed = p:CreateValue("Target speed", "km/h")
     local wFinalSpeed = p:CreateValue("Final speed")
+    local wDZSpeedInc = p:CreateValue("DZ spd. inc.", "km/h")
     local wSpeedDiff = p:CreateValue("Speed diff", "km/h")
     local wBrakeMaxSpeed = p:CreateValue("Brake Max Speed", "km/h")
     local wPid = p:CreateValue("Pid")
@@ -225,35 +229,45 @@ function FlightFSM.New(settings)
         return Ternary(temporaryWaypoint, temporaryWaypoint, currentWP)
     end
 
-    ---Adjusts remaining distance and speed based on target location in relation to the body
-    ---@param remainingDistance number
+    ---Calculates the width of the dead zone
     ---@param body Body
-    ---@return number, number
-    local function adjustForDeadZone(remainingDistance, body)
-        local adjusted = remainingDistance
+    local function deadZoneThickness(body)
+        local atmo = body.Atmosphere
+        local thickness = Ternary(atmo.Present, atmo.Thickness * (1 - deadZoneFactor), 0)
+        return thickness
+    end
 
+    ---Indicates if the coordinate is within the atmospheric dead zone of the body
+    ---@param coordinate vec3
+    ---@param body Body
+    local function isWithinDeadZone(coordinate, body)
+        if not body.Atmosphere.Present then return false end
+
+        -- If the point is within the atmospheric radius and outside the inner radius, then it is within the dead zone.
+        local outerBorder = body.Atmosphere.Radius
+        local innerBorder = -deadZoneThickness(body)
+        local distanceToCenter = (coordinate - body.Geography.Center):len()
+
+        return distanceToCenter < outerBorder and distanceToCenter >= innerBorder
+    end
+
+    ---Determines if the construct will enter atmo
+    ---@param waypoint Waypoint
+    ---@param body Body
+    ---@return boolean, vec3, number
+    local function willEnterAtmo(waypoint, body)
         local pos = CurrentPos()
+        local center = body.Geography.Center
+        return calc.LineIntersectSphere(Ray.New(pos, waypoint.DirectionTo()), center, body.Atmosphere.Radius)
+    end
 
-        local speedDecrease = 0
-
-        if body.Atmosphere.Radius > 0 then
-            local threshold = 0.7 -- Consider this much of the atmosphere as a volume where we can't brake.
-            local distanceToBody = body.DistanceToHighestPossibleSurface(pos)
-            local distanceBetweenTargetAndBody = body.DistanceToHighestPossibleSurface(selectWP().Destination())
-            local deadZoneThickness = body.Atmosphere.Thickness * threshold
-            local deadZoneEndAltitude = body.Atmosphere.Radius - deadZoneThickness
-            local isOutsideOrInUpperAtmosphere = distanceToBody > deadZoneEndAltitude
-            local targetIsBelowUpperAtmosphere = distanceBetweenTargetAndBody < deadZoneEndAltitude
-
-            if isOutsideOrInUpperAtmosphere and targetIsBelowUpperAtmosphere then
-                -- The target point may be high up in the atmosphere so prevent negative values
-                adjusted = max(remainingDistance, remainingDistance - deadZoneThickness)
-                -- V^2 = V0^2 + 2ad, we only want the speed increase so v = sqrt(2ad) for the thickness of the dead zone.
-                speedDecrease = (2 * body.Physics.Gravity * deadZoneThickness) ^ 0.5
-            end
-        end
-
-        return adjusted, speedDecrease
+    ---Calculates the speed increase while falling through the dead zone
+    ---@param body Body
+    local function speedIncreaseInDeadZone(body)
+        -- V^2 = V0^2 + 2ad, we only want the speed increase so v = sqrt(2ad) for the thickness of the dead zone.
+        local d = deadZoneThickness(body)
+        return Ternary(body.Atmosphere.Present,
+            (2 * body.Physics.Gravity * d) ^ 0.5, 0)
     end
 
     ---Evaluates the new speed limit and sets that, if lower than the current one
@@ -293,16 +307,18 @@ function FlightFSM.New(settings)
         local inAtmo = false
         wFinalSpeed:Set(string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), remainingDistance))
 
-        if firstBody then
-            local distanceToAtmo = firstBody:DistanceToAtmo(pos)
-            inAtmo = distanceToAtmo == 0
-            local willEnterAtmo = not inAtmo and remainingDistance > distanceToAtmo
+        local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
 
-            if willEnterAtmo then
+        if firstBody then
+            local willHitAtmo, hitPoint, distanceToAtmo = willEnterAtmo(waypoint, firstBody)
+            inAtmo = firstBody:DistanceToAtmo(pos) == 0
+
+            local dzSpeedIncrease = speedIncreaseInDeadZone(firstBody)
+            wDZSpeedInc:Set(calc.Mps2Kph(dzSpeedIncrease))
+
+            if not inAtmo and willHitAtmo then
                 -- Override to ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
-                local speedDecreaseForDeadZone
-                remainingDistance, speedDecreaseForDeadZone = adjustForDeadZone(remainingDistance, firstBody)
-                finalSpeed = max(0, construct.getFrictionBurnSpeed() - speedDecreaseForDeadZone)
+                finalSpeed = max(0, construct.getFrictionBurnSpeed() - dzSpeedIncrease)
                 remainingDistance = distanceToAtmo
                 wFinalSpeed:Set(string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), distanceToAtmo))
             end
@@ -314,7 +330,6 @@ function FlightFSM.New(settings)
 
         local brakeEfficiency = Ternary(inAtmo, atmoBrakeEfficiencyFactor, 1)
 
-        local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
         if waypoint.MaxSpeed() > 0 then
             targetSpeed = evaluateNewLimit(targetSpeed, waypoint.MaxSpeed(), "Route")
         end
@@ -322,6 +337,10 @@ function FlightFSM.New(settings)
         --- Don't allow us to burn
         if inAtmo then
             targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed(), "Burn speed")
+        end
+
+        if firstBody and isWithinDeadZone(pos, firstBody) and direction:dot(GravityDirection()) > 0.7 then
+            remainingDistance = max(remainingDistance, remainingDistance - deadZoneThickness(firstBody))
         end
 
         if waypoint.Reached() then
@@ -339,8 +358,8 @@ function FlightFSM.New(settings)
 
             wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
 
-            if inAtmo and abs(direction:dot(vehicle.world.GravityDirection())) > 0.7 and
-                brakeMaxSpeed <= brakeCutoffSpeed * 2 then
+            if inAtmo and abs(direction:dot(GravityDirection())) > 0.7 and
+                brakeMaxSpeed <= linearThreshold then
                 -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
                 -- when we come to a stand still. To ensure that engines have enough time to warmup as well as
                 -- don't abruptly cut off when going upwards, we enforce a linear slowdown, down to the final speed.
