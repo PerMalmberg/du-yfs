@@ -217,8 +217,7 @@ function FlightFSM.New(settings)
 
     local delta = Stopwatch.New()
 
-    --speedPid = PID(0.01, 0.001, 0.0) -- Large
-    local speedPid = PID(0.1, 0, 0.01) -- Small
+    local speedPid = PID(0.1, 0, 0.01)
 
     local s = {}
 
