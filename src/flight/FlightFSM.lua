@@ -50,7 +50,7 @@ local deadZoneFactor = 0.8 -- Consider the inner edge of the dead zone where we 
 ---@field SetState fun(newState:FlightState)
 ---@field SetEngineWarmupTime fun(t50:number)
 ---@field CheckPathAlignment fun(currentPos:vec3, chaseData:ChaseData)
----@field SetTemporaryWaypoint fun(wp:Waypoint)
+---@field SetTemporaryWaypoint fun(wp:Waypoint|nil)
 ---@field Update fun()
 ---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
 
@@ -597,8 +597,8 @@ function FlightFSM.New(settings)
         return res
     end
 
-    ---Sets a temporary waypoint
-    ---@param waypoint Waypoint
+    ---Sets a temporary waypoint, or removes the current one
+    ---@param waypoint Waypoint|nil
     function s.SetTemporaryWaypoint(waypoint)
         temporaryWaypoint = waypoint
     end

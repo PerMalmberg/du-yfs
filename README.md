@@ -1,8 +1,7 @@
 # Todo
 
-* Sometimes doesn't detect waypoint reached in return to path state.
 * Stuck on pad on activation - wants to move to first point?
-* User PID for adjustment
+* Use PID for adjustment
 * Too weak engines for adjustment when heavy.
 
 * More natural manual control

@@ -21,6 +21,11 @@ function Travel.New(fsm)
     function s.Leave()
     end
 
+    ---Flush
+    ---@param deltaTime number
+    ---@param next Waypoint
+    ---@param previous Waypoint
+    ---@param chaseData ChaseData
     function s.Flush(deltaTime, next, previous, chaseData)
         local currentPos = CurrentPos()
 

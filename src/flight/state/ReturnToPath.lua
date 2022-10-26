@@ -1,5 +1,3 @@
-local r = require("CommonRequire")
-local checks = r.checks
 local Stopwatch = require("system/Stopwatch")
 local Waypoint = require("flight/Waypoint")
 
@@ -14,13 +12,13 @@ local ReturnToPath = {}
 ReturnToPath.__index = ReturnToPath
 local name = "ReturnToPath"
 
+---Creates a new ReturnPath
+---@param fsm FlightFSM
+---@param returnPoint vec3
+---@return ReturnToPath
 function ReturnToPath.New(fsm, returnPoint)
-    checks.IsTable(fsm, "fsm", name .. ":new")
-    checks.IsVec3(returnPoint, "returnPoint", name .. ":new")
-
     local s = {}
-    local sw = Stopwatch.New()
-    local temporaryWP = nil ---@type Waypoint
+    local temporaryWP = nil ---@type Waypoint|nil
 
     function s.Enter()
     end
@@ -41,13 +39,7 @@ function ReturnToPath.New(fsm, returnPoint)
         end
 
         if temporaryWP.Reached() then
-            sw.Start()
-
-            if sw.Elapsed() > 0.3 then
-                fsm.SetState(Travel.New(fsm))
-            end
-        else
-            sw.Stop()
+            fsm.SetState(Travel.New(fsm))
         end
     end
 
