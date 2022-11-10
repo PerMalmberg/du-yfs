@@ -1,5 +1,4 @@
 local Point = require("flight/route/Point")
-local PointOptions = require("flight/route/PointOptions")
 local Route = require("flight/route/Route")
 local log = require("debug/Log")()
 local universe = require("universe/Universe").Instance()
@@ -217,7 +216,7 @@ function RouteController.Instance(bufferedDB)
     ---Deletes a waypoint
     ---@param name string
     function s.DeleteWaypoint(name)
-        waypoints = waypoints or db.Get(RouteController.NAMED_POINTS) or {}
+        local waypoints = db.Get(RouteController.NAMED_POINTS) or {}
         local found = waypoints[name] ~= nil
         if found then
             waypoints[name] = nil
