@@ -18,7 +18,7 @@ require("flight/state/Require")
 
 ---@class FlightCore
 ---@field ReceiveEvents fun()
----@field GetRoutController fun():RouteController
+---@field GetRouteController fun():RouteController
 ---@field NextWP fun()
 ---@field StartFlight fun()
 ---@field Turn fun(degrees:number, axis:vec3):vec3
@@ -92,7 +92,7 @@ function FlightCore.New(routeController, flightFSM)
 
     ---Gets the route controller
     ---@return RouteController
-    function s.GetRoutController()
+    function s.GetRouteController()
         return routeController
     end
 

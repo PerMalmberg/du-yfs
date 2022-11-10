@@ -28,7 +28,7 @@ function InputHandler.New(flightCore)
     local step = 50
     local speed = calc.Kph2Mps(150)
 
-    local routeController = flightCore.GetRoutController()
+    local routeController = flightCore.GetRouteController()
     local cmd = CommandLine.Instance()
     local input = Input.Instance()
 
