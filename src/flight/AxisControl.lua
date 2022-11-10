@@ -157,7 +157,7 @@ end
 function control:Apply()
     local acc = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] +
         finalAcceleration[AxisControlYaw]
-    unit.setEngineCommand("torque", { 0, 0, 0 }, { acc:unpack() }, 1, 1, "", "", "")
+    unit.setEngineCommand("torque", { 0, 0, 0 }, { acc:unpack() }, true, true, "", "", "", 0.1)
 end
 
 function control:Update()
