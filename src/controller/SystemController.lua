@@ -1,6 +1,6 @@
 local RouteModeController = require("controller/RouteModeController")
 local FineTuneController  = require("controller/FineTuneController")
-local Criteria            = require("input.Criteria")
+local Criteria            = require("input/Criteria")
 local Task                = require("system/Task")
 local log                 = require("debug/Log")()
 local pub                 = require("util/PubSub").Instance()
@@ -8,12 +8,13 @@ local sharedPanel         = require("panel/SharedPanel")()
 local commandLine         = require("commandline/CommandLine").Instance()
 local input               = require("input/Input").Instance()
 local keys                = require("input/Keys")
-local brakes              = require("Brakes").Instance()
+local brakes              = require("flight/Brakes").Instance()
 
 ---@module "controller/ControlInterface"
 
 ---@enum FlightMode
 FlightMode = {
+    None = 0,
     Route = 1,
     -- FreeFlight = 2,
     FineTune = 3
@@ -29,7 +30,7 @@ SystemController.__index = SystemController
 ---@return SystemController
 function SystemController.New(flightCore)
     local s = {}
-    local mode = FlightMode.Route ---@type FlightMode
+    local mode = FlightMode.None ---@type FlightMode
     local ifc ---@type ControlInterface
 
     local routeController = flightCore.GetRouteController()
@@ -87,7 +88,7 @@ function SystemController.New(flightCore)
         if mode == FlightMode.FineTune then
             s.SetMode(FlightMode.Route)
         else
-            s.SetMode(FlightMode.Route)
+            s.SetMode(FlightMode.FineTune)
         end
     end
 

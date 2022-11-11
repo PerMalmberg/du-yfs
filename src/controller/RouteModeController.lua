@@ -1,7 +1,7 @@
 ---@module "commandline/CommandLine"
 ---@module "input/Input"
 
-local PointOptions = require("route/PointOptions")
+local PointOptions = require("flight/route/PointOptions")
 local log          = require("debug/Log")()
 local vehicle      = require("abstraction/Vehicle").New()
 local calc         = require("util/Calc")
