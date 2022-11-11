@@ -1,16 +1,22 @@
+local RouteModeController = require("controller/RouteModeController")
+local FineTuneController  = require("controller/FineTuneController")
+local Criteria            = require("input.Criteria")
+local Task                = require("system/Task")
+local log                 = require("debug/Log")()
 local pub                 = require("util/PubSub").Instance()
 local sharedPanel         = require("panel/SharedPanel")()
 local commandLine         = require("commandline/CommandLine").Instance()
 local input               = require("input/Input").Instance()
-local Task                = require("system/Task")
-local RouteModeController = require("controller/RouteModeController")
-require("controller/ControlInterface")
+local keys                = require("input/Keys")
+local brakes              = require("Brakes").Instance()
+
+---@module "controller/ControlInterface"
 
 ---@enum FlightMode
 FlightMode = {
     Route = 1,
-    FreeFlight = 2,
-    StepWise = 3
+    -- FreeFlight = 2,
+    FineTune = 3
 }
 
 ---@class SystemController
@@ -54,7 +60,8 @@ function SystemController.New(flightCore)
         -- Follows a route from start to end.
         -- Takes input from screen
         -- Takes input from command line
-        ifc = RouteModeController.New(input, commandLine)
+        log:Info("Mode: Route")
+        ifc = RouteModeController.New(input, commandLine, flightCore)
         ifc.Setup()
     end
 
@@ -65,10 +72,32 @@ function SystemController.New(flightCore)
             - Speed control
             - Landing assist "press G"
         ]]
+        log:Info("Mode: Free Flight - Not yet implemented")
     end
 
-    local function setupStepwiseMode()
+    local function setupFineTuneMode()
         -- Moves from point A to B, always stopping at B.
+        log:Info("Mode: Fine Tuning")
+        ifc = FineTuneController.New(input, commandLine, flightCore)
+        ifc.Setup()
+    end
+
+    local function switchMode()
+        --mode = FlightMode.Route + (mode % FlightMode.FineTune)
+        if mode == FlightMode.FineTune then
+            s.SetMode(FlightMode.Route)
+        else
+            s.SetMode(FlightMode.Route)
+        end
+    end
+
+    local function registerCommonControls()
+        -- shift + alt + Option9 to switch modes
+        input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), switchMode)
+
+        -- Setup brakes
+        input.Register(keys.brake, Criteria.New().OnPress(), function() brakes:Forced(true) end)
+        input.Register(keys.brake, Criteria.New().OnRelease(), function() brakes:Forced(false) end)
     end
 
     ---Sets new operational mode
@@ -79,19 +108,27 @@ function SystemController.New(flightCore)
             holdPosition()
 
             if ifc then ifc.TearDown() end
+            input.Clear()
 
             if mode == FlightMode.Route then
                 setupRouteMode()
             elseif mode == FlightMode.FreeFlight then
                 setupFreeFlightMode()
             else
-                setupStepwiseMode()
+                setupFineTuneMode()
             end
+
+            registerCommonControls()
         end
     end
 
     -- Create a Task to handle communication with the screen
     Task.New("ControllScreen", screenTask)
+        .Then(function(...)
+            log:Info("No screen connected")
+        end).Catch(function(t)
+            log:Error(t.Error())
+        end)
 
     -- Register for events from the flight system
     -- All the things currently in widgets

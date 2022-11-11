@@ -64,7 +64,7 @@ end
 ---@param flightFSM FlightFSM
 ---@return FlightCore
 function FlightCore.New(routeController, flightFSM)
-    local brakes = require("flight/Brakes"):Instance()
+    local brakes = require("flight/Brakes").Instance()
     local sharedPanel = require("panel/SharedPanel")()
     local p = sharedPanel:Get("Waypoint")
     local s = {}

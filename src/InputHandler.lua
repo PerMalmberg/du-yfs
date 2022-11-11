@@ -10,7 +10,7 @@ local log = r.log
 local vehicle = r.vehicle
 local calc = r.calc
 local universe = r.universe
-local brakes = require("flight/Brakes"):Instance()
+local brakes = require("flight/Brakes").Instance()
 
 ---@module "flight/FlightCore"
 
@@ -31,16 +31,6 @@ function InputHandler.New(flightCore)
     local routeController = flightCore.GetRouteController()
     local cmd = CommandLine.Instance()
     local input = Input.Instance()
-
-    input.Register(keys.option1, Criteria.New().LAlt().OnPress(), function()
-        if player.isFrozen() == 1 then
-            player.freeze(false)
-            log:Info("Movement enabled")
-        else
-            player.freeze(true)
-            log:Info("Manual mode")
-        end
-    end)
 
     ---Initiates a movement
     ---@param reference vec3

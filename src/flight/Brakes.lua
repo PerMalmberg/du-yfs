@@ -19,7 +19,7 @@ Brake.__index = Brake
 
 local instance
 
-function Brake:Instance()
+function Brake.Instance()
     if instance then
         return instance
     end

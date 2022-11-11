@@ -2,10 +2,10 @@
 ---@module "input/Input"
 
 local PointOptions = require("route/PointOptions")
-local log = require("debug/Log")()
-local vehicle = require("abstraction/Vehicle").New()
-local calc = require("util/Calc")
-local universe = require("universe/Universe").Instance()
+local log          = require("debug/Log")()
+local vehicle      = require("abstraction/Vehicle").New()
+local calc         = require("util/Calc")
+local universe     = require("universe/Universe").Instance()
 
 ---@class RouteModeController
 
@@ -28,8 +28,8 @@ function RouteModeController.New(input, cmd, flightCore)
         c.Option("-margin").AsNumber().Default(0.1)
     end
 
-    ---@param data PointOptions
-    ---@return unknown
+    ---@param data table
+    ---@return PointOptions
     local function createOptions(data)
         local opt = PointOptions.New()
         opt.Set(PointOptions.PRECISION, data.precision)
