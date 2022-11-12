@@ -5,6 +5,7 @@ local vehicle      = require("abstraction/Vehicle").New()
 local calc         = require("util/Calc")
 local universe     = require("universe/Universe").Instance()
 local keys         = require("input/Keys")
+local Clamp        = calc.Clamp
 
 ---@class FineTuneController
 
@@ -17,8 +18,9 @@ FineTuneController.__index = FineTuneController
 ---@return ControlInterface
 function FineTuneController.New(input, cmd, flightCore)
     local s = {}
-    local step = 0.1
-    local speed = calc.Kph2Mps(100)
+    local movestep = 0.1
+    local turnAngle = 1
+    local speed = construct.getMaxSpeed()
     local rc = flightCore.GetRouteController()
 
     ---Initiates a movement
@@ -38,15 +40,19 @@ function FineTuneController.New(input, cmd, flightCore)
         flightCore.StartFlight()
     end
 
+    local function printCurrent()
+        log:Info("Turn angle: ", turnAngle, "°, step: ", movestep, "m, speed: ", speed, "km/h")
+    end
+
     function s.Setup()
         player.freeze(true)
 
         input.Register(keys.forward, Criteria.New().OnRepeat(), function()
-            move(vehicle.orientation.Forward(), step)
+            move(vehicle.orientation.Forward(), movestep)
         end)
 
         input.Register(keys.backward, Criteria.New().OnRepeat(), function()
-            move(vehicle.orientation.Forward(), -step)
+            move(vehicle.orientation.Forward(), -movestep)
         end)
 
         input.Register(keys.strafeleft, Criteria.New().OnRepeat(), function()
@@ -54,35 +60,54 @@ function FineTuneController.New(input, cmd, flightCore)
             options.Set(PointOptions.MAX_SPEED, speed)
             options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
 
-            move(-vehicle.orientation.Right(), step, options)
+            move(-vehicle.orientation.Right(), movestep, options)
         end)
 
         input.Register(keys.straferight, Criteria.New().OnRepeat(), function()
             local options = PointOptions.New()
             options.Set(PointOptions.MAX_SPEED, speed)
             options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
-            move(vehicle.orientation.Right(), step, options)
+            move(vehicle.orientation.Right(), movestep, options)
         end)
 
         input.Register(keys.up, Criteria.New().OnRepeat(), function()
-            move(-universe.VerticalReferenceVector(), step)
+            move(-universe.VerticalReferenceVector(), movestep)
         end)
 
         input.Register(keys.down, Criteria.New().OnRepeat(), function()
-            move(-universe.VerticalReferenceVector(), -step)
+            move(-universe.VerticalReferenceVector(), -movestep)
         end)
 
         input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
-            flightCore.Turn(1, vehicle.orientation.Up())
+            flightCore.Turn(turnAngle, vehicle.orientation.Up())
         end)
 
         input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
-            flightCore.Turn(-1, vehicle.orientation.Up())
+            flightCore.Turn(-turnAngle, vehicle.orientation.Up())
         end)
+
+        cmd.Accept("step", function(data)
+            movestep = Clamp(data.commandValue, 0.1, 200000)
+            printCurrent()
+        end).AsNumber().Mandatory()
+
+        cmd.Accept("speed", function(data)
+            speed = calc.Kph2Mps(Clamp(data.commandValue, 1, calc.Mps2Kph(construct.getMaxSpeed())))
+            printCurrent()
+        end).AsNumber().Mandatory()
+
+        cmd.Accept("turn-angle", function(data)
+            turnAngle = Clamp(data.commandValue, 0, 360)
+            printCurrent()
+        end)
+
+        printCurrent()
+        log:Info("Player locked in place")
     end
 
     function s.TearDown()
         player.freeze(false)
+        log:Info("Player released")
         input.Clear()
         cmd.Clear()
     end

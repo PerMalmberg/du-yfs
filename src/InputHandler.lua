@@ -10,12 +10,12 @@ local log = r.log
 local vehicle = r.vehicle
 local calc = r.calc
 local universe = r.universe
-local brakes = require("flight/Brakes").Instance()
 
 ---@module "flight/FlightCore"
 
 ---@class InputHandler
----@field New fun(flightCore.FlightCore)
+---@field New fun(flightCore.FlightCore):InputHandler
+
 local InputHandler = {}
 InputHandler.__index = InputHandler
 
@@ -30,23 +30,8 @@ function InputHandler.New(flightCore)
 
     local routeController = flightCore.GetRouteController()
     local cmd = CommandLine.Instance()
-    local input = Input.Instance()
 
-    local start = vehicle.position.Current()
 
-    local stepFunc = function(data)
-        step = utils.clamp(data.commandValue, 0.1, 20000)
-        log:Info("Step set to: ", step)
-    end
-
-    cmd.Accept("step", stepFunc).AsNumber().Mandatory()
-
-    local speedFunc = function(data)
-        speed = calc.Kph2Mps(utils.clamp(data.commandValue, 1, 20000))
-        log:Info("Speed set to: ", speed)
-    end
-
-    cmd.Accept("speed", speedFunc).AsNumber().Mandatory()
 
     local function addPointOptions(c)
         c.Option("-precision").AsBoolean().Default(false)
@@ -87,7 +72,7 @@ function InputHandler.New(flightCore)
         -- Turn in the expected way, i.e. clockwise on positive values.
         local angle = -data.commandValue
 
-        flightCore.Turn(angle, vehicle.orientation.Up(), vehicle.position.Current())
+        flightCore.Turn(angle, vehicle.orientation.Up())
     end
 
     cmd.Accept("turn", turnFunc).AsNumber()

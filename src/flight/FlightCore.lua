@@ -148,7 +148,9 @@ function FlightCore.New(routeController, flightFSM)
 
     ---Hooks up the events needed for flight
     function s.ReceiveEvents()
+        ---@diagnostic disable-next-line: undefined-field
         flushHandlerId = system:onEvent("onFlush", s.fcFlush)
+        ---@diagnostic disable-next-line: undefined-field
         updateHandlerId = system:onEvent("onUpdate", s.fcUpdate)
         pitch:ReceiveEvents()
         roll:ReceiveEvents()
@@ -157,7 +159,9 @@ function FlightCore.New(routeController, flightFSM)
 
     ---Disconnects events
     function s.StopEvents()
+        ---@diagnostic disable-next-line: undefined-field
         system:clearEvent("flush", flushHandlerId)
+        ---@diagnostic disable-next-line: undefined-field
         system:clearEvent("update", updateHandlerId)
         pitch:StopEvents()
         roll:StopEvents()
