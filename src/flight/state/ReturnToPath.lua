@@ -14,7 +14,7 @@ local name = "ReturnToPath"
 
 ---Creates a new ReturnPath
 ---@param fsm FlightFSM
----@param returnPoint vec3
+---@param returnPoint Vec3
 ---@return ReturnToPath
 function ReturnToPath.New(fsm, returnPoint)
     local s = {}

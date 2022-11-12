@@ -1,12 +1,12 @@
-local Vec3 = require("cpml/vec3")
+local Vec3 = require("math/Vec3")
 
 local constants = {
     ticksPerSecond = 60.0,
     flushTick = 1 / 60.0,
     universe = {
-        up = Vec3(0, 1, 0),
-        forward = Vec3(1, 0, 0),
-        right = Vec3(0, 0, 1)
+        up = Vec3.New(0, 1, 0),
+        forward = Vec3.New(1, 0, 0),
+        right = Vec3.New(0, 0, 1)
     },
     direction = {
         counterClockwise = 1,

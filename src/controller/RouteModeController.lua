@@ -37,7 +37,7 @@ function RouteModeController.New(input, cmd, flightCore)
         opt.Set(PointOptions.MARGIN, data.margin)
 
         if data.lockdir then
-            opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
+            opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
         end
         return opt
     end

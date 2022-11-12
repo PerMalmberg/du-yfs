@@ -6,7 +6,7 @@ local AngAcc = vehicle.acceleration.localized.Angular
 local checks = r.checks
 local calc = r.calc
 local SignLargestAxis = calc.SignLargestAxis
-local nullVec = r.Vec3()
+local nullVec = r.Vec3.New()
 local sharedPanel = require("panel/SharedPanel")()
 local PID = require("cpml/pid")
 
@@ -107,13 +107,13 @@ function control:Speed()
 
     -- The normal vector gives the correct x, y or z axis part of the speed
     -- We need the sign of the speed
-    return vel:len() * SignLargestAxis(vel)
+    return vel:Len() * SignLargestAxis(vel)
 end
 
 function control:Acceleration()
     local vel = AngAcc() * rad2deg
     -- The normal vector gives the correct x, y or z axis part of the acceleration
-    return (vel * self.LocalNormal()):len()
+    return (vel * self.LocalNormal()):Len()
 end
 
 function control:AxisFlush(apply)
@@ -157,7 +157,7 @@ end
 function control:Apply()
     local acc = finalAcceleration[AxisControlPitch] + finalAcceleration[AxisControlRoll] +
         finalAcceleration[AxisControlYaw]
-    unit.setEngineCommand("torque", { 0, 0, 0 }, { acc:unpack() }, true, true, "", "", "", 0.1)
+    unit.setEngineCommand("torque", { 0, 0, 0 }, { acc:Unpack() }, true, true, "", "", "", 0.1)
 end
 
 function control:Update()

@@ -4,7 +4,7 @@ local universe = r.universe
 local calc = r.calc
 local abs = math.abs
 
----@alias AlignmentFunction fun(currentWaypoint:Waypoint, previous:Waypoint):vec3
+---@alias AlignmentFunction fun(currentWaypoint:Waypoint, previous:Waypoint):Vec3
 
 -- Reminder: Don't return a point based on the constructs' current position, it will cause spin if it overshoots etc.
 
@@ -20,33 +20,33 @@ end
 
 ---@param waypoint Waypoint
 ---@param previousWaypoint Waypoint
----@return vec3
+---@return Vec3
 function alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference(waypoint, previousWaypoint)
     local normal = -universe:VerticalReferenceVector()
-    local dir = waypoint.YawPitchDirection():project_on_plane(normal)
+    local dir = waypoint.YawPitchDirection():ProjectOnPlane(normal)
     local nearest = calc.NearestPointOnLine(previousWaypoint.Destination(),
-        (waypoint.Destination() - previousWaypoint.Destination()):normalize_inplace(), vehicle.position.Current())
+        (waypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace(), vehicle.position.Current())
 
     return nearest + dir * directionMargin
 end
 
 ---@param waypoint Waypoint
 ---@param previousWaypoint Waypoint
----@return vec3
+---@return Vec3
 function alignment.YawPitchKeepOrthogonalToVerticalReference(waypoint, previousWaypoint)
     local normal = -universe:VerticalReferenceVector()
     local nearest = calc.NearestPointOnLine(previousWaypoint.Destination(),
-        (waypoint.Destination() - previousWaypoint.Destination()):normalize_inplace(), vehicle.position.Current())
-    local dir = (waypoint.Destination() - nearest):normalize_inplace()
+        (waypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace(), vehicle.position.Current())
+    local dir = (waypoint.Destination() - nearest):NormalizeInPlace()
 
-    if abs(dir:dot(normal)) > 0.9 then
+    if abs(dir:Dot(normal)) > 0.9 then
         -- When the next waypoint is nearly above or below us, switch alignment mode.
         -- This 'trick' allows turning also in manual control
         waypoint.LockDirection(vehicle.orientation.Forward(), true)
         return waypoint.YawAndPitch(previousWaypoint)
     end
 
-    dir = dir:project_on_plane(normal)
+    dir = dir:ProjectOnPlane(normal)
     return nearest + dir * directionMargin
 end
 

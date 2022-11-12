@@ -3,7 +3,7 @@ local vehicle = require("abstraction/Vehicle"):New()
 local calc = require("util/Calc")
 local sharedPanel = require("panel/SharedPanel")()
 local universe = require("universe/Universe").Instance()
-local nullVec = require("cpml/vec3")()
+local nullVec = require("math/Vec3").New()
 local PID = require("cpml/pid")
 local IsInAtmo = vehicle.world.IsInAtmo
 local TotalMass = vehicle.mass.Total
@@ -48,9 +48,9 @@ function Brake.Instance()
 
     local function finalDeceleration()
         if s.forced then
-            return -Velocity():normalize() * rawAvailableDeceleration()
+            return -Velocity():Normalize() * rawAvailableDeceleration()
         else
-            return -Velocity():normalize() * deceleration
+            return -Velocity():Normalize() * deceleration
         end
     end
 
@@ -71,7 +71,7 @@ function Brake.Instance()
         ]]
         local res = nullVec
         if IsInAtmo() then
-            res = finalDeceleration():project_on(universe:VerticalReferenceVector())
+            res = finalDeceleration():ProjectOn(universe:VerticalReferenceVector())
         end
 
         return res
@@ -84,12 +84,12 @@ function Brake.Instance()
     function s:BrakeFlush()
         -- The brake vector must point against the direction of travel.
         local brakeVector = finalDeceleration()
-        unit.setEngineCommand(s.brakeGroup:Intersection(), { brakeVector:unpack() }, { 0, 0, 0 }, true, true,
+        unit.setEngineCommand(s.brakeGroup:Intersection(), { brakeVector:Unpack() }, { 0, 0, 0 }, true, true,
             "", "", "", 0.001)
     end
 
     function s:GravityInfluencedAvailableDeceleration()
-        local dot = GravityDirection():dot(Velocity():normalize())
+        local dot = GravityDirection():Dot(Velocity():Normalize())
         local movingTowardsGravityWell = dot > 0
         local influence = calc.Ternary(movingTowardsGravityWell, -1, 1)
         -- Might not be enough brakes to counter gravity so don't go below 0

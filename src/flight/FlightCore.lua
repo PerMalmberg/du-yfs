@@ -6,7 +6,7 @@ local checks = r.checks
 local calc = r.calc
 local Ternary = r.calc.Ternary
 local Vec3 = r.Vec3
-local nullVec = Vec3()
+local nullVec = Vec3.New()
 
 local AxisControl = require("flight/AxisControl")
 local Waypoint = require("flight/Waypoint")
@@ -21,7 +21,7 @@ require("flight/state/Require")
 ---@field GetRouteController fun():RouteController
 ---@field NextWP fun()
 ---@field StartFlight fun()
----@field Turn fun(degrees:number, axis:vec3):vec3
+---@field Turn fun(degrees:number, axis:Vec3):Vec3
 ---@field StopEvents fun()
 ---@field CreateWPFromPoint fun(p:Point):Waypoint
 
@@ -40,7 +40,7 @@ local defaultMargin = 0.1 -- m
 ---@return Waypoint
 function FlightCore.CreateWPFromPoint(point, lastInRoute)
     local opt = point.Options()
-    local dir = Vec3(opt.Get(PointOptions.LOCK_DIRECTION, nullVec))
+    local dir = Vec3.New(opt.Get(PointOptions.LOCK_DIRECTION, nullVec))
     local margin = opt.Get(PointOptions.MARGIN, defaultMargin)
     local finalSpeed = Ternary(lastInRoute, 0, opt.Get(PointOptions.FINAL_SPEED, defaultSpeed))
     local maxSpeed = opt.Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored).
@@ -134,7 +134,7 @@ function FlightCore.New(routeController, flightFSM)
 
     ---Rotates all waypoints around the axis with the given angle
     ---@param degrees number The angle to turn
-    ---@param axis vec3
+    ---@param axis Vec3
     function s.Turn(degrees, axis)
         checks.IsNumber(degrees, "degrees", "s.RotateWaypoints")
         checks.IsVec3(axis, "axis", "s.RotateWaypoints")
@@ -203,8 +203,8 @@ function FlightCore.New(routeController, flightFSM)
                     wWaypointDirLock:Set(wp.DirectionLocked())
 
                     local diff = wp.Destination() - previousWaypoint.Destination()
-                    local len = diff:len()
-                    local dir = diff:normalize()
+                    local len = diff:Len()
+                    local dir = diff:Normalize()
                     visual:DrawNumber(1, previousWaypoint.Destination())
                     visual:DrawNumber(2, previousWaypoint.Destination() + dir * len / 4)
                     visual:DrawNumber(3, previousWaypoint.Destination() + dir * len / 2)

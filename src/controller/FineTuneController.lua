@@ -18,10 +18,11 @@ FineTuneController.__index = FineTuneController
 function FineTuneController.New(input, cmd, flightCore)
     local s = {}
     local step = 0.1
+    local speed = calc.Kph2Mps(100)
     local rc = flightCore.GetRouteController()
 
     ---Initiates a movement
-    ---@param reference vec3
+    ---@param reference Vec3
     ---@param distance number
     ---@param options PointOptions|nil
     local function move(reference, distance, options)
@@ -51,7 +52,7 @@ function FineTuneController.New(input, cmd, flightCore)
         input.Register(keys.strafeleft, Criteria.New().OnRepeat(), function()
             local options = PointOptions.New()
             options.Set(PointOptions.MAX_SPEED, speed)
-            options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
+            options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
 
             move(-vehicle.orientation.Right(), step, options)
         end)
@@ -59,7 +60,7 @@ function FineTuneController.New(input, cmd, flightCore)
         input.Register(keys.straferight, Criteria.New().OnRepeat(), function()
             local options = PointOptions.New()
             options.Set(PointOptions.MAX_SPEED, speed)
-            options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
+            options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
             move(vehicle.orientation.Right(), step, options)
         end)
 

@@ -62,7 +62,7 @@ function InputHandler.New(flightCore)
         opt.Set(PointOptions.MARGIN, data.margin)
 
         if data.lockdir then
-            opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
+            opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
         end
         return opt
     end
@@ -97,7 +97,7 @@ function InputHandler.New(flightCore)
         local point = route.AddCoordinate(vehicle.position.Current() + vehicle.orientation.Right() * data.commandValue)
         local p = PointOptions.New()
         point.options = p
-        p.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():unpack() })
+        p.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
         p.Set(PointOptions.MAX_SPEED, data.maxspeed or speed)
 
         flightCore.StartFlight()

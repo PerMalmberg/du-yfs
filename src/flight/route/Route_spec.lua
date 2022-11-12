@@ -1,6 +1,6 @@
 require("util/Table")
 require("environment"):Prepare()
-local Vec3 = require("cpml/vec3")
+local Vec3 = require("math/Vec3")
 local Route = require("flight/route/Route")
 
 describe("Route", function()
@@ -22,19 +22,23 @@ describe("Route", function()
 
     it("Can add a coordinate", function()
         local r = Route.New()
-        r.AddCoordinate(Vec3(1, 2, 3))
+        r.AddCoordinate(Vec3.New(1, 2, 3))
         assert.are_equal(1, TableLen(r.Points()))
     end)
 
     it("Can add a waypoint reference", function()
         local r = Route.New()
         local p = r.AddWaypointRef("a name")
-        assert.are_equal(1, TableLen(r.Points()))
-        assert.is_true(p.HasWaypointRef())
-        assert.are_equal("a name", p.WaypointRef())
+        if p then
+            assert.are_equal(1, TableLen(r.Points()))
+            assert.is_true(p.HasWaypointRef())
+            assert.are_equal("a name", p.WaypointRef())
 
-        p.SetWaypointRef("a new name")
-        assert.are_equal("a new name", r.Points()[1].WaypointRef())
+            p.SetWaypointRef("a new name")
+            assert.are_equal("a new name", r.Points()[1].WaypointRef())
+        else
+            assert.truthy(false)
+        end
     end)
 
     it("Can iterate through the points", function()

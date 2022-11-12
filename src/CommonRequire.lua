@@ -7,7 +7,7 @@ local n = {
     checks = require("debug/Checks"),
     visual = require("debug/Visual")(),
     engine = require("abstraction/Engine").Instance(),
-    Vec3 = require("cpml/vec3")
+    Vec3 = require("math/Vec3")
 }
 
 return n

@@ -9,7 +9,7 @@ local CalcBrakeDistance = calc.CalcBrakeDistance
 local Ternary = calc.Ternary
 local universe = r.universe
 local Vec3 = r.Vec3
-local nullVec = Vec3()
+local nullVec = Vec3.New()
 local visual = r.visual
 local sharedPanel = require("panel/SharedPanel")()
 local engine = r.engine
@@ -42,14 +42,14 @@ local Right = vehicle.orientation.Right
 local OneKphPh = calc.Kph2Mps(1)
 local deadZoneFactor = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
 
----@alias ChaseData { nearest:vec3, rabbit:vec3 }
+---@alias ChaseData { nearest:Vec3, rabbit:Vec3 }
 
 ---@class FlightFSM
 ---@field New fun(settings:Settings):FlightFSM
 ---@field FsmFlush fun(next:Waypoint, previous:Waypoint)
 ---@field SetState fun(newState:FlightState)
 ---@field SetEngineWarmupTime fun(t50:number)
----@field CheckPathAlignment fun(currentPos:vec3, chaseData:ChaseData)
+---@field CheckPathAlignment fun(currentPos:Vec3, chaseData:ChaseData)
 ---@field SetTemporaryWaypoint fun(wp:Waypoint|nil)
 ---@field Update fun()
 ---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
@@ -114,7 +114,7 @@ function FlightFSM.New(settings)
 
     local function warmupDistance()
         -- Note, this doesn't take acceleration into account
-        return Velocity():len() * warmupTime
+        return Velocity():Len() * warmupTime
     end
 
     local function getAdjustedAcceleration(accLookup, dir, distance, movingTowardsTarget, forThrust)
@@ -137,9 +137,9 @@ function FlightFSM.New(settings)
 
     local function getEngines(moveDirection, precision)
         if precision then
-            if abs(moveDirection:dot(Forward())) >= 0.707 then
+            if abs(moveDirection:Dot(Forward())) >= 0.707 then
                 return forwardGroup
-            elseif abs(moveDirection:dot(Right())) >= 0.707 then
+            elseif abs(moveDirection:Dot(Right())) >= 0.707 then
                 return rightGroup
             else
                 return upGroup
@@ -167,23 +167,23 @@ function FlightFSM.New(settings)
     ---Calculates the nearest point between two waypoints
     ---@param wpStart Waypoint
     ---@param wpEnd Waypoint
-    ---@param currentPos vec3
+    ---@param currentPos Vec3
     ---@param ahead number
     ---@return ChaseData
     local function nearestPointBetweenWaypoints(wpStart, wpEnd, currentPos, ahead)
         local totalDiff = wpEnd.Destination() - wpStart.Destination()
-        local dir = totalDiff:normalize()
+        local dir = totalDiff:Normalize()
         local nearestPoint = calc.NearestPointOnLine(wpStart.Destination(), dir, currentPos)
 
         ahead = (ahead or 0)
         local startDiff = nearestPoint - wpStart.Destination()
-        local distanceFromStart = startDiff:len()
-        local rabbitDistance = min(distanceFromStart + ahead, totalDiff:len())
+        local distanceFromStart = startDiff:Len()
+        local rabbitDistance = min(distanceFromStart + ahead, totalDiff:Len())
         local rabbit = wpStart.Destination() + dir * rabbitDistance
 
-        if startDiff:normalize():dot(dir) < 0 then
+        if startDiff:Normalize():Dot(dir) < 0 then
             return { nearest = wpStart.Destination(), rabbit = rabbit }
-        elseif startDiff:len() >= totalDiff:len() then
+        elseif startDiff:Len() >= totalDiff:Len() then
             return { nearest = wpEnd.Destination(), rabbit = rabbit }
         else
             return { nearest = nearestPoint, rabbit = rabbit }
@@ -237,15 +237,16 @@ function FlightFSM.New(settings)
     end
 
     ---Indicates if the coordinate is within the atmospheric dead zone of the body
-    ---@param coordinate vec3
+    ---@param coordinate Vec3
     ---@param body Body
+    ---@return boolean
     local function isWithinDeadZone(coordinate, body)
         if not body.Atmosphere.Present then return false end
 
         -- If the point is within the atmospheric radius and outside the inner radius, then it is within the dead zone.
         local outerBorder = body.Atmosphere.Radius
         local innerBorder = -deadZoneThickness(body)
-        local distanceToCenter = (coordinate - body.Geography.Center):len()
+        local distanceToCenter = (coordinate - body.Geography.Center):Len()
 
         return distanceToCenter < outerBorder and distanceToCenter >= innerBorder
     end
@@ -253,7 +254,7 @@ function FlightFSM.New(settings)
     ---Determines if the construct will enter atmo
     ---@param waypoint Waypoint
     ---@param body Body
-    ---@return boolean, vec3, number
+    ---@return boolean, Vec3, number
     local function willEnterAtmo(waypoint, body)
         local pos = CurrentPos()
         local center = body.Geography.Center
@@ -285,24 +286,24 @@ function FlightFSM.New(settings)
 
     ---Gets the maximum speed we may have and still be able to stop
     ---@param deltaTime number Time since last tick, seconds
-    ---@param velocity vec3 Current velocity
-    ---@param direction vec3 Direction we want to travel
+    ---@param velocity Vec3 Current velocity
+    ---@param direction Vec3 Direction we want to travel
     ---@param waypoint Waypoint Current waypoint
     ---@return number
     local function getSpeedLimit(deltaTime, velocity, direction, waypoint)
         local finalSpeed = waypoint.FinalSpeed()
 
-        local currentSpeed = velocity:len()
+        local currentSpeed = velocity:Len()
         -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
         -- This is inaccurate if acceleration isn't in the same direction as our movement vector, but it is gives a safe value.
         local remainingDistance = max(0,
-            waypoint.DistanceTo() - (currentSpeed * deltaTime + 0.5 * Acceleration():len() * deltaTime * deltaTime))
+            waypoint.DistanceTo() - (currentSpeed * deltaTime + 0.5 * Acceleration():Len() * deltaTime * deltaTime))
 
         -- Calculate max speed we may have with available brake force to to reach the final speed.
 
         -- If we're passing through or into atmosphere, reduce speed before we reach it
         local pos = CurrentPos()
-        local firstBody = universe.CurrentGalaxy():BodiesInPath(Ray.New(pos, velocity:normalize()))[1]
+        local firstBody = universe.CurrentGalaxy():BodiesInPath(Ray.New(pos, velocity:Normalize()))[1]
         local inAtmo = false
         wFinalSpeed:Set(string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), remainingDistance))
 
@@ -338,7 +339,7 @@ function FlightFSM.New(settings)
             targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed(), "Burn speed")
         end
 
-        if firstBody and isWithinDeadZone(pos, firstBody) and direction:dot(GravityDirection()) > 0.7 then
+        if firstBody and isWithinDeadZone(pos, firstBody) and direction:Dot(GravityDirection()) > 0.7 then
             remainingDistance = max(remainingDistance, remainingDistance - deadZoneThickness(firstBody))
         end
 
@@ -357,7 +358,7 @@ function FlightFSM.New(settings)
 
             wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
 
-            if inAtmo and abs(direction:dot(GravityDirection())) > 0.7 and
+            if inAtmo and abs(direction:Dot(GravityDirection())) > 0.7 and
                 brakeMaxSpeed <= linearThreshold then
                 -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
                 -- when we come to a stand still. To ensure that engines have enough time to warmup as well as
@@ -381,26 +382,26 @@ function FlightFSM.New(settings)
 
     ---Adjust for deviation from the desired path
     ---@param chaseData ChaseData
-    ---@param currentPos vec3
-    ---@param moveDirection vec3
-    ---@return vec3
+    ---@param currentPos Vec3
+    ---@param moveDirection Vec3
+    ---@return Vec3
     local function adjustForDeviation(chaseData, currentPos, moveDirection)
         -- Add counter to deviation from optimal path
-        local plane = moveDirection:normalize()
-        local vel = calc.ProjectVectorOnPlane(plane, Velocity())
-        local currSpeed = vel:len()
+        local plane = moveDirection:Normalize()
+        local vel = Velocity():ProjectOnPlane(plane)
+        local currSpeed = vel:Len()
 
         local targetPoint = chaseData.nearest
 
         local toTargetWorld = targetPoint - currentPos
         local toTarget = calc.ProjectPointOnPlane(plane, currentPos, chaseData.nearest) -
             calc.ProjectPointOnPlane(plane, currentPos, currentPos)
-        local dirToTarget = toTarget:normalize()
-        local distance = toTarget:len()
+        local dirToTarget = toTarget:Normalize()
+        local distance = toTarget:Len()
 
-        local movingTowardsTarget = deviationAccum:Add(vel:normalize():dot(dirToTarget) > 0.8) > 0.5
+        local movingTowardsTarget = deviationAccum:Add(vel:Normalize():Dot(dirToTarget) > 0.8) > 0.5
 
-        local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:normalize(),
+        local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:Normalize(),
             false)
         local brakeDistance = CalcBrakeDistance(currSpeed, maxBrakeAcc) + warmupTime * currSpeed
         local speedLimit = calc.Scale(distance, 0, toleranceDistance, adjustmentSpeedMin, adjustmentSpeedMax)
@@ -410,7 +411,7 @@ function FlightFSM.New(settings)
         wAdjBrakeDistance:Set(calc.Round(brakeDistance))
         wAdjSpeed:Set(calc.Round(currSpeed, 1) .. "(" .. calc.Round(speedLimit, 1) .. ")")
 
-        local adjustmentAcc = nullVec ---@type vec3
+        local adjustmentAcc = nullVec
 
         if distance > 0 then
             -- Are we moving towards target?
@@ -420,36 +421,36 @@ function FlightFSM.New(settings)
                 elseif distance > lastDevDist then
                     -- Slipping away, nudge back to path
                     adjustmentAcc = dirToTarget *
-                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:Normalize(), distance, movingTowardsTarget)
                 elseif distance < toleranceDistance then
                     -- Add brake acc to help stop where we want
                     adjustmentAcc = -dirToTarget * CalcBrakeAcceleration(currSpeed, distance)
                 elseif currSpeed < speedLimit then
                     -- This check needs to be last so that it doesn't interfere with decelerating towards destination
                     adjustmentAcc = dirToTarget *
-                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:Normalize(), distance, movingTowardsTarget)
                 end
             else
                 -- Counter current movement, if any
                 if currSpeed > 0.1 then
-                    adjustmentAcc = -vel:normalize() *
-                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                    adjustmentAcc = -vel:Normalize() *
+                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:Normalize(), distance, movingTowardsTarget)
                 else
                     adjustmentAcc = dirToTarget *
-                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:normalize(), distance, movingTowardsTarget)
+                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:Normalize(), distance, movingTowardsTarget)
                 end
             end
         end
 
         lastDevDist = distance
 
-        wAdjAcc:Set(calc.Round(adjustmentAcc:len(), 2))
+        wAdjAcc:Set(calc.Round(adjustmentAcc:Len(), 2))
         return adjustmentAcc
     end
 
     ---Applies the acceleration to the engines
-    ---@param acceleration vec3|nil
-    ---@param adjustmentAcc vec3
+    ---@param acceleration Vec3|nil
+    ---@param adjustmentAcc Vec3
     ---@param precision boolean If true, use precision mode
     local function applyAcceleration(acceleration, adjustmentAcc, precision)
         if acceleration == nil then
@@ -460,36 +461,36 @@ function FlightFSM.New(settings)
         local groups = getEngines(acceleration, precision)
         local t = groups.thrust
         local adj = groups.adjust
-        local thrustAcc = acceleration + t.antiG() - Vec3(construct.getWorldAirFrictionAcceleration())
+        local thrustAcc = acceleration + t.antiG() - Vec3.New(construct.getWorldAirFrictionAcceleration())
         local adjustAcc = (adjustmentAcc) + adj.antiG()
 
         if precision then
             -- Apply acceleration independently
-            unit.setEngineCommand(t.engines:Union(), { thrustAcc:unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
+            unit.setEngineCommand(t.engines:Union(), { thrustAcc:Unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
                 t.prio2Tag, t.prio3Tag, 1)
-            unit.setEngineCommand(adj.engines:Union(), { adjustAcc:unpack() }, { 0, 0, 0 }, true, true,
+            unit.setEngineCommand(adj.engines:Union(), { adjustAcc:Unpack() }, { 0, 0, 0 }, true, true,
                 adj.prio1Tag, adj.prio2Tag, adj.prio3Tag, 1)
         else
             -- Apply acceleration as a single vector
             local finalAcc = thrustAcc + adjustAcc
-            unit.setEngineCommand(t.engines:Union(), { finalAcc:unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
+            unit.setEngineCommand(t.engines:Union(), { finalAcc:Unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
                 t.prio2Tag, t.prio3Tag, 1)
         end
     end
 
     ---@param deltaTime number The time since last Flush
     ---@param waypoint Waypoint The next waypoint
-    ---@return vec3
+    ---@return Vec3
     local function move(deltaTime, waypoint)
         local direction = waypoint:DirectionTo()
 
         local velocity = Velocity()
-        local currentSpeed = velocity:len()
-        local motionDirection = velocity:normalize()
+        local currentSpeed = velocity:Len()
+        local motionDirection = velocity:Normalize()
 
         local speedLimit = getSpeedLimit(deltaTime, velocity, direction, waypoint)
 
-        local wrongDir = direction:dot(motionDirection) < 0
+        local wrongDir = direction:Dot(motionDirection) < 0
         local brakeCounter = brakes:Feed(Ternary(wrongDir, 0, speedLimit), currentSpeed)
 
         local diff = speedLimit - currentSpeed
@@ -550,7 +551,7 @@ function FlightFSM.New(settings)
 
             visual:DrawNumber(9, chaseData.rabbit)
             visual:DrawNumber(8, chaseData.nearest)
-            visual:DrawNumber(0, pos + (acceleration or nullVec):normalize() * 8)
+            visual:DrawNumber(0, pos + (acceleration or nullVec):Normalize() * 8)
         end
     end
 
@@ -579,19 +580,19 @@ function FlightFSM.New(settings)
     end
 
     ---Checks if we're still on the path
-    ---@param currentPos vec3
+    ---@param currentPos Vec3
     ---@param chaseData ChaseData
     ---@return boolean
     function s.CheckPathAlignment(currentPos, chaseData)
         local res = true
 
         local vel = Velocity()
-        local speed = vel:len()
+        local speed = vel:Len()
 
         local toNearest = chaseData.nearest - currentPos
 
         if speed > 1 then
-            res = toNearest:len() < toleranceDistance
+            res = toNearest:Len() < toleranceDistance
         end
 
         return res
@@ -605,8 +606,8 @@ function FlightFSM.New(settings)
 
     function s.Update()
         if currentState ~= nil then
-            wAcceleration:Set(calc.Round(Acceleration():len(), 2))
-            wSpeed:Set(calc.Round(calc.Mps2Kph(Velocity():len()), 1))
+            wAcceleration:Set(calc.Round(Acceleration():Len(), 2))
+            wSpeed:Set(calc.Round(calc.Mps2Kph(Velocity():Len()), 1))
             currentState.Update()
         end
     end
