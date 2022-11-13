@@ -1,7 +1,6 @@
 local r = require("CommonRequire")
 local universe = r.universe
 local vehicle = r.vehicle
-local visual = r.visual
 local checks = r.checks
 local calc = r.calc
 local Ternary = r.calc.Ternary
@@ -175,7 +174,6 @@ function FlightCore.New(routeController, flightFSM)
         local target = waypoint.YawAndPitch(prev)
 
         if target ~= nil then
-            visual:DrawNumber(6, target + vehicle.orientation.Forward() * 1)
             yaw:SetTarget(target)
             pitch:SetTarget(target)
         else
@@ -209,11 +207,6 @@ function FlightCore.New(routeController, flightFSM)
                     local diff = wp.Destination() - previousWaypoint.Destination()
                     local len = diff:Len()
                     local dir = diff:Normalize()
-                    visual:DrawNumber(1, previousWaypoint.Destination())
-                    visual:DrawNumber(2, previousWaypoint.Destination() + dir * len / 4)
-                    visual:DrawNumber(3, previousWaypoint.Destination() + dir * len / 2)
-                    visual:DrawNumber(4, previousWaypoint.Destination() + dir * 3 * len / 4)
-                    visual:DrawNumber(5, wp.Destination())
                 end
             end,
             traceback

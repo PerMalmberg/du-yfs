@@ -10,7 +10,6 @@ local Ternary = calc.Ternary
 local universe = r.universe
 local Vec3 = r.Vec3
 local nullVec = Vec3.New()
-local visual = r.visual
 local sharedPanel = require("panel/SharedPanel")()
 local engine = r.engine
 local EngineGroup = require("abstraction/EngineGroup")
@@ -388,7 +387,7 @@ function FlightFSM.New(settings)
     local function adjustForDeviation(chaseData, currentPos, moveDirection)
         -- Add counter to deviation from optimal path
         local plane = moveDirection:Normalize()
-        local vel = Velocity():ProjectOnPlane(plane)
+        local vel = Velocity():ProjectOnPlane(plane) / plane:Len2()
         local currSpeed = vel:Len()
 
         local targetPoint = chaseData.nearest
@@ -549,9 +548,9 @@ function FlightFSM.New(settings)
 
             applyAcceleration(acceleration, adjustmentAcc, selectedWP.GetPrecisionMode())
 
-            visual:DrawNumber(9, chaseData.rabbit)
-            visual:DrawNumber(8, chaseData.nearest)
-            visual:DrawNumber(0, pos + (acceleration or nullVec):Normalize() * 8)
+            --visual:DrawNumber(9, chaseData.rabbit)
+            --visual:DrawNumber(8, chaseData.nearest)
+            --visual:DrawNumber(0, pos + (acceleration or nullVec):Normalize() * 8)
         end
     end
 

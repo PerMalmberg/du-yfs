@@ -36,7 +36,7 @@ Task.New("Main", function()
     local fsm = FlightFSM.New(settings)
     settings.Reload()
     local fc = FlightCore.New(RouteController.Instance(routeDb), fsm)
-    local cont = SystemController.New(fc)
+    local cont = SystemController.New(fc, settings)
     fc.ReceiveEvents()
     cont.SetMode(FlightMode.Route)
 

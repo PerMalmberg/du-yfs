@@ -27,8 +27,9 @@ local SystemController = {}
 SystemController.__index = SystemController
 
 ---@param flightCore FlightCore
+---@param settings Settings
 ---@return SystemController
-function SystemController.New(flightCore)
+function SystemController.New(flightCore, settings)
     local s = {}
     local mode = FlightMode.None ---@type FlightMode
     local ifc ---@type ControlInterface
@@ -110,6 +111,7 @@ function SystemController.New(flightCore)
 
             if ifc then ifc.TearDown() end
             input.Clear()
+            commandLine.Clear()
 
             if mode == FlightMode.Route then
                 setupRouteMode()
@@ -120,6 +122,7 @@ function SystemController.New(flightCore)
             end
 
             registerCommonControls()
+            settings.RegisterCommands()
         end
     end
 
