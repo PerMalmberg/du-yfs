@@ -23,6 +23,10 @@ local Velocity = vehicle.velocity.Movement
 local Acceleration = vehicle.acceleration.Movement
 local GravityDirection = vehicle.world.GravityDirection
 local utils = require("cpml/utils")
+local topics = require("Topics")
+local topicNumber = topics.numbers
+local topicString = topics.numbers
+local pub = require("util/PubSub").Instance()
 local clamp = utils.clamp
 local abs = math.abs
 local min = math.min
@@ -276,7 +280,9 @@ function FlightFSM.New(settings)
     ---@return number
     local function evaluateNewLimit(currentLimit, newLimit, reason)
         if newLimit >= 0 and newLimit < currentLimit then
-            wTargetSpeed:Set(string.format("%.1f (%s)", calc.Mps2Kph(newLimit), reason))
+            local msg = string.format("%.1f (%s)", calc.Mps2Kph(newLimit), reason)
+            wTargetSpeed:Set(msg)
+            pub.Publish(topicNumber.flightTargetSpeed, msg)
             return newLimit
         end
 
@@ -305,6 +311,8 @@ function FlightFSM.New(settings)
         local firstBody = universe.CurrentGalaxy():BodiesInPath(Ray.New(pos, velocity:Normalize()))[1]
         local inAtmo = false
         wFinalSpeed:Set(string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), remainingDistance))
+        pub.Publish(topicNumber.flightFinalSpeed, calc.Mps2Kph(finalSpeed))
+        pub.Publish(topicNumber.flightFinalSpeedDist, remainingDistance)
 
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
 
@@ -314,16 +322,21 @@ function FlightFSM.New(settings)
 
             local dzSpeedIncrease = speedIncreaseInDeadZone(firstBody)
             wDZSpeedInc:Set(calc.Mps2Kph(dzSpeedIncrease))
+            pub.Publish(topicNumber.flightDZSpeedInc, calc.Mps2Kph(dzSpeedIncrease))
 
             if not inAtmo and willHitAtmo then
                 -- Override to ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
                 finalSpeed = max(0, construct.getFrictionBurnSpeed() - dzSpeedIncrease)
                 remainingDistance = distanceToAtmo
                 wFinalSpeed:Set(string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), distanceToAtmo))
+                pub.Publish(topicNumber.flightFinalSpeed, calc.Mps2Kph(finalSpeed))
+                pub.Publish(topicNumber.flightFinalSpeedDist, remainingDistance)
             end
 
+            pub.Publish(topicNumber.flightAtmoDist, calc.Round(distanceToAtmo, 1))
             wDistToAtmo:Set(calc.Round(distanceToAtmo, 1))
         else
+            pub.Publish(topicNumber.flightAtmoDist, -1)
             wDistToAtmo:Set("-")
         end
 
@@ -344,6 +357,7 @@ function FlightFSM.New(settings)
 
         if waypoint.Reached() then
             targetSpeed = evaluateNewLimit(targetSpeed, 0, "Hold")
+            pub.Publish(topicNumber.flightBrakeMaxSpeed, 0)
             wBrakeMaxSpeed:Set(0)
         else
             local brakeMaxSpeed = calcMaxAllowedSpeed(
@@ -356,6 +370,7 @@ function FlightFSM.New(settings)
             end
 
             wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
+            pub.Publish(topicNumber.flightBrakeMaxSpeed, calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
 
             if inAtmo and abs(direction:Dot(GravityDirection())) > 0.7 and
                 brakeMaxSpeed <= linearThreshold then
@@ -375,6 +390,7 @@ function FlightFSM.New(settings)
         end
 
         wPointDistance:Set(calc.Round(remainingDistance, 2))
+        pub.Publish(topicNumber.wpDist, calc.Round(remainingDistance, 2))
 
         return targetSpeed
     end
@@ -406,9 +422,13 @@ function FlightFSM.New(settings)
         local speedLimit = calc.Scale(distance, 0, toleranceDistance, adjustmentSpeedMin, adjustmentSpeedMax)
 
         wAdjTowards:Set(movingTowardsTarget)
+        pub.Publish(topicNumber.adjustTowards, movingTowardsTarget)
         wAdjDist:Set(calc.Round(distance, 4))
+        pub.Publish(topicNumber.adjustDist, calc.Round(distance, 4))
         wAdjBrakeDistance:Set(calc.Round(brakeDistance))
+        pub.Publish(topicNumber.adjustBrakeDist, calc.Round(brakeDistance))
         wAdjSpeed:Set(calc.Round(currSpeed, 1) .. "(" .. calc.Round(speedLimit, 1) .. ")")
+        pub.Publish(topicNumber.adjustSpeed, calc.Round(currSpeed, 1) .. "(" .. calc.Round(speedLimit, 1) .. ")")
 
         local adjustmentAcc = nullVec
 
@@ -444,6 +464,7 @@ function FlightFSM.New(settings)
         lastDevDist = distance
 
         wAdjAcc:Set(calc.Round(adjustmentAcc:Len(), 2))
+        pub.Publish(topicNumber.adjustAcc, calc.Round(adjustmentAcc:Len(), 2))
         return adjustmentAcc
     end
 
@@ -494,6 +515,7 @@ function FlightFSM.New(settings)
 
         local diff = speedLimit - currentSpeed
         wSpeedDiff:Set(calc.Round(calc.Mps2Kph(diff), 1))
+        pub.Publish(topicNumber.flightSpeedDiff, calc.Round(calc.Mps2Kph(diff), 1))
 
         -- Feed the pid with 1/10:th to give it a wider working range.
         speedPid:inject(diff / 10)
@@ -503,6 +525,7 @@ function FlightFSM.New(settings)
         local pidValue = clamp(speedPid:get(), 0, 1)
 
         wPid:Set(calc.Round(pidValue, 5))
+        pub.Publish(topicNumber.flightSpeedPid, calc.Round(pidValue, 5))
 
         local acceleration
 
@@ -563,9 +586,11 @@ function FlightFSM.New(settings)
 
         if state == nil then
             wStateName:Set("No state!")
+            pub.Publish(topicString.flightFSMState, "No state!")
             return
         else
             wStateName:Set(state:Name())
+            pub.Publish(topicString.flightFSMState, state:Name())
             state.Enter()
         end
 
@@ -606,7 +631,9 @@ function FlightFSM.New(settings)
     function s.Update()
         if currentState ~= nil then
             wAcceleration:Set(calc.Round(Acceleration():Len(), 2))
+            pub.Publish(topicNumber.flightAcceleration, calc.Round(Acceleration():Len(), 2))
             wSpeed:Set(calc.Round(calc.Mps2Kph(Velocity():Len()), 1))
+            pub.Publish(topicNumber.flightAbsSpeed, calc.Round(calc.Mps2Kph(Velocity():Len()), 1))
             currentState.Update()
         end
     end

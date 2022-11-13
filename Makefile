@@ -4,6 +4,7 @@ PWD=$(shell pwd)
 
 LUA_PATH := ./src/?.lua
 LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/src/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/external/du-render/src/?.lua
 
 LUA_PATH_TEST := $(LUA_PATH);$(PWD)/external/du-libs/src/builtin/du_provided/?.lua
 LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-lua-examples/api-mockup/?.lua

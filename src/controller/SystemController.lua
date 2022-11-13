@@ -2,13 +2,16 @@ local RouteModeController = require("controller/RouteModeController")
 local FineTuneController  = require("controller/FineTuneController")
 local Criteria            = require("input/Criteria")
 local Task                = require("system/Task")
+local ValueTree           = require("util/ValueTree")
 local log                 = require("debug/Log")()
 local pub                 = require("util/PubSub").Instance()
-local sharedPanel         = require("panel/SharedPanel")()
 local commandLine         = require("commandline/CommandLine").Instance()
 local input               = require("input/Input").Instance()
 local keys                = require("input/Keys")
 local brakes              = require("flight/Brakes").Instance()
+local topics              = require("Topics")
+local Stream              = require("Stream")
+local json                = require("dkjson")
 
 ---@module "controller/ControlInterface"
 
@@ -45,16 +48,47 @@ function SystemController.New(flightCore, settings)
     local function screenTask()
         local screen = library.getLinkByClass("ScreenUnit")
 
-        while screen do
-            coroutine.yield()
-            -- Get data to send to screen
+        if not screen then return end
 
-            -- Send data to screen
+        log:Info("Screen found")
 
-            -- Get data from screen
-
+        local function dataReceived(data)
             -- Publish data to system
 
+        end
+
+        local function timeOut(isTimedOut)
+
+        end
+
+        local tree = ValueTree.New()
+        local stream = Stream.New(screen, dataReceived, 1, timeOut)
+
+        for _, path in pairs(topics.numbers) do
+            pub.RegisterNumber(path, function(topic, value)
+                tree.Set(topic, value)
+            end)
+        end
+
+        for _, path in pairs(topics.strings) do
+            pub.RegisterString(path, function(topic, value)
+                tree.Set(topic, value)
+            end)
+        end
+
+        while screen do
+            coroutine.yield()
+            stream.Tick()
+            -- Get data to send to screen
+            local data = tree.Pick()
+            -- Send data to screen
+            if data then
+                local js = json.encode({ flightData = data })
+                if js then
+                    --- @cast js string
+                    stream.Write(js)
+                end
+            end
         end
     end
 

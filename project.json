@@ -9,6 +9,7 @@
   "libs": [
     {
       "id": "du-libs",
+      "type": "project",
       "path": "external/du-libs"
     }
   ],
@@ -16,6 +17,11 @@
     "main": {
       "name": "main",
       "type": "control",
+      "slots": {}
+    },
+    "screen/main": {
+      "name": "screen/main",
+      "type": "screen",
       "slots": {}
     }
   },
@@ -30,5 +36,6 @@
       "minify": true,
       "compress": true
     }
-  }
+  },
+  "internalPaths": []
 }

@@ -11,6 +11,8 @@ local Velocity = vehicle.velocity.Movement
 local GravityDirection = vehicle.world.GravityDirection
 local G = vehicle.world.G
 local utils = require("cpml/utils")
+local topics = require("Topics")
+local pub = require("util/PubSub").Instance()
 local clamp = utils.clamp
 local max = math.max
 
@@ -56,9 +58,13 @@ function Brake.Instance()
 
     function s:BrakeUpdate()
         s.totalMass = TotalMass()
+        local n = topics.numbers
         wDeceleration:Set(calc.Round(rawAvailableDeceleration(), 2))
+        pub.Publish(n.brakeMaxDeceleration, calc.Round(rawAvailableDeceleration(), 2))
         wCurrentDec:Set(calc.Round(construct.getCurrentBrake() / s.totalMass, 2))
+        pub.Publish(n.brakeCurrentDec, calc.Round(construct.getCurrentBrake() / s.totalMass, 2))
         wMass:Set(calc.Round(s.totalMass / 1000, 1))
+        pub.Publish(n.brakeMass, calc.Round(s.totalMass / 1000, 1))
     end
 
     local function brakeCounter()
@@ -109,6 +115,7 @@ function Brake.Instance()
 
         local brakeValue = clamp(pid:get(), 0, 1)
         wPid:Set(calc.Round(brakeValue, 4))
+        pub.Publish(topics.brakePid, calc.Round(brakeValue, 4))
 
         deceleration = brakeValue * rawAvailableDeceleration()
 
