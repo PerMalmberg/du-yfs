@@ -18,8 +18,6 @@ local layer = screen.Layer(1)
 local behavior = Behaviour.New()
 local font = Font.Get(FontName.Play, 30)
 
-layer.Text(string.format("%0.2f%%", screen.Stats()), Vec2.New(), font)
-
 local middle = screen.Bounds() / 2
 local speed = layer.Text("Speed: 0", middle, font)
 speed.Props.Fill = Color.New(1, 1, 1)
@@ -49,4 +47,4 @@ stream.Tick()
 
 behavior.TriggerEvents(screen)
 binder.Render()
-screen.Render()
+screen.Render(true)
