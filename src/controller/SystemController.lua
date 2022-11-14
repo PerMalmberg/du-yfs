@@ -11,7 +11,7 @@ local keys                = require("input/Keys")
 local brakes              = require("flight/Brakes").Instance()
 local topics              = require("Topics")
 local Stream              = require("Stream")
-local json                = require("dkjson")
+local serializer          = require("util/Serializer")
 
 ---@module "controller/ControlInterface"
 
@@ -79,14 +79,17 @@ function SystemController.New(flightCore, settings)
         while screen do
             coroutine.yield()
             stream.Tick()
-            -- Get data to send to screen
-            local data = tree.Pick()
-            -- Send data to screen
-            if data then
-                local js = json.encode({ flightData = data })
-                if js then
-                    --- @cast js string
-                    stream.Write(js)
+
+            if not stream.WaitingToSend() then
+                -- Get data to send to screen
+                local data = tree.Pick()
+                -- Send data to screen
+                if data then
+                    local ser = serializer.Serialize({ flightData = data })
+                    if ser then
+                        --- @cast ser string
+                        stream.Write(ser)
+                    end
                 end
             end
         end

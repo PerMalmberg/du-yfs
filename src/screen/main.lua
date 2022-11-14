@@ -1,17 +1,13 @@
-local Font      = require("Font")
-local Color     = require("Color")
-local Screen    = require("Screen")
-local Stream    = require("Stream")
-local Vec2      = require("Vec2")
-local Binder    = require("Binder")
-local Behaviour = require("Behaviour")
-local json      = require("dkjson")
-local topics    = require("Topics")
-local log       = require("RenderScript").Log
-
-local function fd(topic)
-    return string.format("flightData/%s", topic)
-end
+local Font       = require("Font")
+local Color      = require("Color")
+local Screen     = require("Screen")
+local Stream     = require("Stream")
+local Vec2       = require("Vec2")
+local Binder     = require("Binder")
+local Behaviour  = require("Behaviour")
+local topics     = require("Topics")
+local log        = require("RenderScript").Log
+local serializer = require("util/Serializer")
 
 local screen = Screen.New()
 local layer = screen.Layer(1)
@@ -23,17 +19,15 @@ local speed = layer.Text("Speed: 0", middle, font)
 speed.Props.Fill = Color.New(1, 1, 1)
 
 local binder = Binder.New()
-local path = binder.Path("flightData/flight")
+local path = binder.Path("flightData/flight", 1)
 path.Number(speed, "Text", "absspeed", "Speed: %0.1f km/h")
 
 
 local onDataReceived = function(data)
-    local j = json.decode(data)
-    if j then
-        ---@cast j table
-        binder.MergeData(j)
-    else
-        error(j)
+    local d = serializer.Deserialize(data)
+    if d then
+        ---@cast d table
+        binder.MergeData(d)
     end
 end
 

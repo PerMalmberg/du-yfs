@@ -2,7 +2,7 @@
 
 * Stuck on pad on activation - wants to move to first point?
 * Use PID for adjustment
-* Too weak engines for adjustment when heavy.
+* Jitter on small construct when holding position.
 
 * More natural manual control
 * Fix overshoot when turning
