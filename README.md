@@ -3,6 +3,7 @@
 * Stuck on pad on activation - wants to move to first point?
 * Use PID for adjustment
 * Jitter on small construct when holding position.
+* Overshoot upwards? Small construct 1000m
 
 * More natural manual control
 * Fix overshoot when turning

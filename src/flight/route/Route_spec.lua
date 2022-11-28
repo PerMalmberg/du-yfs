@@ -3,7 +3,7 @@ require("environment"):Prepare()
 local Vec3 = require("math/Vec3")
 local Route = require("flight/route/Route")
 
-describe("Route", function()
+describe("Route #flight", function()
     it("Can create a route with points", function()
         local r = Route.New()
         r.AddCurrentPos()

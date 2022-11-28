@@ -1,7 +1,7 @@
 local Point = require("flight/route/Point")
 local PointOptions = require("flight/route/PointOptions")
 
-describe("Point", function()
+describe("Point #flight", function()
     local posString = "::pos{0,0,0,0,0}"
     local opt = PointOptions:New()
     opt.Set(PointOptions.FINAL_SPEED, 1)
@@ -10,7 +10,6 @@ describe("Point", function()
     opt.Set(PointOptions.MARGIN, 3)
     opt.Set(PointOptions.PRECISION, true)
     opt.Set(PointOptions.USE_WINGS, true)
-    opt.Get()
 
     it("returns what is passed in", function()
         local point = Point.New(posString, "named reference", opt)

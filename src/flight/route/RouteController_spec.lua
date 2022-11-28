@@ -9,7 +9,7 @@ local function runTicks()
     end
 end
 
-describe("RouteController", function()
+describe("RouteController #flight", function()
     env.Prepare()
     require("api-mockup/databank")
     local RouteController = require("flight/route/RouteController")

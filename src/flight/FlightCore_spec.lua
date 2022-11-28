@@ -7,7 +7,7 @@ local PointOptions = require("flight/route/PointOptions")
 local Waypoint = require("flight/Waypoint")
 local Vec3 = require("math/Vec3")
 
-describe("FlightCore", function()
+describe("FlightCore #flight", function()
     it("Can create Waypoint from point", function()
         local o = PointOptions.New()
         o.Set(PointOptions.MAX_SPEED, 1000)

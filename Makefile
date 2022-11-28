@@ -31,7 +31,7 @@ clean: clean_cov clean_report
 	@rm -rf out
 
 test: clean
-	@LUA_PATH="$(LUA_PATH_TEST)" busted .
+	@LUA_PATH="$(LUA_PATH_TEST)" busted -t "flight" .
 	@luacov
 	@$(CLEAN_COV)
 
