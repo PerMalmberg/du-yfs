@@ -6,8 +6,6 @@ local calc = r.calc
 local Ternary = r.calc.Ternary
 local Vec3 = r.Vec3
 local nullVec = Vec3.New()
-local topics = require("Topics")
-local topicNum = topics.numbers
 local pub = require("util/PubSub").Instance()
 
 local AxisControl = require("flight/AxisControl")
@@ -201,15 +199,10 @@ function FlightCore.New(routeController, flightFSM)
                 local wp = currentWaypoint
                 if wp ~= nil then
                     wWaypointDistance:Set(calc.Round(wp.DistanceTo(), 3))
-                    pub.Publish(topicNum.wpDist, wp.DistanceTo())
                     wWaypointMargin:Set(calc.Round(wp.Margin(), 3))
-                    pub.Publish(topicNum.wpFinalSpeed, calc.Round(calc.Kph2Mps(wp.FinalSpeed()), 1))
                     wWaypointFinalSpeed:Set(calc.Round(calc.Kph2Mps(wp.FinalSpeed()), 1))
-                    pub.Publish(topicNum.wpMaxSpeed, calc.Round(calc.Kph2Mps(wp.MaxSpeed()), 1))
                     wWaypointMaxSpeed:Set(calc.Round(calc.Kph2Mps(wp.MaxSpeed()), 1))
-                    pub.Publish(topicNum.wpPrecision, wp.GetPrecisionMode())
                     wWaypointPrecision:Set(wp.GetPrecisionMode())
-                    pub.Publish(topicNum.wpDirLock, wp.DirectionLocked())
                     wWaypointDirLock:Set(wp.DirectionLocked())
                 end
             end,

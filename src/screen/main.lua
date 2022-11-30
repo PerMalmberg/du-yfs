@@ -1,12 +1,11 @@
-local Font       = require("Font")
-local Color      = require("Color")
-local Screen     = require("Screen")
+local Font       = require("native/Font")
+local Color      = require("native/Color")
+local Screen     = require("native/Screen")
 local Stream     = require("Stream")
-local Vec2       = require("Vec2")
+local Vec2       = require("native/Vec2")
 local Binder     = require("Binder")
 local Behaviour  = require("Behaviour")
-local topics     = require("Topics")
-local log        = require("RenderScript").Log
+local log        = require("native/RenderScript").Log
 local serializer = require("util/Serializer")
 
 local screen = Screen.New()

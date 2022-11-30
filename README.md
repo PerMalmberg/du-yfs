@@ -8,6 +8,45 @@
 * More natural manual control
 * Fix overshoot when turning
 
+* When activating a route, ensure that construct is less than 1m from first point.
+  * If the reveresed route makes the construct within the limit, run the route reveresed.
+  * Button to set waypoint to closes endpoint
+
+
+## Screens
+
+### Take me there
+- List of routes
+  - Favorites listed first
+- Select route, display info.
+- Separate button to start route.
+- Emergency stop button
+
+### Travel screen
+- Emergency stop button - hold position / zero speed limit?
+- Leg x of y
+- Distance to next point
+- Distance to end point (via route)
+- Current speed
+- Target speed
+- Fuel
+- Mass
+  - Cargo
+  - Total
+
+### Control screen
+- Step up/down
+- Angle + up/down buttons
+- Speed up/down
+- Display current values
+
+### Edit route
+
+- Button
+  - Update options for point; checkboxes for options
+  - Save current pos
+
+
 * -- https://github.com/Dimencia/Archaegeo-Orbital-Hud/blob/7414fa08c50605936bd6a1dc3abfe503dd65a10c/src/requires/apclass.lua#L2755
 
 # Controls

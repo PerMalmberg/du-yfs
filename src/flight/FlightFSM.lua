@@ -23,9 +23,6 @@ local Velocity = vehicle.velocity.Movement
 local Acceleration = vehicle.acceleration.Movement
 local GravityDirection = vehicle.world.GravityDirection
 local utils = require("cpml/utils")
-local topics = require("Topics")
-local topicNumber = topics.numbers
-local topicString = topics.numbers
 local pub = require("util/PubSub").Instance()
 local clamp = utils.clamp
 local abs = math.abs
@@ -115,6 +112,31 @@ function FlightFSM.New(settings)
 
     local atmoBrakeEfficiencyFactor = 0.6
 
+    local flightData = {
+        targetSpeed = 0,
+        targetSpeedReason = "",
+        finalSpeed = 0,
+        finalSpeedDistance = 0,
+        distanceToAtmo = -1,
+        dzSpeedInc = 0,
+        atmoDistance = 0,
+        brakeMaxSpeed = 0,
+        waypointDist = 0,
+        speedDiff = 0,
+        pid = 0,
+        fsmState = "No state",
+        acceleration = 0,
+        absSpeed = 0
+    }
+
+    local adjustData = {
+        towards = false,
+        distance = 0,
+        brakeDist = 0,
+        speed = 0,
+        acceleration = 0
+    }
+
     local function warmupDistance()
         -- Note, this doesn't take acceleration into account
         return Velocity():Len() * warmupTime
@@ -197,22 +219,6 @@ function FlightFSM.New(settings)
 
     local p = sharedPanel:Get("Movement")
     local a = sharedPanel:Get("Adjustment")
-    local wStateName = p:CreateValue("State", "")
-    local wPointDistance = p:CreateValue("Point dist.", "m")
-    local wAcceleration = p:CreateValue("Acceleration", "m/s2")
-    local wTargetSpeed = p:CreateValue("Target speed", "km/h")
-    local wFinalSpeed = p:CreateValue("Final speed")
-    local wDZSpeedInc = p:CreateValue("DZ spd. inc.", "km/h")
-    local wSpeedDiff = p:CreateValue("Speed diff", "km/h")
-    local wBrakeMaxSpeed = p:CreateValue("Brake Max Speed", "km/h")
-    local wPid = p:CreateValue("Pid")
-    local wDistToAtmo = p:CreateValue("Atmo dist.", "m")
-    local wSpeed = a:CreateValue("Abs. speed", "km/h")
-    local wAdjTowards = a:CreateValue("Adj. towards")
-    local wAdjDist = a:CreateValue("Adj. distance", "m")
-    local wAdjAcc = a:CreateValue("Adj. acc", "m/s2")
-    local wAdjBrakeDistance = a:CreateValue("Adj. brake dist.", "m")
-    local wAdjSpeed = a:CreateValue("Adj. speed (limit)", "m/s")
     local currentWP
     local temporaryWaypoint
     local lastDevDist = 0
@@ -280,9 +286,8 @@ function FlightFSM.New(settings)
     ---@return number
     local function evaluateNewLimit(currentLimit, newLimit, reason)
         if newLimit >= 0 and newLimit < currentLimit then
-            local msg = string.format("%.1f (%s)", calc.Mps2Kph(newLimit), reason)
-            wTargetSpeed:Set(msg)
-            pub.Publish(topicNumber.flightTargetSpeed, msg)
+            flightData.targetSpeed = newLimit
+            flightData.targetSpeedReason = reason
             return newLimit
         end
 
@@ -310,9 +315,8 @@ function FlightFSM.New(settings)
         local pos = CurrentPos()
         local firstBody = universe.CurrentGalaxy():BodiesInPath(Ray.New(pos, velocity:Normalize()))[1]
         local inAtmo = false
-        wFinalSpeed:Set(string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), remainingDistance))
-        pub.Publish(topicNumber.flightFinalSpeed, calc.Mps2Kph(finalSpeed))
-        pub.Publish(topicNumber.flightFinalSpeedDist, remainingDistance)
+        flightData.finalSpeed = finalSpeed
+        flightData.finalSpeedDistance = remainingDistance
 
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
 
@@ -321,23 +325,19 @@ function FlightFSM.New(settings)
             inAtmo = firstBody:DistanceToAtmo(pos) == 0
 
             local dzSpeedIncrease = speedIncreaseInDeadZone(firstBody)
-            wDZSpeedInc:Set(calc.Mps2Kph(dzSpeedIncrease))
-            pub.Publish(topicNumber.flightDZSpeedInc, calc.Mps2Kph(dzSpeedIncrease))
+            flightData.dzSpeedInc = dzSpeedIncrease
 
             if not inAtmo and willHitAtmo then
                 -- Override to ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
                 finalSpeed = max(0, construct.getFrictionBurnSpeed() - dzSpeedIncrease)
                 remainingDistance = distanceToAtmo
-                wFinalSpeed:Set(string.format("%.1f km/h in %.1f m", calc.Mps2Kph(finalSpeed), distanceToAtmo))
-                pub.Publish(topicNumber.flightFinalSpeed, calc.Mps2Kph(finalSpeed))
-                pub.Publish(topicNumber.flightFinalSpeedDist, remainingDistance)
+                flightData.finalSpeed = finalSpeed
+                flightData.finalSpeedDistance = distanceToAtmo
             end
 
-            pub.Publish(topicNumber.flightAtmoDist, calc.Round(distanceToAtmo, 1))
-            wDistToAtmo:Set(calc.Round(distanceToAtmo, 1))
+            flightData.distanceToAtmo = distanceToAtmo
         else
-            pub.Publish(topicNumber.flightAtmoDist, -1)
-            wDistToAtmo:Set("-")
+            flightData.distanceToAtmo = -1
         end
 
         local brakeEfficiency = Ternary(inAtmo, atmoBrakeEfficiencyFactor, 1)
@@ -357,8 +357,7 @@ function FlightFSM.New(settings)
 
         if waypoint.Reached() then
             targetSpeed = evaluateNewLimit(targetSpeed, 0, "Hold")
-            pub.Publish(topicNumber.flightBrakeMaxSpeed, 0)
-            wBrakeMaxSpeed:Set(0)
+            flightData.brakeMaxSpeed = 0
         else
             local brakeMaxSpeed = calcMaxAllowedSpeed(
                 -brakes:GravityInfluencedAvailableDeceleration() * brakeEfficiency,
@@ -369,8 +368,7 @@ function FlightFSM.New(settings)
                 targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brakes")
             end
 
-            wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
-            pub.Publish(topicNumber.flightBrakeMaxSpeed, calc.Round(calc.Mps2Kph(brakeMaxSpeed), 1))
+            flightData.brakeMaxSpeed = brakeMaxSpeed
 
             if inAtmo and abs(direction:Dot(GravityDirection())) > 0.7 and
                 brakeMaxSpeed <= linearThreshold then
@@ -389,8 +387,7 @@ function FlightFSM.New(settings)
             end
         end
 
-        wPointDistance:Set(calc.Round(remainingDistance, 2))
-        pub.Publish(topicNumber.wpDist, calc.Round(remainingDistance, 2))
+        flightData.waypointDist = remainingDistance
 
         return targetSpeed
     end
@@ -421,14 +418,10 @@ function FlightFSM.New(settings)
         local brakeDistance = CalcBrakeDistance(currSpeed, maxBrakeAcc) + warmupTime * currSpeed
         local speedLimit = calc.Scale(distance, 0, toleranceDistance, adjustmentSpeedMin, adjustmentSpeedMax)
 
-        wAdjTowards:Set(movingTowardsTarget)
-        pub.Publish(topicNumber.adjustTowards, movingTowardsTarget)
-        wAdjDist:Set(calc.Round(distance, 4))
-        pub.Publish(topicNumber.adjustDist, calc.Round(distance, 4))
-        wAdjBrakeDistance:Set(calc.Round(brakeDistance))
-        pub.Publish(topicNumber.adjustBrakeDist, calc.Round(brakeDistance))
-        wAdjSpeed:Set(calc.Round(currSpeed, 1) .. "(" .. calc.Round(speedLimit, 1) .. ")")
-        pub.Publish(topicNumber.adjustSpeed, calc.Round(currSpeed, 1) .. "(" .. calc.Round(speedLimit, 1) .. ")")
+        adjustData.towards = movingTowardsTarget
+        adjustData.distance = distance
+        adjustData.brakeDist = brakeDistance
+        adjustData.speed = currSpeed
 
         local adjustmentAcc = nullVec
 
@@ -462,9 +455,8 @@ function FlightFSM.New(settings)
         end
 
         lastDevDist = distance
+        adjustData.acceleration = adjustmentAcc:Len()
 
-        wAdjAcc:Set(calc.Round(adjustmentAcc:Len(), 2))
-        pub.Publish(topicNumber.adjustAcc, calc.Round(adjustmentAcc:Len(), 2))
         return adjustmentAcc
     end
 
@@ -514,8 +506,7 @@ function FlightFSM.New(settings)
         local brakeCounter = brakes:Feed(Ternary(wrongDir, 0, speedLimit), currentSpeed)
 
         local diff = speedLimit - currentSpeed
-        wSpeedDiff:Set(calc.Round(calc.Mps2Kph(diff), 1))
-        pub.Publish(topicNumber.flightSpeedDiff, calc.Round(calc.Mps2Kph(diff), 1))
+        flightData.speedDiff = diff
 
         -- Feed the pid with 1/10:th to give it a wider working range.
         speedPid:inject(diff / 10)
@@ -524,8 +515,7 @@ function FlightFSM.New(settings)
         -- skewed outside its intended values and push us off the path, or make us fall when holding position (if pid gets <0)
         local pidValue = clamp(speedPid:get(), 0, 1)
 
-        wPid:Set(calc.Round(pidValue, 5))
-        pub.Publish(topicNumber.flightSpeedPid, calc.Round(pidValue, 5))
+        flightData.pid = pidValue
 
         local acceleration
 
@@ -585,12 +575,10 @@ function FlightFSM.New(settings)
         end
 
         if state == nil then
-            wStateName:Set("No state!")
-            pub.Publish(topicString.flightFSMState, "No state!")
+            flightData.fsmState = "No state"
             return
         else
-            wStateName:Set(state:Name())
-            pub.Publish(topicString.flightFSMState, state:Name())
+            flightData.fsmState = state:Name()
             state.Enter()
         end
 
@@ -630,11 +618,11 @@ function FlightFSM.New(settings)
 
     function s.Update()
         if currentState ~= nil then
-            wAcceleration:Set(calc.Round(Acceleration():Len(), 2))
-            pub.Publish(topicNumber.flightAcceleration, calc.Round(Acceleration():Len(), 2))
-            wSpeed:Set(calc.Round(calc.Mps2Kph(Velocity():Len()), 1))
-            pub.Publish(topicNumber.flightAbsSpeed, calc.Round(calc.Mps2Kph(Velocity():Len()), 1))
+            flightData.acceleration = Acceleration():Len()
+            flightData.absSpeed = Velocity():Len()
             currentState.Update()
+            pub.Publish("FlightData", flightData)
+            pub.Publish("AdjustmentData", adjustData)
         end
     end
 

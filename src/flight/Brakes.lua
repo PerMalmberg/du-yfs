@@ -1,7 +1,5 @@
-local EngineGroup = require("abstraction/EngineGroup")
 local vehicle = require("abstraction/Vehicle"):New()
 local calc = require("util/Calc")
-local sharedPanel = require("panel/SharedPanel")()
 local universe = require("universe/Universe").Instance()
 local nullVec = require("math/Vec3").New()
 local PID = require("cpml/pid")
@@ -11,7 +9,6 @@ local Velocity = vehicle.velocity.Movement
 local GravityDirection = vehicle.world.GravityDirection
 local G = vehicle.world.G
 local utils = require("cpml/utils")
-local topics = require("Topics")
 local pub = require("util/PubSub").Instance()
 local clamp = utils.clamp
 local max = math.max
@@ -26,19 +23,14 @@ function Brake.Instance()
         return instance
     end
 
-    local p = sharedPanel:Get("Brakes")
     local pid = PID(1, 0, 0.01)
     local deceleration = 0
-    local wDeceleration = p:CreateValue("Max deceleration", "m/s2")
-    local wCurrentDec = p:CreateValue("Brake dec.", "m/s2")
-    local wMass = p:CreateValue("Mass", "T")
-    local wPid = p:CreateValue("Pid")
+    local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0 } ---@type BrakeData
 
     local s = {
         engaged = false,
         forced = false,
-        totalMass = TotalMass(),
-        brakeGroup = EngineGroup("brake"),
+        totalMass = TotalMass()
     }
 
     ---Returns the deceleration the construct is capable of in the given movement.
@@ -58,13 +50,9 @@ function Brake.Instance()
 
     function s:BrakeUpdate()
         s.totalMass = TotalMass()
-        local n = topics.numbers
-        wDeceleration:Set(calc.Round(rawAvailableDeceleration(), 2))
-        pub.Publish(n.brakeMaxDeceleration, calc.Round(rawAvailableDeceleration(), 2))
-        wCurrentDec:Set(calc.Round(construct.getCurrentBrake() / s.totalMass, 2))
-        pub.Publish(n.brakeCurrentDec, calc.Round(construct.getCurrentBrake() / s.totalMass, 2))
-        wMass:Set(calc.Round(s.totalMass / 1000, 1))
-        pub.Publish(n.brakeMass, calc.Round(s.totalMass / 1000, 1))
+        brakeData.maxDeceleration = rawAvailableDeceleration()
+        brakeData.currentDeceleration = construct.getCurrentBrake() / s.totalMass
+        pub.Publish("BrakeData", brakeData)
     end
 
     local function brakeCounter()
@@ -90,8 +78,7 @@ function Brake.Instance()
     function s:BrakeFlush()
         -- The brake vector must point against the direction of travel.
         local brakeVector = finalDeceleration()
-        unit.setEngineCommand(s.brakeGroup:Intersection(), { brakeVector:Unpack() }, { 0, 0, 0 }, true, true,
-            "", "", "", 0.001)
+        unit.setEngineCommand("brake", { brakeVector:Unpack() }, { 0, 0, 0 }, true, true, "", "", "", 0.001)
     end
 
     function s:GravityInfluencedAvailableDeceleration()
@@ -114,8 +101,7 @@ function Brake.Instance()
         pid:inject(-diff) -- Negate to make PID become positive when we have too high speed.
 
         local brakeValue = clamp(pid:get(), 0, 1)
-        wPid:Set(calc.Round(brakeValue, 4))
-        pub.Publish(topics.brakePid, calc.Round(brakeValue, 4))
+        brakeData.pid = brakeValue
 
         deceleration = brakeValue * rawAvailableDeceleration()
 

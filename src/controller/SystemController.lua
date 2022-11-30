@@ -3,13 +3,13 @@ local FineTuneController  = require("controller/FineTuneController")
 local Criteria            = require("input/Criteria")
 local Task                = require("system/Task")
 local ValueTree           = require("util/ValueTree")
+local InfoCentral         = require("info/InfoCentral")
 local log                 = require("debug/Log")()
 local pub                 = require("util/PubSub").Instance()
 local commandLine         = require("commandline/CommandLine").Instance()
 local input               = require("input/Input").Instance()
 local keys                = require("input/Keys")
 local brakes              = require("flight/Brakes").Instance()
-local topics              = require("Topics")
 local Stream              = require("Stream")
 local serializer          = require("util/Serializer")
 
@@ -37,6 +37,7 @@ function SystemController.New(flightCore, settings)
     local mode = FlightMode.None ---@type FlightMode
     local ifc ---@type ControlInterface
 
+    local info = InfoCentral.Instance()
     local routeController = flightCore.GetRouteController()
 
     local function holdPosition()
@@ -63,18 +64,6 @@ function SystemController.New(flightCore, settings)
 
         local tree = ValueTree.New()
         local stream = Stream.New(screen, dataReceived, 1, timeOut)
-
-        for _, path in pairs(topics.numbers) do
-            pub.RegisterNumber(path, function(topic, value)
-                tree.Set(topic, value)
-            end)
-        end
-
-        for _, path in pairs(topics.strings) do
-            pub.RegisterString(path, function(topic, value)
-                tree.Set(topic, value)
-            end)
-        end
 
         while screen do
             coroutine.yield()
