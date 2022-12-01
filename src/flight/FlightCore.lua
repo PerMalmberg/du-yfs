@@ -71,9 +71,9 @@ function FlightCore.New(routeController, flightFSM)
 
     local flushHandlerId = 0
     local updateHandlerId = 0
-    local pitch = AxisControl(AxisControlPitch)
-    local roll = AxisControl(AxisControlRoll)
-    local yaw = AxisControl(AxisControlYaw)
+    local pitch = AxisControl.New(ControlledAxis.Pitch)
+    local roll = AxisControl.New(ControlledAxis.Roll)
+    local yaw = AxisControl.New(ControlledAxis.Yaw)
     local waypointReachedSignaled = false
     local wWaypointDistance = p:CreateValue("Distance", "m")
     local wWaypointMargin = p:CreateValue("Margin", "m")
@@ -152,9 +152,9 @@ function FlightCore.New(routeController, flightFSM)
         flushHandlerId = system:onEvent("onFlush", s.fcFlush)
         ---@diagnostic disable-next-line: undefined-field
         updateHandlerId = system:onEvent("onUpdate", s.fcUpdate)
-        pitch:ReceiveEvents()
-        roll:ReceiveEvents()
-        yaw:ReceiveEvents()
+        pitch.ReceiveEvents()
+        roll.ReceiveEvents()
+        yaw.ReceiveEvents()
     end
 
     ---Disconnects events
@@ -163,9 +163,9 @@ function FlightCore.New(routeController, flightFSM)
         system:clearEvent("flush", flushHandlerId)
         ---@diagnostic disable-next-line: undefined-field
         system:clearEvent("update", updateHandlerId)
-        pitch:StopEvents()
-        roll:StopEvents()
-        yaw:StopEvents()
+        pitch.StopEvents()
+        roll.StopEvents()
+        yaw.StopEvents()
     end
 
     local function align()
@@ -175,18 +175,18 @@ function FlightCore.New(routeController, flightFSM)
         local target = waypoint.YawAndPitch(prev)
 
         if target ~= nil then
-            yaw:SetTarget(target)
-            pitch:SetTarget(target)
+            yaw.SetTarget(target)
+            pitch.SetTarget(target)
         else
-            yaw:Disable()
-            pitch:Disable()
+            yaw.Disable()
+            pitch.Disable()
         end
 
         local topSideAlignment = waypoint.Roll(prev)
         if topSideAlignment ~= nil then
-            roll:SetTarget(topSideAlignment)
+            roll.SetTarget(topSideAlignment)
         else
-            roll:Disable()
+            roll.Disable()
         end
     end
 
@@ -244,9 +244,9 @@ function FlightCore.New(routeController, flightFSM)
                     unit.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
                 end
 
-                pitch:AxisFlush(false)
-                roll:AxisFlush(false)
-                yaw:AxisFlush(true)
+                pitch.AxisFlush(false)
+                roll.AxisFlush(false)
+                yaw.AxisFlush(true)
                 brakes:BrakeFlush()
             end,
             traceback
