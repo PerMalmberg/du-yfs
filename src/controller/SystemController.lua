@@ -126,6 +126,11 @@ function SystemController.New(flightCore, settings)
         -- Setup brakes
         input.Register(keys.brake, Criteria.New().OnPress(), function() brakes:Forced(true) end)
         input.Register(keys.brake, Criteria.New().OnRelease(), function() brakes:Forced(false) end)
+
+        commandLine.Accept("idle", function(data)
+            log:Info("Going idle!")
+            flightCore.GoIdle()
+        end)
     end
 
     ---Sets new operational mode

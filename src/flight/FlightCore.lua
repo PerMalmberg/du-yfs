@@ -6,7 +6,6 @@ local calc = r.calc
 local Ternary = r.calc.Ternary
 local Vec3 = r.Vec3
 local nullVec = Vec3.New()
-local pub = require("util/PubSub").Instance()
 
 local AxisControl = require("flight/AxisControl")
 local Waypoint = require("flight/Waypoint")
@@ -24,6 +23,7 @@ require("flight/state/Require")
 ---@field Turn fun(degrees:number, axis:Vec3):Vec3
 ---@field StopEvents fun()
 ---@field CreateWPFromPoint fun(p:Point):Waypoint
+---@field GoIdle fun()
 
 
 local FlightCore = {}
@@ -43,7 +43,7 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
     local dir = Vec3.New(opt.Get(PointOptions.LOCK_DIRECTION, nullVec))
     local margin = opt.Get(PointOptions.MARGIN, defaultMargin)
     local finalSpeed = Ternary(lastInRoute, 0, opt.Get(PointOptions.FINAL_SPEED, defaultSpeed))
-    local maxSpeed = opt.Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored).
+    local maxSpeed = opt.Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored/max speed.
 
     local coordinate = universe.ParsePosition(point.Pos()).Coordinates()
     local wp = Waypoint.New(coordinate, finalSpeed, maxSpeed, margin,
@@ -111,7 +111,8 @@ function FlightCore.New(routeController, flightFSM)
 
         previousWaypoint = currentWaypoint
         waypointReachedSignaled = false
-        currentWaypoint = s.CreateWPFromPoint(nextPoint, route.LastPointReached())
+        currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached())
+        system.setWaypoint(nextPoint.Pos(), false)
     end
 
     ---Starts the flight
@@ -130,6 +131,10 @@ function FlightCore.New(routeController, flightFSM)
         else
             fsm.SetState(Hold.New(fsm))
         end
+    end
+
+    function s.GoIdle()
+        flightFSM.SetState(Idle.New(flightFSM))
     end
 
     ---Rotates all waypoints around the axis with the given angle

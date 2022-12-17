@@ -52,21 +52,27 @@ function RouteModeController.New(input, cmd, flightCore)
             end
         end)
 
-        cmd.Accept("route-load", function(data)
-            rc.LoadRoute(data.commandValue)
-        end).AsString()
+        cmd.Accept("route-load",
+            ---@param data {commandValue:string}
+            function(data)
+                rc.LoadRoute(data.commandValue)
+            end).AsString()
 
-        cmd.Accept("route-create", function(data)
-            rc.CreateRoute(data.commandValue)
-        end).AsString().Mandatory()
+        cmd.Accept("route-create",
+            ---@param data {commandValue:string}
+            function(data)
+                rc.CreateRoute(data.commandValue)
+            end).AsString().Mandatory()
 
         cmd.Accept("route-save", function(data)
             rc.SaveRoute()
         end).AsEmpty()
 
-        cmd.Accept("route-delete", function(data)
-            rc.DeleteRoute(data.commandValue)
-        end).AsString().Mandatory()
+        cmd.Accept("route-delete",
+            ---@param data {commandValue:string}
+            function(data)
+                rc.DeleteRoute(data.commandValue)
+            end).AsString().Mandatory()
 
         cmd.Accept("route-print", function(data)
             local route = rc.CurrentEdit()
@@ -80,20 +86,22 @@ function RouteModeController.New(input, cmd, flightCore)
 
                 local opts = p.Options()
                 for k, v in pairs(opts.Data()) do
-                    system.print(string.format(" - %s: %s", k, tostring(v)))
+                    log:Info("- ", k, ": ", v)
                 end
             end
 
         end)
 
-        cmd.Accept("route-activate", function(data)
-            local reverse = calc.Ternary(data.reverse or false, RouteOrder.REVERSED, RouteOrder.FORWARD) ---@type RouteOrder
+        cmd.Accept("route-activate",
+            ---@param data {commandValue:string, reverse:boolean}
+            function(data)
+                local reverse = calc.Ternary(data.reverse or false, RouteOrder.REVERSED, RouteOrder.FORWARD) ---@type RouteOrder
 
-            if rc.ActivateRoute(data.commandValue, reverse) then
-                flightCore.StartFlight()
-                log:Info("Flight started")
-            end
-        end).AsString().Mandatory()
+                if rc.ActivateRoute(data.commandValue, reverse) then
+                    flightCore.StartFlight()
+                    log:Info("Flight started")
+                end
+            end).AsString().Mandatory()
             .Option("reverse").AsEmptyBoolean()
 
 
@@ -112,28 +120,32 @@ function RouteModeController.New(input, cmd, flightCore)
 
         addPointOptions(addCurrentToRoute)
 
-        local addNamed = cmd.Accept("route-add-named-pos", function(data)
-            local ref = rc.LoadWaypoint(data.commandValue)
+        local addNamed = cmd.Accept("route-add-named-pos",
+            ---@param data {commandValue:string}
+            function(data)
+                local ref = rc.LoadWaypoint(data.commandValue)
 
-            if ref then
-                local route = rc.CurrentEdit()
-                if route == nil then
-                    log:Error("No route open for edit")
-                else
-                    local p = route.AddWaypointRef(data.commandValue)
-                    p.SetOptions(createOptions(data))
-                    log:Info("Added position to route")
+                if ref then
+                    local route = rc.CurrentEdit()
+                    if route == nil then
+                        log:Error("No route open for edit")
+                    else
+                        local p = route.AddWaypointRef(data.commandValue)
+                        p.SetOptions(createOptions(data))
+                        log:Info("Added position to route")
+                    end
                 end
-            end
-        end).AsString()
+            end).AsString()
         addPointOptions(addNamed)
 
-        cmd.Accept("pos-save-as", function(data)
-            local pos = universe.CreatePos(vehicle.position.Current()).AsPosString()
-            if rc.StoreWaypoint(data.commandValue, pos) then
-                log:Info("Position saved as ", data.commandValue)
-            end
-        end).AsString().Mandatory()
+        cmd.Accept("pos-save-as",
+            ---@param data {commandValue:string}
+            function(data)
+                local pos = universe.CreatePos(vehicle.position.Current()).AsPosString()
+                if rc.StoreWaypoint(data.commandValue, pos) then
+                    log:Info("Position saved as ", data.commandValue)
+                end
+            end).AsString().Mandatory()
 
         cmd.Accept("pos-list", function(_)
             for _, data in ipairs(rc.GetWaypoints()) do
@@ -141,19 +153,23 @@ function RouteModeController.New(input, cmd, flightCore)
             end
         end)
 
-        cmd.Accept("pos-delete", function(data)
-            if rc.DeleteWaypoint(data.commandValue) then
-                log:Info("Waypoint deleted")
-            end
-        end).AsString().Mandatory()
+        cmd.Accept("pos-delete",
+            ---@param data {commandValue:string}
+            function(data)
+                if rc.DeleteWaypoint(data.commandValue) then
+                    log:Info("Waypoint deleted")
+                end
+            end).AsString().Mandatory()
 
-        local rel = cmd.Accept("pos-create-along-gravity", function(data)
-            local pos = vehicle.position.Current() - universe.VerticalReferenceVector() * data.u
-            local posStr = universe.CreatePos(pos).AsPosString()
-            if rc.StoreWaypoint(data.commandValue, posStr) then
-                log:Info("Stored postion ", posStr, " as ", data.commandValue)
-            end
-        end).AsString().Mandatory()
+        local rel = cmd.Accept("pos-create-along-gravity",
+            ---@param data {commandValue:string, u:number}
+            function(data)
+                local pos = vehicle.position.Current() - universe.VerticalReferenceVector() * data.u
+                local posStr = universe.CreatePos(pos).AsPosString()
+                if rc.StoreWaypoint(data.commandValue, posStr) then
+                    log:Info("Stored postion ", posStr, " as ", data.commandValue)
+                end
+            end).AsString().Mandatory()
         rel.Option("-u").AsNumber().Mandatory()
     end
 
