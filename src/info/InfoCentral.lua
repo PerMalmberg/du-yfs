@@ -30,6 +30,7 @@ function InfoCentral.Instance()
         wStateName = nil,
         wPointDistance = nil,
         wAcceleration = nil,
+        wCtrlAcceleration = nil,
         wTargetSpeed = nil,
         wFinalSpeed = nil,
         wDZSpeedInc = nil,
@@ -91,6 +92,7 @@ function InfoCentral.Instance()
             flightInfo.wStateName = p:CreateValue("State", "")
             flightInfo.wPointDistance = p:CreateValue("Point dist.", "m")
             flightInfo.wAcceleration = p:CreateValue("Acceleration", "m/s2")
+            flightInfo.wCtrlAcceleration = p:CreateValue("Ctrl. acc.", "m/s2")
             flightInfo.wTargetSpeed = p:CreateValue("Target speed")
             flightInfo.wFinalSpeed = p:CreateValue("Final speed")
             flightInfo.wDZSpeedInc = p:CreateValue("DZ spd. inc.", "km/h")
@@ -108,6 +110,7 @@ function InfoCentral.Instance()
             flightInfo.wStateName:Set(value.fsmState)
             flightInfo.wPointDistance:Set(calc.Round(value.waypointDist, 2))
             flightInfo.wAcceleration:Set(format("%.1f", value.acceleration))
+            flightInfo.wCtrlAcceleration:Set(format("%.1f", value.controlAcc))
             flightInfo.wTargetSpeed:Set(format("%.1f (%s)", calc.Mps2Kph(value.targetSpeed), value.targetSpeedReason))
             flightInfo.wFinalSpeed:Set(format("%.1f km/h in %.1f m", calc.Mps2Kph(value.finalSpeed),
                 value.finalSpeedDistance))

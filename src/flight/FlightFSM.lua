@@ -30,8 +30,13 @@ local min = math.min
 local max = math.max
 local MAX_INT = math.maxinteger
 
-local brakeCutoffSpeed = 100 -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
-local linearThreshold = brakeCutoffSpeed * 2
+local atmoBrakeCutoffSpeed = 100 -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
+local atmoBrakeEfficiencyFactor = 0.6
+local spaceEngineTurnOffTime = 10
+local engineTurnOffThreshold = calc.Kph2Mps(100)
+local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
+
+
 local longitudinal = "longitudinal"
 local vertical = "vertical"
 local lateral = "lateral"
@@ -110,8 +115,7 @@ function FlightFSM.New(settings)
     local adjustmentSpeedMax = calc.Kph2Mps(50)
     local warmupTime = 1
 
-    local atmoBrakeEfficiencyFactor = 0.6
-
+    ---@type FlightData
     local flightData = {
         targetSpeed = 0,
         targetSpeedReason = "",
@@ -126,6 +130,7 @@ function FlightFSM.New(settings)
         pid = 0,
         fsmState = "No state",
         acceleration = 0,
+        controlAcc = 0,
         absSpeed = 0
     }
 
@@ -294,6 +299,24 @@ function FlightFSM.New(settings)
         return currentLimit
     end
 
+    ---Adjust the speed to be linear based on the remaining distance
+    ---@param currentTargetSpeed number Current target speed
+    ---@param remainingDistance number Remaining distance
+    ---@param linearStart number Distance from end point to start linear approach
+    local function linearApproach(currentTargetSpeed, remainingDistance, linearStart)
+        if remainingDistance > linearStart then
+            return currentTargetSpeed
+        end
+
+        -- 1000m -> 500kph, 500m -> 250kph etc.
+        local distanceBasedSpeedLimit = calc.Kph2Mps(remainingDistance)
+        if distanceBasedSpeedLimit < OneKphPh then
+            distanceBasedSpeedLimit = OneKphPh
+        end
+
+        return evaluateNewLimit(currentTargetSpeed, distanceBasedSpeedLimit, "Approaching")
+    end
+
     ---Gets the maximum speed we may have and still be able to stop
     ---@param deltaTime number Time since last tick, seconds
     ---@param velocity Vec3 Current velocity
@@ -327,8 +350,10 @@ function FlightFSM.New(settings)
             local dzSpeedIncrease = speedIncreaseInDeadZone(firstBody)
             flightData.dzSpeedInc = dzSpeedIncrease
 
-            if not inAtmo and willHitAtmo then
-                -- Override to ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
+            -- Ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
+            if not inAtmo and willHitAtmo
+                and remainingDistance > distanceToAtmo -- Waypoint may be closer than atmo
+            then
                 finalSpeed = max(0, construct.getFrictionBurnSpeed() - dzSpeedIncrease)
                 remainingDistance = distanceToAtmo
                 flightData.finalSpeed = finalSpeed
@@ -339,8 +364,6 @@ function FlightFSM.New(settings)
         else
             flightData.distanceToAtmo = -1
         end
-
-        local brakeEfficiency = Ternary(inAtmo, atmoBrakeEfficiencyFactor, 1)
 
         if waypoint.MaxSpeed() > 0 then
             targetSpeed = evaluateNewLimit(targetSpeed, waypoint.MaxSpeed(), "Route")
@@ -359,31 +382,33 @@ function FlightFSM.New(settings)
             targetSpeed = evaluateNewLimit(targetSpeed, 0, "Hold")
             flightData.brakeMaxSpeed = 0
         else
+            -- When in space, engines take a long time to turn off which causes overshoots
+            local engineTurnOffDistance = 0
+            if not inAtmo and currentSpeed > engineTurnOffThreshold then
+                engineTurnOffDistance = currentSpeed * spaceEngineTurnOffTime
+            end
+
+            local brakeEfficiency = Ternary(inAtmo, atmoBrakeEfficiencyFactor, 1)
             local brakeMaxSpeed = calcMaxAllowedSpeed(
                 -brakes:GravityInfluencedAvailableDeceleration() * brakeEfficiency,
-                remainingDistance, finalSpeed)
+                clamp(remainingDistance - engineTurnOffDistance, 0, remainingDistance), finalSpeed)
 
-            -- When standing still, we get no brake speed as brakes give no force at all.
-            if brakeMaxSpeed > 0 then
+            -- When standing still in atmo, we get no brake speed as brakes give no force at all.
+            if not inAtmo or currentSpeed > ignoreAtmoBrakeLimitThreshold then
                 targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brakes")
             end
 
             flightData.brakeMaxSpeed = brakeMaxSpeed
 
-            if inAtmo and abs(direction:Dot(GravityDirection())) > 0.7 and
-                brakeMaxSpeed <= linearThreshold then
+            if inAtmo and abs(direction:Dot(GravityDirection())) > 0.7 then
+                -- Moving vertically in atmo
                 -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
                 -- when we come to a stand still. To ensure that engines have enough time to warmup as well as
                 -- don't abruptly cut off when going upwards, we enforce a linear slowdown, down to the final speed.
-
-                -- 1000m -> 500kph, 500m -> 250kph etc.
-                local distanceBasedSpeedLimit = calc.Kph2Mps(remainingDistance * 0.8)
-                distanceBasedSpeedLimit = max(distanceBasedSpeedLimit, finalSpeed)
-                if distanceBasedSpeedLimit < OneKphPh then
-                    distanceBasedSpeedLimit = OneKphPh
-                end
-
-                targetSpeed = evaluateNewLimit(targetSpeed, distanceBasedSpeedLimit, "Approaching")
+                targetSpeed = linearApproach(targetSpeed, remainingDistance, 1000)
+            elseif not inAtmo then
+                -- In space we want a linear approach just during the last part
+                targetSpeed = linearApproach(targetSpeed, remainingDistance, 75)
             end
         end
 
@@ -492,7 +517,7 @@ function FlightFSM.New(settings)
 
     ---@param deltaTime number The time since last Flush
     ---@param waypoint Waypoint The next waypoint
-    ---@return Vec3
+    ---@return Vec3 The acceleration
     local function move(deltaTime, waypoint)
         local direction = waypoint:DirectionTo()
 
@@ -528,6 +553,7 @@ function FlightFSM.New(settings)
                 engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
         end
 
+        flightData.controlAcc = acceleration:Len()
         return acceleration
     end
 
