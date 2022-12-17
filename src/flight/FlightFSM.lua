@@ -10,7 +10,6 @@ local Ternary = calc.Ternary
 local universe = r.universe
 local Vec3 = r.Vec3
 local nullVec = Vec3.New()
-local sharedPanel = require("panel/SharedPanel")()
 local engine = r.engine
 local EngineGroup = require("abstraction/EngineGroup")
 local Accumulator = require("util/Accumulator")
@@ -20,6 +19,7 @@ local Ray = require("util/Ray")
 require("flight/state/Require")
 local CurrentPos = vehicle.position.Current
 local Velocity = vehicle.velocity.Movement
+local TotalMass = vehicle.mass.Total
 local Acceleration = vehicle.acceleration.Movement
 local GravityDirection = vehicle.world.GravityDirection
 local utils = require("cpml/utils")
@@ -221,11 +221,8 @@ function FlightFSM.New(settings)
     end
 
     local currentState ---@type FlightState
-
-    local p = sharedPanel:Get("Movement")
-    local a = sharedPanel:Get("Adjustment")
-    local currentWP
-    local temporaryWaypoint
+    local currentWP ---@type Waypoint
+    local temporaryWaypoint ---@type Waypoint|nil
     local lastDevDist = 0
     local deviationAccum = Accumulator:New(10, Accumulator.Truth)
 
@@ -235,11 +232,10 @@ function FlightFSM.New(settings)
 
     local s = {}
 
-
     ---Selects the waypoint to go to
     ---@return Waypoint
     local function selectWP()
-        return Ternary(temporaryWaypoint, temporaryWaypoint, currentWP)
+        if temporaryWaypoint == nil then return currentWP else return temporaryWaypoint end
     end
 
     ---Calculates the width of the dead zone
@@ -299,12 +295,25 @@ function FlightFSM.New(settings)
         return currentLimit
     end
 
+    ---Calculates the start distance for the linear approach
+    ---@return number The linear start distance in meters
+    local function calcLinearApproachStart()
+        if vehicle.world.IsInSpace() then
+            return 75
+        else
+            if TotalMass() > 10000 then
+                return 1000
+            end
+
+            return 2
+        end
+    end
+
     ---Adjust the speed to be linear based on the remaining distance
     ---@param currentTargetSpeed number Current target speed
     ---@param remainingDistance number Remaining distance
-    ---@param linearStart number Distance from end point to start linear approach
-    local function linearApproach(currentTargetSpeed, remainingDistance, linearStart)
-        if remainingDistance > linearStart then
+    local function linearApproach(currentTargetSpeed, remainingDistance)
+        if remainingDistance > calcLinearApproachStart() then
             return currentTargetSpeed
         end
 
@@ -405,10 +414,10 @@ function FlightFSM.New(settings)
                 -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
                 -- when we come to a stand still. To ensure that engines have enough time to warmup as well as
                 -- don't abruptly cut off when going upwards, we enforce a linear slowdown, down to the final speed.
-                targetSpeed = linearApproach(targetSpeed, remainingDistance, 1000)
+                targetSpeed = linearApproach(targetSpeed, remainingDistance)
             elseif not inAtmo then
                 -- In space we want a linear approach just during the last part
-                targetSpeed = linearApproach(targetSpeed, remainingDistance, 75)
+                targetSpeed = linearApproach(targetSpeed, remainingDistance)
             end
         end
 

@@ -12,6 +12,10 @@
   * If the reveresed route makes the construct within the limit, run the route reveresed.
   * Button to set waypoint to closes endpoint
 
+# FAQ
+
+- Q: It accelerates, then brakes when taking off
+- A: Too heavy load, brake calculations say max 0 km/h.
 
 ## Screens
 
