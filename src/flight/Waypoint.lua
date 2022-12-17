@@ -35,7 +35,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
     local s = {
         destination = destination,
         finalSpeed = finalSpeed,
-        maxSpeed = Ternary(finalSpeed > maxSpeed, finalSpeed, maxSpeed), ---@type number -- Guard against bad settings.
+        maxSpeed = Ternary(finalSpeed > maxSpeed and maxSpeed > 0, finalSpeed, maxSpeed), ---@type number -- Guard against bad settings.
         margin = margin,
         rollFunc = rollFunc,
         yawPitchFunc = yawPitchFunc,
