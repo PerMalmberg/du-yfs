@@ -52,10 +52,12 @@ function RouteModeController.New(input, cmd, flightCore)
             end
         end)
 
-        cmd.Accept("route-load",
+        cmd.Accept("route-edit",
             ---@param data {commandValue:string}
             function(data)
-                rc.LoadRoute(data.commandValue)
+                if rc.EditRoute(data.commandValue) then
+                    log:Info("Route open for edit")
+                end
             end).AsString()
 
         cmd.Accept("route-create",
@@ -89,7 +91,6 @@ function RouteModeController.New(input, cmd, flightCore)
                     log:Info("- ", k, ": ", v)
                 end
             end
-
         end)
 
         cmd.Accept("route-activate",
@@ -104,6 +105,11 @@ function RouteModeController.New(input, cmd, flightCore)
             end).AsString().Mandatory()
             .Option("reverse").AsEmptyBoolean()
 
+        cmd.Accept("route-reverse", function(data)
+            if rc.ReverseRoute() then
+                log:Info("Route reveresed")
+            end
+        end)
 
         local addCurrentToRoute = cmd.Accept("route-add-current-pos", function(data)
             local route = rc.CurrentEdit()

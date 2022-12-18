@@ -56,12 +56,14 @@ describe("RouteController #flight", function()
         assert.are_equal(1, TableLen(r.Points()))
         c.SaveRoute()
 
-        c.LoadRoute("test")
+        c.EditRoute("test")
         r = c.CurrentEdit()
         assert.are_equal(2, TableLen(r.Points()))
 
         assert.is_nil(c.CurrentRoute())
-        c.ActivateRoute("test")
+        assert.False(c.ActivateRoute("test"))
+        assert.True(c.SaveRoute())
+        assert.True(c.ActivateRoute("test"))
         r = c.CurrentRoute()
         assert.are_equal(2, TableLen(r.Points()))
 
@@ -81,7 +83,7 @@ describe("RouteController #flight", function()
     end)
 
     it("Cannot load route that does not exist", function()
-        assert.is_nil(c.LoadRoute("doesn't exist"))
+        assert.is_nil(c.EditRoute("doesn't exist"))
     end)
 
     it("Can get waypoints", function()
@@ -108,7 +110,7 @@ describe("RouteController #flight", function()
 
         assert.is_not_nil(r.AddWaypointRef("a second point"))
         assert.is_true(c.SaveRoute())
-        r = c.LoadRoute("a route")
+        r = c.EditRoute("a route")
         assert.are_equal(2, #r.Points())
         assert.are_equal("a point", r.Points()[1].WaypointRef())
         assert.are_equal("some value", r.Points()[1].Options().Get("some option"))
@@ -118,7 +120,7 @@ describe("RouteController #flight", function()
         local r = c.CreateRoute("a route")
         assert.is_not_nil(r.AddWaypointRef("a non exsting point"))
         c.SaveRoute()
-        r = c.LoadRoute("a route")
+        r = c.EditRoute("a route")
         assert.is_nil(r)
     end)
 
@@ -137,13 +139,25 @@ describe("RouteController #flight", function()
         assert.is_true(c.StoreWaypoint("B", positions[2]))
         assert.is_true(c.StoreWaypoint("C", positions[3]))
 
-        local r = c.CreateRoute("forward")
+        local r = c.CreateRoute("route_name")
         assert.is_not_nil(r.AddWaypointRef("A"))
         assert.is_not_nil(r.AddWaypointRef("B"))
         assert.is_not_nil(r.AddWaypointRef("C"))
         assert.is_true(c.SaveRoute())
 
-        assert.is_true(c.ActivateRoute("forward", RouteOrder.REVERSED))
+        -- Load it in normal order
+        assert.is_true(c.ActivateRoute("route_name", RouteOrder.FORWARD))
+        r = c.CurrentRoute()
+        local p = r.Next()
+
+        assert.are_equal("A", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("B", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("C", p.WaypointRef())
+
+        -- Load it reversed
+        assert.is_true(c.ActivateRoute("route_name", RouteOrder.REVERSED))
         r = c.CurrentRoute()
         local p = r.Next()
 
@@ -152,6 +166,81 @@ describe("RouteController #flight", function()
         assert.are_equal("B", p.WaypointRef())
         p = r.Next()
         assert.are_equal("A", p.WaypointRef())
+
+        -- Load it again, making sure that it is now in the right normal order
+        assert.is_true(c.ActivateRoute("route_name", RouteOrder.FORWARD))
+        r = c.CurrentRoute()
+        local p = r.Next()
+
+        assert.are_equal("A", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("B", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("C", p.WaypointRef())
+    end)
+
+    it("Can reverse a route, save it and load it again, then restore normal order", function()
+        local positions = {
+            "::pos{0,2,2.9093,65.4697,34.7071}",
+            "::pos{0,2,2.9093,65.4697,34.7072}",
+            "::pos{0,2,2.9093,65.4697,34.7073}",
+        }
+
+        assert.is_true(c.StoreWaypoint("A", positions[1]))
+        assert.is_true(c.StoreWaypoint("B", positions[2]))
+        assert.is_true(c.StoreWaypoint("C", positions[3]))
+
+        local r = c.CreateRoute("to_be_reversed")
+        assert.is_not_nil(r.AddWaypointRef("A"))
+        assert.is_not_nil(r.AddWaypointRef("B"))
+        assert.is_not_nil(r.AddWaypointRef("C"))
+        assert.is_true(c.SaveRoute())
+
+        -- Load it and ensure it is normal order
+        assert.is_true(c.ActivateRoute("to_be_reversed", RouteOrder.FORWARD))
+        r = c.CurrentRoute()
+        local p = r.Next()
+
+        assert.are_equal("A", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("B", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("C", p.WaypointRef())
+
+        -- Reverse and save
+        r = c.EditRoute("to_be_reversed")
+        assert.is_not_nil(r)
+        r.Reverse()
+        assert.True(c.SaveRoute())
+        assert.False(c.SaveRoute())
+
+        -- Load it as normal, should be reversed
+        assert.is_true(c.ActivateRoute("to_be_reversed", RouteOrder.FORWARD))
+        r = c.CurrentRoute()
+        local p = r.Next()
+
+        assert.are_equal("C", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("B", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("A", p.WaypointRef())
+
+        -- Reverse again and save
+        r = c.EditRoute("to_be_reversed")
+        assert.is_not_nil(r)
+        r.Reverse()
+        assert.True(c.SaveRoute())
+
+        -- Load it again, making sure that it is now in the right normal order
+        assert.is_true(c.ActivateRoute("to_be_reversed", RouteOrder.FORWARD))
+        r = c.CurrentRoute()
+        local p = r.Next()
+
+        assert.are_equal("A", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("B", p.WaypointRef())
+        p = r.Next()
+        assert.are_equal("C", p.WaypointRef())
     end)
 
     it("Can delete a waypoint", function()

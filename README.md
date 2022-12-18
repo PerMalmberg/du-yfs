@@ -83,11 +83,12 @@
 | turn                  | angle              | degrees | N        | Turns the construct the specified number of degrees around the Z-axis (up)                                    |
 | strafe                | distance           | meter   | N        | Initiates a strafing move with locked direction.                                                              |
 | route-list            |                    |         |          | Lists the currently available routes                                                                          |
-| route-load            | name of route      |         | N        | Loads a route for editing                                                                                     |
+| route-edit            | name of route      |         | N        | Opens a route for editing                                                                                     |
 | route-create          | name of route      |         | N        | Creates a new route for editing                                                                               |
 | route-save            |                    |         |          | Saves the currently open route                                                                                |
 | route-activate        | name of route      |         | N        | Activates the named route and start the flight.                                                               |
-|                       | -reverse           | booean  | Y        | Reverses the route, i.e. the last point becomes the first.
+|                       | -reverse           | booean  | Y        | Runs the route in reverse, i.e. the last point becomes the first.                                             |
+| route-reverse         |                    |         |          | Reverses the currently open route                                                                             |
 | route-delete          | name of route      |         | N        | Deletes the named route                                                                                       |
 | route-add-current-pos |                    |         |          | Adds the current position to the current route                                                                |
 |                       | -maxspeed          | kph     | Y        | Maximum approach speed                                                                                        |

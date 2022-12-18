@@ -10,7 +10,7 @@ require("util/Table")
 
 ---@class RouteController
 ---@field GetRouteNames fun()string[]
----@field LoadRoute fun(name:string):Route|nil
+---@field EditRoute fun(name:string):Route|nil
 ---@field DeleteRoute fun(name:string)
 ---@field StoreRoute fun(name:string, route:Route):boolean
 ---@field StoreWaypoint fun(name:string, pos:string):boolean
@@ -22,6 +22,7 @@ require("util/Table")
 ---@field ActivateRoute fun(name:string, order:RouteOrder|nil):boolean
 ---@field ActivateTempRoute fun():Route
 ---@field CreateRoute fun(name:string):Route|nil
+---@field ReverseRoute fun():boolean
 ---@field SaveRoute fun():boolean
 ---@field Count fun():integer
 
@@ -71,7 +72,7 @@ function RouteController.Instance(bufferedDB)
     ---Loads a named route
     ---@param name string The name of the route to load
     ---@return Route|nil
-    function s.LoadRoute(name)
+    function s.loadRoute(name)
 
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
         local data = routes[name]
@@ -102,12 +103,21 @@ function RouteController.Instance(bufferedDB)
             route.AddPoint(p)
         end
 
-        edit = route
-        editName = name
-
         log:Info("Route '", name, "' loaded")
 
         return route
+    end
+
+    ---Loads a named route and makes it available for editing
+    ---@param name string The name of the route to load
+    ---@return Route|nil
+    function s.EditRoute(name)
+        edit = s.loadRoute(name)
+
+        if edit == nil then return end
+        editName = name
+
+        return edit
     end
 
     ---Deletes the named route
@@ -242,7 +252,7 @@ function RouteController.Instance(bufferedDB)
 
     ---Activate the route by the given name
     ---@param name string
-    ---@param order RouteOrder|nil The order the route shall be followed
+    ---@param order RouteOrder|nil The order the route shall be followed, or nil for FORWARD
     ---@return boolean
     function s.ActivateRoute(name, order)
         order = order or RouteOrder.FORWARD
@@ -251,12 +261,13 @@ function RouteController.Instance(bufferedDB)
             log:Error("No route name provided")
             return false
         end
+
         if editName ~= nil and name == editName and edit ~= nil then
-            log:Info("Activating route currently being edited, forcing save.")
-            s.StoreRoute(editName, edit)
+            log:Info("Cannot activate route currently being edited, please save first.")
+            return false
         end
 
-        current = s.LoadRoute(name)
+        current = s.loadRoute(name)
 
         if current == nil then
             return false
@@ -301,8 +312,26 @@ function RouteController.Instance(bufferedDB)
         local res = false
         if edit and editName ~= nil then
             res = s.StoreRoute(editName, edit)
+            editName = nil
+            edit = nil
+            log:Info("Closed for editing.")
         else
             log:Error("No route currently opened for edit.")
+        end
+
+        return res
+    end
+
+    ---Reverses the route currently being edited
+    ---@return boolean
+    function s.ReverseRoute()
+        local res = false
+
+        if edit and editName ~= nil then
+            edit.Reverse()
+            res = true
+        else
+            log:Error("No route currently open for edit.")
         end
 
         return res

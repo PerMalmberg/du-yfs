@@ -101,6 +101,68 @@ function FineTuneController.New(input, cmd, flightCore)
             printCurrent()
         end)
 
+        local function addPointOptions(c)
+            c.Option("-precision").AsBoolean().Default(false)
+            c.Option("-lockdir").AsBoolean().Default(false)
+            c.Option("-maxspeed").AsNumber().Default(speed)
+            c.Option("-margin").AsNumber().Default(0.1)
+        end
+
+        local function createOptions(data)
+            local opt = PointOptions.New()
+            opt.Set(PointOptions.PRECISION, data.precision)
+            opt.Set(PointOptions.MAX_SPEED, calc.Kph2Mps(data.maxspeed))
+            opt.Set(PointOptions.MARGIN, data.margin)
+
+            if data.lockdir then
+                opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
+            end
+            return opt
+        end
+
+        local moveFunc = function(data)
+            local route = rc.ActivateTempRoute()
+            local pos = vehicle.position.Current()
+            local point = route.AddCoordinate(pos + vehicle.orientation.Forward() * data.f +
+                vehicle.orientation.Right() * data.r - universe.VerticalReferenceVector() * data.u)
+            point.SetOptions(createOptions(data))
+
+            flightCore.StartFlight()
+        end
+
+        local moveCmd = cmd.Accept("move", moveFunc)
+        moveCmd.Option("-u").AsNumber().Mandatory().Default(0)
+        moveCmd.Option("-r").AsNumber().Mandatory().Default(0)
+        moveCmd.Option("-f").AsNumber().Mandatory().Default(0)
+        addPointOptions(moveCmd)
+
+        local turnFunc = function(data)
+            -- Turn in the expected way, i.e. clockwise on positive values.
+            local angle = -data.commandValue
+
+            flightCore.Turn(angle, vehicle.orientation.Up())
+        end
+
+        cmd.Accept("turn", turnFunc).AsNumber()
+
+        local strafeFunc = function(data)
+            local route = rc.ActivateTempRoute()
+            local point = route.AddCoordinate(vehicle.position.Current() +
+                vehicle.orientation.Right() * data.commandValue)
+            local p = PointOptions.New()
+            point.options = p
+            p.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
+            p.Set(PointOptions.MAX_SPEED, data.maxspeed or speed)
+
+            flightCore.StartFlight()
+        end
+
+        local strafeCmd = cmd.Accept("strafe", strafeFunc).AsNumber()
+        strafeCmd.Option("-maxspeed").AsNumber()
+
+
+
+
         printCurrent()
         log:Info("Player locked in place")
     end

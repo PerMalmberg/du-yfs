@@ -112,7 +112,6 @@ function FlightCore.New(routeController, flightFSM)
         previousWaypoint = currentWaypoint
         waypointReachedSignaled = false
         currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached())
-        system.setWaypoint(nextPoint.Pos(), false)
     end
 
     ---Starts the flight
