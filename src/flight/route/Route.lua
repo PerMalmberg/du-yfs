@@ -21,6 +21,8 @@ require("util/Table")
 ---@field Next fun():Point|nil
 ---@field LastPointReached fun():boolean
 ---@field Reverse fun()
+---@field RemovePoint fun(ix:number):boolean
+---@field MovePoint fun(from:number, to:number)
 
 ---@enum RouteOrder
 RouteOrder = {
@@ -115,6 +117,35 @@ function Route.New()
 
     function s.Reverse()
         ReverseInplace(points)
+    end
+
+    local function checkBounds(ix)
+        return ix > 0 and ix <= #points
+    end
+
+    ---Remove the point at index ix
+    ---@param ix number
+    function s.RemovePoint(ix)
+        if not checkBounds(ix) then return false end
+
+        table.remove(points, ix)
+        return true
+    end
+
+    ---Move a point from index 'from' to index 'to'
+    ---@param from number
+    ---@param to number
+    function s.MovePoint(from, to)
+        if not checkBounds(from) or not checkBounds(to) or to == from then return false end
+
+        table.insert(points, to, points[from])
+
+        if from > to then
+            from = from + 1
+        end
+
+        table.remove(points, from)
+        return true
     end
 
     return setmetatable(s, Route)

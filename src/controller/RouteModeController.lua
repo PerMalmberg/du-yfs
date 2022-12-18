@@ -144,6 +144,38 @@ function RouteModeController.New(input, cmd, flightCore)
             end).AsString()
         addPointOptions(addNamed)
 
+        cmd.Accept("route-delete-pos",
+            ---@param data {commandValue:number}
+            function(data)
+                local route = rc.CurrentEdit()
+                if route == nil then
+                    log:Error("No route open for edit")
+                else
+                    if route.RemovePoint(data.commandValue) then
+                        log:Info("Point removed")
+                    else
+                        log:Error("Could not remove point")
+                    end
+                end
+            end).AsNumber().Mandatory()
+
+        local movePos = cmd.Accept("route-move-pos",
+            ---@param data {from:number, to:number}
+            function(data)
+                local route = rc.CurrentEdit()
+                if route == nil then
+                    log:Error("No route open for edit")
+                else
+                    if route.MovePoint(data.from, data.to) then
+                        log:Info("Point moved")
+                    else
+                        log:Error("Could not move point")
+                    end
+                end
+            end)
+        movePos.Option("from").AsNumber().Mandatory()
+        movePos.Option("to").AsNumber().Mandatory()
+
         cmd.Accept("pos-save-as",
             ---@param data {commandValue:string}
             function(data)

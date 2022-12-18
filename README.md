@@ -14,6 +14,9 @@
 
 # FAQ
 
+- Q: For up-and-over parking, how much above the floor of the space core must the construct enter?
+- A: 7m, high enough that it is not caught by the gravity well of the space construct.
+
 - Q: It accelerates, then brakes when taking off
 - A: Too heavy load, brake calculations say max 0 km/h.
 
@@ -90,6 +93,9 @@
 |                       | -reverse           | booean  | Y        | Runs the route in reverse, i.e. the last point becomes the first.                                             |
 | route-reverse         |                    |         |          | Reverses the currently open route                                                                             |
 | route-delete          | name of route      |         | N        | Deletes the named route                                                                                       |
+| route-move-pos        |                    |         |          | Moves a point from one index to another                                                                       |
+|                       | -from              | number  |          |  The index to move from                                                                                       |
+|                       | -to                |         |          |  The index to move to. Positons at and after the position are shifted forward.                                |
 | route-add-current-pos |                    |         |          | Adds the current position to the current route                                                                |
 |                       | -maxspeed          | kph     | Y        | Maximum approach speed                                                                                        |
 |                       | -precision         | boolean | Y        | if true, the approach will use precision mode.Recommended for 'elevator' movement.                            |
@@ -101,13 +107,13 @@
 |                       | -precision         | boolean | Y        | if true, the approach will use precision mode.Recommended for 'elevator' movement.                            |
 |                       | -lockdir           | boolean | Y        | if true, locks the direction during the approach to that which the construct had when the command was issued. |
 |                       | -margin            | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.  |
-| route-print           |                    |         |          | Prints the current route to the console                                                                        |
-| pos-create-along-gravity   | name of waypoint   |         |          | Creates a waypoint relative to the constructs position along the gravity vector.    |
+| route-print           |                    |         |          | Prints the current route to the console                                                                       |
+| pos-create-along-gravity   | name of waypoint   |         |          | Creates a waypoint relative to the constructs position along the gravity vector.                         |
 |                       | -u                 | meter   | N        | Upward distance; negate to place point downwards the source of gravity                                        |
 | pos-save-as           | name of waypoint   |         | N        | Save the current position as a named waypoint for later use in a route                                        |
 | pos-list              |                    |         |          | Lists the saved positions                                                                                     |
-| pos-delete            |                    |         |          | Deletes a waypoint.
-|                       | name of waypoint   | string  | N        | The waypoint to delete.
+| pos-delete            |                    |         |          | Deletes a waypoint.                                                                                           |
+|                       | name of waypoint   | string  | N        | The waypoint to delete.                                                                                       |
 | set                   |                    |         |          | Sets the specified setting to the specified value                                                             |
 |                       | -engineWarmup      | seconds | Y        | Sets the engine warmup time (T50). Set this to that of the engine with longes warmup.                         |
 | get                   | <same as 'set'>    |         |          | Displays the value of the specified value                                                                     |

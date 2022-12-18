@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"runOnSave.commands": [
+			{
+				"globMatch": ".+\\.lua",
+				"command": "make test",
+				"runIn": "terminal"
+			}
+		]
+	}
+}
