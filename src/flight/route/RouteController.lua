@@ -185,10 +185,18 @@ function RouteController.Instance(bufferedDB)
         return true
     end
 
+    ---Gets the named waypoints
+    ---@return WaypointMap
+    local function getNamedPoints()
+        local w = db.Get(RouteController.NAMED_POINTS) or {}
+        ---@cast w WaypointMap
+        return w
+    end
+
     ---Returns a list of all waypoints
     ---@return NamedWaypoint[]
     function s.GetWaypoints()
-        local namedPositions = db.Get(RouteController.NAMED_POINTS) or {}
+        local namedPositions = getNamedPoints()
 
         local names = {}
 
@@ -212,7 +220,7 @@ function RouteController.Instance(bufferedDB)
     ---@param waypoints? WaypointMap An optional table to load from
     ---@return Point|nil
     function s.LoadWaypoint(name, waypoints)
-        waypoints = waypoints or db.Get(RouteController.NAMED_POINTS) or {}
+        waypoints = waypoints or getNamedPoints()
         local pointData = waypoints[name]
 
         if pointData == nil then
@@ -225,7 +233,7 @@ function RouteController.Instance(bufferedDB)
     ---Deletes a waypoint
     ---@param name string
     function s.DeleteWaypoint(name)
-        local waypoints = db.Get(RouteController.NAMED_POINTS) or {}
+        local waypoints = getNamedPoints()
         local found = waypoints[name] ~= nil
         if found then
             waypoints[name] = nil
