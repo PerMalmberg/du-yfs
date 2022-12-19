@@ -98,6 +98,7 @@
 |                       | -reverse           | booean  | Y        | Runs the route in reverse, i.e. the last point becomes the first.                                             |
 | route-reverse         |                    |         |          | Reverses the currently open route                                                                             |
 | route-delete          | name of route      |         | N        | Deletes the named route                                                                                       |
+| route-delete-pos      | index of waypoint  | number  | N        | Removes the point at index from the route.
 | route-move-pos        |                    |         |          | Moves a point from one index to another                                                                       |
 |                       | -from              | number  |          |  The index to move from                                                                                       |
 |                       | -to                |         |          |  The index to move to. Positons at and after the position are shifted forward.                                |
