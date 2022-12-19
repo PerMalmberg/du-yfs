@@ -101,6 +101,7 @@ function FineTuneController.New(input, cmd, flightCore)
             printCurrent()
         end)
 
+        ---@param c Command
         local function addPointOptions(c)
             c.Option("-precision").AsBoolean().Default(false)
             c.Option("-lockdir").AsBoolean().Default(false)
@@ -160,8 +161,32 @@ function FineTuneController.New(input, cmd, flightCore)
         local strafeCmd = cmd.Accept("strafe", strafeFunc).AsNumber()
         strafeCmd.Option("-maxspeed").AsNumber()
 
+        local gotoCmd = cmd.Accept("goto",
+            ---@param data {commandValue:string}
+            function(data)
+                local target
+                local point = rc.LoadWaypoint(data.commandValue)
+                if point then
+                    target = point.Pos()
+                else
+                    local pos = universe.ParsePosition(data.commandValue)
+                    if pos then
+                        target = pos.AsPosString()
+                    end
+                end
 
-
+                if target then
+                    local route = rc.ActivateTempRoute()
+                    route.AddCurrentPos()
+                    local targetPoint = route.AddPos(target)
+                    targetPoint.SetOptions(createOptions(data))
+                    flightCore.StartFlight()
+                    log:Info("Moving to position")
+                else
+                    log:Error("Given position is not a :pos{} string or a named waypoint")
+                end
+            end).AsString().Mandatory()
+        addPointOptions(gotoCmd)
 
         printCurrent()
         log:Info("Player locked in place")

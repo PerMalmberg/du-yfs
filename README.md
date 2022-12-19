@@ -83,6 +83,11 @@
 |                       | -precision         | boolean | Y        | if true, the approach will use precision mode.Recommended for 'elevator' movement.                            |
 |                       | -lockdir           | boolean | Y        | if true, locks the direction during the approach to that which the construct had when the command was issued. |
 |                       | -margin            | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.  |
+| goto                  | waypoint or ::pos{} string   |         |          | Moves to the given point                                                                                      |
+|                       | -maxspeed          | kph     | Y        | See &lt;move&gt;                                                                                              |
+|                       | -precision         | boolean | Y        | See &lt;move&gt;                                                                                              |
+|                       | -lockdir           | boolean | Y        | See &lt;move&gt;                                                                                              |
+|                       | -margin            | meter   | Y        | See &lt;move&gt;                                                                                              |
 | turn                  | angle              | degrees | N        | Turns the construct the specified number of degrees around the Z-axis (up)                                    |
 | strafe                | distance           | meter   | N        | Initiates a strafing move with locked direction.                                                              |
 | route-list            |                    |         |          | Lists the currently available routes                                                                          |
@@ -97,16 +102,16 @@
 |                       | -from              | number  |          |  The index to move from                                                                                       |
 |                       | -to                |         |          |  The index to move to. Positons at and after the position are shifted forward.                                |
 | route-add-current-pos |                    |         |          | Adds the current position to the current route                                                                |
-|                       | -maxspeed          | kph     | Y        | Maximum approach speed                                                                                        |
-|                       | -precision         | boolean | Y        | if true, the approach will use precision mode.Recommended for 'elevator' movement.                            |
-|                       | -lockdir           | boolean | Y        | if true, locks the direction during the approach to that which the construct had when the command was issued. |
-|                       | -margin            | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.  |
+|                       | -maxspeed          | kph     | Y        | See &lt;move&gt;                                                                                              |
+|                       | -precision         | boolean | Y        | See &lt;move&gt;                                                                                              |
+|                       | -lockdir           | boolean | Y        | See &lt;move&gt;                                                                                              |
+|                       | -margin            | meter   | Y        | See &lt;move&gt;                                                                                              |
 | route-add-named-pos   |                    |         |          |                                                                                                               |
 |                       | name of waypoint   |         |          | Adds a named waypoint to the route                                                                            |
-|                       | -maxspeed          | kph     | Y        | Maximum approach speed                                                                                        |
-|                       | -precision         | boolean | Y        | if true, the approach will use precision mode.Recommended for 'elevator' movement.                            |
-|                       | -lockdir           | boolean | Y        | if true, locks the direction during the approach to that which the construct had when the command was issued. |
-|                       | -margin            | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.  |
+|                       | -maxspeed          | kph     | Y        | See &lt;move&gt;                                                                                              |
+|                       | -precision         | boolean | Y        | See &lt;move&gt;                                                                                              |
+|                       | -lockdir           | boolean | Y        | See &lt;move&gt;                                                                                              |
+|                       | -margin            | meter   | Y        | See &lt;move&gt;                                                                                              |
 | route-print           |                    |         |          | Prints the current route to the console                                                                       |
 | pos-create-along-gravity   | name of waypoint   |         |          | Creates a waypoint relative to the constructs position along the gravity vector.                         |
 |                       | -u                 | meter   | N        | Upward distance; negate to place point downwards the source of gravity                                        |
@@ -116,7 +121,7 @@
 |                       | name of waypoint   | string  | N        | The waypoint to delete.                                                                                       |
 | set                   |                    |         |          | Sets the specified setting to the specified value                                                             |
 |                       | -engineWarmup      | seconds | Y        | Sets the engine warmup time (T50). Set this to that of the engine with longes warmup.                         |
-| get                   | <same as 'set'>    |         |          | Displays the value of the specified value                                                                     |
+| get                   | &lt;same as 'set'&gt;    |         |          | Displays the value of the specified value                                                                     |
 | alias                 | name of alias      |         |          | Creates an alias of a command                                                                                 |
 |                       | command to execute | string  | N        | The command to execute as a string enclosed in "", e.g. "route-activate myroute -reverse"                     |
 

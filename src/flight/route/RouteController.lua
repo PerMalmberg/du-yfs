@@ -216,7 +216,6 @@ function RouteController.Instance(bufferedDB)
         local pointData = waypoints[name]
 
         if pointData == nil then
-            log:Error("No waypoint by name '", name, "' found.")
             return nil
         end
 
