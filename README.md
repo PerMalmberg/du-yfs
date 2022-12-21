@@ -10,7 +10,8 @@
 
 * When activating a route, ensure that construct is less than 1m from first point.
   * If the reveresed route makes the construct within the limit, run the route reveresed.
-  * Button to set waypoint to closes endpoint
+  * Button to set waypoint to closest endpoint
+  * Button to move to closest point
 
 # FAQ
 
@@ -27,7 +28,7 @@
   - Favorites listed first
 - Select route, display info.
 - Separate button to start route.
-- Emergency stop button
+- Emergency stop button - Hold postion
 
 ### Travel screen
 - Emergency stop button - hold position / zero speed limit?
@@ -56,7 +57,14 @@
 
 * -- https://github.com/Dimencia/Archaegeo-Orbital-Hud/blob/7414fa08c50605936bd6a1dc3abfe503dd65a10c/src/requires/apclass.lua#L2755
 
-# Controls
+# Shortcuts
+
+| Key          | Description             |
+|--------------|-------------------------|
+| Alt-Shift-9  | (Un)locks player        |
+
+
+# Controls (when user is locked in place)
 
 | Key   | Description             |
 |-------|-------------------------|
@@ -88,6 +96,7 @@
 |                       | -precision         | boolean | Y        | See &lt;move&gt;                                                                                              |
 |                       | -lockdir           | boolean | Y        | See &lt;move&gt;                                                                                              |
 |                       | -margin            | meter   | Y        | See &lt;move&gt;                                                                                              |
+| hold                  |                    |         |          | Stops and returns to the postion at the time of execution, then holds.                                        |
 | turn                  | angle              | degrees | N        | Turns the construct the specified number of degrees around the Z-axis (up)                                    |
 | strafe                | distance           | meter   | N        | Initiates a strafing move with locked direction.                                                              |
 | route-list            |                    |         |          | Lists the currently available routes                                                                          |
