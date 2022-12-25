@@ -30,13 +30,16 @@ clean_report:
 clean: clean_cov clean_report
 	@rm -rf out
 
+minify_layout:
+	@jq -c . ./src/screen/layout.json > ./src/screen/layout_min.json
+
 test: clean
 	@LUA_PATH="$(LUA_PATH_TEST)" busted -t "flight" .
 	@luacov
 	@$(CLEAN_COV)
 
-dev: test
+dev: minify_layout test
 	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=development/main
 
-release: test
+release: minify_layout test
 	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=release/main

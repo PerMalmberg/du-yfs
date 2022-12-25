@@ -1,15 +1,13 @@
 local ControlCommands = require("controller/ControlCommands")
-local Criteria        = require("input/Criteria")
 local Task            = require("system/Task")
 local ValueTree       = require("util/ValueTree")
 local InfoCentral     = require("info/InfoCentral")
 local log             = require("debug/Log")()
-local pub             = require("util/PubSub").Instance()
 local commandLine     = require("commandline/CommandLine").Instance()
 local input           = require("input/Input").Instance()
-
-local Stream     = require("Stream")
-local serializer = require("util/Serializer")
+local layout          = library.embedFile("../screen/layout_min.json")
+local Stream          = require("Stream")
+local json            = require("dkjson")
 
 ---@module "controller/ControlInterface"
 
@@ -23,7 +21,7 @@ SystemController.__index = SystemController
 ---@return SystemController
 function SystemController.New(flightCore, settings)
     local s = {}
-    local ifc = ControlCommands.New(input, commandLine, flightCore)
+    local commands = ControlCommands.New(input, commandLine, flightCore)
 
     local info = InfoCentral.Instance()
     local routeController = flightCore.GetRouteController()
@@ -35,17 +33,35 @@ function SystemController.New(flightCore, settings)
 
         log:Info("Screen found")
 
-        local function dataReceived(data)
-            -- Publish data to system
-
+        ---@param t table
+        ---@return string
+        local function serialize(t)
+            local r = json.encode(t)
+            ---@cast r string
+            return r
         end
 
-        local function timeOut(isTimedOut)
+        local function dataReceived(data)
+            -- Publish data to system
+            system.print(data)
+        end
 
+        local layoutSent = false
+
+        ---@param isTimedOut boolean
+        ---@param stream Stream
+        local function onTimeout(isTimedOut, stream)
+            if isTimedOut then
+                layoutSent = false
+            elseif not layoutSent then
+                stream.Write(serialize({ screen_layout = json.decode(layout) }))
+                stream.Write(serialize({ activate_page = "routeSelection" }))
+                layoutSent = true
+            end
         end
 
         local tree = ValueTree.New()
-        local stream = Stream.New(screen, dataReceived, 1, timeOut)
+        local stream = Stream.New(screen, dataReceived, 1, onTimeout)
 
         while screen do
             coroutine.yield()
@@ -56,11 +72,13 @@ function SystemController.New(flightCore, settings)
                 local data = tree.Pick()
                 -- Send data to screen
                 if data then
-                    local ser = serializer.Serialize({ flightData = data })
+                    local ser = json.encode({ flightData = data })
                     if ser then
                         --- @cast ser string
                         stream.Write(ser)
                     end
+                else
+                    stream.Write('{"keepalive": ""}')
                 end
             end
         end
