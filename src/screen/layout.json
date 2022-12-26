@@ -39,10 +39,10 @@
                     "pos1": "(50,50)",
                     "style": "RouteButtonText",
                     "font": "RouteTextFont",
-                    "text": "$str(path{routes/1:name}:init{No route})",
+                    "text": "$str(path{routes:1}:init{})",
                     "mouse": {
                         "click": {
-                            "command": "$str(path{routes/1:name}:format{route-activate %s}:init{})"
+                            "command": "$str(path{routes:1}:format{route-activate '%s'}:init{})"
                         },
                         "inside": {
                             "set_style": "RouteButtonTextHover"
@@ -58,7 +58,7 @@
                     "style": "RouteButtonBox",
                     "mouse": {
                         "click": {
-                            "command": "$str(path{routes/1:name}:format{route-activate %s}:init{})"
+                            "command": "$str(path{routes:1}:format{route-activate '%s'}:init{})"
                         },
                         "inside": {
                             "set_style": "RouteButtonBoxHover"
@@ -72,10 +72,10 @@
                     "pos1": "(50,100)",
                     "style": "RouteButtonText",
                     "font": "RouteTextFont",
-                    "text": "$str(path{routeList:2}:init{-})",
+                    "text": "$str(path{routes:2}:init{})",
                     "mouse": {
                         "click": {
-                            "command": "$str(path{routes/2:name}:format{route-activate %s}:init{})"
+                            "command": "$str(path{routes:2}:format{route-activate '%s'}:init{})"
                         },
                         "inside": {
                             "set_style": "RouteButtonTextHover"
@@ -91,7 +91,139 @@
                     "style": "RouteButtonBox",
                     "mouse": {
                         "click": {
-                            "command": "$str(path{routes/2:cmd}:format{route-activate %s}:init{})"
+                            "command": "$str(path{routes:2}:format{route-activate '%s'}:init{})"
+                        },
+                        "inside": {
+                            "set_style": "RouteButtonBoxHover"
+                        }
+                    }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
+                    "pos1": "(50,150)",
+                    "style": "RouteButtonText",
+                    "font": "RouteTextFont",
+                    "text": "$str(path{routes:3}:init{})",
+                    "mouse": {
+                        "click": {
+                            "command": "$str(path{routes:3}:format{route-activate '%s'}:init{})"
+                        },
+                        "inside": {
+                            "set_style": "RouteButtonTextHover"
+                        }
+                    }
+                },
+                {
+                    "type": "box",
+                    "layer": 1,
+                    "visible": true,
+                    "pos1": "(45,145)",
+                    "pos2": "(350,170)",
+                    "style": "RouteButtonBox",
+                    "mouse": {
+                        "click": {
+                            "command": "$str(path{routes:3}:format{route-activate '%s'}:init{})"
+                        },
+                        "inside": {
+                            "set_style": "RouteButtonBoxHover"
+                        }
+                    }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
+                    "pos1": "(50,200)",
+                    "style": "RouteButtonText",
+                    "font": "RouteTextFont",
+                    "text": "$str(path{routes:4}:init{})",
+                    "mouse": {
+                        "click": {
+                            "command": "$str(path{routes:4}:format{route-activate '%s'}:init{})"
+                        },
+                        "inside": {
+                            "set_style": "RouteButtonTextHover"
+                        }
+                    }
+                },
+                {
+                    "type": "box",
+                    "layer": 1,
+                    "visible": true,
+                    "pos1": "(45,195)",
+                    "pos2": "(350,220)",
+                    "style": "RouteButtonBox",
+                    "mouse": {
+                        "click": {
+                            "command": "$str(path{routes:4}:format{route-activate '%s'}:init{})"
+                        },
+                        "inside": {
+                            "set_style": "RouteButtonBoxHover"
+                        }
+                    }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
+                    "pos1": "(50,250)",
+                    "style": "RouteButtonText",
+                    "font": "RouteTextFont",
+                    "text": "$str(path{routes:5}:init{})",
+                    "mouse": {
+                        "click": {
+                            "command": "$str(path{routes:5}:format{route-activate '%s'}:init{})"
+                        },
+                        "inside": {
+                            "set_style": "RouteButtonTextHover"
+                        }
+                    }
+                },
+                {
+                    "type": "box",
+                    "layer": 1,
+                    "visible": true,
+                    "pos1": "(45,245)",
+                    "pos2": "(350,270)",
+                    "style": "RouteButtonBox",
+                    "mouse": {
+                        "click": {
+                            "command": "$str(path{routes:5}:format{route-activate '%s'}:init{})"
+                        },
+                        "inside": {
+                            "set_style": "RouteButtonBoxHover"
+                        }
+                    }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
+                    "pos1": "(50,300)",
+                    "style": "RouteButtonText",
+                    "font": "RouteTextFont",
+                    "text": "$str(path{routes:6}:init{})",
+                    "mouse": {
+                        "click": {
+                            "command": "$str(path{routes:6}:format{route-activate '%s'}:init{})"
+                        },
+                        "inside": {
+                            "set_style": "RouteButtonTextHover"
+                        }
+                    }
+                },
+                {
+                    "type": "box",
+                    "layer": 1,
+                    "visible": true,
+                    "pos1": "(45,295)",
+                    "pos2": "(350,320)",
+                    "style": "RouteButtonBox",
+                    "mouse": {
+                        "click": {
+                            "command": "$str(path{routes:5}:format{route-activate '%s'}:init{})"
                         },
                         "inside": {
                             "set_style": "RouteButtonBoxHover"

@@ -9,7 +9,7 @@ require("util/Table")
 ---@module "storage/BufferedDB"
 
 ---@class RouteController
----@field GetRouteNames fun()string[]
+---@field GetRouteNames fun():string[]
 ---@field EditRoute fun(name:string):Route|nil
 ---@field DeleteRoute fun(name:string)
 ---@field StoreRoute fun(name:string, route:Route):boolean

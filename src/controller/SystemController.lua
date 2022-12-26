@@ -24,7 +24,7 @@ function SystemController.New(flightCore, settings)
     local commands = ControlCommands.New(input, commandLine, flightCore)
 
     local info = InfoCentral.Instance()
-    local routeController = flightCore.GetRouteController()
+    local rc = flightCore.GetRouteController()
 
     local function screenTask()
         local screen = library.getLinkByClass("ScreenUnit")
@@ -41,9 +41,22 @@ function SystemController.New(flightCore, settings)
             return r
         end
 
+        ---@param s string
+        ---@return table|nil
+        local function deserialize(s)
+            local d = json.decode(s)
+            ---@cast d table
+            return d
+        end
+
         local function dataReceived(data)
             -- Publish data to system
-            system.print(data)
+            data = deserialize(data)
+            if data == nil then return end
+            local command = data["mouse_click"]
+            if command ~= nil then
+                commandLine.Exec(command)
+            end
         end
 
         local layoutSent = false
@@ -56,6 +69,12 @@ function SystemController.New(flightCore, settings)
             elseif not layoutSent then
                 stream.Write(serialize({ screen_layout = json.decode(layout) }))
                 stream.Write(serialize({ activate_page = "routeSelection" }))
+
+                local t = { routes = {} } ---@type string[]
+                for i, r in ipairs(rc.GetRouteNames()) do
+                    t.routes[tostring(i)] = r
+                end
+                stream.Write(serialize(t))
                 layoutSent = true
             end
         end
