@@ -4,12 +4,38 @@ local ValueTree       = require("util/ValueTree")
 local InfoCentral     = require("info/InfoCentral")
 local log             = require("debug/Log")()
 local commandLine     = require("commandline/CommandLine").Instance()
+local pub             = require("util/PubSub").Instance()
 local input           = require("input/Input").Instance()
 local layout          = library.embedFile("../screen/layout_min.json")
 local Stream          = require("Stream")
 local json            = require("dkjson")
+local calc            = require("util/Calc")
 
----@module "controller/ControlInterface"
+---@param t table
+---@return string
+local function serialize(t)
+    local r = json.encode(t)
+    ---@cast r string
+    return r
+end
+
+---@param s string
+---@return table|nil
+local function deserialize(s)
+    local d = json.decode(s)
+    ---@cast d table
+    return d
+end
+
+local function dataReceived(data)
+    -- Publish data to system
+    data = deserialize(data)
+    if data == nil then return end
+    local command = data["mouse_click"]
+    if command ~= nil then
+        commandLine.Exec(command)
+    end
+end
 
 ---@class SystemController
 
@@ -21,10 +47,33 @@ SystemController.__index = SystemController
 ---@return SystemController
 function SystemController.New(flightCore, settings)
     local s = {}
+    local layoutSent = false
     local commands = ControlCommands.New(input, commandLine, flightCore)
-
     local info = InfoCentral.Instance()
     local rc = flightCore.GetRouteController()
+    local flightData = ValueTree.New()
+
+    ---@param stream Stream
+    local function sendRoutes(stream)
+        local t = { routes = {} } ---@type string[]
+        for i, r in ipairs(rc.GetRouteNames()) do
+            t.routes[tostring(i)] = r
+        end
+        stream.Write(serialize(t))
+    end
+
+    ---@param isTimedOut boolean
+    ---@param stream Stream
+    local function onTimeout(isTimedOut, stream)
+        if isTimedOut then
+            layoutSent = false
+        elseif not layoutSent then
+            stream.Write(serialize({ screen_layout = json.decode(layout) }))
+            stream.Write(serialize({ activate_page = "routeSelection" }))
+            sendRoutes(stream)
+            layoutSent = true
+        end
+    end
 
     local function screenTask()
         local screen = library.getLinkByClass("ScreenUnit")
@@ -32,54 +81,16 @@ function SystemController.New(flightCore, settings)
         if not screen then return end
 
         log:Info("Screen found")
+        screen.activate()
 
-        ---@param t table
-        ---@return string
-        local function serialize(t)
-            local r = json.encode(t)
-            ---@cast r string
-            return r
-        end
+        pub.RegisterTable("FlightData",
+            ---@param topic string
+            ---@param data FlightData
+            function(topic, data)
+                flightData.Set("flightData/absSpeed", calc.Mps2Kph(data.absSpeed))
+                flightData.Set("flightData/wpDist", calc.Mps2Kph(data.waypointDist))
+            end)
 
-        ---@param s string
-        ---@return table|nil
-        local function deserialize(s)
-            local d = json.decode(s)
-            ---@cast d table
-            return d
-        end
-
-        local function dataReceived(data)
-            -- Publish data to system
-            data = deserialize(data)
-            if data == nil then return end
-            local command = data["mouse_click"]
-            if command ~= nil then
-                commandLine.Exec(command)
-            end
-        end
-
-        local layoutSent = false
-
-        ---@param isTimedOut boolean
-        ---@param stream Stream
-        local function onTimeout(isTimedOut, stream)
-            if isTimedOut then
-                layoutSent = false
-            elseif not layoutSent then
-                stream.Write(serialize({ screen_layout = json.decode(layout) }))
-                stream.Write(serialize({ activate_page = "routeSelection" }))
-
-                local t = { routes = {} } ---@type string[]
-                for i, r in ipairs(rc.GetRouteNames()) do
-                    t.routes[tostring(i)] = r
-                end
-                stream.Write(serialize(t))
-                layoutSent = true
-            end
-        end
-
-        local tree = ValueTree.New()
         local stream = Stream.New(screen, dataReceived, 1, onTimeout)
 
         while screen do
@@ -88,10 +99,11 @@ function SystemController.New(flightCore, settings)
 
             if not stream.WaitingToSend() then
                 -- Get data to send to screen
-                local data = tree.Pick()
+                local data = flightData.Pick()
                 -- Send data to screen
                 if data then
-                    local ser = json.encode({ flightData = data })
+                    local ser = json.encode(data)
+                    system.print(ser)
                     if ser then
                         --- @cast ser string
                         stream.Write(ser)
@@ -110,9 +122,6 @@ function SystemController.New(flightCore, settings)
         end).Catch(function(t)
             log:Error(t.Error())
         end)
-
-    -- Register for events from the flight system
-    -- All the things currently in widgets
 
     return setmetatable(s, SystemController)
 end

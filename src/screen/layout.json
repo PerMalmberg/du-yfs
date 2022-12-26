@@ -3,6 +3,10 @@
         "RouteTextFont": {
             "font": "Play",
             "size": 15
+        },
+        "InfoFont": {
+            "font": "Play",
+            "size": "20"
         }
     },
     "styles": {
@@ -27,6 +31,9 @@
                 "color": "r0,g0.5,b0.5,a1",
                 "distance": 3
             }
+        },
+        "InfoText": {
+            "fill": "r1,g1,b1,a1"
         }
     },
     "pages": {
@@ -229,6 +236,24 @@
                             "set_style": "RouteButtonBoxHover"
                         }
                     }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
+                    "pos1": "(360,50)",
+                    "style": "InfoText",
+                    "font": "InfoFont",
+                    "text": "$num(path{flightData:absSpeed}:init{0}:format{Speed: %0.2f km/h}:interval{0.5})"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
+                    "pos1": "(360,75)",
+                    "style": "InfoText",
+                    "font": "InfoFont",
+                    "text": "$num(path{flightData:wpDist}:init{0}:format{Distance: %0.2f m}:interval{0.5})"
                 }
             ]
         }
