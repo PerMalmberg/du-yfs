@@ -1,6 +1,7 @@
 # Todo
 
-* Stuck on pad on activation - wants to move to first point?
+* Make settings separate commands to make them type safe.
+* Stuck on pad on activation - wants to move to first point? Move upwards a little first
 * Use PID for adjustment
 * Jitter on small construct when holding position.
 * Brake counter causes movement when holding pos?

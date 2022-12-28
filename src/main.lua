@@ -37,6 +37,7 @@ Task.New("Main", function()
     settings.Reload()
     local fc = FlightCore.New(RouteController.Instance(routeDb), fsm)
     local cont = SystemController.New(fc, settings)
+    settings.RegisterCommands()
     fc.ReceiveEvents()
 
 end).Then(function()

@@ -29,9 +29,15 @@ function Settings.New(db)
     s.def = {
         engineWarmup = { key = "engineWarmup", default = 2 },
         speedP = { key = "speedp", default = 0.01 },
-        speedI = { key = "speedi", default = 0.0 },
+        speedI = { key = "speedi", default = 0.005 },
         speedD = { key = "speedd", default = 0.01 },
-        speeda = { key = "speeda", default = 0.99 }
+        speeda = { key = "speeda", default = 0.99 },
+        containerProficiency = { key = "containerProficiency", default = 0 },
+        fuelTankOptimization = { key = "fuelTankOptimization", default = 0 },
+        containerOptimization = { key = "containerOptimization", default = 0 },
+        atmoFuelTankHandling = { key = "atmoFuelTankHandling", default = 0 },
+        spaceFuelTankHandling = { key = "spaceFuelTankHandling", default = 0 },
+        rocketFuelTankHandling = { key = "rocketFuelTankHandling", default = 0 }
     }
 
     function s.ensureSingle(data)
