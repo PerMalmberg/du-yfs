@@ -182,6 +182,24 @@
                     "type": "text",
                     "layer": 1,
                     "visible": true,
+                    "style": "info",
+                    "pos1": "(280,160)",
+                    "font": "info",
+                    "text": "$num(path{target:height}:init{0}:format{%0.2f}:interval{0.5})"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
+                    "style": "footer",
+                    "pos1": "(260,190)",
+                    "font": "footer",
+                    "text": "$str(path{target:heightUnit}:init{meter}:interval{0.5})"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
                     "style": "header-text",
                     "pos1": "(300,140)",
                     "text": "Target distance",
@@ -191,10 +209,46 @@
                     "type": "text",
                     "layer": 1,
                     "visible": true,
+                    "style": "info",
+                    "pos1": "(460,160)",
+                    "font": "info",
+                    "text": "$num(path{target:distance}:init{0}:format{%0.2f}:interval{0.5})"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
+                    "style": "footer",
+                    "pos1": "(440,190)",
+                    "font": "footer",
+                    "text": "$str(path{target:distanceUnit}:init{km}:interval{0.5})"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
                     "style": "header-text",
                     "pos1": "(480,140)",
                     "text": "Deviation",
                     "font": "header"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
+                    "style": "info",
+                    "pos1": "(640,160)",
+                    "font": "info",
+                    "text": "$num(path{deviation:distance}:init{0}:format{%0.2f}:interval{0.5})"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "visible": true,
+                    "style": "footer",
+                    "pos1": "(620,190)",
+                    "font": "footer",
+                    "text": "meter"
                 }
             ]
         },
