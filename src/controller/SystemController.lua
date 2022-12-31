@@ -17,7 +17,9 @@ local calc             = require("util/Calc")
 ---@param t table
 ---@return string
 local function serialize(t)
+    coroutine.yield()
     local r = json.encode(t)
+    coroutine.yield()
     ---@cast r string
     return r
 end
@@ -25,7 +27,9 @@ end
 ---@param s string
 ---@return table|nil
 local function deserialize(s)
+    coroutine.yield()
     local d = json.decode(s)
+    coroutine.yield()
     ---@cast d table
     return d
 end
@@ -72,7 +76,7 @@ function SystemController.New(flightCore, settings)
         if isTimedOut then
             layoutSent = false
         elseif not layoutSent then
-            stream.Write(serialize({ screen_layout = json.decode(layout) }))
+            stream.Write(serialize({ screen_layout = deserialize(layout) }))
             stream.Write(serialize({ activate_page = "routeSelection" }))
             sendRoutes(stream)
             layoutSent = true

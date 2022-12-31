@@ -1,0 +1,268 @@
+<svg width="1024" height="613" viewBox="0 0 1024 613" fill="none"
+    xmlns="http://www.w3.org/2000/svg">
+    <g id="elevator-interface-basic">
+        <g id="bottom">
+            <rect id="background" y="240" width="1024" height="373" fill="#99A7A8"/>
+            <g id="waypoints">
+                <g id="wp5">
+                    <rect id="Rectangle 12" x="680" y="520" width="300" height="40" fill="#546263"/>
+                    <rect id="Rectangle 13" x="780" y="540" width="20" height="20" fill="#99A7A8"/>
+                    <text id="Waypoint 5" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                        <tspan x="895" y="544">Waypoint 5</tspan>
+                    </text>
+                </g>
+                <g id="wp4">
+                    <rect id="Rectangle 12_2" x="680" y="460" width="300" height="40" fill="#546263"/>
+                    <rect id="Rectangle 13_2" x="760" y="480" width="20" height="20" fill="#99A7A8"/>
+                    <text id="Waypoint 4" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                        <tspan x="895" y="484">Waypoint 4</tspan>
+                    </text>
+                </g>
+                <g id="wp3">
+                    <rect id="Rectangle 12_3" x="680" y="400" width="300" height="40" fill="#546263"/>
+                    <rect id="Rectangle 13_3" x="740" y="420" width="20" height="20" fill="#99A7A8"/>
+                    <text id="Waypoint 3" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                        <tspan x="895" y="424">Waypoint 3</tspan>
+                    </text>
+                </g>
+                <g id="wp2">
+                    <rect id="Rectangle 12_4" x="680" y="340" width="300" height="40" fill="#546263"/>
+                    <rect id="Rectangle 13_4" x="720" y="360" width="20" height="20" fill="#99A7A8"/>
+                    <text id="Waypoint 2" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                        <tspan x="895" y="364">Waypoint 2</tspan>
+                    </text>
+                </g>
+                <g id="wp1">
+                    <rect id="Rectangle 12_5" x="680" y="280" width="300" height="40" fill="#546263"/>
+                    <rect id="Rectangle 13_5" x="700" y="300" width="20" height="20" fill="#99A7A8"/>
+                    <text id="Waypoint 1" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                        <tspan x="895" y="304">Waypoint 1</tspan>
+                    </text>
+                </g>
+            </g>
+            <g id="routes">
+                <g id="route-other">
+                    <g id="wp-start">
+                        <rect id="Rectangle 12_6" x="520" y="460" width="120" height="40" fill="#546263"/>
+                        <rect id="Rectangle 13_6" x="520" y="460" width="20" height="20" fill="#99A7A8"/>
+                        <rect id="Rectangle 14" x="620" y="460" width="20" height="20" fill="#99A7A8"/>
+                        <text id="Start" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="565" y="484">Start</tspan>
+                        </text>
+                    </g>
+                    <text id="Route Other" fill="#546263" font-family="Play" font-size="16" font-weight="bold">
+                        <tspan x="557.438" y="416">Route&#10;</tspan>
+                        <tspan x="558" y="435">Other</tspan>
+                    </text>
+                    <g id="wp-end">
+                        <rect id="Rectangle 12_7" x="520" y="340" width="120" height="40" fill="#546263"/>
+                        <rect id="Rectangle 13_7" x="520" y="360" width="20" height="20" fill="#99A7A8"/>
+                        <rect id="Rectangle 14_2" x="620" y="360" width="20" height="20" fill="#99A7A8"/>
+                        <text id="End" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="569" y="364">End</tspan>
+                        </text>
+                    </g>
+                </g>
+                <g id="route-sightseeing">
+                    <g id="wp-start_2">
+                        <rect id="Rectangle 12_8" x="360" y="460" width="120" height="40" fill="#546263"/>
+                        <rect id="Rectangle 13_8" x="360" y="460" width="20" height="20" fill="#99A7A8"/>
+                        <rect id="Rectangle 14_3" x="460" y="460" width="20" height="20" fill="#99A7A8"/>
+                        <text id="Start_2" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="405" y="484">Start</tspan>
+                        </text>
+                    </g>
+                    <text id="Route Sightseeing" fill="#546263" font-family="Play" font-size="16" font-weight="bold">
+                        <tspan x="397.438" y="416">Route&#10;</tspan>
+                        <tspan x="374" y="435">Sightseeing</tspan>
+                    </text>
+                    <g id="wp-end_2">
+                        <rect id="Rectangle 12_9" x="360" y="340" width="120" height="40" fill="#546263"/>
+                        <rect id="Rectangle 13_9" x="360" y="360" width="20" height="20" fill="#99A7A8"/>
+                        <rect id="Rectangle 14_4" x="460" y="360" width="20" height="20" fill="#99A7A8"/>
+                        <text id="End_2" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="409" y="364">End</tspan>
+                        </text>
+                    </g>
+                </g>
+                <g id="route-shop">
+                    <g id="wp-start_3">
+                        <rect id="Rectangle 12_10" x="200" y="460" width="120" height="40" fill="#546263"/>
+                        <rect id="Rectangle 13_10" x="200" y="460" width="20" height="20" fill="#99A7A8"/>
+                        <rect id="Rectangle 14_5" x="300" y="460" width="20" height="20" fill="#99A7A8"/>
+                        <text id="Start_3" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="245" y="484">Start</tspan>
+                        </text>
+                    </g>
+                    <text id="Route Shop" fill="#546263" font-family="Play" font-size="16" font-weight="bold">
+                        <tspan x="237.438" y="416">Route&#10;</tspan>
+                        <tspan x="240" y="435">Shop</tspan>
+                    </text>
+                    <g id="wp-end_3">
+                        <rect id="Rectangle 12_11" x="200" y="340" width="120" height="40" fill="#546263"/>
+                        <rect id="Rectangle 13_11" x="200" y="360" width="20" height="20" fill="#99A7A8"/>
+                        <rect id="Rectangle 14_6" x="300" y="360" width="20" height="20" fill="#99A7A8"/>
+                        <text id="End_3" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="249" y="364">End</tspan>
+                        </text>
+                    </g>
+                </g>
+                <g id="route-main">
+                    <g id="wp-start_4">
+                        <rect id="Rectangle 12_12" x="40" y="520" width="120" height="40" fill="#2F6FD0"/>
+                        <rect id="Rectangle 15" x="60" y="480" width="80" height="20" fill="#2F6FD0"/>
+                        <rect id="Rectangle 13_12" x="40" y="520" width="20" height="20" fill="#99A7A8"/>
+                        <rect id="Rectangle 14_7" x="140" y="520" width="20" height="20" fill="#99A7A8"/>
+                        <text id="Start_4" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="851" y="544">Start</tspan>
+                        </text>
+                    </g>
+                    <text id="Route&#226;&#128;&#168;MAIN" fill="#546263" font-family="Play" font-size="16" font-weight="bold">
+                        <tspan x="77" y="416">Route&#x2028;</tspan>
+                        <tspan x="79.1719" y="435">MAIN</tspan>
+                    </text>
+                    <g id="wp-end_4">
+                        <rect id="Rectangle 12_13" x="40" y="280" width="120" height="40" fill="#2F6FD0"/>
+                        <rect id="Rectangle 15_2" x="60" y="340" width="80" height="20" fill="#2F6FD0"/>
+                        <rect id="Rectangle 13_13" x="40" y="300" width="20" height="20" fill="#99A7A8"/>
+                        <rect id="Rectangle 14_8" x="140" y="300" width="20" height="20" fill="#99A7A8"/>
+                        <text id="End_4" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="891" y="304">End</tspan>
+                        </text>
+                    </g>
+                </g>
+            </g>
+        </g>
+        <g id="top">
+            <rect id="background_2" width="1024" height="240" fill="#546263"/>
+            <g id="fuel">
+                <g id="space fuel">
+                    <g id="space-bar">
+                        <rect id="empty-space" x="940" y="20" width="40" height="200" fill="#2F3637"/>
+                        <rect id="fuel-kergon" x="940" y="46" width="40" height="174" fill="#D0D071"/>
+                        <text id="87%" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="947" y="214">87%</tspan>
+                        </text>
+                    </g>
+                    <g id="space-bar_2">
+                        <rect id="empty-space_2" x="900" y="20" width="40" height="200" fill="#2F3637"/>
+                        <rect id="fuel-kergon_2" x="900" y="60" width="40" height="160" fill="#D0D02F"/>
+                        <text id="80%" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="907" y="214">80%</tspan>
+                        </text>
+                    </g>
+                    <g id="space-bar_3">
+                        <rect id="empty-space_3" x="860" y="20" width="40" height="200" fill="#2F3637"/>
+                        <rect id="fuel-kergon_3" x="860" y="40" width="40" height="180" fill="#D0D071"/>
+                        <text id="89%" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="867" y="214">89%</tspan>
+                        </text>
+                    </g>
+                    <g id="space-bar_4">
+                        <rect id="empty-space_4" x="820" y="20" width="40" height="200" fill="#2F3637"/>
+                        <rect id="fuel-kergon_4" x="820" y="49" width="40" height="171" fill="#D0D02F"/>
+                        <text id="85%" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="827" y="214">85%</tspan>
+                        </text>
+                    </g>
+                </g>
+                <g id="atmos fuel">
+                    <g id="atmos-bar">
+                        <rect id="empty-atmos" x="760" y="20" width="40" height="200" fill="#2F3637"/>
+                        <rect id="fuel-nitron" x="760" y="160" width="40" height="60" fill="#7197D0"/>
+                        <text id="43%" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="767" y="214">43%</tspan>
+                        </text>
+                    </g>
+                    <g id="atmos-bar_2">
+                        <rect id="empty-atmos_2" x="720" y="20" width="40" height="200" fill="#2F3637"/>
+                        <rect id="fuel-nitron_2" x="720" y="140" width="40" height="80" fill="#2F6FD0"/>
+                        <text id="58%" fill="#ffffff" font-family="Play" font-size="12" font-weight="bold">
+                            <tspan x="727" y="214">58%</tspan>
+                        </text>
+                    </g>
+                </g>
+            </g>
+            <g id="target-data">
+                <g id="deviation">
+                    <text id="meter" fill="#ffffff" font-family="Play" font-size="12">
+                        <tspan x="587.445" y="214">meter</tspan>
+                    </text>
+                    <text id="0.1" fill="#ffffff" font-family="Play" font-size="32" font-weight="bold">
+                        <tspan x="574" y="191">0.1</tspan>
+                    </text>
+                    <text id="Deviation:" fill="#ffffff" font-family="Play" font-size="12">
+                        <tspan x="480" y="154">Deviation:</tspan>
+                    </text>
+                </g>
+                <g id="target-distance">
+                    <text id="meter_2" fill="#ffffff" font-family="Play" font-size="12">
+                        <tspan x="407.445" y="214">meter</tspan>
+                    </text>
+                    <text id="11.757" fill="#ffffff" font-family="Play" font-size="32" font-weight="bold">
+                        <tspan x="339" y="191">11.757</tspan>
+                    </text>
+                    <text id="Target distance:" fill="#ffffff" font-family="Play" font-size="12">
+                        <tspan x="300" y="154">Target distance:</tspan>
+                    </text>
+                </g>
+                <g id="target-height">
+                    <text id="meter_3" fill="#ffffff" font-family="Play" font-size="12">
+                        <tspan x="227.445" y="214">meter</tspan>
+                    </text>
+                    <text id="36.500" fill="#ffffff" font-family="Play" font-size="32" font-weight="bold">
+                        <tspan x="159" y="191">36.500</tspan>
+                    </text>
+                    <text id="Target height" fill="#ffffff" font-family="Play" font-size="12">
+                        <tspan x="120" y="154">Target height</tspan>
+                    </text>
+                </g>
+                <g id="target-icon">
+                    <rect id="block" x="60" y="140" width="20" height="20" fill="#B5BFC0"/>
+                    <rect id="block_2" x="40" y="160" width="20" height="20" fill="#B5BFC0"/>
+                    <rect id="block_3" x="60" y="180" width="20" height="20" fill="#B5BFC0"/>
+                    <rect id="block_4" x="80" y="160" width="20" height="20" fill="#B5BFC0"/>
+                </g>
+            </g>
+            <g id="current-data">
+                <g id="current-target">
+                    <text id="MAIN - End" fill="#ffffff" font-family="Play" font-size="16" font-weight="bold">
+                        <tspan x="480" y="75">MAIN - End</tspan>
+                    </text>
+                    <text id="Target-set:" fill="#ffffff" font-family="Play" font-size="12">
+                        <tspan x="480" y="54">Waypoint set:</tspan>
+                    </text>
+                </g>
+                <g id="current-speed">
+                    <text id="km/h" fill="#ffffff" font-family="Play" font-size="12">
+                        <tspan x="411.23" y="114">km/h</tspan>
+                    </text>
+                    <text id="1.075" fill="#ffffff" font-family="Play" font-size="32" font-weight="bold">
+                        <tspan x="357" y="91">1.075</tspan>
+                    </text>
+                    <text id="Current speed:" fill="#ffffff" font-family="Play" font-size="12">
+                        <tspan x="300" y="54">Current speed:</tspan>
+                    </text>
+                </g>
+                <g id="current-height">
+                    <text id="meter_4" fill="#ffffff" font-family="Play" font-size="12">
+                        <tspan x="227.445" y="114">meter</tspan>
+                    </text>
+                    <text id="1.723" fill="#ffffff" font-family="Play" font-size="32" font-weight="bold">
+                        <tspan x="177" y="91">1.723</tspan>
+                    </text>
+                    <text id="Current height:" fill="#ffffff" font-family="Play" font-size="12">
+                        <tspan x="120" y="54">Current height:</tspan>
+                    </text>
+                </g>
+                <g id="current-icon">
+                    <rect id="block_5" x="40" y="40" width="20" height="20" fill="#B5BFC0"/>
+                    <rect id="block_6" x="40" y="80" width="20" height="20" fill="#B5BFC0"/>
+                    <rect id="block_7" x="60" y="60" width="20" height="20" fill="#B5BFC0"/>
+                    <rect id="block_8" x="80" y="80" width="20" height="20" fill="#B5BFC0"/>
+                    <rect id="block_9" x="80" y="40" width="20" height="20" fill="#B5BFC0"/>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
