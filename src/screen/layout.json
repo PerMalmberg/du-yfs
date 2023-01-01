@@ -11,6 +11,10 @@
         "footer": {
             "font": "Play",
             "size": 14
+        },
+        "fuel-percent": {
+            "font": "Play",
+            "size": 9
         }
     },
     "styles": {
@@ -31,6 +35,19 @@
         "footer": {
             "fill": "#ffffffff",
             "align": "h2,v1"
+        },
+        "fuel-back": {
+            "fill": "#2f3637ff"
+        },
+        "fuel-atmo": {
+            "fill": "#2f6fd0ff"
+        },
+        "fuel-space": {
+            "fill": "#d0d02fff"
+        },
+        "fuel-percent": {
+            "fill": "#ffffffff",
+            "align": "h1,v2"
         }
     },
     "pages": {
@@ -249,6 +266,78 @@
                     "pos1": "(620,190)",
                     "font": "footer",
                     "text": "meter"
+                },
+                {
+                    "comment": "atmo-fuel-back",
+                    "type": "box",
+                    "layer": 1,
+                    "style": "fuel-back",
+                    "visible": true,
+                    "pos1": "(680,20)",
+                    "pos2": "(840,220)"
+                },
+                {
+                    "comment": "atmo-fuel-bar",
+                    "type": "box",
+                    "layer": 1,
+                    "style": "fuel-atmo",
+                    "visible": true,
+                    "pos1": "$vec2(path{fuel/atmo/[#]:factorBar}:init{(680,220)}:percent{(680,20)})",
+                    "pos2": "(720,220)",
+                    "replicate": {
+                        "x_count": 4,
+                        "x_step": 40
+                    }
+                },
+                {
+                    "comment": "atmo-percent",
+                    "type": "text",
+                    "layer": 1,
+                    "visible": 1,
+                    "text": "$num(path{fuel/atmo/[#]:factor}:init{100}:op{mul}:format{%0.1f%%})",
+                    "pos1": "(700,210)",
+                    "font": "fuel-percent",
+                    "style": "fuel-percent",
+                    "replicate": {
+                        "x_count": 4,
+                        "x_step": 40
+                    }
+                },
+                {
+                    "comment": "space-fuel-back",
+                    "type": "box",
+                    "layer": 1,
+                    "style": "fuel-back",
+                    "visible": true,
+                    "pos1": "(850,20)",
+                    "pos2": "(1010,220)"
+                },
+                {
+                    "comment": "space-fuel-bar",
+                    "type": "box",
+                    "layer": 1,
+                    "style": "fuel-space",
+                    "visible": true,
+                    "pos1": "$vec2(path{fuel/space/[#]:factorBar}:init{(850,220)}:percent{(850,20)})",
+                    "pos2": "(890,220)",
+                    "replicate": {
+                        "x_count": 4,
+                        "x_step": 40
+                    }
+                },
+                {
+                    "comment": "space-percent",
+                    "type": "text",
+                    "layer": 1,
+                    "visible": 1,
+                    "text": "$num(path{fuel/space/[#]:factor}:init{100}:op{mul}:format{%0.1f%%})",
+                    "pos1": "(870,210)",
+                    "font": "fuel-percent",
+                    "style": "fuel-percent",
+                    "replicate": {
+                        "x_count": 4,
+                        "x_step": 40
+                    }
                 }
             ]
         },

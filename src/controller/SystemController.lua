@@ -9,6 +9,7 @@ local log              = require("debug/Log")()
 local commandLine      = require("commandline/CommandLine").Instance()
 local pub              = require("util/PubSub").Instance()
 local input            = require("input/Input").Instance()
+local Vec2             = require("native/Vec2")
 local layout           = library.embedFile("../screen/layout_min.json")
 local Stream           = require("Stream")
 local json             = require("dkjson")
@@ -58,7 +59,7 @@ function SystemController.New(flightCore, settings)
     local commands = ControlCommands.New(input, commandLine, flightCore)
     local info = InfoCentral.Instance()
     local rc = flightCore.GetRouteController()
-    local flightData = ValueTree.New()
+    local dataToScreen = ValueTree.New()
     local talents = ContainerTalents.New(0, 0, 0, 0, 0, 0)
 
     ---@param stream Stream
@@ -95,8 +96,8 @@ function SystemController.New(flightCore, settings)
             ---@param topic string
             ---@param data FlightData
             function(topic, data)
-                flightData.Set("flightData/absSpeed", calc.Mps2Kph(data.absSpeed))
-                flightData.Set("flightData/wpDist", calc.Mps2Kph(data.waypointDist))
+                dataToScreen.Set("flightData/absSpeed", calc.Mps2Kph(data.absSpeed))
+                dataToScreen.Set("flightData/wpDist", calc.Mps2Kph(data.waypointDist))
             end)
 
         local stream = Stream.New(screen, dataReceived, 1, onTimeout)
@@ -107,7 +108,7 @@ function SystemController.New(flightCore, settings)
 
             if not stream.WaitingToSend() then
                 -- Get data to send to screen
-                local data = flightData.Pick()
+                local data = dataToScreen.Pick()
                 -- Send data to screen
                 if data then
                     local ser = json.encode(data)
@@ -169,27 +170,35 @@ function SystemController.New(flightCore, settings)
         sw.Start()
 
         local tanks = {
-            AtmoFuelLevels = Container.GetAllCo(ContainerType.Atmospheric),
-            SpaceFuelLevels = Container.GetAllCo(ContainerType.Space),
-            RocketFuelLevels = Container.GetAllCo(ContainerType.Rocket)
+            atmo = Container.GetAllCo(ContainerType.Atmospheric),
+            space = Container.GetAllCo(ContainerType.Space),
+            rocket = Container.GetAllCo(ContainerType.Rocket)
         }
 
         while true do
             if sw.Elapsed() < 2 then
                 coroutine.yield()
             else
-                for key, containers in pairs(tanks) do
+                for fuelType, containers in pairs(tanks) do
                     local fillFactors = {} ---@type {name:string, factor:number}[]
                     for _, tank in ipairs(containers) do
-                        table.insert(fillFactors, { name = tank.Name(), factor = tank.FuelFillFactor(talents) })
+                        local factor = tank.FuelFillFactor(talents)
+                        table.insert(fillFactors,
+                            { name = tank.Name(),
+                                factorBar = Vec2.New(1, factor),
+                                factor = factor })
+                        coroutine.yield()
                     end
 
+                    -- Sort tanks in acending fuel levels
                     table.sort(fillFactors,
                         function(a, b) return a.factor < b.factor end)
-                    pub.Publish(key, fillFactors)
-                    coroutine.yield()
 
-                    log:Info(key, fillFactors) --qqq
+                    for i, tankInfo in ipairs(fillFactors) do
+                        dataToScreen.Set(string.format("fuel/%s/%d", fuelType, i), tankInfo)
+                    end
+
+                    coroutine.yield()
                 end
 
                 sw.Restart()
