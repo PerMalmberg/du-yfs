@@ -180,19 +180,19 @@ function SystemController.New(flightCore, settings)
                 coroutine.yield()
             else
                 for fuelType, containers in pairs(tanks) do
-                    local fillFactors = {} ---@type {name:string, factor:number}[]
+                    local fillFactors = {} ---@type {name:string, factorBar:Vec2, percent:number}[]
                     for _, tank in ipairs(containers) do
                         local factor = tank.FuelFillFactor(talents)
                         table.insert(fillFactors,
                             { name = tank.Name(),
                                 factorBar = Vec2.New(1, factor),
-                                factor = factor })
+                                percent = factor * 100 })
                         coroutine.yield()
                     end
 
                     -- Sort tanks in acending fuel levels
                     table.sort(fillFactors,
-                        function(a, b) return a.factor < b.factor end)
+                        function(a, b) return a.percent < b.percent end)
 
                     for i, tankInfo in ipairs(fillFactors) do
                         dataToScreen.Set(string.format("fuel/%s/%d", fuelType, i), tankInfo)
