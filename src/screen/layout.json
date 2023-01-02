@@ -19,6 +19,10 @@
         "route-endpoint-text": {
             "font": "Play",
             "size": 14
+        },
+        "route-name": {
+            "font": "Play",
+            "size": 24
         }
     },
     "styles": {
@@ -67,6 +71,10 @@
             "fill": "#2f6fd0ff"
         },
         "route-endpoint-text": {
+            "fill": "#ffffffff",
+            "align": "h1,v2"
+        },
+        "route-name": {
             "fill": "#ffffffff",
             "align": "h1,v2"
         }
@@ -350,7 +358,7 @@
                     "comment": "route upper",
                     "type": "box",
                     "layer": 1,
-                    "visible": "$bool(path{route/[#]:visible}:init{true})",
+                    "visible": "$bool(path{route/[#]:visible}:init{false})",
                     "pos1": "(40,280)",
                     "pos2": "(160,320)",
                     "style": "route-button",
@@ -368,7 +376,7 @@
                     "comment": "route upper cover left",
                     "type": "box",
                     "layer": 1,
-                    "visible": "$bool(path{route/[#]:visible}:init{true})",
+                    "visible": "$bool(path{route/[#]:visible}:init{false})",
                     "pos1": "(40,300)",
                     "pos2": "(60,320)",
                     "style": "bkg-light",
@@ -381,7 +389,7 @@
                     "comment": "route upper cover right",
                     "type": "box",
                     "layer": 1,
-                    "visible": "$bool(path{route/[#]:visible}:init{true})",
+                    "visible": "$bool(path{route/[#]:visible}:init{false})",
                     "pos1": "(140,300)",
                     "pos2": "(160,320)",
                     "style": "bkg-light",
@@ -393,7 +401,7 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": "$bool(path{route/[#]:visible}:init{true})",
+                    "visible": "$bool(path{route/[#]:visible}:init{false})",
                     "pos1": "(100,300)",
                     "text": "End",
                     "style": "route-endpoint-text",
@@ -408,18 +416,29 @@
                     "comment": "route lower",
                     "type": "box",
                     "layer": 1,
-                    "visible": "$bool(path{route/[#]:visible}:init{true})",
+                    "visible": "$bool(path{route/[#]:visible}:init{false})",
                     "pos1": "(40,380)",
                     "pos2": "(160,420)",
                     "style": "route-button",
                     "mouse": {
                         "inside": {
                             "set_style": "route-button-hover"
-                        },
-                        "click": {
-                            "command": "Hello"
                         }
                     },
+                    "replicate": {
+                        "x_count": 5,
+                        "x_step": 160
+                    }
+                },
+                {
+                    "comment": "route name",
+                    "type": "text",
+                    "layer": 1,
+                    "pos1": "(100, 350)",
+                    "visible": "$bool(path{route/[#]:visible}:init{false})",
+                    "style": "route-name",
+                    "font": "route-name",
+                    "text": "$str(path{route/[#]:name}:init{route name})",
                     "replicate": {
                         "x_count": 5,
                         "x_step": 160
@@ -429,7 +448,7 @@
                     "comment": "route lower cover left",
                     "type": "box",
                     "layer": 1,
-                    "visible": "$bool(path{route/[#]:visible}:init{true})",
+                    "visible": "$bool(path{route/[#]:visible}:init{false})",
                     "pos1": "(40,380)",
                     "pos2": "(60,400)",
                     "style": "bkg-light",
@@ -442,7 +461,7 @@
                     "comment": "route lower cover right",
                     "type": "box",
                     "layer": 1,
-                    "visible": "$bool(path{route/[#]:visible}:init{true})",
+                    "visible": "$bool(path{route/[#]:visible}:init{false})",
                     "pos1": "(140,380)",
                     "pos2": "(160,400)",
                     "style": "bkg-light",
@@ -454,7 +473,7 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": "$bool(path{route/[#]:visible}:init{true})",
+                    "visible": "$bool(path{route/[#]:visible}:init{false})",
                     "pos1": "(100,400)",
                     "text": "Start",
                     "style": "route-endpoint-text",
@@ -464,212 +483,6 @@
                         "x_count": 5,
                         "x_step": 160
                     }
-                }
-            ]
-        },
-        "old_routeSelection": {
-            "components": [
-                {
-                    "type": "text",
-                    "layer": 1,
-                    "pos1": "(50,50)",
-                    "style": "RouteButtonText",
-                    "font": "RouteTextFont",
-                    "text": "$str(path{routes:1}:init{})",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:1}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonTextHover"
-                        }
-                    }
-                },
-                {
-                    "type": "box",
-                    "layer": 1,
-                    "pos1": "(45,45)",
-                    "pos2": "(350,70)",
-                    "style": "RouteButtonBox",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:1}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonBoxHover"
-                        }
-                    }
-                },
-                {
-                    "type": "text",
-                    "layer": 1,
-                    "pos1": "(50,100)",
-                    "style": "RouteButtonText",
-                    "font": "RouteTextFont",
-                    "text": "$str(path{routes:2}:init{})",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:2}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonTextHover"
-                        }
-                    }
-                },
-                {
-                    "type": "box",
-                    "layer": 1,
-                    "pos1": "(45,95)",
-                    "pos2": "(350,120)",
-                    "style": "RouteButtonBox",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:2}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonBoxHover"
-                        }
-                    }
-                },
-                {
-                    "type": "text",
-                    "layer": 1,
-                    "pos1": "(50,150)",
-                    "style": "RouteButtonText",
-                    "font": "RouteTextFont",
-                    "text": "$str(path{routes:3}:init{})",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:3}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonTextHover"
-                        }
-                    }
-                },
-                {
-                    "type": "box",
-                    "layer": 1,
-                    "pos1": "(45,145)",
-                    "pos2": "(350,170)",
-                    "style": "RouteButtonBox",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:3}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonBoxHover"
-                        }
-                    }
-                },
-                {
-                    "type": "text",
-                    "layer": 1,
-                    "pos1": "(50,200)",
-                    "style": "RouteButtonText",
-                    "font": "RouteTextFont",
-                    "text": "$str(path{routes:4}:init{})",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:4}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonTextHover"
-                        }
-                    }
-                },
-                {
-                    "type": "box",
-                    "layer": 1,
-                    "pos1": "(45,195)",
-                    "pos2": "(350,220)",
-                    "style": "RouteButtonBox",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:4}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonBoxHover"
-                        }
-                    }
-                },
-                {
-                    "type": "text",
-                    "layer": 1,
-                    "pos1": "(50,250)",
-                    "style": "RouteButtonText",
-                    "font": "RouteTextFont",
-                    "text": "$str(path{routes:5}:init{})",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:5}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonTextHover"
-                        }
-                    }
-                },
-                {
-                    "type": "box",
-                    "layer": 1,
-                    "pos1": "(45,245)",
-                    "pos2": "(350,270)",
-                    "style": "RouteButtonBox",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:5}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonBoxHover"
-                        }
-                    }
-                },
-                {
-                    "type": "text",
-                    "layer": 1,
-                    "pos1": "(50,300)",
-                    "style": "RouteButtonText",
-                    "font": "RouteTextFont",
-                    "text": "$str(path{routes:6}:init{})",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:6}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonTextHover"
-                        }
-                    }
-                },
-                {
-                    "type": "box",
-                    "layer": 1,
-                    "pos1": "(45,295)",
-                    "pos2": "(350,320)",
-                    "style": "RouteButtonBox",
-                    "mouse": {
-                        "click": {
-                            "command": "$str(path{routes:5}:format{route-activate '%s'}:init{})"
-                        },
-                        "inside": {
-                            "set_style": "RouteButtonBoxHover"
-                        }
-                    }
-                },
-                {
-                    "type": "text",
-                    "layer": 1,
-                    "pos1": "(360,50)",
-                    "style": "InfoText",
-                    "font": "InfoFont",
-                    "text": "$num(path{flightData:absSpeed}:init{0}:format{Speed: %0.2f km/h}:interval{0.5})"
-                },
-                {
-                    "type": "text",
-                    "layer": 1,
-                    "pos1": "(360,75)",
-                    "style": "InfoText",
-                    "font": "InfoFont",
-                    "text": "$num(path{flightData:wpDist}:init{0}:format{Distance: %0.2f m}:interval{0.5})"
                 }
             ]
         }

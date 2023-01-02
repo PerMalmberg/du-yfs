@@ -1,7 +1,8 @@
-local Point = require("flight/route/Point")
-local Route = require("flight/route/Route")
-local log = require("debug/Log")()
+local Point    = require("flight/route/Point")
+local Route    = require("flight/route/Route")
+local log      = require("debug/Log")()
 local universe = require("universe/Universe").Instance()
+local calc     = require("util/Calc")
 require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}
@@ -10,6 +11,8 @@ require("util/Table")
 
 ---@class RouteController
 ---@field GetRouteNames fun():string[]
+---@field GetPageCount fun(perPage:integer):integer
+---@field GetRoutePage fun(page:integer, perPage:integer):string[]]
 ---@field EditRoute fun(name:string):Route|nil
 ---@field DeleteRoute fun(name:string)
 ---@field StoreRoute fun(name:string, route:Route):boolean
@@ -60,7 +63,40 @@ function RouteController.Instance(bufferedDB)
             table.insert(res, name)
         end
 
+        table.sort(res)
+
         return res
+    end
+
+    ---@param page integer
+    ---@param perPage integer
+    ---@return string[]
+    function s.GetRoutePage(page, perPage)
+        local all = s.GetRouteNames()
+
+        if #all == 0 then return {} end
+
+        local totalPages = math.ceil(#all / perPage)
+        page = calc.Clamp(page, 1, totalPages)
+
+        local startIx = (page - 1) * perPage + 1
+        local endIx = startIx + perPage - 1
+
+        local res = {} ---@type string[]
+        local ix = 1
+
+        for i = startIx, endIx, 1 do
+            res[ix] = all[i]
+            ix = ix + 1
+        end
+
+        return res
+    end
+
+    ---@param perPage integer
+    ---@return integer
+    function s.GetPageCount(perPage)
+        return math.ceil(#s.GetRouteNames() / perPage)
     end
 
     ---Returns the number of routes

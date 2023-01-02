@@ -7,10 +7,12 @@
 	"settings": {
 		"runOnSave.commands": [
 			{
-				"globMatch": ".+\\.lua",
+				"match": ".*",
 				"command": "make test",
 				"runIn": "terminal"
 			}
-		]
+		],
+		"editor.formatOnSave": true,
+		"files.autoSave": "onFocusChange"
 	}
 }

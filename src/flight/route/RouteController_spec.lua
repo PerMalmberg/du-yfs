@@ -250,4 +250,43 @@ describe("RouteController #flight", function()
         assert.is_true(c.DeleteWaypoint("todelete"))
         assert.are_equal(count, TableLen(c.GetWaypoints()))
     end)
+
+    it("Can do pagenation", function()
+        for _, name in ipairs(c.GetRouteNames()) do
+            c.DeleteRoute(name)
+        end
+        assert.are_equal(0, c.Count())
+
+        for i = 1, 11, 1 do
+            c.CreateRoute(string.format("route%2d", i)) -- Make route names alphabetically sortable
+            c.SaveRoute()
+        end
+
+        assert.are_equal(11, c.Count())
+        assert.are_equal(3, c.GetPageCount(5))
+
+        local five = c.GetRoutePage(1, 5)
+        assert.are_equal(5, TableLen(five))
+        assert.equal("route 1", five[1])
+        assert.equal("route 2", five[2])
+        assert.equal("route 3", five[3])
+        assert.equal("route 4", five[4])
+        assert.equal("route 5", five[5])
+
+        five = c.GetRoutePage(2, 5)
+        assert.are_equal(5, TableLen(five))
+        assert.equal("route 6", five[1])
+        assert.equal("route 7", five[2])
+        assert.equal("route 8", five[3])
+        assert.equal("route 9", five[4])
+        assert.equal("route10", five[5])
+
+        local one = c.GetRoutePage(3, 5)
+        assert.are_equal(1, TableLen(one))
+        assert.equal("route11", one[1])
+
+        -- Get the last page
+        local pastEnd = c.GetRoutePage(10, 5)
+        assert.are_equal(1, TableLen(pastEnd))
+    end)
 end)

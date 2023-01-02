@@ -61,12 +61,14 @@ function SystemController.New(flightCore, settings)
     local rc = flightCore.GetRouteController()
     local dataToScreen = ValueTree.New()
     local talents = ContainerTalents.New(0, 0, 0, 0, 0, 0)
+    local routePage = 1
+    local routesPerPage = 5
 
     ---@param stream Stream
     local function sendRoutes(stream)
-        local t = { routes = {} } ---@type string[]
-        for i, r in ipairs(rc.GetRouteNames()) do
-            t.routes[tostring(i)] = r
+        local t = { route = {} }
+        for i, r in ipairs(rc.GetRoutePage(routePage, routesPerPage)) do
+            t.route[tostring(i)] = { visible = true, name = r }
         end
         stream.Write(serialize(t))
     end
@@ -93,11 +95,18 @@ function SystemController.New(flightCore, settings)
         screen.activate()
 
         pub.RegisterTable("FlightData",
-            ---@param topic string
+            ---@param _ string
             ---@param data FlightData
-            function(topic, data)
+            function(_, data)
                 dataToScreen.Set("flightData/absSpeed", calc.Mps2Kph(data.absSpeed))
-                dataToScreen.Set("flightData/wpDist", calc.Mps2Kph(data.waypointDist))
+                dataToScreen.Set("target/distance", calc.Mps2Kph(data.waypointDist))
+            end)
+
+        pub.RegisterTable("AdjustmentData",
+            ---@param _ string
+            ---@param data AdjustmentData
+            function(_, data)
+                dataToScreen.Set("adjustment/distance", calc.Mps2Kph(data.distance))
             end)
 
         local stream = Stream.New(screen, dataReceived, 1, onTimeout)
