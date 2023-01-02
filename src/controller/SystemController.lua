@@ -180,13 +180,14 @@ function SystemController.New(flightCore, settings)
                 coroutine.yield()
             else
                 for fuelType, containers in pairs(tanks) do
-                    local fillFactors = {} ---@type {name:string, factorBar:Vec2, percent:number}[]
+                    local fillFactors = {} ---@type {name:string, factorBar:Vec2, percent:number, visible:boolean}[]
                     for _, tank in ipairs(containers) do
                         local factor = tank.FuelFillFactor(talents)
                         table.insert(fillFactors,
                             { name = tank.Name(),
                                 factorBar = Vec2.New(1, factor),
-                                percent = factor * 100 })
+                                percent = factor * 100,
+                                visible = true })
                         coroutine.yield()
                     end
 

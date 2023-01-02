@@ -18,6 +18,9 @@
         }
     },
     "styles": {
+        "hidden": {
+            "fill": "#00000000"
+        },
         "bkg-dark": {
             "fill": "#546263ff"
         },
@@ -57,7 +60,6 @@
                     "comment": "background",
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "style": "bkg-dark",
                     "pos1": "(0,0)",
                     "pos2": "(1024,240)"
@@ -66,7 +68,6 @@
                     "comment": "background",
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "style": "bkg-light",
                     "pos1": "(0,241)",
                     "pos2": "(1024,613)"
@@ -75,7 +76,6 @@
                     "comment": "current-icon-outer",
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "style": "bkg-light",
                     "pos1": "(40,20)",
                     "pos2": "(60,40)",
@@ -90,7 +90,6 @@
                     "comment": "current-icon-center",
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "style": "bkg-light",
                     "pos1": "(60,40)",
                     "pos2": "(80,60)"
@@ -98,7 +97,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "header-text",
                     "pos1": "(120,20)",
                     "text": "Current height",
@@ -107,7 +105,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "info",
                     "pos1": "(280,40)",
                     "font": "info",
@@ -116,7 +113,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "footer",
                     "pos1": "(260,70)",
                     "font": "footer",
@@ -125,7 +121,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "header-text",
                     "pos1": "(300,20)",
                     "text": "Current speed",
@@ -134,7 +129,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "info",
                     "pos1": "(460,40)",
                     "font": "info",
@@ -143,7 +137,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "footer",
                     "pos1": "(440,70)",
                     "font": "footer",
@@ -152,7 +145,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "header-text",
                     "pos1": "(480,20)",
                     "text": "Current route",
@@ -162,7 +154,6 @@
                     "comment": "target-icon-vert",
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "style": "bkg-light",
                     "pos1": "(60,140)",
                     "pos2": "(80,160)",
@@ -176,7 +167,6 @@
                     "comment": "target-icon-hor",
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "style": "bkg-light",
                     "pos1": "(40,160)",
                     "pos2": "(60,180)",
@@ -189,7 +179,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "header-text",
                     "pos1": "(120,140)",
                     "text": "Target height",
@@ -198,7 +187,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "info",
                     "pos1": "(280,160)",
                     "font": "info",
@@ -207,7 +195,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "footer",
                     "pos1": "(260,190)",
                     "font": "footer",
@@ -216,7 +203,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "header-text",
                     "pos1": "(300,140)",
                     "text": "Target distance",
@@ -225,7 +211,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "info",
                     "pos1": "(460,160)",
                     "font": "info",
@@ -234,7 +219,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "footer",
                     "pos1": "(440,190)",
                     "font": "footer",
@@ -243,7 +227,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "header-text",
                     "pos1": "(480,140)",
                     "text": "Deviation",
@@ -252,7 +235,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "info",
                     "pos1": "(640,160)",
                     "font": "info",
@@ -261,7 +243,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "style": "footer",
                     "pos1": "(620,190)",
                     "font": "footer",
@@ -272,16 +253,20 @@
                     "type": "box",
                     "layer": 1,
                     "style": "fuel-back",
-                    "visible": true,
+                    "visible": "$bool(path{fuel/atmo/[#]:visible}:init{false})",
                     "pos1": "(680,20)",
-                    "pos2": "(840,220)"
+                    "pos2": "(720,220)",
+                    "replicate": {
+                        "x_count": 4,
+                        "x_step": 40
+                    }
                 },
                 {
                     "comment": "atmo-fuel-bar",
                     "type": "box",
                     "layer": 1,
                     "style": "fuel-atmo",
-                    "visible": true,
+                    "visible": "$bool(path{fuel/atmo/[#]:visible}:init{false})",
                     "pos1": "$vec2(path{fuel/atmo/[#]:factorBar}:init{(680,220)}:percent{(680,20)})",
                     "pos2": "(720,220)",
                     "replicate": {
@@ -293,7 +278,7 @@
                     "comment": "atmo-percent",
                     "type": "text",
                     "layer": 1,
-                    "visible": 1,
+                    "visible": "$bool(path{fuel/atmo/[#]:visible}:init{false})",
                     "text": "$num(path{fuel/atmo/[#]:percent}:init{0}:format{%0.1f%%})",
                     "pos1": "(700,210)",
                     "font": "fuel-percent",
@@ -308,16 +293,20 @@
                     "type": "box",
                     "layer": 1,
                     "style": "fuel-back",
-                    "visible": true,
+                    "visible": "$bool(path{fuel/space/[#]:visible}:init{false})",
                     "pos1": "(850,20)",
-                    "pos2": "(1010,220)"
+                    "pos2": "(890,220)",
+                    "replicate": {
+                        "x_count": 4,
+                        "x_step": 40
+                    }
                 },
                 {
                     "comment": "space-fuel-bar",
                     "type": "box",
                     "layer": 1,
                     "style": "fuel-space",
-                    "visible": true,
+                    "visible": "$bool(path{fuel/space/[#]:visible}:init{false})",
                     "pos1": "$vec2(path{fuel/space/[#]:factorBar}:init{(850,220)}:percent{(850,20)})",
                     "pos2": "(890,220)",
                     "replicate": {
@@ -329,7 +318,7 @@
                     "comment": "space-percent",
                     "type": "text",
                     "layer": 1,
-                    "visible": 1,
+                    "visible": "$bool(path{fuel/space/[#]:visible}:init{false})",
                     "text": "$num(path{fuel/space/[#]:percent}:init{0}:format{%0.1f%%})",
                     "pos1": "(870,210)",
                     "font": "fuel-percent",
@@ -346,7 +335,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(50,50)",
                     "style": "RouteButtonText",
                     "font": "RouteTextFont",
@@ -363,7 +351,6 @@
                 {
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(45,45)",
                     "pos2": "(350,70)",
                     "style": "RouteButtonBox",
@@ -379,7 +366,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(50,100)",
                     "style": "RouteButtonText",
                     "font": "RouteTextFont",
@@ -396,7 +382,6 @@
                 {
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(45,95)",
                     "pos2": "(350,120)",
                     "style": "RouteButtonBox",
@@ -412,7 +397,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(50,150)",
                     "style": "RouteButtonText",
                     "font": "RouteTextFont",
@@ -429,7 +413,6 @@
                 {
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(45,145)",
                     "pos2": "(350,170)",
                     "style": "RouteButtonBox",
@@ -445,7 +428,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(50,200)",
                     "style": "RouteButtonText",
                     "font": "RouteTextFont",
@@ -462,7 +444,6 @@
                 {
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(45,195)",
                     "pos2": "(350,220)",
                     "style": "RouteButtonBox",
@@ -478,7 +459,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(50,250)",
                     "style": "RouteButtonText",
                     "font": "RouteTextFont",
@@ -495,7 +475,6 @@
                 {
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(45,245)",
                     "pos2": "(350,270)",
                     "style": "RouteButtonBox",
@@ -511,7 +490,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(50,300)",
                     "style": "RouteButtonText",
                     "font": "RouteTextFont",
@@ -528,7 +506,6 @@
                 {
                     "type": "box",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(45,295)",
                     "pos2": "(350,320)",
                     "style": "RouteButtonBox",
@@ -544,7 +521,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(360,50)",
                     "style": "InfoText",
                     "font": "InfoFont",
@@ -553,7 +529,6 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "visible": true,
                     "pos1": "(360,75)",
                     "style": "InfoText",
                     "font": "InfoFont",
