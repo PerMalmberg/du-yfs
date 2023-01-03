@@ -8,6 +8,7 @@ local AngAcc = vehicle.acceleration.localized.Angular
 local SignLargestAxis = calc.SignLargestAxis
 local PID = require("cpml/pid")
 local pub = require("util/PubSub").Instance()
+local visual = r.visual
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
@@ -29,6 +30,11 @@ local finalAcceleration = {} ---@type Vec3[]
 finalAcceleration[ControlledAxis.Pitch] = nullVec
 finalAcceleration[ControlledAxis.Roll] = nullVec
 finalAcceleration[ControlledAxis.Yaw] = nullVec
+
+local offsets = {} ---@type number[]
+offsets[ControlledAxis.Pitch] = 0
+offsets[ControlledAxis.Roll] = 0
+offsets[ControlledAxis.Yaw] = 0
 
 ---@class AxisControl
 ---@field ReceiveEvents fun()
@@ -54,7 +60,6 @@ function AxisControl.New(axis)
     local normal = nil ---@type fun():Vec3
     local localNormal = nil ---@type fun():Vec3
 
-    local controlledAxis = axis
     local updateHandlerId = nil
     local targetCoordinate = nil ---@type Vec3|nil
     local pid = PID(24, 16, 1600, 0.1) -- 0.5 amortization makes it alot smoother
@@ -101,12 +106,21 @@ function AxisControl.New(axis)
             s:Disable()
         else
             targetCoordinate = target
+
+            --QQQ
+            if axis == ControlledAxis.Roll then
+                visual:DrawNumber(0, target)
+            elseif axis == ControlledAxis.Pitch then
+                visual:DrawNumber(1, target)
+            else
+                visual:DrawNumber(2, target)
+            end
         end
     end
 
     function s.Disable()
         targetCoordinate = nil
-        finalAcceleration[controlledAxis] = nullVec
+        finalAcceleration[axis] = nullVec
     end
 
     ---Returns the current signed angular velocity, in degrees per seconds.
@@ -135,15 +149,8 @@ function AxisControl.New(axis)
 
             local vecToTarget = targetCoordinate - vehicle.position.Current()
             local offset = calc.SignedRotationAngle(normal(), reference(), vecToTarget) * rad2deg
+            offsets[axis] = offset
             axisData.offset = offset
-
-            -- Prefer yaw above pitch by preventing the construct from pitching when the target point is behind.
-            -- This prevents construct from ending up upside down while gravity affects us and engines can't keep us afloat.
-            if s.controlledAxis == ControlledAxis.Pitch then
-                if abs(offset) >= 90 and G() > 0 then
-                    offset = 0
-                end
-            end
 
             local sign = Sign(offset)
             local isLeftOf = sign == -1
@@ -156,8 +163,8 @@ function AxisControl.New(axis)
 
             pid:inject(offset)
 
-            finalAcceleration[controlledAxis] = normal() * pid:get() * deg2rad *
-                calc.Ternary(movingTowardsTarget, 0.5, 1)
+            finalAcceleration[axis] = normal() * pid:get() * deg2rad *
+                calc.Ternary(movingTowardsTarget, 0.05, 0.1)
         end
 
         if apply then

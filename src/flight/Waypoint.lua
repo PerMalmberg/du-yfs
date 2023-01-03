@@ -14,7 +14,7 @@ local vehicle = r.vehicle
 ---@field DirectionTo fun():Vec3
 ---@field GetPrecisionMode fun():boolean
 ---@field SetPrecisionMode fun(v:boolean)
----@field LockDirection fun(direction:Vec3, forced:boolean)
+---@field LockDirection fun(direction:Vec3, forced:boolean, reason:string)
 ---@field DirectionLocked fun():boolean
 ---@field Roll fun(previouss.Waypoint):Vec3
 ---@field YawAndPitch fun(previous:Waypoint):Vec3
@@ -106,10 +106,12 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
     ---Locks the direction
     ---@param direction Vec3 The direction to lock towards
     ---@param forced boolean If true, overrides existing lock
-    function s.LockDirection(direction, forced)
+    ---@param reason string
+    function s.LockDirection(direction, forced, reason)
         if s.yawPitchDirection == nil or forced then
             s.yawPitchDirection = direction
             s.yawPitchFunc = alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference
+            system.print("Locked: " .. reason)
         end
     end
 

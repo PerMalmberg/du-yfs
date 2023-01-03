@@ -53,7 +53,7 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
     wp.SetPrecisionMode(opt.Get(PointOptions.PRECISION, false))
 
     if dir ~= nullVec then
-        wp.LockDirection(dir, true)
+        wp.LockDirection(dir, true, "New wp")
     end
 
     return wp
@@ -140,13 +140,15 @@ function FlightCore.New(routeController, flightFSM)
     ---@param degrees number The angle to turn
     ---@param axis Vec3
     function s.Turn(degrees, axis)
-        checks.IsNumber(degrees, "degrees", "s.RotateWaypoints")
-        checks.IsVec3(axis, "axis", "s.RotateWaypoints")
-
         local currentWp = currentWaypoint
         if currentWp then
-            local direction = calc.RotateAroundAxis(vehicle.orientation.Forward(), nullVec, degrees, axis)
-            currentWp.LockDirection(direction, true)
+            local current = vehicle.position.Current()
+            local forwardPointOnPlane = calc.ProjectPointOnPlane(axis, current,
+                current + vehicle.orientation.Forward() * 10)
+            local forwardDir = forwardPointOnPlane - current
+
+            local direction = calc.RotateAroundAxis(forwardDir, nullVec, degrees, axis)
+            currentWp.LockDirection(direction, true, "Turn")
         end
     end
 
@@ -231,7 +233,7 @@ function FlightCore.New(routeController, flightFSM)
                             waypointReachedSignaled = true
                             flightFSM.WaypointReached(route.LastPointReached(), wp, previousWaypoint)
 
-                            wp.LockDirection(vehicle.orientation.Forward(), false)
+                            wp.LockDirection(vehicle.orientation.Forward(), false, "Reached")
                         end
 
                         -- Switch to next waypoint
