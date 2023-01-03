@@ -17,7 +17,7 @@ local vehicle = r.vehicle
 ---@field LockDirection fun(direction:Vec3, forced:boolean, reason:string)
 ---@field DirectionLocked fun():boolean
 ---@field Roll fun(previouss.Waypoint):Vec3
----@field YawAndPitch fun(previous:Waypoint):Vec3
+---@field YawAndPitch fun(previous:Waypoint):{yaw:Vec3, pitch:Vec3}|nil
 ---@field YawPitchDirection fun():Vec3
 
 local Waypoint = {}
@@ -134,7 +134,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
 
     ---Performs the way and pitch applicable for this waypoint
     ---@param previousWaypoint Waypoint
-    ---@return Vec3|nil
+    ---@return {yaw:Vec3, pitch:Vec3}|nil
     function s.YawAndPitch(previousWaypoint)
         if s.yawPitchFunc ~= nil then
             return s.yawPitchFunc(s, previousWaypoint)

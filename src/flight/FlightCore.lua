@@ -181,8 +181,8 @@ function FlightCore.New(routeController, flightFSM)
         local target = waypoint.YawAndPitch(prev)
 
         if target ~= nil then
-            yaw.SetTarget(target)
-            pitch.SetTarget(target)
+            yaw.SetTarget(target.yaw)
+            pitch.SetTarget(target.pitch)
         else
             yaw.Disable()
             pitch.Disable()

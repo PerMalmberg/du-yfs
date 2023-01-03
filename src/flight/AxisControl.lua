@@ -106,15 +106,6 @@ function AxisControl.New(axis)
             s:Disable()
         else
             targetCoordinate = target
-
-            --QQQ
-            if axis == ControlledAxis.Roll then
-                visual:DrawNumber(0, target)
-            elseif axis == ControlledAxis.Pitch then
-                visual:DrawNumber(1, target)
-            else
-                visual:DrawNumber(2, target)
-            end
         end
     end
 
