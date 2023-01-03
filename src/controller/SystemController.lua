@@ -14,6 +14,7 @@ local layout           = library.embedFile("../screen/layout_min.json")
 local Stream           = require("Stream")
 local json             = require("dkjson")
 local calc             = require("util/Calc")
+local Stopwatch        = require("system/Stopwatch")
 
 ---@param t table
 ---@return string
@@ -70,6 +71,12 @@ function SystemController.New(flightCore, settings)
         for i, r in ipairs(rc.GetRoutePage(routePage, routesPerPage)) do
             t.route[tostring(i)] = { visible = true, name = r }
         end
+
+        -- Ensure to hide the rest if routes have been removed.
+        for i = TableLen(t.route) + 1, routesPerPage, 1 do
+            t.route[tostring(i)] = { visible = false, name = "" }
+        end
+
         stream.Write(serialize(t))
     end
 
@@ -90,9 +97,11 @@ function SystemController.New(flightCore, settings)
         local screen = library.getLinkByClass("ScreenUnit")
 
         if not screen then return end
-
         log:Info("Screen found")
         screen.activate()
+
+        local routeTimer = Stopwatch.New()
+        routeTimer.Start()
 
         pub.RegisterTable("FlightData",
             ---@param _ string
@@ -116,6 +125,11 @@ function SystemController.New(flightCore, settings)
             stream.Tick()
 
             if not stream.WaitingToSend() then
+                if not routeTimer.IsRunning() or routeTimer.Elapsed() > 5 then
+                    sendRoutes(stream)
+                    routeTimer.Restart()
+                end
+
                 -- Get data to send to screen
                 local data = dataToScreen.Pick()
                 -- Send data to screen

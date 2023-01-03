@@ -365,6 +365,9 @@
                     "mouse": {
                         "inside": {
                             "set_style": "route-button-hover"
+                        },
+                        "click": {
+                            "command": "$str(path{route/[#]:name}:init{}:format{route-activate '%s'})"
                         }
                     },
                     "replicate": {
@@ -423,6 +426,9 @@
                     "mouse": {
                         "inside": {
                             "set_style": "route-button-hover"
+                        },
+                        "click": {
+                            "command": "$str(path{route/[#]:name}:init{}:format{route-activate '%s' -reverse})"
                         }
                     },
                     "replicate": {
