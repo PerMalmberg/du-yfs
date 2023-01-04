@@ -143,7 +143,6 @@ function FlightCore.New(routeController, flightFSM)
         local forwardPointOnPlane = calc.ProjectPointOnPlane(axis, current,
             current + vehicle.orientation.Forward() * alignment.DirectionMargin)
         forwardPointOnPlane = calc.RotateAroundAxis(forwardPointOnPlane, current, degrees, axis)
-        system.setWaypoint(universe.CreatePos(forwardPointOnPlane).AsPosString(), false)
         s.AlignTo(forwardPointOnPlane)
     end
 
