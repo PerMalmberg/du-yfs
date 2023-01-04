@@ -238,10 +238,11 @@ function FlightCore.New(routeController, flightFSM)
                         if not waypointReachedSignaled then
                             waypointReachedSignaled = true
                             flightFSM.WaypointReached(route.LastPointReached(), wp, previousWaypoint)
+                            -- Lock direction when WP is reached, but don't override existing locks, such as is in place when strafing.
                             wp.LockDirection(
                                 alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(wp,
                                     previousWaypoint),
-                                true)
+                                false)
                         end
 
                         -- Switch to next waypoint
