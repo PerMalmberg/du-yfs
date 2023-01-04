@@ -9,9 +9,9 @@ local abs = math.abs
 
 -- Reminder: Don't return a point based on the constructs' current position, it will cause spin if it overshoots etc.
 
--- Return a point this far from the waypoint so that in case we overshoot
--- we don't get the point behind us and start turning around
-local directionMargin = 10
+-- Return a direction target point this far from the waypoint so that in case we overshoot
+-- we don't get the point behind us and start turning around and also reduces oscilliating yaw.
+local directionMargin = 1000
 
 local alignment = {}
 
