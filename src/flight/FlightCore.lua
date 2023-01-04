@@ -242,6 +242,8 @@ function FlightCore.New(routeController, flightFSM)
                                 alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(wp,
                                     previousWaypoint),
                                 false)
+                        else
+                            waypointReachedSignaled = false
                         end
 
                         -- Switch to next waypoint
