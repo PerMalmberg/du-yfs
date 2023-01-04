@@ -108,14 +108,14 @@ function SystemController.New(flightCore, settings)
             ---@param data FlightData
             function(_, data)
                 dataToScreen.Set("flightData/absSpeed", calc.Mps2Kph(data.absSpeed))
-                dataToScreen.Set("target/distance", calc.Mps2Kph(data.waypointDist))
+                dataToScreen.Set("target/distance", data.waypointDist / 1000)
             end)
 
         pub.RegisterTable("AdjustmentData",
             ---@param _ string
             ---@param data AdjustmentData
             function(_, data)
-                dataToScreen.Set("adjustment/distance", calc.Mps2Kph(data.distance))
+                dataToScreen.Set("adjustment/distance", data.distance)
             end)
 
         local stream = Stream.New(screen, dataReceived, 1, onTimeout)

@@ -12,7 +12,8 @@ local alignment = {}
 
 -- Return a direction target point this far from the waypoint so that in case we overshoot
 -- we don't get the point behind us and start turning around and also reduces oscilliating yaw.
-alignment.DirectionMargin = 1000
+local directionMargin = 1000
+alignment.DirectionMargin = directionMargin
 
 
 function alignment.NoAdjust()
@@ -27,7 +28,7 @@ function alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference(wa
     local travelDir = (waypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
 
     local nearest = calc.NearestPointOnLine(previousWaypoint.Destination(), travelDir, current)
-    local point = nearest + waypoint.YawPitchDirection() * DirectionMargin
+    local point = nearest + waypoint.YawPitchDirection() * directionMargin
 
     return { yaw = point,
         pitch = alignment.PointAtSameHeightAsConstructParallelToVerticalRef() }
@@ -43,7 +44,7 @@ function alignment.YawPitchKeepOrthogonalToVerticalReference(waypoint, previousW
     local travelDir = (waypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
 
     local point = calc.NearestPointOnLine(previousWaypoint.Destination(), travelDir, current)
-    local withMargin = point + travelDir * DirectionMargin
+    local withMargin = point + travelDir * directionMargin
 
     local res = {} ---@type {yaw:Vec3, pitch:Vec3}|nil
 
@@ -62,7 +63,7 @@ function alignment.YawPitchKeepOrthogonalToVerticalReference(waypoint, previousW
 end
 
 function alignment.RollTopsideAwayFromVerticalReference(waypoint, previousWaypoint)
-    return Current() - universe:VerticalReferenceVector() * DirectionMargin
+    return Current() - universe:VerticalReferenceVector() * directionMargin
 end
 
 ---@return Vec3
@@ -76,10 +77,21 @@ function alignment.PointAtSameHeightAsConstructParallelToVerticalRef()
     local current = Current()
     local normal = -universe:VerticalReferenceVector()
 
-    local alignmentPoint = current + vehicle.orientation.Forward() * DirectionMargin
+    local alignmentPoint = current + vehicle.orientation.Forward() * directionMargin
     alignmentPoint = calc.ProjectPointOnPlane(normal, current, alignmentPoint)
 
     return alignmentPoint
+end
+
+---@param previous Waypoint
+---@param next Waypoint
+---@return Vec3 direction The direction from `previous` to `next` projected on the current plane
+function alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(previous, next)
+    local current = Current()
+    local normal = -universe.VerticalReferenceVector()
+    local p = calc.ProjectPointOnPlane(normal, current, previous.Destination())
+    local c = calc.ProjectPointOnPlane(normal, current, next.Destination())
+    return (p - c):NormalizeInPlace()
 end
 
 return alignment

@@ -119,8 +119,6 @@ function FlightCore.New(routeController, flightFSM)
     function s.StartFlight()
         local fsm = flightFSM
 
-        waypointReachedSignaled = false
-
         -- Setup waypoint that will be the previous waypoint
         currentWaypoint = createDefaultWP()
         s.NextWP()
@@ -240,14 +238,14 @@ function FlightCore.New(routeController, flightFSM)
                         if not waypointReachedSignaled then
                             waypointReachedSignaled = true
                             flightFSM.WaypointReached(route.LastPointReached(), wp, previousWaypoint)
-                            ---QQQ Lock direction based on previous waypoint to prevent drift
+                            wp.LockDirection(
+                                alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(wp,
+                                    previousWaypoint),
+                                true)
                         end
 
                         -- Switch to next waypoint
                         s.NextWP()
-                    else
-                        -- When we go out of range, reset signal so that we get it again when we're back on the waypoint.
-                        waypointReachedSignaled = false
                     end
 
                     align()
