@@ -97,6 +97,8 @@
 |                          | -precision                 | boolean | Y        | See &lt;move&gt;                                                                                              |
 |                          | -lockdir                   | boolean | Y        | See &lt;move&gt;                                                                                              |
 |                          | -margin                    | meter   | Y        | See &lt;move&gt;                                                                                              |
+| print-pos                |                            |         |          | Prints the current position and current alignment point                                                       |
+| align-to                 | waypoint or ::pos{} string |         |          | Aligns to the given point                                                                                     |
 | hold                     |                            |         |          | Stops and returns to the postion at the time of execution, then holds.                                        |
 | idle                     |                            |         |          | Puts the system into idle mode, engines are off.                                                              |
 | turn                     | angle                      | degrees | N        | Turns the construct the specified number of degrees around the Z-axis (up)                                    |

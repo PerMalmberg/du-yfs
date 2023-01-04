@@ -9,7 +9,9 @@ local brakes       = require("flight/Brakes").Instance()
 local calc         = require("util/Calc")
 local universe     = require("universe/Universe").Instance()
 local keys         = require("input/Keys")
+local alignment    = require("flight/AlignmentFunctions")
 local Clamp        = calc.Clamp
+local Current      = vehicle.position.Current
 
 ---@class ControlCommands
 ---@field New fun(input:Input, cmd:Command, flightCore:FlightCore)
@@ -85,7 +87,7 @@ function ControlCommands.New(input, cmd, flightCore)
     ---@param options PointOptions|nil
     local function move(reference, distance, options)
         local route = rc.ActivateTempRoute()
-        local point = route.AddCoordinate(vehicle.position.Current() + reference * distance)
+        local point = route.AddCoordinate(Current() + reference * distance)
         local opt = options or point.Options()
 
         opt.Set(PointOptions.MAX_SPEED, speed)
@@ -239,7 +241,7 @@ function ControlCommands.New(input, cmd, flightCore)
     cmd.Accept("pos-save-as",
         ---@param data {commandValue:string}
         function(data)
-            local pos = universe.CreatePos(vehicle.position.Current()).AsPosString()
+            local pos = universe.CreatePos(Current()).AsPosString()
             if rc.StoreWaypoint(data.commandValue, pos) then
                 log:Info("Position saved as ", data.commandValue)
             end
@@ -262,7 +264,7 @@ function ControlCommands.New(input, cmd, flightCore)
     local rel = cmd.Accept("pos-create-along-gravity",
         ---@param data {commandValue:string, u:number}
         function(data)
-            local pos = vehicle.position.Current() - universe.VerticalReferenceVector() * data.u
+            local pos = Current() - universe.VerticalReferenceVector() * data.u
             local posStr = universe.CreatePos(pos).AsPosString()
             if rc.StoreWaypoint(data.commandValue, posStr) then
                 log:Info("Stored postion ", posStr, " as ", data.commandValue)
@@ -324,7 +326,7 @@ function ControlCommands.New(input, cmd, flightCore)
     cmd.Accept("turn-angle", function(data)
         turnAngle = Clamp(data.commandValue, 0, 360)
         printCurrent()
-    end)
+    end).AsNumber().Mandatory()
 
     ---@param c Command
     local function addPointOptions(c)
@@ -348,7 +350,7 @@ function ControlCommands.New(input, cmd, flightCore)
 
     local moveFunc = function(data)
         local route = rc.ActivateTempRoute()
-        local pos = vehicle.position.Current()
+        local pos = Current()
         local point = route.AddCoordinate(pos + vehicle.orientation.Forward() * data.f +
             vehicle.orientation.Right() * data.r - universe.VerticalReferenceVector() * data.u)
         point.SetOptions(createOptions(data))
@@ -373,7 +375,7 @@ function ControlCommands.New(input, cmd, flightCore)
 
     local strafeFunc = function(data)
         local route = rc.ActivateTempRoute()
-        local point = route.AddCoordinate(vehicle.position.Current() +
+        local point = route.AddCoordinate(Current() +
             vehicle.orientation.Right() * data.commandValue)
         local p = PointOptions.New()
         point.options = p
@@ -386,19 +388,31 @@ function ControlCommands.New(input, cmd, flightCore)
     local strafeCmd = cmd.Accept("strafe", strafeFunc).AsNumber()
     strafeCmd.Option("-maxspeed").AsNumber()
 
+    ---@param input string
+    ---@return string|nil
+    local function getPos(input)
+        local target
+        local point = rc.LoadWaypoint(input)
+        if point then
+            target = point.Pos()
+        else
+            local pos = universe.ParsePosition(input)
+            if pos then
+                target = pos.AsPosString()
+            end
+        end
+
+        if not target then
+            log:Error("Given input is not a :pos{} string or a named waypoint")
+        end
+
+        return target
+    end
+
     local gotoCmd = cmd.Accept("goto",
         ---@param data {commandValue:string}
         function(data)
-            local target
-            local point = rc.LoadWaypoint(data.commandValue)
-            if point then
-                target = point.Pos()
-            else
-                local pos = universe.ParsePosition(data.commandValue)
-                if pos then
-                    target = pos.AsPosString()
-                end
-            end
+            local target = getPos(data.commandValue)
 
             if target then
                 local route = rc.ActivateTempRoute()
@@ -407,11 +421,31 @@ function ControlCommands.New(input, cmd, flightCore)
                 targetPoint.SetOptions(createOptions(data))
                 flightCore.StartFlight()
                 log:Info("Moving to position")
-            else
-                log:Error("Given position is not a :pos{} string or a named waypoint")
             end
         end).AsString().Mandatory()
     addPointOptions(gotoCmd)
+
+    cmd.Accept("align-to",
+        ---@param data {commandValue:string}
+        function(data)
+            local target = getPos(data.commandValue)
+            if target then
+                local pos = universe.ParsePosition(target)
+                if pos then
+                    log:Info("Aligning to ", pos.AsPosString())
+                    local route = rc.ActivateTempRoute()
+                    route.AddCurrentPos()
+                    flightCore.StartFlight()
+                    flightCore.AlignTo(pos.Coordinates())
+                end
+            end
+        end).AsString().Mandatory()
+
+    cmd.Accept("print-pos", function(_)
+        log:Info("Current pos:", universe.CreatePos(Current()):AsPosString())
+        log:Info("Alignment pos:",
+            universe.CreatePos(Current() + vehicle.orientation.Forward() * alignment.DirectionMargin):AsPosString())
+    end)
 
     printCurrent()
 

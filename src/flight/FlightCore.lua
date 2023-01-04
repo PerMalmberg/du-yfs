@@ -1,7 +1,7 @@
 local r = require("CommonRequire")
 local universe = r.universe
 local vehicle = r.vehicle
-local checks = r.checks
+local deg2rad = math.rad
 local calc = r.calc
 local Ternary = r.calc.Ternary
 local Vec3 = r.Vec3
@@ -21,6 +21,7 @@ require("flight/state/Require")
 ---@field NextWP fun()
 ---@field StartFlight fun()
 ---@field Turn fun(degrees:number, axis:Vec3):Vec3
+---@field AlignTo fun(point:Vec3)
 ---@field StopEvents fun()
 ---@field CreateWPFromPoint fun(p:Point):Waypoint
 ---@field GoIdle fun()
@@ -53,7 +54,7 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
     wp.SetPrecisionMode(opt.Get(PointOptions.PRECISION, false))
 
     if dir ~= nullVec then
-        wp.LockDirection(dir, true, "New wp")
+        wp.LockDirection(dir, true)
     end
 
     return wp
@@ -140,15 +141,22 @@ function FlightCore.New(routeController, flightFSM)
     ---@param degrees number The angle to turn
     ---@param axis Vec3
     function s.Turn(degrees, axis)
-        local currentWp = currentWaypoint
-        if currentWp then
-            local current = vehicle.position.Current()
-            local forwardPointOnPlane = calc.ProjectPointOnPlane(axis, current,
-                current + vehicle.orientation.Forward() * 10)
-            local forwardDir = forwardPointOnPlane - current
+        local current = vehicle.position.Current()
+        local forwardPointOnPlane = calc.ProjectPointOnPlane(axis, current,
+            current + vehicle.orientation.Forward() * alignment.DirectionMargin)
+        forwardPointOnPlane = calc.RotateAroundAxis(forwardPointOnPlane, current, degrees, axis)
+        system.setWaypoint(universe.CreatePos(forwardPointOnPlane).AsPosString(), false)
+        s.AlignTo(forwardPointOnPlane)
+    end
 
-            local direction = calc.RotateAroundAxis(forwardDir, nullVec, degrees, axis)
-            currentWp.LockDirection(direction, true, "Turn")
+    ---Aligns to the point
+    ---@param point Vec3
+    function s.AlignTo(point)
+        if currentWaypoint then
+            local current = vehicle.position.Current()
+            local pointOnPlane = calc.ProjectPointOnPlane(-universe.VerticalReferenceVector(), current, point)
+            local dir = (pointOnPlane - current):NormalizeInPlace()
+            currentWaypoint.LockDirection(dir, true)
         end
     end
 
@@ -232,8 +240,7 @@ function FlightCore.New(routeController, flightFSM)
                         if not waypointReachedSignaled then
                             waypointReachedSignaled = true
                             flightFSM.WaypointReached(route.LastPointReached(), wp, previousWaypoint)
-
-                            wp.LockDirection(vehicle.orientation.Forward(), false, "Reached")
+                            ---QQQ Lock direction based on previous waypoint to prevent drift
                         end
 
                         -- Switch to next waypoint
