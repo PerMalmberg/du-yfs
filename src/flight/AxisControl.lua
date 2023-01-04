@@ -1,19 +1,18 @@
 local r = require("CommonRequire")
 local vehicle = r.vehicle
 local calc = r.calc
-local G = vehicle.world.G
 local nullVec = r.Vec3.New()
 local AngVel = vehicle.velocity.localized.Angular
 local AngAcc = vehicle.acceleration.localized.Angular
 local SignLargestAxis = calc.SignLargestAxis
+local SignedRotationAngle = calc.SignedRotationAngle
+local Sign = calc.Sign
+local setEngineCommand = unit.setEngineCommand
 local PID = require("cpml/pid")
 local pub = require("util/PubSub").Instance()
-local visual = r.visual
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
-local abs = math.abs
-local Sign = calc.Sign
 
 local control = {}
 control.__index = control
@@ -25,16 +24,10 @@ ControlledAxis = {
     Yaw = 3,
 }
 
-
 local finalAcceleration = {} ---@type Vec3[]
 finalAcceleration[ControlledAxis.Pitch] = nullVec
 finalAcceleration[ControlledAxis.Roll] = nullVec
 finalAcceleration[ControlledAxis.Yaw] = nullVec
-
-local offsets = {} ---@type number[]
-offsets[ControlledAxis.Pitch] = 0
-offsets[ControlledAxis.Roll] = 0
-offsets[ControlledAxis.Yaw] = 0
 
 ---@class AxisControl
 ---@field ReceiveEvents fun()
@@ -139,8 +132,7 @@ function AxisControl.New(axis)
             -- Positive velocity means we're turning counter-clockwise
 
             local vecToTarget = targetCoordinate - vehicle.position.Current()
-            local offset = calc.SignedRotationAngle(normal(), reference(), vecToTarget) * rad2deg
-            offsets[axis] = offset
+            local offset = SignedRotationAngle(normal(), reference(), vecToTarget) * rad2deg
             axisData.offset = offset
 
             local sign = Sign(offset)
@@ -161,7 +153,7 @@ function AxisControl.New(axis)
         if apply then
             local acc = finalAcceleration[ControlledAxis.Pitch] + finalAcceleration[ControlledAxis.Roll] +
                 finalAcceleration[ControlledAxis.Yaw]
-            unit.setEngineCommand("torque", { 0, 0, 0 }, { acc:Unpack() }, true, true, "", "", "", 0.1)
+            setEngineCommand("torque", { 0, 0, 0 }, { acc:Unpack() }, true, true, "", "", "", 0.1)
         end
     end
 
