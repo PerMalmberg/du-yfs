@@ -3,8 +3,7 @@
 * Make settings separate commands to make them type safe.
 * Stuck on pad on activation - wants to move to first point? Move upwards a little first
 * Use PID for adjustment
-* Jitter on small construct when holding position.
-* Brake counter causes movement when holding pos?
+* Does not go back to state Hold if it drifts out of it, but speed limiter says (Hold) (due to changed reached-notification?)
 
 * More natural manual control
 * Fix overshoot when turning

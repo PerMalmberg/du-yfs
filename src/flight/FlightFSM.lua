@@ -30,7 +30,7 @@ local min = math.min
 local max = math.max
 local MAX_INT = math.maxinteger
 
-local atmoBrakeCutoffSpeed = 100 -- Speed limit under which atmospheric brakes become less effective (down to 10m/s where they give 0.1 of max)
+local atmoBrakeCutoffSpeed = calc.Kph2Mps(360) -- Speed limit under which atmospheric brakes become less effective (down to 10m/s [36km/h] where they give 0.1 of max)
 local atmoBrakeEfficiencyFactor = 0.6
 local spaceEngineTurnOffTime = 10
 local engineTurnOffThreshold = calc.Kph2Mps(100)
@@ -326,6 +326,22 @@ function FlightFSM.New(settings)
         return evaluateNewLimit(currentTargetSpeed, distanceBasedSpeedLimit, "Approaching")
     end
 
+    ---Gets the brake efficiency to use
+    ---@param inAtmo boolean
+    ---@param speed number
+    ---@return number
+    local function getBrakeEfficiency(inAtmo, speed)
+        if not inAtmo then
+            return 1
+        end
+
+        if speed <= atmoBrakeCutoffSpeed then
+            return 0.1
+        else
+            return atmoBrakeEfficiencyFactor
+        end
+    end
+
     ---Gets the maximum speed we may have and still be able to stop
     ---@param deltaTime number Time since last tick, seconds
     ---@param velocity Vec3 Current velocity
@@ -397,7 +413,7 @@ function FlightFSM.New(settings)
                 engineTurnOffDistance = currentSpeed * spaceEngineTurnOffTime
             end
 
-            local brakeEfficiency = Ternary(inAtmo, atmoBrakeEfficiencyFactor, 1)
+            local brakeEfficiency = getBrakeEfficiency(inAtmo, currentSpeed)
             local brakeMaxSpeed = calcMaxAllowedSpeed(
                 -brakes:GravityInfluencedAvailableDeceleration() * brakeEfficiency,
                 clamp(remainingDistance - engineTurnOffDistance, 0, remainingDistance), finalSpeed)
@@ -558,6 +574,11 @@ function FlightFSM.New(settings)
             acceleration = -motionDirection *
                 engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-motionDirection) + brakeCounter
         else
+            -- When we move slow, don't use the brake counter as that induces jitter, especially on small crafts.
+            if currentSpeed < ignoreAtmoBrakeLimitThreshold then
+                brakeCounter = nullVec
+            end
+
             acceleration = direction * pidValue *
                 engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
         end
