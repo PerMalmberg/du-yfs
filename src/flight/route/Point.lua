@@ -8,7 +8,7 @@ local PointOptions = require("flight/route/PointOptions")
 ---@class Point Represents a point/waypoint in a route
 ---@field New fun(pos:string, waypointRef?:string, options?:PointOptions):Point
 ---@field Pos fun():string
----@field HasWaypointRef fun(s):boolean
+---@field HasWaypointRef fun():boolean
 ---@field WaypointRef fun():string|nil
 ---@field SetWaypointRef fun(ref:string)
 ---@field Persist fun():PointPOD

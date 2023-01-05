@@ -3,6 +3,7 @@ local Route    = require("flight/route/Route")
 local log      = require("debug/Log")()
 local universe = require("universe/Universe").Instance()
 local calc     = require("util/Calc")
+local Current  = require("abstraction/Vehicle").New().position.Current
 require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}
@@ -22,8 +23,7 @@ require("util/Table")
 ---@field DeleteWaypoint fun(name:string):boolean
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
----@field LoadRoute fun(name:string, order:RouteOrder?):Route|nil
----@field ActivateRoute fun(name:string, order:RouteOrder?):boolean
+---@field ActivateRoute fun(name:string, order:RouteOrder?, ignoreStartMargin:boolean?):boolean
 ---@field ActivateTempRoute fun():Route
 ---@field CreateRoute fun(name:string):Route|nil
 ---@field ReverseRoute fun():boolean
@@ -36,6 +36,7 @@ local singleton
 
 RouteController.NAMED_POINTS = "NamedPoints"
 RouteController.NAMED_ROUTES = "NamedRoutes"
+local startMargin = 2 -- Don't allow a route to be started if we're more than this away from the start of the route
 
 ---Create a new route controller instance
 ---@param bufferedDB BufferedDB
@@ -295,26 +296,16 @@ function RouteController.Instance(bufferedDB)
         return edit
     end
 
-    ---Only loads the route and returns the data (or nil), doesn't activate or make it available for editing
-    ---@param name string
-    ---@param order RouteOrder? The order the route shall be followed, default FORWARD
-    ---@return Route|nil
-    function s.LoadRoute(name, order)
-        order = order or RouteOrder.FORWARD
-        local route = s.loadRoute(name)
-        if route and order == RouteOrder.REVERSED then
-            route.Reverse()
-        end
-
-        return route
-    end
-
     ---Activate the route by the given name
     ---@param name string
-    ---@param order RouteOrder? The order the route shall be followed, or nil for FORWARD
+    ---@param order RouteOrder? The order the route shall be followed, default is FORWARD
+    ---@param ignoreStartMargin boolean? If true, the route will be activated even if currently outside the start margin. Default is false.
     ---@return boolean
-    function s.ActivateRoute(name, order)
+    function s.ActivateRoute(name, order, ignoreStartMargin)
         order = order or RouteOrder.FORWARD
+        if ignoreStartMargin == nil then
+            ignoreStartMargin = false
+        end
 
         if not name or string.len(name) == 0 then
             log:Error("No route name provided")
@@ -326,20 +317,87 @@ function RouteController.Instance(bufferedDB)
             return false
         end
 
-        current = s.loadRoute(name)
+        local route = s.loadRoute(name)
 
-        if current == nil then
+        if route == nil then
+            return false
+        elseif #route.Points() < 2 then
+            log:Error("Less than 2 points in route '", name, "'")
             return false
         else
-            log:Info("Route activated: ", name)
+            log:Info("Route loaded: ", name)
         end
 
         if order == RouteOrder.REVERSED then
             log:Info("Reversing route '", name, "'")
-            current.Reverse()
+            route.Reverse()
         end
 
+        -- Find closest point within the route, or the first point, in the order the route is loaded
+        local points = route.Points()
+        local currentPos = Current()
 
+        local firstIx = 1
+        local nextIx = firstIx + 1
+
+        -- Start with the distance to the first point
+        local f = universe.ParsePosition(points[firstIx].Pos())
+
+        if not f then
+            log:Error("Route contains an invalid position string")
+            return false
+        end
+
+        local distance = (f.Coordinates() - currentPos):Len()
+
+        local closestIx = 0
+        local nearestOnRoute ---@type Vec3|nil
+
+        while nextIx <= #points do
+            f = universe.ParsePosition(points[firstIx].Pos())
+            local n = universe.ParsePosition(points[nextIx].Pos())
+
+            if not (f and n) then
+                log:Error("Route contains an invalid position string")
+                return false
+            end
+
+            local onRoute = calc.NearestOnLineBetweenPoints(f.Coordinates(), n.Coordinates(), currentPos)
+            local distanceToPoint = (onRoute - currentPos):Len()
+
+            if distanceToPoint < distance then
+                closestIx = firstIx
+                distance = distanceToPoint
+                nearestOnRoute = onRoute
+            end
+
+            firstIx = nextIx
+            nextIx = nextIx + 1
+        end
+
+        if nearestOnRoute then
+            log:Info("Found a point in the route that is closer than the first point, adjusting route.")
+            -- The closest point is somewhere on the route so remove points before.
+            for i = 1, closestIx, 1 do
+                table.remove(points, 1)
+            end
+
+            -- Add a new point at the nearest point
+            table.insert(points, 1, Point.New(universe.CreatePos(nearestOnRoute).AsPosString()))
+        end
+
+        -- Check we're close enough to the closest point, which is now the first one in the route.
+        local firstPos = universe.ParsePosition(points[1].Pos())
+        if not firstPos then return false end
+
+        distance = (firstPos.Coordinates() - currentPos):Len()
+        if not ignoreStartMargin and distance > startMargin then
+            log:Error(string.format("Currently %0.2fm from closest point in route. Please move within %dm of %s and try again."
+                , distance, startMargin, firstPos.AsPosString()))
+            return false
+        end
+
+        current = route
 
         return true
     end

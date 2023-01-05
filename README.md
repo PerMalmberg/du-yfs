@@ -8,10 +8,6 @@
 * Fix overshoot when turning
 * Optionally follow waypoints as beizer curves
 
-* When activating a route, move to the closest point on the path between the closest wp and the next.
-  * Button to set waypoint to closest endpoint
-  * Button to move to closest point
-
 # Future commands
 
 * orbit-position - height X -radius Y -point inwards/outwards/front/back

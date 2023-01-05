@@ -90,6 +90,7 @@ function FlightCore.New(routeController, flightFSM)
     -- Setup start waypoints to prevent nil values
     local currentWaypoint = createDefaultWP() -- The positions we want to move to
     local previousWaypoint = currentWaypoint -- Previous waypoint
+    local route = nil ---@type Route|nil
 
     ---Gets the route controller
     ---@return RouteController
@@ -99,8 +100,6 @@ function FlightCore.New(routeController, flightFSM)
 
     ---Selects the next waypoint
     function s.NextWP()
-        local route = routeController.CurrentRoute()
-
         if route == nil then
             return
         end
@@ -117,6 +116,7 @@ function FlightCore.New(routeController, flightFSM)
 
     ---Starts the flight
     function s.StartFlight()
+        route = routeController.CurrentRoute()
         local fsm = flightFSM
 
         -- Setup waypoint that will be the previous waypoint
@@ -229,7 +229,6 @@ function FlightCore.New(routeController, flightFSM)
     function s.fcFlush()
         local status, err, _ = xpcall(
             function()
-                local route = routeController.CurrentRoute()
                 local wp = currentWaypoint
 
                 if wp and route then
