@@ -22,7 +22,8 @@ require("util/Table")
 ---@field DeleteWaypoint fun(name:string):boolean
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
----@field ActivateRoute fun(name:string, order:RouteOrder|nil):boolean
+---@field LoadRoute fun(name:string, order:RouteOrder?):Route|nil
+---@field ActivateRoute fun(name:string, order:RouteOrder?):boolean
 ---@field ActivateTempRoute fun():Route
 ---@field CreateRoute fun(name:string):Route|nil
 ---@field ReverseRoute fun():boolean
@@ -128,7 +129,7 @@ function RouteController.Instance(bufferedDB)
                 log:Debug("Loading waypoint reference '", wpName, "'")
                 local wp = s.LoadWaypoint(wpName)
                 if wp == nil then
-                    log:Error("The referenced waypoint '", wpName, "' was not found")
+                    log:Error("The referenced waypoint '", wpName, "' in route '", name, "' was not found")
                     return nil
                 end
 
@@ -252,10 +253,11 @@ function RouteController.Instance(bufferedDB)
     end
 
     ---Loads a waypoint by the given name
-    ---@param name string Nave of waypoint to load
+    ---@param name string|nil Name of waypoint to load
     ---@param waypoints? WaypointMap An optional table to load from
     ---@return Point|nil
     function s.LoadWaypoint(name, waypoints)
+        if not name then return nil end
         waypoints = waypoints or getNamedPoints()
         local pointData = waypoints[name]
 
@@ -293,9 +295,23 @@ function RouteController.Instance(bufferedDB)
         return edit
     end
 
+    ---Only loads the route and returns the data (or nil), doesn't activate or make it available for editing
+    ---@param name string
+    ---@param order RouteOrder? The order the route shall be followed, default FORWARD
+    ---@return Route|nil
+    function s.LoadRoute(name, order)
+        order = order or RouteOrder.FORWARD
+        local route = s.loadRoute(name)
+        if route and order == RouteOrder.REVERSED then
+            route.Reverse()
+        end
+
+        return route
+    end
+
     ---Activate the route by the given name
     ---@param name string
-    ---@param order RouteOrder|nil The order the route shall be followed, or nil for FORWARD
+    ---@param order RouteOrder? The order the route shall be followed, or nil for FORWARD
     ---@return boolean
     function s.ActivateRoute(name, order)
         order = order or RouteOrder.FORWARD
@@ -322,6 +338,8 @@ function RouteController.Instance(bufferedDB)
             log:Info("Reversing route '", name, "'")
             current.Reverse()
         end
+
+
 
         return true
     end

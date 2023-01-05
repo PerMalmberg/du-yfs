@@ -23,7 +23,7 @@ require("flight/state/Require")
 ---@field Turn fun(degrees:number, axis:Vec3):Vec3
 ---@field AlignTo fun(point:Vec3)
 ---@field StopEvents fun()
----@field CreateWPFromPoint fun(p:Point):Waypoint
+---@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean):Waypoint
 ---@field GoIdle fun()
 
 

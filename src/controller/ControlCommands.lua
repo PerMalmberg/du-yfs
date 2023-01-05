@@ -13,6 +13,8 @@ local alignment    = require("flight/AlignmentFunctions")
 local Clamp        = calc.Clamp
 local Current      = vehicle.position.Current
 
+local startMargin = 2 -- Don't allow a route to be started if we're more than this away from the start of the route
+
 ---@class ControlCommands
 ---@field New fun(input:Input, cmd:Command, flightCore:FlightCore)
 
@@ -156,10 +158,26 @@ function ControlCommands.New(input, cmd, flightCore)
         function(data)
             local reverse = calc.Ternary(data.reverse or false, RouteOrder.REVERSED, RouteOrder.FORWARD) ---@type RouteOrder
 
+            local route = rc.LoadRoute(data.commandValue, reverse)
+
+            if route == nil then return end
+
+            local next = route.Peek()
+            if not next then return end
+
+            local wp = flightCore.CreateWPFromPoint(next, false)
+            local distance = wp.DistanceTo()
+            if distance > startMargin then
+                log:Error(string.format("%0.2f", distance), "m from start of route. Please move with ", startMargin,
+                    "m of ", universe.CreatePos(wp.Destination()).AsPosString(), " and try again.")
+                return
+            end
+
             if rc.ActivateRoute(data.commandValue, reverse) then
                 flightCore.StartFlight()
                 log:Info("Flight started")
             end
+
         end).AsString().Mandatory()
         .Option("reverse").AsEmptyBoolean()
 

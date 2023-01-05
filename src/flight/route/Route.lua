@@ -19,6 +19,7 @@ require("util/Table")
 ---@field AddPoint fun(sp:Point)
 ---@field Clear fun()
 ---@field Next fun():Point|nil
+---@field Peek fun():Point|nil
 ---@field LastPointReached fun():boolean
 ---@field Reverse fun()
 ---@field RemovePoint fun(ix:number):boolean
@@ -101,14 +102,19 @@ function Route.New()
     ---Returns the next point in the route or nil if it is the last.
     ---@return Point|nil
     function s.Next()
-        if s.LastPointReached() then
-            return nil
-        end
+        if s.LastPointReached() then return nil end
 
         local p = points[currentPointIx]
         currentPointIx = currentPointIx + 1
 
         return p
+    end
+
+    ---Get the next point, or nil, without removing it from the route.
+    ---@return Point|nil
+    function s.Peek()
+        if s.LastPointReached() then return nil end
+        return points[currentPointIx]
     end
 
     function s.LastPointReached()

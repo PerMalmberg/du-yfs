@@ -3,15 +3,18 @@
 * Make settings separate commands to make them type safe.
 * Stuck on pad on activation - wants to move to first point? Move upwards a little first
 * Use PID for adjustment
-* Does not go back to state Hold if it drifts out of it, but speed limiter says (Hold) (due to changed reached-notification?)
 
 * More natural manual control
 * Fix overshoot when turning
+* Optionally follow waypoints as beizer curves
 
-* When activating a route, ensure that construct is less than 1m from first point.
-  * If the reveresed route makes the construct within the limit, run the route reveresed.
+* When activating a route, move to the closest point on the path between the closest wp and the next.
   * Button to set waypoint to closest endpoint
   * Button to move to closest point
+
+# Future commands
+
+* orbit-position - height X -radius Y -point inwards/outwards/front/back
 
 # FAQ
 
