@@ -521,7 +521,8 @@ function FlightFSM.New(settings)
         local groups = getEngines(acceleration, precision)
         local t = groups.thrust
         local adj = groups.adjust
-        local thrustAcc = acceleration + t.antiG() - Vec3.New(construct.getWorldAirFrictionAcceleration())
+        -- Subtracting the air friction induces jitter on small constructs so we no longer do that on the thrust acceleration.
+        local thrustAcc = acceleration + t.antiG()
         local adjustAcc = (adjustmentAcc) + adj.antiG()
 
         if precision then
