@@ -36,7 +36,7 @@ local singleton
 
 RouteController.NAMED_POINTS = "NamedPoints"
 RouteController.NAMED_ROUTES = "NamedRoutes"
-local startMargin = 2 -- Don't allow a route to be started if we're more than this away from the start of the route
+local startMargin = 10 -- Don't allow a route to be started if we're more than this away from the start of the route
 
 ---Create a new route controller instance
 ---@param bufferedDB BufferedDB
