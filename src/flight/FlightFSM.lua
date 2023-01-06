@@ -58,6 +58,7 @@ local deadZoneFactor = 0.8 -- Consider the inner edge of the dead zone where we 
 ---@field SetTemporaryWaypoint fun(wp:Waypoint|nil)
 ---@field Update fun()
 ---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
+---@field GetSettings fun():Settings
 
 local FlightFSM = {}
 FlightFSM.__index = FlightFSM
@@ -712,6 +713,11 @@ function FlightFSM.New(settings)
         speedPid = PID(speedPid.p, speedPid.i, speedPid.d, value)
         log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d, " A:", speedPid.amortization)
     end)
+
+    ---@return Settings
+    function s.GetSettings()
+        return settings
+    end
 
     s.SetState(Idle.New(s))
 

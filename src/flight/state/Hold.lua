@@ -1,4 +1,8 @@
 ---@module "flight/state/Travel"
+local Telemeter = require("element/Telemeter")
+local pub = require("util/PubSub").Instance()
+local log = require("debug/Log")()
+
 
 ---@class Hold
 ---@field Enter fun()
@@ -18,14 +22,18 @@ local name = "Hold"
 ---@return Hold
 function Hold.New(fsm)
 
-    local s = {}
+    local s = {
+        isLastWaypoint = false
+    }
+
+    local settings = fsm.GetSettings()
 
     function s.Enter()
-
+        pub.RegisterTable("FloorMonitor", s.floorMonitor)
     end
 
     function s.Leave()
-
+        pub.Unregister("FloorMonitor", s.floorMonitor)
     end
 
     function s.Flush(deltaTime, next, previous, chaseData)
@@ -40,10 +48,23 @@ function Hold.New(fsm)
     end
 
     function s.WaypointReached(isLastWaypoint, next, previous)
+        s.isLastWaypoint = isLastWaypoint
     end
 
     function s.Name()
         return name
+    end
+
+    ---@param topic string
+    ---@param hit TelemeterResult
+    function s.floorMonitor(topic, hit)
+        if player.isFrozen() == 0
+            and s.isLastWaypoint
+            and hit.Hit
+            and hit.Distance < settings.Get("autoShutdownFloorDistance") then
+            log:Info("Floor detected at last waypoint, shutting down.")
+            unit.exit()
+        end
     end
 
     function s.InhibitsThrust()

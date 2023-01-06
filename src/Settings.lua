@@ -9,6 +9,7 @@ require("util/Table")
 ---@field RegisterCallback fun(key:string, f:fun(any))
 ---@field Reload fun()
 ---@field RegisterCommands fun()
+---@field Get fun(key:string, default:any?)
 
 local singleton
 local Settings = {}
@@ -37,7 +38,8 @@ function Settings.New(db)
         containerOptimization = { key = "containerOptimization", default = 0 },
         atmoFuelTankHandling = { key = "atmoFuelTankHandling", default = 0 },
         spaceFuelTankHandling = { key = "spaceFuelTankHandling", default = 0 },
-        rocketFuelTankHandling = { key = "rocketFuelTankHandling", default = 0 }
+        rocketFuelTankHandling = { key = "rocketFuelTankHandling", default = 0 },
+        autoShutdownFloorDistance = { key = "autoShutdownFloorDistance", default = 0.3 }
     }
 
     function s.ensureSingle(data)
@@ -82,7 +84,18 @@ function Settings.New(db)
         table.insert(subscribers[key], func)
     end
 
+    ---comment
+    ---@param key string
+    ---@param default string|number|table|nil
+    ---@return string|number|table|nil
     function s.Get(key, default)
+        local def = s.def[key]
+
+        -- If no default is provided, use the one in the definition
+        if def and not default then
+            return db.Get(key, def.default)
+        end
+
         return db.Get(key, default)
     end
 

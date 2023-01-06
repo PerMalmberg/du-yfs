@@ -3,6 +3,7 @@ local ContainerTalents = require("element/ContainerTalents")
 local ControlCommands  = require("controller/ControlCommands")
 local Stopwatch        = require("system/Stopwatch")
 local Task             = require("system/Task")
+local Telemeter        = require("element/Telemeter")
 local ValueTree        = require("util/ValueTree")
 local InfoCentral      = require("info/InfoCentral")
 local log              = require("debug/Log")()
@@ -14,7 +15,6 @@ local layout           = library.embedFile("../screen/layout_min.json")
 local Stream           = require("Stream")
 local json             = require("dkjson")
 local calc             = require("util/Calc")
-local Stopwatch        = require("system/Stopwatch")
 
 ---@param t table
 ---@return string
@@ -115,7 +115,15 @@ function SystemController.New(flightCore, settings)
             ---@param _ string
             ---@param data AdjustmentData
             function(_, data)
-                dataToScreen.Set("adjustment/distance", data.distance)
+                dataToScreen.Set("deviation/distance", data.distance)
+            end)
+
+        pub.RegisterTable("FloorMonitor",
+            ---@param _ string
+            ---@param value TelemeterResult
+            function(_, value)
+                dataToScreen.Set("floor/hit", value.Hit)
+                dataToScreen.Set("floor/distance", value.Distance)
             end)
 
         local stream = Stream.New(screen, dataReceived, 1, onTimeout)
@@ -187,7 +195,6 @@ function SystemController.New(flightCore, settings)
         log:Info(talents)
     end)
 
-
     Task.New("FuelMonitor", function()
         local sw = Stopwatch.New()
         sw.Start()
@@ -230,6 +237,31 @@ function SystemController.New(flightCore, settings)
         end
     end).Then(function(...)
         log:Info("No fuel tanks detected")
+    end).Catch(function(t)
+        log:Error(t.Name(), t.Error())
+    end)
+
+    local floorDetectorName = "FloorDetector"
+    Task.New("FloorMonitor", function()
+        local teleLink = library.getLinkByName(floorDetectorName)
+        if teleLink then
+            local tele = Telemeter.New(teleLink)
+            if not tele.IsTelemeter() then return end
+
+            local sw = Stopwatch.New()
+            sw.Start()
+
+            while true do
+                coroutine.yield()
+                if sw.Elapsed() > 0.3 then
+                    sw.Restart()
+                    pub.Publish("FloorMonitor", tele.Measure())
+                end
+            end
+        end
+
+    end).Then(function(...)
+        log:Info("No telementer by name '", floorDetectorName, "' found, auto shutdown disabled")
     end).Catch(function(t)
         log:Error(t.Name(), t.Error())
     end)

@@ -35,10 +35,10 @@ function ControlCommands.New(input, cmd, flightCore)
     local function lockUser()
         if player.isFrozen() == 1 then
             player.freeze(false)
-            log:Info("Player released")
+            log:Info("Player released and auto shutdown enabled.")
         else
             player.freeze(true)
-            log:Info("Player locked")
+            log:Info("Player locked and auto shutdown disabled.")
         end
     end
 
