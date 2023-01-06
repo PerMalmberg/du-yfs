@@ -320,9 +320,6 @@ function FlightFSM.New(settings)
 
         -- 1000m -> 500kph, 500m -> 250kph etc.
         local distanceBasedSpeedLimit = calc.Kph2Mps(remainingDistance)
-        if distanceBasedSpeedLimit < OneKphPh then
-            distanceBasedSpeedLimit = OneKphPh
-        end
 
         return evaluateNewLimit(currentTargetSpeed, distanceBasedSpeedLimit, "Approaching")
     end
