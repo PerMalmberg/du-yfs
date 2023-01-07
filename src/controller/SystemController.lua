@@ -15,7 +15,7 @@ local layout           = library.embedFile("../screen/layout_min.json")
 local Stream           = require("Stream")
 local json             = require("dkjson")
 local calc             = require("util/Calc")
-local Current          = require("abstraction/Vehicle").New().position.Current
+local TotalMass        = require("abstraction/Vehicle").New().mass.Total
 
 ---@param t table
 ---@return string
@@ -110,6 +110,8 @@ function SystemController.New(flightCore, settings)
             function(_, data)
                 dataToScreen.Set("flightData/absSpeed", calc.Mps2Kph(data.absSpeed))
                 dataToScreen.Set("nextWp/distance", data.waypointDist / 1000)
+
+                dataToScreen.Set("mass/total", TotalMass())
             end)
 
         pub.RegisterTable("RouteData",
@@ -267,12 +269,30 @@ function SystemController.New(flightCore, settings)
                 end
             end
         end
-
     end).Then(function(...)
         log:Info("No telementer by name '", floorDetectorName, "' found, auto shutdown disabled")
     end).Catch(function(t)
         log:Error(t.Name(), t.Error())
     end)
+
+    --[[ Task.New("CargoMonitor", function()
+        while true do
+            local containers = Container.GetAllCo(ContainerType.Standard)
+
+            local totalCargo = 0
+
+            for k, c in ipairs(containers) do
+                coroutine.yield()
+                totalCargo = totalCargo + c.ActualContentMass(talents)
+            end
+
+            coroutine.yield()
+            dataToScreen.Set("mass/actualCargo", totalCargo)
+        end
+
+    end).Catch(function(t)
+        log:Error(t.Name(), t.Error())
+    end) ]]
 
     return setmetatable(s, SystemController)
 end

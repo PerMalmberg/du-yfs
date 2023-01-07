@@ -125,7 +125,7 @@
                     "layer": 1,
                     "style": "header-text",
                     "pos1": "(120,20)",
-                    "text": "????",
+                    "text": "Total mass",
                     "font": "header"
                 },
                 {
@@ -134,7 +134,7 @@
                     "style": "info",
                     "pos1": "(280,40)",
                     "font": "info",
-                    "text": "$num(path{????:????}:init{0}:format{%0.2f}:interval{0.5})"
+                    "text": "$num(path{mass:total}:init{0}:format{%0.0f}:interval{0.5})"
                 },
                 {
                     "type": "text",
@@ -142,7 +142,7 @@
                     "style": "units",
                     "pos1": "(260,70)",
                     "font": "units",
-                    "text": "$str(path{????:????}:init{???}:interval{0.5})"
+                    "text": "$str(path{mass:totalUnit}:init{kg}:interval{0.5})"
                 },
                 {
                     "type": "text",
