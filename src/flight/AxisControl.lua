@@ -55,7 +55,7 @@ function AxisControl.New(axis)
 
     local updateHandlerId = nil
     local targetCoordinate = nil ---@type Vec3|nil
-    local pid = PID(24, 16, 1600, 0.1) -- 0.5 amortization makes it alot smoother
+    local pid = PID(24, 1, 1600, 0.1) -- 0.5 amortization makes it alot smoother
     local pubTopic
 
     local axisData = {
@@ -146,8 +146,7 @@ function AxisControl.New(axis)
 
             pid:inject(offset)
 
-            finalAcceleration[axis] = normal() * pid:get() * deg2rad *
-                calc.Ternary(movingTowardsTarget, 0.05, 0.1)
+            finalAcceleration[axis] = normal() * pid:get() * deg2rad
         end
 
         if apply then
