@@ -3,11 +3,14 @@
     When loaded, additional points may be inserted to to create a route that is smooth to fly
     and that doesn't pass through a planetary body. Extra points are not persisted.
 ]] --
-local vehicle = require("abstraction/Vehicle"):New()
-local log = require("debug/Log")()
+local vehicle  = require("abstraction/Vehicle"):New()
+local Calc     = require("util/Calc")
+local log      = require("debug/Log")()
 local universe = require("universe/Universe").Instance()
-local Point = require("flight/route/Point")
+local Point    = require("flight/route/Point")
 require("util/Table")
+
+---@alias RouteRemainingInfo {Legs:integer, TotalDistance:number}
 
 ---@class Route Represents a route
 ---@field New fun():Route
@@ -24,6 +27,8 @@ require("util/Table")
 ---@field Reverse fun()
 ---@field RemovePoint fun(ix:number):boolean
 ---@field MovePoint fun(from:number, to:number)
+---@field GetRemaining fun(fromPos:Vec3):RouteRemainingInfo
+
 
 ---@enum RouteOrder
 RouteOrder = {
@@ -40,7 +45,7 @@ function Route.New()
     local s = {}
 
     local points = {} ---@type Point[]
-    local currentPointIx = 1
+    local nextPointIx = 1
 
     ---Returns all the points in the route
     ---@return Point[]
@@ -96,16 +101,16 @@ function Route.New()
     ---Clears the route
     function s.Clear()
         points = {}
-        currentPointIx = 1
+        nextPointIx = 1
     end
 
-    ---Returns the next point in the route or nil if it is the last.
+    ---Returns the next point in the route or nil if the end has been reached
     ---@return Point|nil
     function s.Next()
         if s.LastPointReached() then return nil end
 
-        local p = points[currentPointIx]
-        currentPointIx = currentPointIx + 1
+        local p = points[nextPointIx]
+        nextPointIx = nextPointIx + 1
 
         return p
     end
@@ -114,11 +119,11 @@ function Route.New()
     ---@return Point|nil
     function s.Peek()
         if s.LastPointReached() then return nil end
-        return points[currentPointIx]
+        return points[nextPointIx]
     end
 
     function s.LastPointReached()
-        return currentPointIx > #points
+        return nextPointIx > #points
     end
 
     function s.Reverse()
@@ -152,6 +157,31 @@ function Route.New()
 
         table.remove(points, from)
         return true
+    end
+
+    ---@param fromPos Vec3
+    ---@return RouteRemainingInfo
+    function s.GetRemaining(fromPos)
+        local total = 0
+        local prev
+
+        for i = nextPointIx, #points, 1 do
+            local pos = universe.ParsePosition(points[i].Pos())
+            if pos then
+                if prev then
+                    total = total + (prev - pos.Coordinates()):Len()
+                end
+
+                prev = pos.Coordinates()
+            end
+        end
+
+        -- Add distance to next point in route
+        local ix = Calc.Ternary(s.LastPointReached(), -1, 0)
+        local next = universe.ParsePosition(points[nextPointIx + ix].Pos()).Coordinates()
+        total = total + (fromPos - next):Len()
+
+        return { Legs = #points - nextPointIx, TotalDistance = total }
     end
 
     return setmetatable(s, Route)

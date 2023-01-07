@@ -8,13 +8,13 @@
             "font": "Play",
             "size": 36
         },
-        "footer": {
+        "units": {
             "font": "Play",
             "size": 14
         },
         "fuel-percent": {
             "font": "Play",
-            "size": 9
+            "size": 14
         },
         "route-endpoint-text": {
             "font": "Play",
@@ -30,7 +30,7 @@
             "fill": "#00000000"
         },
         "bkg-dark": {
-            "fill": "#546263ff"
+            "fill": "#2F3637ff"
         },
         "bkg-light": {
             "fill": "#aaaaaaff",
@@ -47,12 +47,12 @@
             "fill": "#ffffffff",
             "align": "h2,v1"
         },
-        "footer": {
+        "units": {
             "fill": "#ffffffff",
             "align": "h2,v1"
         },
         "fuel-back": {
-            "fill": "#2f3637ff"
+            "fill": "#000000ff"
         },
         "fuel-atmo": {
             "fill": "#2f6fd0ff"
@@ -125,7 +125,7 @@
                     "layer": 1,
                     "style": "header-text",
                     "pos1": "(120,20)",
-                    "text": "Current height",
+                    "text": "????",
                     "font": "header"
                 },
                 {
@@ -134,15 +134,15 @@
                     "style": "info",
                     "pos1": "(280,40)",
                     "font": "info",
-                    "text": "$num(path{flightData:height}:init{0}:format{%0.2f}:interval{0.5})"
+                    "text": "$num(path{????:????}:init{0}:format{%0.2f}:interval{0.5})"
                 },
                 {
                     "type": "text",
                     "layer": 1,
-                    "style": "footer",
+                    "style": "units",
                     "pos1": "(260,70)",
-                    "font": "footer",
-                    "text": "$str(path{flightData:heightUnit}:init{meter}:interval{0.5})"
+                    "font": "units",
+                    "text": "$str(path{????:????}:init{???}:interval{0.5})"
                 },
                 {
                     "type": "text",
@@ -163,9 +163,9 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "style": "footer",
+                    "style": "units",
                     "pos1": "(440,70)",
-                    "font": "footer",
+                    "font": "units",
                     "text": "$str(path{flightData:speedUnit}:init{km/h}:interval{0.5})"
                 },
                 {
@@ -175,6 +175,14 @@
                     "pos1": "(480,20)",
                     "text": "Current route",
                     "font": "header"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "style": "info",
+                    "pos1": "(640,40)",
+                    "font": "info",
+                    "text": "$str(path{currentRoute:name}:init{-}:interval{0.5})"
                 },
                 {
                     "comment": "target-icon-vert",
@@ -207,7 +215,7 @@
                     "layer": 1,
                     "style": "header-text",
                     "pos1": "(120,140)",
-                    "text": "Target height",
+                    "text": "Remaining distance",
                     "font": "header"
                 },
                 {
@@ -216,22 +224,22 @@
                     "style": "info",
                     "pos1": "(280,160)",
                     "font": "info",
-                    "text": "$num(path{target:height}:init{0}:format{%0.2f}:interval{0.5})"
+                    "text": "$num(path{finalWp:distance}:init{0}:format{%0.2f}:interval{0.5})"
                 },
                 {
                     "type": "text",
                     "layer": 1,
-                    "style": "footer",
+                    "style": "units",
                     "pos1": "(260,190)",
-                    "font": "footer",
-                    "text": "$str(path{target:heightUnit}:init{meter}:interval{0.5})"
+                    "font": "units",
+                    "text": "$str(path{finalWp:distanceUnit}:init{km}:interval{0.5})"
                 },
                 {
                     "type": "text",
                     "layer": 1,
                     "style": "header-text",
                     "pos1": "(300,140)",
-                    "text": "Target distance",
+                    "text": "Next WP distance",
                     "font": "header"
                 },
                 {
@@ -240,15 +248,15 @@
                     "style": "info",
                     "pos1": "(460,160)",
                     "font": "info",
-                    "text": "$num(path{target:distance}:init{0}:format{%0.2f}:interval{0.5})"
+                    "text": "$num(path{nextWp:distance}:init{0}:format{%0.2f}:interval{0.5})"
                 },
                 {
                     "type": "text",
                     "layer": 1,
-                    "style": "footer",
+                    "style": "units",
                     "pos1": "(440,190)",
-                    "font": "footer",
-                    "text": "$str(path{target:distanceUnit}:init{km}:interval{0.5})"
+                    "font": "units",
+                    "text": "$str(path{nextWp:distanceUnit}:init{km}:interval{0.5})"
                 },
                 {
                     "type": "text",
@@ -269,9 +277,9 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "style": "footer",
+                    "style": "units",
                     "pos1": "(620,190)",
-                    "font": "footer",
+                    "font": "units",
                     "text": "meter"
                 },
                 {
@@ -305,8 +313,8 @@
                     "type": "text",
                     "layer": 1,
                     "visible": "$bool(path{fuel/atmo/[#]:visible}:init{false})",
-                    "text": "$num(path{fuel/atmo/[#]:percent}:init{0}:format{%0.1f%%})",
-                    "pos1": "(700,210)",
+                    "text": "$num(path{fuel/atmo/[#]:percent}:init{0}:format{%0.1f})",
+                    "pos1": "(700,40)",
                     "font": "fuel-percent",
                     "style": "fuel-percent",
                     "replicate": {
@@ -345,8 +353,8 @@
                     "type": "text",
                     "layer": 1,
                     "visible": "$bool(path{fuel/space/[#]:visible}:init{false})",
-                    "text": "$num(path{fuel/space/[#]:percent}:init{0}:format{%0.1f%%})",
-                    "pos1": "(870,210)",
+                    "text": "$num(path{fuel/space/[#]:percent}:init{0}:format{%0.1f})",
+                    "pos1": "(870,40)",
                     "font": "fuel-percent",
                     "style": "fuel-percent",
                     "replicate": {

@@ -1,7 +1,9 @@
 local r = require("CommonRequire")
 local universe = r.universe
 local vehicle = r.vehicle
-local deg2rad = math.rad
+local pub = require("util/PubSub").Instance()
+local Stopwatch = require("system/Stopwatch")
+local Current = vehicle.position.Current
 local calc = r.calc
 local Ternary = r.calc.Ternary
 local Vec3 = r.Vec3
@@ -33,7 +35,6 @@ local singleton
 
 local defaultSpeed = calc.Kph2Mps(50)
 local defaultMargin = 0.1 -- m
-
 
 ---Creates a waypoint from a point
 ---@param point Point
@@ -83,6 +84,8 @@ function FlightCore.New(routeController, flightFSM)
     local wWaypointPrecision = p:CreateValue("Precision")
     local wWaypointDirLock = p:CreateValue("Dir lock")
 
+    local routePublishTimer = Stopwatch.New()
+
     local function createDefaultWP()
         return Waypoint.New(vehicle.position.Current(), 0, 0, 10, alignment.NoAdjust, alignment.NoAdjust)
     end
@@ -118,6 +121,7 @@ function FlightCore.New(routeController, flightFSM)
     function s.StartFlight()
         route = routeController.CurrentRoute()
         local fsm = flightFSM
+        routePublishTimer.Start()
 
         -- Setup waypoint that will be the previous waypoint
         currentWaypoint = createDefaultWP()
@@ -206,6 +210,11 @@ function FlightCore.New(routeController, flightFSM)
             function()
                 flightFSM.Update()
                 brakes:BrakeUpdate()
+
+                if route and routePublishTimer.Elapsed() > 0.5 then
+                    routePublishTimer.Restart()
+                    pub.Publish("RouteData", route.GetRemaining(Current()))
+                end
 
                 local wp = currentWaypoint
                 if wp ~= nil then

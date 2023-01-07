@@ -1,5 +1,6 @@
 require("util/Table")
 require("environment"):Prepare()
+local u = require("universe/Universe").Instance()
 local Vec3 = require("math/Vec3")
 local Route = require("flight/route/Route")
 
@@ -104,5 +105,51 @@ describe("Route #flight", function()
         assert.Equal(p3, r.Points()[1].Pos())
         assert.Equal(p2, r.Points()[2].Pos())
         assert.Equal(p1, r.Points()[3].Pos())
+    end)
+
+    it("Can calculate the remaining info", function()
+        local start = "::pos{0,2,49.9323,160.4394,50.3686}"
+
+        local p1 = "::pos{0,2,49.9329,160.4477,50.3507}"
+        local p2 = "::pos{0,2,49.9337,160.4739,50.3034}"
+        local p3 = "::pos{0,2,49.9351,160.5081,50.2578}"
+        local r = Route.New()
+        assert.is_not_nil(r.AddPos(p1))
+        assert.is_not_nil(r.AddPos(p2))
+        assert.is_not_nil(r.AddPos(p3))
+
+        local startCoord = u.ParsePosition(start).Coordinates()
+        local p1Coord = u.ParsePosition(p1).Coordinates()
+        local p2Coord = u.ParsePosition(p2).Coordinates()
+        local p3Coord = u.ParsePosition(p3).Coordinates()
+
+        local total = (p3Coord - p2Coord):Len() + (p2Coord - p1Coord):Len() + (p1Coord - startCoord):Len()
+        local remaining = r.GetRemaining(startCoord)
+        assert.near(total, remaining.TotalDistance, 0.01)
+        assert.are_equal(2, remaining.Legs)
+    end)
+
+    it("Can calculate the remaining info with just one remaining", function()
+
+        local p1 = "::pos{0,2,49.9329,160.4477,50.3507}"
+        local p2 = "::pos{0,2,49.9337,160.4739,50.3034}"
+        local r = Route.New()
+        assert.is_not_nil(r.AddPos(p1))
+        assert.is_not_nil(r.AddPos(p2))
+
+        local p1Coord = u.ParsePosition(p1).Coordinates()
+        local p2Coord = u.ParsePosition(p2).Coordinates()
+
+        local total = (p2Coord - p1Coord):Len()
+        local remaining = r.GetRemaining(p1Coord)
+        assert.near(total, remaining.TotalDistance, 0.01)
+        assert.are_equal(1, remaining.Legs)
+
+        assert.not_nil(r.Next())
+
+        total = (p1Coord - p2Coord):Len()
+        remaining = r.GetRemaining(p1Coord)
+        assert.near(total, remaining.TotalDistance, 0.01)
+        assert.are_equal(0, remaining.Legs)
     end)
 end)

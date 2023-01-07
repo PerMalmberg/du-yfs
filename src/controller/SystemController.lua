@@ -15,6 +15,7 @@ local layout           = library.embedFile("../screen/layout_min.json")
 local Stream           = require("Stream")
 local json             = require("dkjson")
 local calc             = require("util/Calc")
+local Current          = require("abstraction/Vehicle").New().position.Current
 
 ---@param t table
 ---@return string
@@ -108,7 +109,14 @@ function SystemController.New(flightCore, settings)
             ---@param data FlightData
             function(_, data)
                 dataToScreen.Set("flightData/absSpeed", calc.Mps2Kph(data.absSpeed))
-                dataToScreen.Set("target/distance", data.waypointDist / 1000)
+                dataToScreen.Set("nextWp/distance", data.waypointDist / 1000)
+            end)
+
+        pub.RegisterTable("RouteData",
+            ---@param _ string
+            ---@param remaining RouteRemainingInfo
+            function(_, remaining)
+                dataToScreen.Set("finalWp/distance", remaining.TotalDistance / 1000)
             end)
 
         pub.RegisterTable("AdjustmentData",
