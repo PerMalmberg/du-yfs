@@ -7,7 +7,7 @@
 * Fix screen data
 * EM Stop button
 * Stitting in a seat should not automatically enable manual control
-* Brake PID doesn't turn off fast enough
+
 
 
 * More natural manual control

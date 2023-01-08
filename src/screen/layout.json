@@ -489,7 +489,7 @@
                     "layer": 1,
                     "visible": "$bool(path{route/[#]:visible}:init{false})",
                     "pos1": "(100,400)",
-                    "text": "Start",
+                    "text": "Beginning",
                     "style": "route-endpoint-text",
                     "font": "route-endpoint-text",
                     "hitable": false,
