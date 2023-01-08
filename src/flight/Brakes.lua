@@ -23,7 +23,7 @@ function Brake.Instance()
         return instance
     end
 
-    local pid = PID(1, 0, 0.01)
+    local pid = PID(0.1, 0, 0.01)
     local deceleration = 0
     local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0 } ---@type BrakeData
 
@@ -97,10 +97,16 @@ function Brake.Instance()
     ---@param currentSpeed number The current speed
     ---@return Vec3 The thrust needed to counter the thrust induced by the braking operation
     function s:Feed(targetSpeed, currentSpeed)
+
         local diff = targetSpeed - currentSpeed
         pid:inject(-diff) -- Negate to make PID become positive when we have too high speed.
-
         local brakeValue = clamp(pid:get(), 0, 1)
+
+        if currentSpeed <= targetSpeed then
+            pid:reset()
+            brakeValue = 0
+        end
+
         brakeData.pid = brakeValue
 
         deceleration = brakeValue * rawAvailableDeceleration()
