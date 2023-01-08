@@ -239,6 +239,35 @@ function ControlCommands.New(input, cmd, flightCore)
     movePos.Option("from").AsNumber().Mandatory()
     movePos.Option("to").AsNumber().Mandatory()
 
+    cmd.Accept("route-set-all-margins",
+        ---@param data {commandValue:number}
+        function(data)
+            local route = rc.CurrentEdit()
+            if route == nil then
+                log:Error("No route open for edit")
+            else
+                for _, value in ipairs(route.Points()) do
+                    value.Options().Set(PointOptions.MARGIN, data.commandValue)
+                end
+                log:Info("Margins on all points in route set to ", data.commandValue)
+            end
+        end).AsNumber().Mandatory()
+
+    cmd.Accept("route-set-all-max-speeds",
+        ---@param data {commandValue:number}
+        function(data)
+            local route = rc.CurrentEdit()
+            if route == nil then
+                log:Error("No route open for edit")
+            else
+                local newSpeed = calc.Kph2Mps(data.commandValue)
+                for _, value in ipairs(route.Points()) do
+                    value.Options().Set(PointOptions.MAX_SPEED, newSpeed)
+                end
+                log:Info("Max speeds on all points in route set to ", data.commandValue, "km/h")
+            end
+        end).AsNumber().Mandatory()
+
     cmd.Accept("pos-save-as",
         ---@param data {commandValue:string}
         function(data)

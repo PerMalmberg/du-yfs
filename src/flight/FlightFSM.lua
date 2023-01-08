@@ -1,4 +1,5 @@
 local r = require("CommonRequire")
+local AxisManager = require("flight/AxisManager")
 local log = r.log
 local brakes = require("flight/Brakes"):Instance()
 local vehicle = r.vehicle
@@ -115,6 +116,8 @@ function FlightFSM.New(settings)
     local adjustmentSpeedMin = calc.Kph2Mps(0.5)
     local adjustmentSpeedMax = calc.Kph2Mps(50)
     local warmupTime = 1
+    local yaw = AxisManager.Instance().Yaw()
+    local yawAlignmentThrustLimiter = 1
 
     ---@type FlightData
     local flightData = {
@@ -521,8 +524,14 @@ function FlightFSM.New(settings)
         local groups = getEngines(acceleration, precision)
         local t = groups.thrust
         local adj = groups.adjust
+
         -- Subtracting the air friction induces jitter on small constructs so we no longer do that on the thrust acceleration.
-        local thrustAcc = acceleration + t.antiG()
+        local thrustAcc = t.antiG()
+
+        if abs(yaw.OffsetDegrees()) < yawAlignmentThrustLimiter then
+            thrustAcc = thrustAcc + acceleration
+        end
+
         local adjustAcc = (adjustmentAcc) + adj.antiG()
 
         if precision then
@@ -659,6 +668,7 @@ function FlightFSM.New(settings)
         local toNearest = chaseData.nearest - currentPos
 
         if speed > 1 then
+            -- TODO: when using a PID to control adjustment, can we maybe use currentWP.Margin() instead? Is it the accurate enough?
             res = toNearest:Len() < toleranceDistance
         end
 
@@ -710,6 +720,12 @@ function FlightFSM.New(settings)
     settings.RegisterCallback("speeda", function(value)
         speedPid = PID(speedPid.p, speedPid.i, speedPid.d, value)
         log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d, " A:", speedPid.amortization)
+    end)
+
+
+    settings.RegisterCallback("yawAlignmentThrustLimiter", function(value)
+        yawAlignmentThrustLimiter = value
+        log:Info("yawAlignmentThrustLimiter:", value)
     end)
 
     ---@return Settings

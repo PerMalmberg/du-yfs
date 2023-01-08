@@ -1,7 +1,7 @@
 local alignment = require("flight/AlignmentFunctions")
 local r = require("CommonRequire")
 local Ternary = r.calc.Ternary
-local vehicle = r.vehicle
+local Current = r.vehicle.position.Current
 
 ---@class Waypoint
 ---@field New fun():Waypoint
@@ -76,19 +76,24 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
     ---Indicates if the waypoint has been reached.
     ---@return boolean
     function s.Reached()
-        return s.DistanceTo() <= s.margin
+        -- When the margin is larger than a meter, we still want to aim for the inner part of the sphere around the actual target point.
+        local m = s.margin
+        if s.margin > 1 then
+            m = m / 2
+        end
+        return s.DistanceTo() <= m
     end
 
     ---Gets the distance to the waypoint
     ---@return number
     function s.DistanceTo()
-        return (s.destination - vehicle.position.Current()):Len()
+        return (s.destination - Current()):Len()
     end
 
     ---Gets the direction to the waypoint
     ---@return Vec3
     function s.DirectionTo()
-        return (s.destination - vehicle.position.Current()):NormalizeInPlace()
+        return (s.destination - Current()):NormalizeInPlace()
     end
 
     ---Indicates of precision mode is active

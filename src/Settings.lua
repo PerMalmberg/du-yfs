@@ -39,7 +39,8 @@ function Settings.New(db)
         atmoFuelTankHandling = { key = "atmoFuelTankHandling", default = 0 },
         spaceFuelTankHandling = { key = "spaceFuelTankHandling", default = 0 },
         rocketFuelTankHandling = { key = "rocketFuelTankHandling", default = 0 },
-        autoShutdownFloorDistance = { key = "autoShutdownFloorDistance", default = 0.3 }
+        autoShutdownFloorDistance = { key = "autoShutdownFloorDistance", default = 0.3 },
+        yawAlignmentThrustLimiter = { key = "yawAlignmentThrustLimiter", default = 1 }
     }
 
     function s.ensureSingle(data)

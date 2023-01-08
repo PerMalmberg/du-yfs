@@ -38,6 +38,7 @@ finalAcceleration[ControlledAxis.Yaw] = nullVec
 ---@field AxisFlush fun(apply:boolean)
 ---@field Update fun()
 ---@field SetTarget fun(target:Vec3)
+---@field OffsetDegrees fun():number
 
 local AxisControl = {}
 AxisControl.__index = AxisControl
@@ -62,7 +63,7 @@ function AxisControl.New(axis)
         angle = 0,
         speed = 0,
         acceleration = 0,
-        offset = 0
+        offset = 0 -- in degrees
     }
 
     local o = vehicle.orientation
@@ -160,6 +161,12 @@ function AxisControl.New(axis)
         axisData.speed = s.Speed()
         axisData.acceleration = s.Acceleration()
         pub.Publish(pubTopic, axisData)
+    end
+
+    ---Returns the current offset, in degrees
+    ---@return number
+    function s.OffsetDegrees()
+        return axisData.offset
     end
 
     return setmetatable(s, control)

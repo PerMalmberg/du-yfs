@@ -27,9 +27,7 @@ function Travel.New(fsm)
     ---@param previous Waypoint
     ---@param chaseData ChaseData
     function s.Flush(deltaTime, next, previous, chaseData)
-        local currentPos = CurrentPos()
-
-        if not fsm.CheckPathAlignment(currentPos, chaseData) then
+        if not fsm.CheckPathAlignment(CurrentPos(), chaseData) then
             -- Are we on the the desired path?
             fsm.SetState(ReturnToPath.New(fsm, chaseData.nearest))
         end
