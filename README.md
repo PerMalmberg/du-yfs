@@ -6,7 +6,7 @@
 * Screen with logo in shutdown state - configurable at compile time
 * Fix screen data
 * EM Stop button
-* Stitting in a seat should not automatically enable manual control
+* When checking if on path, differentiate between traveling to or from point.
 
 
 

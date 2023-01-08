@@ -32,8 +32,12 @@ function ControlCommands.New(input, cmd, flightCore)
     local speed = construct.getMaxSpeed()
     local rc = flightCore.GetRouteController()
 
+    local function manualInputEnabled()
+        return player.isFrozen() == 1
+    end
+
     local function lockUser()
-        if player.isFrozen() == 1 then
+        if manualInputEnabled() then
             player.freeze(false)
             log:Info("Player released and auto shutdown enabled.")
         else
@@ -305,14 +309,17 @@ function ControlCommands.New(input, cmd, flightCore)
 
     -- Fine tune commands below
     input.Register(keys.forward, Criteria.New().OnRepeat(), function()
+        if not manualInputEnabled() then return end
         move(vehicle.orientation.Forward(), movestep)
     end)
 
     input.Register(keys.backward, Criteria.New().OnRepeat(), function()
+        if not manualInputEnabled() then return end
         move(vehicle.orientation.Forward(), -movestep)
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnRepeat(), function()
+        if not manualInputEnabled() then return end
         local options = PointOptions.New()
         options.Set(PointOptions.MAX_SPEED, speed)
         options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
@@ -321,6 +328,7 @@ function ControlCommands.New(input, cmd, flightCore)
     end)
 
     input.Register(keys.straferight, Criteria.New().OnRepeat(), function()
+        if not manualInputEnabled() then return end
         local options = PointOptions.New()
         options.Set(PointOptions.MAX_SPEED, speed)
         options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
@@ -328,18 +336,22 @@ function ControlCommands.New(input, cmd, flightCore)
     end)
 
     input.Register(keys.up, Criteria.New().OnRepeat(), function()
+        if not manualInputEnabled() then return end
         move(-universe.VerticalReferenceVector(), movestep)
     end)
 
     input.Register(keys.down, Criteria.New().OnRepeat(), function()
+        if not manualInputEnabled() then return end
         move(-universe.VerticalReferenceVector(), -movestep)
     end)
 
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
+        if not manualInputEnabled() then return end
         flightCore.Turn(turnAngle, vehicle.orientation.Up())
     end)
 
     input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
+        if not manualInputEnabled() then return end
         flightCore.Turn(-turnAngle, vehicle.orientation.Up())
     end)
 
