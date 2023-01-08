@@ -110,14 +110,13 @@ function FlightCore.New(routeController, flightFSM)
         end
 
         previousWaypoint = currentWaypoint
-        waypointReachedSignaled = false
         currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached())
+        waypointReachedSignaled = false
     end
 
     ---Starts the flight
     function s.StartFlight()
         route = routeController.CurrentRoute()
-        local fsm = flightFSM
         routePublishTimer.Start()
 
         -- Setup waypoint that will be the previous waypoint
@@ -126,9 +125,9 @@ function FlightCore.New(routeController, flightFSM)
 
         -- Don't start unless we have a destination.
         if currentWaypoint then
-            fsm.SetState(Travel.New(fsm))
+            flightFSM.SetState(Travel.New(flightFSM))
         else
-            fsm.SetState(Hold.New(fsm))
+            flightFSM.SetState(Hold.New(flightFSM))
         end
     end
 
@@ -177,11 +176,7 @@ function FlightCore.New(routeController, flightFSM)
     end
 
     local function align()
-        local waypoint = currentWaypoint
-        local prev = previousWaypoint
-
-        local target = waypoint.YawAndPitch(prev)
-        local topSideAlignment = waypoint.Roll(prev)
+        local target = currentWaypoint.YawAndPitch(previousWaypoint)
 
         if target ~= nil then
             axes.SetYawTarget(target.yaw)
@@ -191,6 +186,7 @@ function FlightCore.New(routeController, flightFSM)
             axes.SetPitchTarget()
         end
 
+        local topSideAlignment = currentWaypoint.Roll(previousWaypoint)
         axes.SetRollTarget(topSideAlignment)
     end
 
@@ -227,28 +223,26 @@ function FlightCore.New(routeController, flightFSM)
     function s.fcFlush()
         local status, err, _ = xpcall(
             function()
-                local wp = currentWaypoint
+                if currentWaypoint and route then
+                    align()
+                    flightFSM.FsmFlush(currentWaypoint, previousWaypoint)
 
-                if wp and route then
-                    if wp.Reached() then
+                    if currentWaypoint.Reached() then
                         if not waypointReachedSignaled then
                             waypointReachedSignaled = true
-                            flightFSM.WaypointReached(route.LastPointReached(), wp, previousWaypoint)
+                            flightFSM.WaypointReached(route.LastPointReached(), currentWaypoint, previousWaypoint)
                             -- Lock direction when WP is reached, but don't override existing locks, such as is in place when strafing.
-                            wp.LockDirection(
-                                alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(wp,
+                            currentWaypoint.LockDirection(
+                                alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(currentWaypoint,
                                     previousWaypoint),
                                 false)
-                        else
-                            waypointReachedSignaled = false
                         end
 
                         -- Switch to next waypoint
                         s.NextWP()
+                    else
+                        waypointReachedSignaled = false
                     end
-
-                    align()
-                    flightFSM.FsmFlush(currentWaypoint, previousWaypoint)
                 else
                     --- This is a workaround for engines remembering their states from a previous session; shut down all engines.
                     unit.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
