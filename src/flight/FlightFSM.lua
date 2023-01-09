@@ -668,7 +668,8 @@ function FlightFSM.New(settings)
         local toNearest = chaseData.nearest - currentPos
 
         if speed > 1 then
-            -- TODO: when using a PID to control adjustment, can we maybe use currentWP.Margin() instead? Is it the accurate enough?
+            -- TODO: when using a PID to control adjustment, can we maybe use currentWP.Margin() instead? Is the movement thenn accurate enough?
+            -- This is not meant to be the same as the waypoint margin which is used to determine when w waypoint has been reached.
             res = toNearest:Len() < toleranceDistance
         end
 
