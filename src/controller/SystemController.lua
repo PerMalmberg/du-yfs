@@ -16,6 +16,7 @@ local Stream           = require("Stream")
 local json             = require("dkjson")
 local calc             = require("util/Calc")
 local distanceFormat   = require("util/DistanceFormat")
+local massFormat       = require("util/MassFormat")
 local TotalMass        = require("abstraction/Vehicle").New().mass.Total
 
 ---@param t table
@@ -114,7 +115,9 @@ function SystemController.New(flightCore, settings)
                 dataToScreen.Set("nextWp/distance", formatted.value)
                 dataToScreen.Set("nextWp/distanceUnit", formatted.unit)
 
-                dataToScreen.Set("mass/total", TotalMass())
+                formatted = massFormat(TotalMass())
+                dataToScreen.Set("mass/total", formatted.value)
+                dataToScreen.Set("mass/totalUnit", formatted.unit)
             end)
 
         pub.RegisterTable("RouteData",
