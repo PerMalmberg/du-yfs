@@ -122,11 +122,12 @@ function SystemController.New(flightCore, settings)
 
         pub.RegisterTable("RouteData",
             ---@param _ string
-            ---@param remaining RouteRemainingInfo
-            function(_, remaining)
-                local formatted = distanceFormat(remaining.TotalDistance)
+            ---@param data {remaining:RouteRemainingInfo, activeRouteName:string|nil}
+            function(_, data)
+                local formatted = distanceFormat(data.remaining.TotalDistance)
                 dataToScreen.Set("finalWp/distance", formatted.value)
                 dataToScreen.Set("finalWp/distanceUnit", formatted.unit)
+                dataToScreen.Set("route/current/name", data.activeRouteName)
             end)
 
         pub.RegisterTable("AdjustmentData",

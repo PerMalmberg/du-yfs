@@ -196,7 +196,10 @@ function FlightCore.New(routeController, flightFSM)
 
                 if route and routePublishTimer.Elapsed() > 0.5 then
                     routePublishTimer.Restart()
-                    pub.Publish("RouteData", route.GetRemaining(Current()))
+                    pub.Publish("RouteData", {
+                        remaining = route.GetRemaining(Current()),
+                        activeRouteName = routeController.ActiveRouteName()
+                    })
                 end
 
                 local wp = currentWaypoint

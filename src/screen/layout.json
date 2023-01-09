@@ -198,7 +198,7 @@
                     "style": "info",
                     "pos1": "(640,40)",
                     "font": "info",
-                    "text": "$str(path{currentRoute:name}:init{-}:interval{0.5})"
+                    "text": "$str(path{route/current:name}:init{-}:interval{0.5})"
                 },
                 {
                     "comment": "target-icon-vert",

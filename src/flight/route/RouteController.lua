@@ -13,7 +13,7 @@ require("util/Table")
 ---@class RouteController
 ---@field GetRouteNames fun():string[]
 ---@field GetPageCount fun(perPage:integer):integer
----@field GetRoutePage fun(page:integer, perPage:integer):string[]]
+---@field GetRoutePage fun(page:integer, perPage:integer):string[]
 ---@field EditRoute fun(name:string):Route|nil
 ---@field DeleteRoute fun(name:string)
 ---@field StoreRoute fun(name:string, route:Route):boolean
@@ -29,6 +29,7 @@ require("util/Table")
 ---@field ReverseRoute fun():boolean
 ---@field SaveRoute fun():boolean
 ---@field Count fun():integer
+---@field ActiveRouteName fun():string|nil
 
 local RouteController = {}
 RouteController.__index = RouteController
@@ -52,6 +53,7 @@ function RouteController.Instance(bufferedDB)
     local current ---@type Route|nil
     local edit ---@type Route|nil
     local editName ---@type string|nil
+    local activeRouteName ---@type string|nil
 
     ---Returns the the name of all routes, with "(editing)" appended to the one currently being edited.
     ---@return string[]
@@ -398,6 +400,7 @@ function RouteController.Instance(bufferedDB)
         end
 
         current = route
+        activeRouteName = name
 
         return true
     end
@@ -406,6 +409,7 @@ function RouteController.Instance(bufferedDB)
     ---@return Route
     function s.ActivateTempRoute()
         current = Route.New()
+        activeRouteName = "Temporary"
         return current
     end
 
@@ -454,6 +458,12 @@ function RouteController.Instance(bufferedDB)
         end
 
         return res
+    end
+
+    ---Returns the current name
+    ---@return string|nil
+    function s.ActiveRouteName()
+        return activeRouteName
     end
 
     singleton = setmetatable(s, RouteController)
