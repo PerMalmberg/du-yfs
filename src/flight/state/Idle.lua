@@ -3,7 +3,7 @@ local checks = require("CommonRequire").checks
 ---@class Idle
 ---@field Enter fun()
 ---@field Leave fun()
----@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, chaseData:ChaseData)
+---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)
 ---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
 ---@field Update fun()
 ---@field Name fun():string
@@ -26,7 +26,11 @@ function Idle.New(fsm)
     function s.Leave()
     end
 
-    function s.Flush(deltaTime, next, previous, chaseData)
+    ---@param deltaTime number
+    ---@param next Waypoint
+    ---@param previous Waypoint
+    ---@param nearestPointOnPath Vec3
+    function s.Flush(deltaTime, next, previous, nearestPointOnPath)
 
     end
 

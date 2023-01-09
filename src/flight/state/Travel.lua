@@ -25,18 +25,18 @@ function Travel.New(fsm)
     ---@param deltaTime number
     ---@param next Waypoint
     ---@param previous Waypoint
-    ---@param chaseData ChaseData
-    function s.Flush(deltaTime, next, previous, chaseData)
-        if not fsm.CheckPathAlignment(CurrentPos(), chaseData) then
-            -- Are we on the the desired path?
-            fsm.SetState(ReturnToPath.New(fsm, chaseData.nearest))
+    ---@param nearestPointOnPath Vec3
+    function s.Flush(deltaTime, next, previous, nearestPointOnPath)
+        -- Are we on the the desired path?
+        if not fsm.CheckPathAlignment(CurrentPos(), nearestPointOnPath, previous, next) then
+            fsm.SetState(ReturnToPath.New(fsm, nearestPointOnPath))
         end
     end
 
     function s.Update()
     end
 
-    function s:WaypointReached(isLastWaypoint, next, previous)
+    function s.WaypointReached(isLastWaypoint, next, previous)
         if isLastWaypoint then
             fsm.SetState(Hold.New(fsm))
         end

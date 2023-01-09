@@ -3,12 +3,18 @@ local r = require("CommonRequire")
 local Ternary = r.calc.Ternary
 local Current = r.vehicle.position.Current
 
+---@enum WPReachMode
+WPReachMode = {
+    ENTRY = 1,
+    EXIT = 2
+}
+
 ---@class Waypoint
 ---@field New fun():Waypoint
 ---@field FinalSpeed fun():number
 ---@field MaxSpeed fun():number
 ---@field Margin fun():number
----@field Reached fun():boolean
+---@field WithinMargin fun(mode:WPReachMode):boolean
 ---@field Destination fun():Vec3
 ---@field DistanceTo fun():number
 ---@field DirectionTo fun():Vec3
@@ -40,7 +46,8 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
         rollFunc = rollFunc,
         yawPitchFunc = yawPitchFunc,
         yawPitchDirection = nil, ---@type Vec3 -- Fixed target direction
-        precisionMode = false
+        precisionMode = false,
+        adjusted = false
     }
 
     ---Gets the destination
@@ -74,13 +81,17 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
     end
 
     ---Indicates if the waypoint has been reached.
+    ---@param mode WPReachMode
     ---@return boolean
-    function s.Reached()
-        -- When the margin is larger than a meter, we still want to aim for the inner part of the sphere around the actual target point.
+    function s.WithinMargin(mode)
         local m = s.margin
-        if s.margin > 1 then
-            m = m / 2
+
+        if mode == WPReachMode.ENTRY then
+            if m > 1 then
+                m = m / 2
+            end
         end
+
         return s.DistanceTo() <= m
     end
 

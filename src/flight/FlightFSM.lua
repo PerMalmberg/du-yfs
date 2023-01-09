@@ -45,17 +45,14 @@ local airfoil = "airfoil"
 local thrustTag = "thrust"
 local Forward = vehicle.orientation.Forward
 local Right = vehicle.orientation.Right
-local OneKphPh = calc.Kph2Mps(1)
 local deadZoneFactor = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
-
----@alias ChaseData { nearest:Vec3, rabbit:Vec3 }
 
 ---@class FlightFSM
 ---@field New fun(settings:Settings):FlightFSM
 ---@field FsmFlush fun(next:Waypoint, previous:Waypoint)
 ---@field SetState fun(newState:FlightState)
 ---@field SetEngineWarmupTime fun(t50:number)
----@field CheckPathAlignment fun(currentPos:Vec3, chaseData:ChaseData)
+---@field CheckPathAlignment fun(currentPos:Vec3, nearestPointOnPath:Vec3, previousWaypoint:Waypoint, nextWaypoint:Waypoint)
 ---@field SetTemporaryWaypoint fun(wp:Waypoint|nil)
 ---@field Update fun()
 ---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
@@ -196,32 +193,6 @@ function FlightFSM.New(settings)
 
         local v0 = (endSpeed * endSpeed - 2 * acceleration * distance) ^ 0.5
         return v0
-    end
-
-    ---Calculates the nearest point between two waypoints
-    ---@param wpStart Waypoint
-    ---@param wpEnd Waypoint
-    ---@param currentPos Vec3
-    ---@param ahead number
-    ---@return ChaseData
-    local function nearestPointBetweenWaypoints(wpStart, wpEnd, currentPos, ahead)
-        local totalDiff = wpEnd.Destination() - wpStart.Destination()
-        local dir = totalDiff:Normalize()
-        local nearestPoint = calc.NearestPointOnLine(wpStart.Destination(), dir, currentPos)
-
-        ahead = (ahead or 0)
-        local startDiff = nearestPoint - wpStart.Destination()
-        local distanceFromStart = startDiff:Len()
-        local rabbitDistance = min(distanceFromStart + ahead, totalDiff:Len())
-        local rabbit = wpStart.Destination() + dir * rabbitDistance
-
-        if startDiff:Normalize():Dot(dir) < 0 then
-            return { nearest = wpStart.Destination(), rabbit = rabbit }
-        elseif startDiff:Len() >= totalDiff:Len() then
-            return { nearest = wpEnd.Destination(), rabbit = rabbit }
-        else
-            return { nearest = nearestPoint, rabbit = rabbit }
-        end
     end
 
     local currentState ---@type FlightState
@@ -404,7 +375,7 @@ function FlightFSM.New(settings)
             remainingDistance = max(remainingDistance, remainingDistance - deadZoneThickness(firstBody))
         end
 
-        if waypoint.Reached() then
+        if waypoint.WithinMargin(WPReachMode.ENTRY) then
             targetSpeed = evaluateNewLimit(targetSpeed, 0, "Hold")
             flightData.brakeMaxSpeed = 0
         else
@@ -444,20 +415,18 @@ function FlightFSM.New(settings)
     end
 
     ---Adjust for deviation from the desired path
-    ---@param chaseData ChaseData
+    ---@param targetPoint Vec3
     ---@param currentPos Vec3
     ---@param moveDirection Vec3
     ---@return Vec3
-    local function adjustForDeviation(chaseData, currentPos, moveDirection)
+    local function adjustForDeviation(targetPoint, currentPos, moveDirection)
         -- Add counter to deviation from optimal path
         local plane = moveDirection:Normalize()
         local vel = Velocity():ProjectOnPlane(plane) / plane:Len2()
         local currSpeed = vel:Len()
 
-        local targetPoint = chaseData.nearest
-
         local toTargetWorld = targetPoint - currentPos
-        local toTarget = calc.ProjectPointOnPlane(plane, currentPos, chaseData.nearest) -
+        local toTarget = calc.ProjectPointOnPlane(plane, currentPos, targetPoint) -
             calc.ProjectPointOnPlane(plane, currentPos, currentPos)
         local dirToTarget = toTarget:Normalize()
         local distance = toTarget:Len()
@@ -615,19 +584,15 @@ function FlightFSM.New(settings)
             local selectedWP = selectWP()
 
             local pos = CurrentPos()
-            local chaseData = nearestPointBetweenWaypoints(previous, selectedWP, pos, 6)
+            local nearest = calc.NearestOnLineBetweenPoints(previous.Destination(), selectedWP.Destination(), pos)
 
-            currentState.Flush(deltaTime, selectedWP, previous, chaseData)
+            currentState.Flush(deltaTime, selectedWP, previous, nearest)
             local moveDirection = selectedWP.DirectionTo()
 
             local acceleration = move(deltaTime, selectedWP)
-            local adjustmentAcc = adjustForDeviation(chaseData, pos, moveDirection)
+            local adjustmentAcc = adjustForDeviation(nearest, pos, moveDirection)
 
             applyAcceleration(acceleration, adjustmentAcc, selectedWP.GetPrecisionMode())
-
-            --visual:DrawNumber(9, chaseData.rabbit)
-            --visual:DrawNumber(8, chaseData.nearest)
-            --visual:DrawNumber(0, pos + (acceleration or nullVec):Normalize() * 8)
         end
     end
 
@@ -657,23 +622,24 @@ function FlightFSM.New(settings)
 
     ---Checks if we're still on the path
     ---@param currentPos Vec3
-    ---@param chaseData ChaseData
+    ---@param nearestPointOnPath Vec3
+    ---@param previousWaypoint Waypoint
+    ---@param nextWaypoint Waypoint
     ---@return boolean
-    function s.CheckPathAlignment(currentPos, chaseData)
-        local res = true
+    function s.CheckPathAlignment(currentPos, nearestPointOnPath, previousWaypoint, nextWaypoint)
+        --[[ As waypoints can have large margins, we need to ensure that we allow for offsets as large as the margins, at each end.
+            The outer edges are a straight line between the edges of the start and end point spheres so allowed offset can be calculated linearly.
+        ]]
 
-        local vel = Velocity()
-        local speed = vel:Len()
+        local dist = (previousWaypoint.Destination() - nextWaypoint.Destination()):Len()
+        local diff = previousWaypoint.Margin() - nextWaypoint.Margin()
+        local koeff = diff / dist
 
-        local toNearest = chaseData.nearest - currentPos
+        local travelDist = min(dist, (previousWaypoint.Destination() - CurrentPos()):Len())
+        local allowedOffset = previousWaypoint.Margin() + koeff * travelDist
+        local toNearest = (nearestPointOnPath - currentPos):Len()
 
-        if speed > 1 then
-            -- TODO: when using a PID to control adjustment, can we maybe use currentWP.Margin() instead? Is the movement thenn accurate enough?
-            -- This is not meant to be the same as the waypoint margin which is used to determine when w waypoint has been reached.
-            res = toNearest:Len() < toleranceDistance
-        end
-
-        return res
+        return toNearest <= max(0.5, allowedOffset)
     end
 
     ---Sets a temporary waypoint, or removes the current one

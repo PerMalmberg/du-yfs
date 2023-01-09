@@ -84,7 +84,7 @@ function FlightCore.New(routeController, flightFSM)
     local routePublishTimer = Stopwatch.New()
 
     local function createDefaultWP()
-        return Waypoint.New(vehicle.position.Current(), 0, 0, 10, alignment.NoAdjust, alignment.NoAdjust)
+        return Waypoint.New(vehicle.position.Current(), 0, 0, defaultMargin, alignment.NoAdjust, alignment.NoAdjust)
     end
 
     -- Setup start waypoints to prevent nil values
@@ -227,7 +227,7 @@ function FlightCore.New(routeController, flightFSM)
                     align()
                     flightFSM.FsmFlush(currentWaypoint, previousWaypoint)
 
-                    if currentWaypoint.Reached() then
+                    if currentWaypoint.WithinMargin(WPReachMode.ENTRY) then
                         if not waypointReachedSignaled then
                             waypointReachedSignaled = true
                             flightFSM.WaypointReached(route.LastPointReached(), currentWaypoint, previousWaypoint)

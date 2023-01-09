@@ -4,7 +4,7 @@ local Waypoint = require("flight/Waypoint")
 ---@class ReturnToPath
 ---@field Enter fun()
 ---@field Leave fun()
----@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, chaseData:ChaseData)
+---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)
 ---@field Update fun()
 ---@field Name fun():string
 
@@ -31,14 +31,14 @@ function ReturnToPath.New(fsm, returnPoint)
     ---@param deltaTime number
     ---@param next Waypoint
     ---@param previous Waypoint
-    ---@param chaseData table
-    function s.Flush(deltaTime, next, previous, chaseData)
+    ---@param nearestPointOnPath Vec3
+    function s.Flush(deltaTime, next, previous, nearestPointOnPath)
         if not temporaryWP then
             temporaryWP = Waypoint.New(returnPoint, 0, 0, next.Margin(), next.Roll, next.YawAndPitch)
             fsm.SetTemporaryWaypoint(temporaryWP)
         end
 
-        if temporaryWP.Reached() then
+        if temporaryWP.WithinMargin(WPReachMode.ENTRY) then
             fsm.SetState(Travel.New(fsm))
         end
     end

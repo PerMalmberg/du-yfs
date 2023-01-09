@@ -7,7 +7,7 @@ local log = require("debug/Log")()
 ---@class Hold
 ---@field Enter fun()
 ---@field Leave fun()
----@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, chaseData:ChaseData)
+---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)
 ---@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
 ---@field Update fun()
 ---@field Name fun():string
@@ -36,8 +36,12 @@ function Hold.New(fsm)
         pub.Unregister("FloorMonitor", s.floorMonitor)
     end
 
-    function s.Flush(deltaTime, next, previous, chaseData)
-        if next.Reached() then
+    ---@param deltaTime number
+    ---@param next Waypoint
+    ---@param previous Waypoint
+    ---@param nearestPointOnPath Vec3
+    function s.Flush(deltaTime, next, previous, nearestPointOnPath)
+        if next.WithinMargin(WPReachMode.EXIT) then
             next.SetPrecisionMode(true)
         else
             fsm.SetState(Travel.New(fsm))
