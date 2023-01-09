@@ -2,7 +2,7 @@
 ---@field Enter fun()
 ---@field Leave fun()
 ---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)
----@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
+---@field AtWaypoint fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
 ---@field InhibitsThrust fun():boolean
 ---@field MayContinueToNextWaypoint fun():boolean
 ---@field Update fun()
@@ -35,7 +35,7 @@ function NameOfState.New(fsm)
     function s.Update()
     end
 
-    function s.WaypointReached(isLastWaypoint, next, previous)
+    function s.AtWaypoint(isLastWaypoint, next, previous)
     end
 
     function s.MayContinueToNextWaypoint()

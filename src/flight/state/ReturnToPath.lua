@@ -46,7 +46,7 @@ function ReturnToPath.New(fsm, returnPoint)
     function s.Update()
     end
 
-    function s.WaypointReached(isLastWaypoint, next, previous)
+    function s.AtWaypoint(isLastWaypoint, next, previous)
     end
 
     function s.Name()

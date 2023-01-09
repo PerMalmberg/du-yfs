@@ -55,7 +55,7 @@ local deadZoneFactor = 0.8 -- Consider the inner edge of the dead zone where we 
 ---@field CheckPathAlignment fun(currentPos:Vec3, nearestPointOnPath:Vec3, previousWaypoint:Waypoint, nextWaypoint:Waypoint)
 ---@field SetTemporaryWaypoint fun(wp:Waypoint|nil)
 ---@field Update fun()
----@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
+---@field AtWaypoint fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
 ---@field GetSettings fun():Settings
 
 local FlightFSM = {}
@@ -658,9 +658,9 @@ function FlightFSM.New(settings)
         end
     end
 
-    function s.WaypointReached(isLastWaypoint, next, previous)
+    function s.AtWaypoint(isLastWaypoint, next, previous)
         if currentState ~= nil then
-            currentState.WaypointReached(isLastWaypoint, next, previous)
+            currentState.AtWaypoint(isLastWaypoint, next, previous)
         end
     end
 

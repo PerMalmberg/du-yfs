@@ -4,7 +4,7 @@ local checks = require("CommonRequire").checks
 ---@field Enter fun()
 ---@field Leave fun()
 ---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)
----@field WaypointReached fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
+---@field AtWaypoint fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
 ---@field Update fun()
 ---@field Name fun():string
 
@@ -37,7 +37,7 @@ function Idle.New(fsm)
     function s.Update()
     end
 
-    function s.WaypointReached(isLastWaypoint, next, previous)
+    function s.AtWaypoint(isLastWaypoint, next, previous)
     end
 
     function s.Name()

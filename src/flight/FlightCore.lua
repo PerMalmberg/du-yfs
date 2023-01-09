@@ -73,7 +73,6 @@ function FlightCore.New(routeController, flightFSM)
     local flushHandlerId = 0
     local updateHandlerId = 0
     local axes = AxisManager.Instance()
-    local waypointReachedSignaled = false
     local wWaypointDistance = p:CreateValue("Distance", "m")
     local wWaypointMargin = p:CreateValue("Margin", "m")
     local wWaypointFinalSpeed = p:CreateValue("Final speed", "km/h")
@@ -111,7 +110,6 @@ function FlightCore.New(routeController, flightFSM)
 
         previousWaypoint = currentWaypoint
         currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached())
-        waypointReachedSignaled = false
     end
 
     ---Starts the flight
@@ -228,20 +226,16 @@ function FlightCore.New(routeController, flightFSM)
                     flightFSM.FsmFlush(currentWaypoint, previousWaypoint)
 
                     if currentWaypoint.WithinMargin(WPReachMode.ENTRY) then
-                        if not waypointReachedSignaled then
-                            waypointReachedSignaled = true
-                            flightFSM.WaypointReached(route.LastPointReached(), currentWaypoint, previousWaypoint)
-                            -- Lock direction when WP is reached, but don't override existing locks, such as is in place when strafing.
-                            currentWaypoint.LockDirection(
-                                alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(currentWaypoint,
-                                    previousWaypoint),
-                                false)
-                        end
+                        flightFSM.AtWaypoint(route.LastPointReached(), currentWaypoint, previousWaypoint)
+
+                        -- Lock direction when WP is reached, but don't override existing locks, such as is in place when strafing.
+                        currentWaypoint.LockDirection(
+                            alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(currentWaypoint,
+                                previousWaypoint),
+                            false)
 
                         -- Switch to next waypoint
                         s.NextWP()
-                    else
-                        waypointReachedSignaled = false
                     end
                 else
                     --- This is a workaround for engines remembering their states from a previous session; shut down all engines.

@@ -23,6 +23,14 @@
         "route-name": {
             "font": "Play",
             "size": 24
+        },
+        "data-font": {
+            "font": "Play",
+            "size": 18
+        },
+        "change-page": {
+            "font": "Play",
+            "size": 14
         }
     },
     "styles": {
@@ -77,6 +85,14 @@
         "route-name": {
             "fill": "#ffffffff",
             "align": "h1,v2"
+        },
+        "data-text": {
+            "fill": "#ffffffff",
+            "align": "h0,v1"
+        },
+        "change-page": {
+            "fill": "#ffffffff",
+            "align": "h0,v1"
         }
     },
     "pages": {
@@ -497,9 +513,54 @@
                         "x_count": 5,
                         "x_step": 160
                     }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "pos1": "(970,590)",
+                    "text": "<data>",
+                    "style": "change-page",
+                    "font": "change-page",
+                    "mouse": {
+                        "click": {
+                            "command": "activatepage{details}"
+                        }
+                    }
                 }
             ]
         },
-        "details": {}
+        "details": {
+            "components": [
+                {
+                    "comment": "background",
+                    "type": "box",
+                    "layer": 1,
+                    "style": "bkg-dark",
+                    "pos1": "(0,0)",
+                    "pos2": "(1024,613)"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "style": "data-text",
+                    "font": "data-font",
+                    "text": "$num(path{floor:distance}:format{Floor: %0.2fm}:init{0})",
+                    "pos1": "(10,10)"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "pos1": "(960,590)",
+                    "text": "<routes>",
+                    "style": "change-page",
+                    "font": "change-page",
+                    "mouse": {
+                        "click": {
+                            "command": "activatepage{routeSelection}"
+                        }
+                    }
+                }
+            ]
+        }
     }
 }

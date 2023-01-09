@@ -4,9 +4,7 @@
 * Stuck on pad on activation - wants to move to first point? Move upwards a little first
 * Use PID for adjustment
 * Screen with logo in shutdown state - configurable at compile time
-* Fix screen data
 * EM Stop button
-
 
 * More natural manual control
 * Fix overshoot when turning

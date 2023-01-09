@@ -36,7 +36,7 @@ function Travel.New(fsm)
     function s.Update()
     end
 
-    function s.WaypointReached(isLastWaypoint, next, previous)
+    function s.AtWaypoint(isLastWaypoint, next, previous)
         if isLastWaypoint then
             fsm.SetState(Hold.New(fsm))
         end
