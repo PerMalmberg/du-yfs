@@ -1,0 +1,39 @@
+{
+    "fonts": {
+        "version": {
+            "font": "Play",
+            "size": 18
+        }
+    },
+    "styles": {
+        "version": {
+            "fill": "#ffffffff",
+            "align": "h2,v4"
+        },
+        "bkg-dark": {
+            "fill": "#2F3637ff"
+        }
+    },
+    "pages": {
+        "offline": {
+            "components": [
+                {
+                    "comment": "background",
+                    "type": "box",
+                    "layer": 1,
+                    "style": "bkg-dark",
+                    "pos1": "(0,0)",
+                    "pos2": "(1024,613)"
+                },
+                {
+                    "type": "text",
+                    "pos1": "(1004,593)",
+                    "text": "Screen code version: GITINFO / DATEINFO",
+                    "layer": 1,
+                    "font": "version",
+                    "style": "version"
+                }
+            ]
+        }
+    }
+}

@@ -32,6 +32,9 @@ clean: clean_cov clean_report
 
 minify_layout:
 	@jq -c . ./src/screen/layout.json > ./src/screen/layout_min.json
+	@jq -c . ./src/screen/offline.json > ./src/screen/offline_min.json
+	@./update_version_info.sh
+
 
 test: clean
 	@LUA_PATH="$(LUA_PATH_TEST)" busted -t "flight" .

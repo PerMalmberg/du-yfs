@@ -6,7 +6,7 @@ local FlightFSM = require("flight/FlightFSM")
 local FlightCore = require("flight/FlightCore")
 local SystemController = require("controller/SystemController")
 local Settings = require("Settings")
-require("version")
+require("version_out")
 
 local Task = require("system/Task")
 

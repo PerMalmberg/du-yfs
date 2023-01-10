@@ -541,11 +541,19 @@
                 },
                 {
                     "type": "text",
+                    "pos1": "(10, 10)",
+                    "text": "Version: GITINFO / DATEINFO",
+                    "layer": 1,
+                    "font": "data-font",
+                    "style": "data-text"
+                },
+                {
+                    "type": "text",
                     "layer": 1,
                     "style": "data-text",
                     "font": "data-font",
                     "text": "$num(path{floor:distance}:format{Floor: %0.2fm}:init{0})",
-                    "pos1": "(10,10)"
+                    "pos1": "(10,30)"
                 },
                 {
                     "type": "text",

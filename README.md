@@ -5,6 +5,7 @@
 * Use PID for adjustment
 * Screen with logo in shutdown state - configurable at compile time
 * EM Stop button
+* Even if we are within the waypoint, try to reach the center
 
 * More natural manual control
 * Fix overshoot when turning

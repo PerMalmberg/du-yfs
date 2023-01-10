@@ -1,2 +1,4 @@
 local driver = require("Driver").Instance()
-driver.Render(10, true)
+local offline = library.embedFile("offline_min.json")
+driver.SetOfflineLayout(offline)
+driver.Render(10, false)
