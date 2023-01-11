@@ -31,12 +31,7 @@ local min = math.min
 local max = math.max
 local MAX_INT = math.maxinteger
 
-local atmoBrakeCutoffSpeed = calc.Kph2Mps(360) -- Speed limit under which atmospheric brakes become less effective (down to 10m/s [36km/h] where they give 0.1 of max)
-local atmoBrakeEfficiencyFactor = 0.6
-local spaceEngineTurnOffTime = 10
-local engineTurnOffThreshold = calc.Kph2Mps(100)
 local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
-
 
 local longitudinal = "longitudinal"
 local vertical = "vertical"
@@ -274,7 +269,7 @@ function FlightFSM.New(settings)
     ---@return number The linear start distance in meters
     local function calcLinearApproachStart()
         if vehicle.world.IsInSpace() then
-            return 75
+            return 175 -- Tested with 75, but that feel crazy fast at the end.
         else
             if TotalMass() > 10000 then
                 return 1000
@@ -298,22 +293,6 @@ function FlightFSM.New(settings)
         return evaluateNewLimit(currentTargetSpeed, distanceBasedSpeedLimit, "Approaching")
     end
 
-    ---Gets the brake efficiency to use
-    ---@param inAtmo boolean
-    ---@param speed number
-    ---@return number
-    local function getBrakeEfficiency(inAtmo, speed)
-        if not inAtmo then
-            return 1
-        end
-
-        if speed <= atmoBrakeCutoffSpeed then
-            return 0.1
-        else
-            return atmoBrakeEfficiencyFactor
-        end
-    end
-
     ---Gets the maximum speed we may have and still be able to stop
     ---@param deltaTime number Time since last tick, seconds
     ---@param velocity Vec3 Current velocity
@@ -321,8 +300,6 @@ function FlightFSM.New(settings)
     ---@param waypoint Waypoint Current waypoint
     ---@return number
     local function getSpeedLimit(deltaTime, velocity, direction, waypoint)
-        local finalSpeed = waypoint.FinalSpeed()
-
         local currentSpeed = velocity:Len()
         -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
         -- This is inaccurate if acceleration isn't in the same direction as our movement vector, but it is gives a safe value.
@@ -331,34 +308,33 @@ function FlightFSM.New(settings)
 
         -- Calculate max speed we may have with available brake force to to reach the final speed.
 
-        -- If we're passing through or into atmosphere, reduce speed before we reach it
         local pos = CurrentPos()
         local firstBody = universe.CurrentGalaxy():BodiesInPath(Ray.New(pos, velocity:Normalize()))[1]
         local inAtmo = false
-        flightData.finalSpeed = finalSpeed
+
+        flightData.finalSpeed = waypoint.FinalSpeed()
         flightData.finalSpeedDistance = remainingDistance
+
+        local atmosphericEntrySpeed = 0
+        local willHitAtmo = false
+        local distanceToAtmo = -1
 
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
 
         if firstBody then
-            local willHitAtmo, hitPoint, distanceToAtmo = willEnterAtmo(waypoint, firstBody)
+            willHitAtmo, _, distanceToAtmo = willEnterAtmo(waypoint, firstBody)
             inAtmo = firstBody:DistanceToAtmo(pos) == 0
 
             local dzSpeedIncrease = speedIncreaseInDeadZone(firstBody)
             flightData.dzSpeedInc = dzSpeedIncrease
 
             -- Ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
-            if not inAtmo and willHitAtmo
-                and remainingDistance > distanceToAtmo -- Waypoint may be closer than atmo
+            if not inAtmo and willHitAtmo and remainingDistance > distanceToAtmo -- Waypoint may be closer than atmo
             then
-                finalSpeed = max(0, construct.getFrictionBurnSpeed() - dzSpeedIncrease)
-                remainingDistance = distanceToAtmo
-                flightData.finalSpeed = finalSpeed
+                atmosphericEntrySpeed = max(dzSpeedIncrease, construct.getFrictionBurnSpeed() - dzSpeedIncrease)
+                flightData.finalSpeed = atmosphericEntrySpeed
                 flightData.finalSpeedDistance = distanceToAtmo
             end
-
-            flightData.distanceToAtmo = distanceToAtmo
-        else
             flightData.distanceToAtmo = -1
         end
 
@@ -368,7 +344,7 @@ function FlightFSM.New(settings)
 
         --- Don't allow us to burn
         if inAtmo then
-            targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed(), "Burn speed")
+            targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed() * 0.99, "Burn speed")
         end
 
         if firstBody and isWithinDeadZone(pos, firstBody) and direction:Dot(GravityDirection()) > 0.7 then
@@ -379,16 +355,17 @@ function FlightFSM.New(settings)
             targetSpeed = evaluateNewLimit(targetSpeed, 0, "Hold")
             flightData.brakeMaxSpeed = 0
         else
-            -- When in space, engines take a long time to turn off which causes overshoots
-            local engineTurnOffDistance = 0
-            if not inAtmo and currentSpeed > engineTurnOffThreshold then
-                engineTurnOffDistance = currentSpeed * spaceEngineTurnOffTime
-            end
+            local brakeEfficiency = brakes:BrakeEfficiency()
+            local brakeMaxSpeed
 
-            local brakeEfficiency = getBrakeEfficiency(inAtmo, currentSpeed)
-            local brakeMaxSpeed = calcMaxAllowedSpeed(
-                -brakes:GravityInfluencedAvailableDeceleration() * brakeEfficiency,
-                clamp(remainingDistance - engineTurnOffDistance, 0, remainingDistance), finalSpeed)
+            if not inAtmo and willHitAtmo then
+                brakeMaxSpeed = calcMaxAllowedSpeed(-brakes:GravityInfluencedAvailableDeceleration() * brakeEfficiency,
+                    distanceToAtmo, atmosphericEntrySpeed)
+            else
+                brakeMaxSpeed = calcMaxAllowedSpeed(
+                    -brakes:GravityInfluencedAvailableDeceleration() * brakeEfficiency,
+                    remainingDistance, waypoint.FinalSpeed())
+            end
 
             -- When standing still in atmo, we get no brake speed as brakes give no force at all.
             if not inAtmo or currentSpeed > ignoreAtmoBrakeLimitThreshold then

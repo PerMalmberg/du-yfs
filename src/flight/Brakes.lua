@@ -13,6 +13,11 @@ local pub = require("util/PubSub").Instance()
 local clamp = utils.clamp
 local max = math.max
 
+
+local atmoBrakeCutoffSpeed = calc.Kph2Mps(360) -- Speed limit under which atmospheric brakes become less effective (down to 10m/s [36km/h] where they give 0.1 of max)
+local atmoBrakeEfficiencyFactor = 0.6
+local atmoSpaceEfficiencyFactor = 0.9 -- Reduced from one to counter brake PID not reacting immediately, thus inducing a delay and subsequent overshoot.
+
 local Brake = {}
 Brake.__index = Brake
 
@@ -23,7 +28,8 @@ function Brake.Instance()
         return instance
     end
 
-    local pid = PID(0.1, 0, 0.01)
+    local pidHighSpeed = PID(1, 0, 0.01)
+    local pidLowSpeed = PID(0.1, 0, 0.01)
     local deceleration = 0
     local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0 } ---@type BrakeData
 
@@ -99,11 +105,20 @@ function Brake.Instance()
     function s:Feed(targetSpeed, currentSpeed)
 
         local diff = targetSpeed - currentSpeed
-        pid:inject(-diff) -- Negate to make PID become positive when we have too high speed.
-        local brakeValue = clamp(pid:get(), 0, 1)
+        diff = -diff -- Negate to make PID become positive when we have too high speed.
+        pidHighSpeed:inject(diff)
+        pidLowSpeed:inject(diff)
+
+        local brakeValue
+        if currentSpeed > calc.Kph2Mps(100) then
+            brakeValue = clamp(pidHighSpeed:get(), 0, 1)
+        else
+            brakeValue = clamp(pidLowSpeed:get(), 0, 1)
+        end
 
         if currentSpeed <= targetSpeed then
-            pid:reset()
+            pidHighSpeed:reset()
+            pidLowSpeed:reset()
             brakeValue = 0
         end
 
@@ -112,6 +127,22 @@ function Brake.Instance()
         deceleration = brakeValue * rawAvailableDeceleration()
 
         return brakeCounter()
+    end
+
+    ---Gets the brake efficiency to use
+    ---@param inAtmo boolean
+    ---@param speed number
+    ---@return number
+    function s:BrakeEfficiency(inAtmo, speed)
+        if not inAtmo then
+            return atmoSpaceEfficiencyFactor
+        end
+
+        if speed <= atmoBrakeCutoffSpeed then
+            return 0.1
+        else
+            return atmoBrakeEfficiencyFactor
+        end
     end
 
     instance = setmetatable(s, Brake)

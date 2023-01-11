@@ -32,7 +32,7 @@ local FlightCore = {}
 FlightCore.__index = FlightCore
 local singleton
 
-local defaultSpeed = calc.Kph2Mps(50)
+local defaultFinalSpeed = 0
 local defaultMargin = 0.1 -- m
 
 ---Creates a waypoint from a point
@@ -43,7 +43,7 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
     local opt = point.Options()
     local dir = Vec3.New(opt.Get(PointOptions.LOCK_DIRECTION, nullVec))
     local margin = opt.Get(PointOptions.MARGIN, defaultMargin)
-    local finalSpeed = Ternary(lastInRoute, 0, opt.Get(PointOptions.FINAL_SPEED, defaultSpeed))
+    local finalSpeed = Ternary(lastInRoute, 0, opt.Get(PointOptions.FINAL_SPEED, defaultFinalSpeed))
     local maxSpeed = opt.Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored/max speed.
 
     local coordinate = universe.ParsePosition(point.Pos()).Coordinates()
