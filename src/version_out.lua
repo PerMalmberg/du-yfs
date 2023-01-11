@@ -1,2 +1,2 @@
 APP_NAME = "Yoarii's Flight System"
-APP_VERSION = "45f3eb0 / 20230110 17:23"
+APP_VERSION = "2a2ad5a / 20230111 09:00"

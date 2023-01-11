@@ -141,8 +141,10 @@ function SystemController.New(flightCore, settings)
             ---@param _ string
             ---@param value TelemeterResult
             function(_, value)
-                dataToScreen.Set("floor/hit", value.Hit)
-                dataToScreen.Set("floor/distance", value.Distance)
+                local floor = string.format("Hit: %s, distance: %0.2f, limit: %0.2f",
+                    tostring(value.Hit), value.Distance,
+                    settings.Get("autoShutdownFloorDistance"))
+                dataToScreen.Set("floor", floor)
             end)
 
         local stream = Stream.New(screen, dataReceived, 1, onTimeout)

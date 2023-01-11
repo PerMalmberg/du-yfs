@@ -3,7 +3,7 @@
 * Make settings separate commands to make them type safe.
 * Stuck on pad on activation - wants to move to first point? Move upwards a little first
 * Use PID for adjustment
-* Screen with logo in shutdown state - configurable at compile time
+* Offline screen - add logo etc.
 * EM Stop button
 * Even if we are within the waypoint, try to reach the center
 
