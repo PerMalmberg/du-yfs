@@ -1,5 +1,5 @@
 ---@module "flight/state/Travel"
-local Telemeter = require("element/Telemeter")
+---@module "element/Telemeter"
 local pub = require("util/PubSub").Instance()
 local log = require("debug/Log")()
 

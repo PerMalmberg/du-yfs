@@ -394,7 +394,7 @@ function RouteController.Instance(bufferedDB)
 
         distance = (firstPos.Coordinates() - currentPos):Len()
         if not ignoreStartMargin and distance > startMargin then
-            log:Error(string.format("Currently %0.2fm from closest point in route. Please move within %dm of %s and try again."
+            log:Error(string.format("Currently %0.2fm from closest point in route. Please move within %0.2fm of %s and try again."
                 , distance, startMargin, firstPos.AsPosString()))
             return false
         end
