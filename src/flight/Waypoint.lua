@@ -22,7 +22,7 @@ WPReachMode = {
 ---@field SetPrecisionMode fun(v:boolean)
 ---@field LockDirection fun(direction:Vec3, forced:boolean)
 ---@field DirectionLocked fun():boolean
----@field Roll fun(previouss.Waypoint):Vec3
+---@field Roll fun(previous:Waypoint):Vec3
 ---@field YawAndPitch fun(previous:Waypoint):{yaw:Vec3, pitch:Vec3}|nil
 ---@field YawPitchDirection fun():Vec3
 

@@ -231,7 +231,7 @@ function FlightFSM.New(settings)
         return distanceToCenter < outerBorder and distanceToCenter >= innerBorder
     end
 
-    ---Determines if the construct will enter atmo
+    ---Determines if the construct will enter atmo if continuing on the current path
     ---@param waypoint Waypoint
     ---@param body Body
     ---@return boolean, Vec3, number
@@ -335,7 +335,7 @@ function FlightFSM.New(settings)
                 flightData.finalSpeed = atmosphericEntrySpeed
                 flightData.finalSpeedDistance = distanceToAtmo
             end
-            flightData.distanceToAtmo = -1
+            flightData.distanceToAtmo = distanceToAtmo
         end
 
         if waypoint.MaxSpeed() > 0 then
@@ -358,7 +358,9 @@ function FlightFSM.New(settings)
             local brakeEfficiency = brakes.BrakeEfficiency(inAtmo, currentSpeed)
             local brakeMaxSpeed
 
-            if not inAtmo and willHitAtmo then
+            -- When we're moving towards the atmosphere, but not actually intending to enter it, such as when changing direction
+            -- of the route (up->down) and doing the 'return to path' procedure, brake calculations must not use the atmo distance as the input.
+            if not inAtmo and willHitAtmo and distanceToAtmo <= waypoint.DistanceTo() then
                 brakeMaxSpeed = calcMaxAllowedSpeed(-brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency,
                     distanceToAtmo, atmosphericEntrySpeed)
             else

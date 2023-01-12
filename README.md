@@ -3,9 +3,10 @@
 * Make settings separate commands to make them type safe.
 * Stuck on pad on activation - wants to move to first point? Move upwards a little first
 * Use PID for adjustment
-* Offline screen - add logo etc.
+* Offline screen - make Y white
 * EM Stop button
 * Even if we are within the waypoint, try to reach the center
+* ReturnToPath - Adjustment -nan
 
 * More natural manual control
 * Fix overshoot when turning
