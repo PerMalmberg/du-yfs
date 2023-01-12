@@ -405,8 +405,7 @@ function FlightFSM.New(settings)
         local currSpeed = vel:Len()
 
         local toTargetWorld = targetPoint - currentPos
-        local toTarget = calc.ProjectPointOnPlane(plane, currentPos, targetPoint) -
-            calc.ProjectPointOnPlane(plane, currentPos, currentPos)
+        local toTarget = calc.ProjectPointOnPlane(plane, currentPos, targetPoint) - currentPos
         local dirToTarget = toTarget:Normalize()
         local distance = toTarget:Len()
 
