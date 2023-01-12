@@ -355,15 +355,15 @@ function FlightFSM.New(settings)
             targetSpeed = evaluateNewLimit(targetSpeed, 0, "Hold")
             flightData.brakeMaxSpeed = 0
         else
-            local brakeEfficiency = brakes:BrakeEfficiency()
+            local brakeEfficiency = brakes.BrakeEfficiency(inAtmo, currentSpeed)
             local brakeMaxSpeed
 
             if not inAtmo and willHitAtmo then
-                brakeMaxSpeed = calcMaxAllowedSpeed(-brakes:GravityInfluencedAvailableDeceleration() * brakeEfficiency,
+                brakeMaxSpeed = calcMaxAllowedSpeed(-brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency,
                     distanceToAtmo, atmosphericEntrySpeed)
             else
                 brakeMaxSpeed = calcMaxAllowedSpeed(
-                    -brakes:GravityInfluencedAvailableDeceleration() * brakeEfficiency,
+                    -brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency,
                     remainingDistance, waypoint.FinalSpeed())
             end
 
@@ -507,7 +507,7 @@ function FlightFSM.New(settings)
         local speedLimit = getSpeedLimit(deltaTime, velocity, direction, waypoint)
 
         local wrongDir = direction:Dot(motionDirection) < 0
-        local brakeCounter = brakes:Feed(Ternary(wrongDir, 0, speedLimit), currentSpeed)
+        local brakeCounter = brakes.Feed(Ternary(wrongDir, 0, speedLimit), currentSpeed)
 
         local diff = speedLimit - currentSpeed
         flightData.speedDiff = diff
@@ -523,16 +523,16 @@ function FlightFSM.New(settings)
 
         local acceleration
 
+        -- When we move slow, don't use the brake counter as that induces jitter, especially on small crafts.
+        if currentSpeed < ignoreAtmoBrakeLimitThreshold then
+            brakeCounter = nullVec
+        end
+
         -- When we're not moving in the direction we should, counter movement with all we got.
         if wrongDir and currentSpeed > calc.Kph2Mps(20) then
             acceleration = -motionDirection *
                 engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-motionDirection) + brakeCounter
         else
-            -- When we move slow, don't use the brake counter as that induces jitter, especially on small crafts.
-            if currentSpeed < ignoreAtmoBrakeLimitThreshold then
-                brakeCounter = nullVec
-            end
-
             acceleration = direction * pidValue *
                 engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
         end

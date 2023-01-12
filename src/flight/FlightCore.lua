@@ -192,7 +192,7 @@ function FlightCore.New(routeController, flightFSM)
         local status, err, _ = xpcall(
             function()
                 flightFSM.Update()
-                brakes:BrakeUpdate()
+                brakes.BrakeUpdate()
 
                 if route and routePublishTimer.Elapsed() > 0.5 then
                     routePublishTimer.Restart()

@@ -16,13 +16,25 @@ local max = math.max
 
 local atmoBrakeCutoffSpeed = calc.Kph2Mps(360) -- Speed limit under which atmospheric brakes become less effective (down to 10m/s [36km/h] where they give 0.1 of max)
 local atmoBrakeEfficiencyFactor = 0.6
-local atmoSpaceEfficiencyFactor = 0.9 -- Reduced from one to counter brake PID not reacting immediately, thus inducing a delay and subsequent overshoot.
+local spaceEfficiencyFactor = 0.9 -- Reduced from one to counter brake PID not reacting immediately, thus inducing a delay and subsequent overshoot.
+
+---@class Brake
+---@field Instance fun() Brake
+---@field Forced fun(enable:boolean)
+---@field BrakeUpdate fun()
+---@field BrakeFlush fun()
+---@field GravityInfluencedAvailableDeceleration fun():number
+---@field AvailableDeceleration fun():number
+---@field BrakeEfficiency fun(inAtmo:boolean, speed:number):number
+---@field Feed fun(targetSpeed:number, currentSpeed:number)
 
 local Brake = {}
 Brake.__index = Brake
 
 local instance
 
+---Gets the brake instance
+---@return Brake
 function Brake.Instance()
     if instance then
         return instance
@@ -40,7 +52,7 @@ function Brake.Instance()
     }
 
     ---Returns the deceleration the construct is capable of in the given movement.
-    ---@return number The deceleration
+    ---@return number Deceleration
     local function rawAvailableDeceleration()
         -- F = m * a => a = F / m
         return construct.getMaxBrake() / s.totalMass
@@ -77,17 +89,21 @@ function Brake.Instance()
         return res
     end
 
-    function s:Forced(on)
+    ---Enables/disables forced brakes
+    ---@param on boolean
+    function s.Forced(on)
         s.forced = on
     end
 
-    function s:BrakeFlush()
+    function s.BrakeFlush()
         -- The brake vector must point against the direction of travel.
         local brakeVector = finalDeceleration()
         unit.setEngineCommand("brake", { brakeVector:Unpack() }, { 0, 0, 0 }, true, true, "", "", "", 0.001)
     end
 
-    function s:GravityInfluencedAvailableDeceleration()
+    ---Gets the available brake deceleration, after taking gravity into account
+    ---@return number
+    function s.GravityInfluencedAvailableDeceleration()
         local dot = GravityDirection():Dot(Velocity():Normalize())
         local movingTowardsGravityWell = dot > 0
         local influence = calc.Ternary(movingTowardsGravityWell, -1, 1)
@@ -95,14 +111,16 @@ function Brake.Instance()
         return max(0, rawAvailableDeceleration() + influence * dot * G())
     end
 
-    function s:AvailableDeceleration()
+    ---Gets the unadjusted available deceleration
+    ---@return number
+    function s.AvailableDeceleration()
         return rawAvailableDeceleration()
     end
 
     ---@param targetSpeed number The desired speed
     ---@param currentSpeed number The current speed
     ---@return Vec3 The thrust needed to counter the thrust induced by the braking operation
-    function s:Feed(targetSpeed, currentSpeed)
+    function s.Feed(targetSpeed, currentSpeed)
 
         local diff = targetSpeed - currentSpeed
         diff = -diff -- Negate to make PID become positive when we have too high speed.
@@ -133,9 +151,9 @@ function Brake.Instance()
     ---@param inAtmo boolean
     ---@param speed number
     ---@return number
-    function s:BrakeEfficiency(inAtmo, speed)
+    function s.BrakeEfficiency(inAtmo, speed)
         if not inAtmo then
-            return atmoSpaceEfficiencyFactor
+            return spaceEfficiencyFactor
         end
 
         if speed <= atmoBrakeCutoffSpeed then

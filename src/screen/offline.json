@@ -44,7 +44,7 @@
                 {
                     "type": "image",
                     "layer": 2,
-                    "pos1": "(5,5)",
+                    "pos1": "(332,100)",
                     "dimensions": "(80,93.4)",
                     "url": "assets.prod.novaquark.com/94617/dcf01ca2-4e9d-410c-ac90-f806634671d9.png",
                     "style": "bkg-dark"
@@ -52,7 +52,7 @@
                 {
                     "type": "image",
                     "layer": 2,
-                    "pos1": "(939,5)",
+                    "pos1": "(612,100)",
                     "dimensions": "(80,80)",
                     "url": "assets.prod.novaquark.com/70604/92eeafe5-527f-49f5-af7a-cb0c4a771f5b.png",
                     "style": "bkg-dark"

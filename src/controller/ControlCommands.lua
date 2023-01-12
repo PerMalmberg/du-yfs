@@ -50,8 +50,8 @@ function ControlCommands.New(input, cmd, flightCore)
     input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), lockUser)
 
     -- Setup brakes
-    input.Register(keys.brake, Criteria.New().OnPress(), function() brakes:Forced(true) end)
-    input.Register(keys.brake, Criteria.New().OnRelease(), function() brakes:Forced(false) end)
+    input.Register(keys.brake, Criteria.New().OnPress(), function() brakes.Forced(true) end)
+    input.Register(keys.brake, Criteria.New().OnRelease(), function() brakes.Forced(false) end)
 
     cmd.Accept("idle", function(data)
         log:Info("Going idle!")
