@@ -121,12 +121,7 @@ function FlightCore.New(routeController, flightFSM)
         currentWaypoint = createDefaultWP()
         s.NextWP()
 
-        -- Don't start unless we have a destination.
-        if currentWaypoint then
-            flightFSM.SetState(Travel.New(flightFSM))
-        else
-            flightFSM.SetState(Hold.New(flightFSM))
-        end
+        flightFSM.SetState(Travel.New(flightFSM))
     end
 
     function s.GoIdle()

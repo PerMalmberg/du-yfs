@@ -3,9 +3,9 @@ local ContainerTalents = require("element/ContainerTalents")
 local ControlCommands  = require("controller/ControlCommands")
 local Stopwatch        = require("system/Stopwatch")
 local Task             = require("system/Task")
-local Telemeter        = require("element/Telemeter")
 local ValueTree        = require("util/ValueTree")
 local InfoCentral      = require("info/InfoCentral")
+local floorDetector    = require("controller/FloorDetector").Instance()
 local log              = require("debug/Log")()
 local commandLine      = require("commandline/CommandLine").Instance()
 local pub              = require("util/PubSub").Instance()
@@ -262,13 +262,8 @@ function SystemController.New(flightCore, settings)
         log:Error(t.Name(), t.Error())
     end)
 
-    local floorDetectorName = "FloorDetector"
     Task.New("FloorMonitor", function()
-        local teleLink = library.getLinkByName(floorDetectorName)
-        if teleLink then
-            local tele = Telemeter.New(teleLink)
-            if not tele.IsTelemeter() then return end
-
+        if floorDetector.Present() then
             local sw = Stopwatch.New()
             sw.Start()
 
@@ -276,12 +271,12 @@ function SystemController.New(flightCore, settings)
                 coroutine.yield()
                 if sw.Elapsed() > 0.3 then
                     sw.Restart()
-                    pub.Publish("FloorMonitor", tele.Measure())
+                    pub.Publish("FloorMonitor", floorDetector.Measure())
                 end
             end
         end
     end).Then(function(...)
-        log:Info("No telementer by name '", floorDetectorName, "' found, auto shutdown disabled")
+        log:Info("Auto shutdown disabled")
     end).Catch(function(t)
         log:Error(t.Name(), t.Error())
     end)

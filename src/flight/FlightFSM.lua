@@ -18,18 +18,18 @@ local Stopwatch = require("system/Stopwatch")
 local PID = require("cpml/pid")
 local Ray = require("util/Ray")
 require("flight/state/Require")
-local CurrentPos = vehicle.position.Current
-local Velocity = vehicle.velocity.Movement
-local TotalMass = vehicle.mass.Total
-local Acceleration = vehicle.acceleration.Movement
+local CurrentPos       = vehicle.position.Current
+local Velocity         = vehicle.velocity.Movement
+local TotalMass        = vehicle.mass.Total
+local Acceleration     = vehicle.acceleration.Movement
 local GravityDirection = vehicle.world.GravityDirection
-local utils = require("cpml/utils")
-local pub = require("util/PubSub").Instance()
-local clamp = utils.clamp
-local abs = math.abs
-local min = math.min
-local max = math.max
-local MAX_INT = math.maxinteger
+local utils            = require("cpml/utils")
+local pub              = require("util/PubSub").Instance()
+local clamp            = utils.clamp
+local abs              = math.abs
+local min              = math.min
+local max              = math.max
+local MAX_INT          = math.maxinteger
 
 local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
 
