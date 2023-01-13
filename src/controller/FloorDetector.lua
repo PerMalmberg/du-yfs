@@ -29,7 +29,7 @@ function FloorDetector.Instance()
             tele = nil
         end
     else
-        log:Error("No telementer by name '", floorDetectorName "' found")
+        log:Error("No telementer by name '", floorDetectorName, "' found")
     end
 
     function instance.Present()
