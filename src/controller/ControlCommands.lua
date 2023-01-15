@@ -370,26 +370,6 @@ function ControlCommands.New(input, cmd, flightCore)
         printCurrent()
     end).AsNumber().Mandatory()
 
-    ---@param c Command
-    local function addPointOptions(c)
-        c.Option("-precision").AsBoolean().Default(false)
-        c.Option("-lockdir").AsBoolean().Default(false)
-        c.Option("-maxspeed").AsNumber().Default(speed)
-        c.Option("-margin").AsNumber().Default(0.1)
-    end
-
-    local function createOptions(data)
-        local opt = PointOptions.New()
-        opt.Set(PointOptions.PRECISION, data.precision)
-        opt.Set(PointOptions.MAX_SPEED, calc.Kph2Mps(data.maxspeed))
-        opt.Set(PointOptions.MARGIN, data.margin)
-
-        if data.lockdir then
-            opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
-        end
-        return opt
-    end
-
     local moveFunc = function(data)
         local route = rc.ActivateTempRoute()
         local pos = Current()
