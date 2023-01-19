@@ -39,7 +39,6 @@ Task.New("Main", function()
     local fsm = FlightFSM.New(settings)
     local fc = FlightCore.New(rc, fsm)
     local cont = SystemController.New(fc, settings)
-    settings.Reload()
     settings.RegisterCommands()
     fc.ReceiveEvents()
 

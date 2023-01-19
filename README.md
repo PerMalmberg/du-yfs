@@ -6,7 +6,8 @@
 * Offline screen - make Y white
 * EM Stop button
 * Even if we are within the waypoint, try to reach the center
-* If no floor is detected, hold position on startup
+* Command for lazy-mode setup. Create route and waypoints.
+* Overload warning based on setting.
 
 * More natural manual control
 * Fix overshoot when turning
