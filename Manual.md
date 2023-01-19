@@ -46,14 +46,14 @@ This procedure outlined below creates a standard route along the gravity vector.
 * With the space core in place, place doors such that when they close, they give support to the construct and also covers the telemeter on the bottom of the construct so that it can detect a 'floor'. You can use logic components to create a circuit that auto-closes the doors when it is in position or use a manual switch.
 
 
-# Shortcuts
+## Shortcuts
 
 | Key         | Description      |
 | ----------- | ---------------- |
 | Alt-Shift-9 | (Un)locks player |
 
 
-# Controls (when user is locked in place)
+## Controls (when user is locked in place)
 
 | Key   | Description             |
 | ----- | ----------------------- |
@@ -66,7 +66,7 @@ This procedure outlined below creates a standard route along the gravity vector.
 | Alt-A | Strafe left             |
 | Alt-D | Strafe right            |
 
-# LUA console commands
+## LUA console commands
 
 | Command                  | Parameters/options          | Unit    | Optional | Description                                                                                                                                         |
 | ------------------------ | --------------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -133,3 +133,13 @@ This procedure outlined below creates a standard route along the gravity vector.
 |                          | -autoShutdownFloorDistance  | number  | N        | Sets the distance at which the system shuts down while in Hold-state, as measured by the 'FloorDetector' telemeter                                  |
 |                          | -yawAlignmentThrustLimitier | number  | N        | Sets the alignment limit angle which yaw must be within before accelerating to the next waypoint.                                                   |
 
+## Mass Overload
+
+Each construct has a max cargo mass it is rated for. If you load the construct with more then one or more of the following may happen:
+
+| Event                                                                      | Possible reasons                                                                                                 |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| When taking off from planet, it will start, brake, start repeatedly.       | Too little brake force to counter gravity for the current mass, which causes the math to say max speed of 0 km/h |
+| When reaching higher atmosphere it may slow down, stop, and start falling. | Engines not being powerfull enough, and/or the thin atmosphere causing too much reduction in power               |
+
+Should you end up in these situations, it is easiest to just disable the controller, and let it fall back down a bit then activate it again. It will the attempt to hold the position it was at when it was started, i.e. brake and activte engines to counter the fall. You can repeat this until you're at an height the engines work again. Having said that, an overloaded ship is still overloaded and bad things are likely to happen.
