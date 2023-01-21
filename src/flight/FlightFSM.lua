@@ -198,7 +198,7 @@ function FlightFSM.New(settings)
 
     local delta = Stopwatch.New()
 
-    local speedPid = PID(0.2, 0.005, 0.08, 0.99)
+    local speedPid = PID(0.2, 0.005, 100, 0.99)
 
     local s = {}
 
@@ -351,42 +351,42 @@ function FlightFSM.New(settings)
             remainingDistance = max(remainingDistance, remainingDistance - deadZoneThickness(firstBody))
         end
 
-        if waypoint.WithinMargin(WPReachMode.ENTRY) then
-            targetSpeed = evaluateNewLimit(targetSpeed, 0, "Hold")
-            flightData.brakeMaxSpeed = 0
+
+        local brakeEfficiency = brakes.BrakeEfficiency(inAtmo, currentSpeed)
+        local brakeMaxSpeed
+
+        -- When we're moving towards the atmosphere, but not actually intending to enter it, such as when changing direction
+        -- of the route (up->down) and doing the 'return to path' procedure, brake calculations must not use the atmo distance as the input.
+        if not inAtmo and willHitAtmo and distanceToAtmo <= waypoint.DistanceTo() then
+            brakeMaxSpeed = calcMaxAllowedSpeed(-brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency,
+                distanceToAtmo, atmosphericEntrySpeed)
+        elseif inAtmo and currentSpeed < ignoreAtmoBrakeLimitThreshold then
+            -- When standing still in atmo, assume brakes gives 1g of brake force (brakes API gives a 0 as response in this case)
+            brakeMaxSpeed = calcMaxAllowedSpeed(-G(), remainingDistance, waypoint.FinalSpeed())
         else
-            local brakeEfficiency = brakes.BrakeEfficiency(inAtmo, currentSpeed)
-            local brakeMaxSpeed
-
-            -- When we're moving towards the atmosphere, but not actually intending to enter it, such as when changing direction
-            -- of the route (up->down) and doing the 'return to path' procedure, brake calculations must not use the atmo distance as the input.
-            if not inAtmo and willHitAtmo and distanceToAtmo <= waypoint.DistanceTo() then
-                brakeMaxSpeed = calcMaxAllowedSpeed(-brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency,
-                    distanceToAtmo, atmosphericEntrySpeed)
-            else
-                brakeMaxSpeed = calcMaxAllowedSpeed(
-                    -brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency,
-                    remainingDistance, waypoint.FinalSpeed())
-            end
-
-            -- When standing still in atmo, we get no brake speed as brakes give no force at all.
-            if not inAtmo or currentSpeed > ignoreAtmoBrakeLimitThreshold then
-                targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brakes")
-            end
-
-            flightData.brakeMaxSpeed = brakeMaxSpeed
-
-            if inAtmo and abs(direction:Dot(GravityDirection())) > 0.7 then
-                -- Moving vertically in atmo
-                -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
-                -- when we come to a stand still. To ensure that engines have enough time to warmup as well as
-                -- don't abruptly cut off when going upwards, we enforce a linear slowdown, down to the final speed.
-                targetSpeed = linearApproach(targetSpeed, remainingDistance)
-            elseif not inAtmo then
-                -- In space we want a linear approach just during the last part
-                targetSpeed = linearApproach(targetSpeed, remainingDistance)
-            end
+            brakeMaxSpeed = calcMaxAllowedSpeed(
+                -brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency,
+                remainingDistance, waypoint.FinalSpeed())
         end
+
+        -- When standing still in atmo, we get no brake speed as brakes give no force at all.
+        --if not inAtmo or currentSpeed > ignoreAtmoBrakeLimitThreshold then
+        targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brakes")
+        --end
+
+        flightData.brakeMaxSpeed = brakeMaxSpeed
+
+        if inAtmo and abs(direction:Dot(GravityDirection())) > 0.7 then
+            -- Moving vertically in atmo
+            -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
+            -- when we come to a stand still. To ensure that engines have enough time to warmup as well as
+            -- don't abruptly cut off when going upwards, we enforce a linear slowdown, down to the final speed.
+            targetSpeed = linearApproach(targetSpeed, remainingDistance)
+        elseif not inAtmo then
+            -- In space we want a linear approach just during the last part
+            targetSpeed = linearApproach(targetSpeed, remainingDistance)
+        end
+
 
         flightData.waypointDist = remainingDistance
 
@@ -522,21 +522,15 @@ function FlightFSM.New(settings)
 
         flightData.pid = pidValue
 
-        local acceleration
+        local acceleration = nullVec
 
         -- When we move slow, don't use the brake counter as that induces jitter, especially on small crafts.
         if currentSpeed < ignoreAtmoBrakeLimitThreshold then
             brakeCounter = nullVec
         end
 
-        -- When we're not moving in the direction we should, counter movement with all we got.
-        if wrongDir and currentSpeed > calc.Kph2Mps(20) then
-            acceleration = -motionDirection *
-                engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-motionDirection) + brakeCounter
-        else
-            acceleration = direction * pidValue *
-                engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
-        end
+        acceleration = direction * pidValue *
+            engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
 
         flightData.controlAcc = acceleration:Len()
         return acceleration
