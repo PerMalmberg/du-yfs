@@ -23,6 +23,7 @@ local Velocity         = vehicle.velocity.Movement
 local TotalMass        = vehicle.mass.Total
 local Acceleration     = vehicle.acceleration.Movement
 local GravityDirection = vehicle.world.GravityDirection
+local AtmoDensity      = vehicle.world.AtmoDensity
 local utils            = require("cpml/utils")
 local pub              = require("util/PubSub").Instance()
 local clamp            = utils.clamp
@@ -225,7 +226,7 @@ function FlightFSM.New(settings)
 
         -- If the point is within the atmospheric radius and outside the inner radius, then it is within the dead zone.
         local outerBorder = body.Atmosphere.Radius
-        local innerBorder = -deadZoneThickness(body)
+        local innerBorder = outerBorder - deadZoneThickness(body)
         local distanceToCenter = (coordinate - body.Geography.Center):Len()
 
         return distanceToCenter < outerBorder and distanceToCenter >= innerBorder
@@ -238,7 +239,10 @@ function FlightFSM.New(settings)
     local function willEnterAtmo(waypoint, body)
         local pos = CurrentPos()
         local center = body.Geography.Center
-        return calc.LineIntersectSphere(Ray.New(pos, waypoint.DirectionTo()), center, body.Atmosphere.Radius)
+        local intersects, point, dist = calc.LineIntersectSphere(Ray.New(pos, waypoint.DirectionTo()), center,
+            body.Atmosphere.Radius)
+        intersects = intersects and not body:IsInAtmo(pos)
+        return intersects, point, dist
     end
 
     ---Calculates the speed increase while falling through the dead zone
@@ -268,15 +272,21 @@ function FlightFSM.New(settings)
     ---Calculates the start distance for the linear approach
     ---@return number The linear start distance in meters
     local function calcLinearApproachStart()
+        local start
         if vehicle.world.IsInSpace() then
-            return 175 -- Tested with 75, but that feel crazy fast at the end.
+            start = 175 -- Tested with 75, but that feel crazy fast at the end.
         else
             if TotalMass() > 10000 then
-                return 1000
+                start = 1000
+            elseif abs(Velocity():Normalize():Dot(Forward())) > 0.2 then
+                --- When moving up or down at ~45 degrees we extend the linear part
+                start = 100
+            else
+                start = 2
             end
-
-            return 2
         end
+
+        return start
     end
 
     ---@param remainingDistance number Remaining distance
@@ -315,6 +325,8 @@ function FlightFSM.New(settings)
         local pos = CurrentPos()
         local firstBody = universe.CurrentGalaxy():BodiesInPath(Ray.New(pos, velocity:Normalize()))[1]
         local inAtmo = false
+        local willLeaveAtmo = false
+        local atmoDensity = AtmoDensity()
 
         flightData.finalSpeed = waypoint.FinalSpeed()
         flightData.finalSpeedDistance = remainingDistance
@@ -327,13 +339,14 @@ function FlightFSM.New(settings)
 
         if firstBody then
             willHitAtmo, _, distanceToAtmo = willEnterAtmo(waypoint, firstBody)
-            inAtmo = firstBody:DistanceToAtmo(pos) == 0
-
+            inAtmo = firstBody:IsInAtmo(pos)
+            willLeaveAtmo = inAtmo and not firstBody:IsInAtmo(waypoint.Destination())
             local dzSpeedIncrease = speedIncreaseInDeadZone(firstBody)
             flightData.dzSpeedInc = dzSpeedIncrease
 
             -- Ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
-            if not inAtmo and willHitAtmo and remainingDistance > distanceToAtmo -- Waypoint may be closer than atmo
+            if willHitAtmo
+                and remainingDistance > distanceToAtmo -- Waypoint may be closer than atmo
             then
                 atmosphericEntrySpeed = max(dzSpeedIncrease, construct.getFrictionBurnSpeed() - dzSpeedIncrease)
                 flightData.finalSpeed = atmosphericEntrySpeed
@@ -347,7 +360,7 @@ function FlightFSM.New(settings)
         end
 
         --- Don't allow us to burn
-        if inAtmo then
+        if atmoDensity > 0 then
             targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed() * 0.99, "Burn speed")
         end
 
@@ -356,42 +369,48 @@ function FlightFSM.New(settings)
         end
 
         local brakeEfficiency = brakes.BrakeEfficiency(inAtmo, currentSpeed)
-        local availableBrakeDeceleration = brakes.GravityInfluencedAvailableDeceleration()
+
+        if atmoDensity > 0 then
+            brakeEfficiency = brakeEfficiency * atmoDensity
+        end
+
+        local availableBrakeDeceleration = brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency
+
+        -- When we're moving towards the atmosphere, but not actually intending to enter it, such as when changing direction
+        -- of the route (up->down) and doing the 'return to path' procedure, brake calculations must not use the atmo distance as the input.
+        if willHitAtmo and distanceToAtmo <= waypoint.DistanceTo() then
+            local entrySpeed = calcMaxAllowedSpeed(-availableBrakeDeceleration,
+                distanceToAtmo, atmosphericEntrySpeed)
+            targetSpeed = evaluateNewLimit(targetSpeed, entrySpeed, "Brake/entry")
+        end
 
         local brakeMaxSpeed
         local brakeReason
 
-        -- When we're moving towards the atmosphere, but not actually intending to enter it, such as when changing direction
-        -- of the route (up->down) and doing the 'return to path' procedure, brake calculations must not use the atmo distance as the input.
-        if not inAtmo and willHitAtmo and distanceToAtmo <= waypoint.DistanceTo() then
-            brakeMaxSpeed = calcMaxAllowedSpeed(-availableBrakeDeceleration * brakeEfficiency,
-                distanceToAtmo, atmosphericEntrySpeed)
-            brakeReason = "Brake/entry"
-        elseif inAtmo and currentSpeed < ignoreAtmoBrakeLimitThreshold then
+        if inAtmo and currentSpeed < ignoreAtmoBrakeLimitThreshold then
             -- When standing still in atmo, assume brakes gives current g of brake force (brakes API gives a 0 as response in this case)
             brakeMaxSpeed = calcMaxAllowedSpeed(-G(), remainingDistance, waypoint.FinalSpeed())
             brakeReason = "Brake/limit"
         elseif inAtmo and availableBrakeDeceleration <= G() then
-            -- Brakes have become so inefficient at the current altitude they are useless, use linear speed
+            -- Brakes have become so inefficient at the current altitude or speed they are nealy useless, use linear speed
             brakeMaxSpeed = linearSpeed(remainingDistance)
-            brakeReason = "Brake/linear"
+            brakeReason = "Brake/ineff"
+        elseif inAtmo and willLeaveAtmo then
+            -- No need to further reduce
+            brakeMaxSpeed = targetSpeed - 1
+            brakeReason = "Brake/leave atmo"
         else
-            brakeMaxSpeed = calcMaxAllowedSpeed(-availableBrakeDeceleration * brakeEfficiency, remainingDistance,
+            brakeMaxSpeed = calcMaxAllowedSpeed(-availableBrakeDeceleration, remainingDistance,
                 waypoint.FinalSpeed())
             brakeReason = "Brake"
-        end
-
-        if inAtmo and velocity:Normalize():Dot(GravityDirection()) >= 0.7 then
-            -- For whatever reason, when moving vertically in atmo, brake calculations are not giving the resonable values so we add a 50% margin.
-            brakeMaxSpeed = brakeMaxSpeed * 0.5
-            brakeReason = "Brake/vert"
         end
 
         targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, brakeReason)
 
         flightData.brakeMaxSpeed = brakeMaxSpeed
 
-        if inAtmo and abs(direction:Dot(GravityDirection())) > 0.7 then
+        local gravAlignment = direction:Dot(GravityDirection())
+        if inAtmo and abs(gravAlignment) > 0.7 then
             -- Moving vertically in atmo
             -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
             -- when we come to a stand still. To ensure that engines have enough time to warmup as well as
