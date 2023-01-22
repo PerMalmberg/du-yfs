@@ -279,18 +279,22 @@ function FlightFSM.New(settings)
         end
     end
 
+    ---@param remainingDistance number Remaining distance
+    local function linearSpeed(remainingDistance)
+        -- 1000m -> 500kph, 500m -> 250kph etc.
+        return calc.Kph2Mps(remainingDistance)
+    end
+
     ---Adjust the speed to be linear based on the remaining distance
     ---@param currentTargetSpeed number Current target speed
     ---@param remainingDistance number Remaining distance
+    ---@return number Speed
     local function linearApproach(currentTargetSpeed, remainingDistance)
         if remainingDistance > calcLinearApproachStart() then
             return currentTargetSpeed
         end
 
-        -- 1000m -> 500kph, 500m -> 250kph etc.
-        local distanceBasedSpeedLimit = calc.Kph2Mps(remainingDistance)
-
-        return evaluateNewLimit(currentTargetSpeed, distanceBasedSpeedLimit, "Approaching")
+        return evaluateNewLimit(currentTargetSpeed, linearSpeed(remainingDistance), "Approaching")
     end
 
     ---Gets the maximum speed we may have and still be able to stop
@@ -351,28 +355,39 @@ function FlightFSM.New(settings)
             remainingDistance = max(remainingDistance, remainingDistance - deadZoneThickness(firstBody))
         end
 
-
         local brakeEfficiency = brakes.BrakeEfficiency(inAtmo, currentSpeed)
+        local availableBrakeDeceleration = brakes.GravityInfluencedAvailableDeceleration()
+
         local brakeMaxSpeed
+        local brakeReason
 
         -- When we're moving towards the atmosphere, but not actually intending to enter it, such as when changing direction
         -- of the route (up->down) and doing the 'return to path' procedure, brake calculations must not use the atmo distance as the input.
         if not inAtmo and willHitAtmo and distanceToAtmo <= waypoint.DistanceTo() then
-            brakeMaxSpeed = calcMaxAllowedSpeed(-brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency,
+            brakeMaxSpeed = calcMaxAllowedSpeed(-availableBrakeDeceleration * brakeEfficiency,
                 distanceToAtmo, atmosphericEntrySpeed)
+            brakeReason = "Brake/entry"
         elseif inAtmo and currentSpeed < ignoreAtmoBrakeLimitThreshold then
-            -- When standing still in atmo, assume brakes gives 1g of brake force (brakes API gives a 0 as response in this case)
+            -- When standing still in atmo, assume brakes gives current g of brake force (brakes API gives a 0 as response in this case)
             brakeMaxSpeed = calcMaxAllowedSpeed(-G(), remainingDistance, waypoint.FinalSpeed())
+            brakeReason = "Brake/limit"
+        elseif inAtmo and availableBrakeDeceleration <= G() then
+            -- Brakes have become so inefficient at the current altitude they are useless, use linear speed
+            brakeMaxSpeed = linearSpeed(remainingDistance)
+            brakeReason = "Brake/linear"
         else
-            brakeMaxSpeed = calcMaxAllowedSpeed(
-                -brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency,
-                remainingDistance, waypoint.FinalSpeed())
+            brakeMaxSpeed = calcMaxAllowedSpeed(-availableBrakeDeceleration * brakeEfficiency, remainingDistance,
+                waypoint.FinalSpeed())
+            brakeReason = "Brake"
         end
 
-        -- When standing still in atmo, we get no brake speed as brakes give no force at all.
-        --if not inAtmo or currentSpeed > ignoreAtmoBrakeLimitThreshold then
-        targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brakes")
-        --end
+        if inAtmo and velocity:Normalize():Dot(GravityDirection()) >= 0.7 then
+            -- For whatever reason, when moving vertically in atmo, brake calculations are not giving the resonable values so we add a 50% margin.
+            brakeMaxSpeed = brakeMaxSpeed * 0.5
+            brakeReason = "Brake/vert"
+        end
+
+        targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, brakeReason)
 
         flightData.brakeMaxSpeed = brakeMaxSpeed
 

@@ -8,6 +8,7 @@
 * Even if we are within the waypoint, try to reach the center
 * Command for lazy-mode setup. Create route and waypoints.
 * Overload warning based on setting.
+* Changing route in transit, lock dir to new waypoint during return-to-path (if same route?)
 
 * More natural manual control
 * Fix overshoot when turning
