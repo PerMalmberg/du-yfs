@@ -291,7 +291,7 @@ function FlightFSM.New(settings)
 
     ---@param remainingDistance number Remaining distance
     local function linearSpeed(remainingDistance)
-        -- 1000m -> 500kph, 500m -> 250kph etc.
+        -- 1000m -> 1000km/h, 500m -> 500km/h etc.
         return calc.Kph2Mps(remainingDistance)
     end
 
@@ -334,6 +334,7 @@ function FlightFSM.New(settings)
         local atmosphericEntrySpeed = 0
         local willHitAtmo = false
         local distanceToAtmo = -1
+        local dzSpeedIncrease = 0
 
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
 
@@ -341,17 +342,8 @@ function FlightFSM.New(settings)
             willHitAtmo, _, distanceToAtmo = willEnterAtmo(waypoint, firstBody)
             inAtmo = firstBody:IsInAtmo(pos)
             willLeaveAtmo = inAtmo and not firstBody:IsInAtmo(waypoint.Destination())
-            local dzSpeedIncrease = speedIncreaseInDeadZone(firstBody)
+            dzSpeedIncrease = speedIncreaseInDeadZone(firstBody)
             flightData.dzSpeedInc = dzSpeedIncrease
-
-            -- Ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
-            if willHitAtmo
-                and remainingDistance > distanceToAtmo -- Waypoint may be closer than atmo
-            then
-                atmosphericEntrySpeed = max(dzSpeedIncrease, construct.getFrictionBurnSpeed() - dzSpeedIncrease)
-                flightData.finalSpeed = atmosphericEntrySpeed
-                flightData.finalSpeedDistance = distanceToAtmo
-            end
             flightData.distanceToAtmo = distanceToAtmo
         end
 
@@ -376,12 +368,39 @@ function FlightFSM.New(settings)
 
         local availableBrakeDeceleration = brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency
 
-        -- When we're moving towards the atmosphere, but not actually intending to enter it, such as when changing direction
-        -- of the route (up->down) and doing the 'return to path' procedure, brake calculations must not use the atmo distance as the input.
-        if willHitAtmo and distanceToAtmo <= waypoint.DistanceTo() then
-            local entrySpeed = calcMaxAllowedSpeed(-availableBrakeDeceleration,
-                distanceToAtmo, atmosphericEntrySpeed)
-            targetSpeed = evaluateNewLimit(targetSpeed, entrySpeed, "Brake/entry")
+
+        -- Ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
+        if willHitAtmo and remainingDistance > distanceToAtmo then -- Waypoint may be closer than atmo
+            atmosphericEntrySpeed = max(dzSpeedIncrease, construct.getFrictionBurnSpeed() - dzSpeedIncrease)
+            flightData.finalSpeed = atmosphericEntrySpeed
+            flightData.finalSpeedDistance = distanceToAtmo
+
+            -- When we're moving towards the atmosphere, but not actually intending to enter it, such as when changing direction
+            -- of the route (up->down) and doing the 'return to path' procedure, brake calculations must not use the atmo distance as the input.
+            if distanceToAtmo <= waypoint.DistanceTo() then
+                local entrySpeed = calcMaxAllowedSpeed(-availableBrakeDeceleration,
+                    distanceToAtmo, atmosphericEntrySpeed)
+                targetSpeed = evaluateNewLimit(targetSpeed, entrySpeed, "Brake/entry")
+            end
+        end
+
+        -- Ensure that we have a speed at which we can come to a stop with 10% of the brake force when we hit 360km/h
+        if inAtmo then
+            local tenPercent = brakes.MaxBrakeAcc() * 0.1
+            if tenPercent > 0 then
+                local speedLimit = calc.Kph2Mps(360)
+                local finalApproachDistance = calc.CalcBrakeDistance(speedLimit, tenPercent)
+                local toBrakePoint = remainingDistance - finalApproachDistance
+                if toBrakePoint > 0 then
+                    targetSpeed = evaluateNewLimit(targetSpeed,
+                        calcMaxAllowedSpeed(-tenPercent, remainingDistance - finalApproachDistance, speedLimit),
+                        "Brake/final")
+                    flightData.finalSpeed = speedLimit
+                    flightData.finalSpeedDistance = remainingDistance - finalApproachDistance
+                else
+                    targetSpeed = linearApproach(targetSpeed, remainingDistance)
+                end
+            end
         end
 
         local brakeMaxSpeed

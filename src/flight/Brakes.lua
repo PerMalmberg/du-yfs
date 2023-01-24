@@ -15,7 +15,7 @@ local max = math.max
 
 
 local atmoBrakeCutoffSpeed = calc.Kph2Mps(360) -- Speed limit under which atmospheric brakes become less effective (down to 10m/s [36km/h] where they give 0.1 of max)
-local atmoBrakeEfficiencyFactor = 0.6
+local atmoBrakeEfficiencyFactor = 0.9 -- Kept at 0.9
 local spaceEfficiencyFactor = 0.9 -- Reduced from one to counter brake PID not reacting immediately, thus inducing a delay and subsequent overshoot.
 
 ---@class Brake
@@ -23,6 +23,7 @@ local spaceEfficiencyFactor = 0.9 -- Reduced from one to counter brake PID not r
 ---@field Forced fun(enable:boolean)
 ---@field BrakeUpdate fun()
 ---@field BrakeFlush fun()
+---@field MaxBrakeAcc fun():number
 ---@field GravityInfluencedAvailableDeceleration fun():number
 ---@field AvailableDeceleration fun():number
 ---@field BrakeEfficiency fun(inAtmo:boolean, speed:number):number
@@ -161,6 +162,12 @@ function Brake.Instance()
         else
             return atmoBrakeEfficiencyFactor
         end
+    end
+
+    ---Gets the max brake acceleration
+    ---@return number
+    function s.MaxBrakeAcc()
+        return rawAvailableDeceleration()
     end
 
     instance = setmetatable(s, Brake)
