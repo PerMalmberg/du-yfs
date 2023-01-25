@@ -366,7 +366,7 @@ function FlightFSM.New(settings)
             brakeEfficiency = brakeEfficiency * atmoDensity
         end
 
-        local availableBrakeDeceleration = brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency
+        local availableBrakeDeceleration = -brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency
 
 
         -- Ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
@@ -378,14 +378,14 @@ function FlightFSM.New(settings)
             -- When we're moving towards the atmosphere, but not actually intending to enter it, such as when changing direction
             -- of the route (up->down) and doing the 'return to path' procedure, brake calculations must not use the atmo distance as the input.
             if distanceToAtmo <= waypoint.DistanceTo() then
-                local entrySpeed = calcMaxAllowedSpeed(-availableBrakeDeceleration,
+                local entrySpeed = calcMaxAllowedSpeed(availableBrakeDeceleration,
                     distanceToAtmo, atmosphericEntrySpeed)
                 targetSpeed = evaluateNewLimit(targetSpeed, entrySpeed, "Brake/entry")
             end
         end
 
-        -- Ensure that we have a speed at which we can come to a stop with 10% of the brake force when we hit 360km/h
-        if inAtmo then
+        -- Ensure that we have a speed at which we can come to a stop with 10% of the brake force when we hit 360km/h, which is the speed at which brakes start to degrade down to 10% at 36km/h.
+        if inAtmo and not willLeaveAtmo then
             local tenPercent = brakes.MaxBrakeAcc() * 0.1
             if tenPercent > 0 then
                 local speedLimit = calc.Kph2Mps(360)
@@ -398,28 +398,33 @@ function FlightFSM.New(settings)
                     flightData.finalSpeed = speedLimit
                     flightData.finalSpeedDistance = remainingDistance - finalApproachDistance
                 else
+                    -- Linear, but not above the limit
                     targetSpeed = linearApproach(targetSpeed, remainingDistance)
+                    targetSpeed = min(targetSpeed, speedLimit)
                 end
             end
         end
 
         local brakeMaxSpeed
-        local brakeReason
+        local brakeReason = ""
+
+        local g = G()
 
         if inAtmo and currentSpeed < ignoreAtmoBrakeLimitThreshold then
-            -- When standing still in atmo, assume brakes gives current g of brake force (brakes API gives a 0 as response in this case)
-            brakeMaxSpeed = calcMaxAllowedSpeed(-G(), remainingDistance, waypoint.FinalSpeed())
-            brakeReason = "Brake/limit"
-        elseif inAtmo and availableBrakeDeceleration <= G() then
-            -- Brakes have become so inefficient at the current altitude or speed they are nealy useless, use linear speed
+            -- When standing still in atmo, assume brakes gives current g of brake acceleration (brake API gives a 0 as response in this case)
+            availableBrakeDeceleration = -g
+        end
+
+        if inAtmo and abs(availableBrakeDeceleration) <= g then
+            -- Brakes have become so inefficient at the current altitude or speed they are useless, use linear speed
+            -- This state can be seen when entering atmo for example.
             brakeMaxSpeed = linearSpeed(remainingDistance)
             brakeReason = "Brake/ineff"
         elseif inAtmo and willLeaveAtmo then
             -- No need to further reduce
-            brakeMaxSpeed = targetSpeed - 1
-            brakeReason = "Brake/leave atmo"
+            brakeMaxSpeed = targetSpeed
         else
-            brakeMaxSpeed = calcMaxAllowedSpeed(-availableBrakeDeceleration, remainingDistance,
+            brakeMaxSpeed = calcMaxAllowedSpeed(availableBrakeDeceleration, remainingDistance,
                 waypoint.FinalSpeed())
             brakeReason = "Brake"
         end
