@@ -577,8 +577,13 @@ function FlightFSM.New(settings)
         local diff = speedLimit - currentSpeed
         flightData.speedDiff = diff
 
-        -- Feed the pid with 1/10:th to give it a wider working range.
-        speedPid:inject(diff / 10)
+        -- Only feed speed pid when not going fast enough to avoid accelerating when speed is too high
+        if diff >= 0 then
+            -- Feed the pid with 1/10:th to give it a wider working range.
+            speedPid:inject(diff / 10)
+        else
+            speedPid:inject(0)
+        end
 
         -- Don't let the pid value go outside 0 ... 1 - that would cause the calculated thrust to get
         -- skewed outside its intended values and push us off the path, or make us fall when holding position (if pid gets <0)
