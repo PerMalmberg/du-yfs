@@ -278,8 +278,8 @@ function FlightFSM.New(settings)
         else
             if TotalMass() > 10000 then
                 start = 1000
-            elseif abs(Velocity():Normalize():Dot(Forward())) > 0.2 then
-                --- When moving up or down at ~45 degrees we extend the linear part
+            elseif abs(Velocity():Normalize():Dot(Forward())) < 0.2 then
+                --- When moving up or down at some degree we extend the linear part
                 start = 100
             else
                 start = 2
@@ -292,7 +292,13 @@ function FlightFSM.New(settings)
     ---@param remainingDistance number Remaining distance
     local function linearSpeed(remainingDistance)
         -- 1000m -> 1000km/h, 500m -> 500km/h etc.
-        return calc.Kph2Mps(remainingDistance)
+        local speed = calc.Kph2Mps(remainingDistance)
+
+        if remainingDistance <= 6 and remainingDistance > 0.1 then
+            speed = speed * 1.5
+        end
+
+        return speed
     end
 
     ---Adjust the speed to be linear based on the remaining distance
@@ -415,7 +421,7 @@ function FlightFSM.New(settings)
             availableBrakeDeceleration = -g
         end
 
-        if inAtmo and abs(availableBrakeDeceleration) <= g then
+        if inAtmo and abs(availableBrakeDeceleration) <= g and abs(velocity:Normalize():Dot(GravityDirection())) > 0.7 then
             -- Brakes have become so inefficient at the current altitude or speed they are useless, use linear speed
             -- This state can be seen when entering atmo for example.
             brakeMaxSpeed = linearSpeed(remainingDistance)
