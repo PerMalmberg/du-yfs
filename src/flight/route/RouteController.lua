@@ -109,6 +109,14 @@ function RouteController.Instance(bufferedDB)
         return TableLen(s.GetRouteNames())
     end
 
+    ---Indicates if the route exists
+    ---@param name string
+    ---@return boolean
+    function s.routeExists(name)
+        local routes = db.Get(RouteController.NAMED_ROUTES) or {}
+        return routes[name] ~= nil
+    end
+
     ---Loads a named route
     ---@param name string The name of the route to load
     ---@return Route|nil
@@ -419,6 +427,11 @@ function RouteController.Instance(bufferedDB)
     function s.CreateRoute(name)
         if name == nil or #name == 0 then
             log:Error("No name provided for route")
+            return nil
+        end
+
+        if s.routeExists(name) then
+            log:Error("Route already exists")
             return nil
         end
 

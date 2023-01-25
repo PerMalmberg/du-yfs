@@ -469,6 +469,27 @@ function ControlCommands.New(input, cmd, flightCore)
             universe.CreatePos(Current() + vehicle.orientation.Forward() * alignment.DirectionMargin):AsPosString())
     end)
 
+    local createVertRoute = cmd.Accept("create-vertical-route",
+        ---@param data {commandValue:string, distance:number}
+        function(data)
+            local route = rc.CreateRoute(data.commandValue)
+            if route then
+                local startPos = route.AddCurrentPos()
+                startPos.Options().Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
+
+                local endPos = route.AddCoordinate(Current() - universe.VerticalReferenceVector() * data.distance)
+                endPos.Options().Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
+
+                if rc.SaveRoute() then
+                    log:Info("Created a route by name '", data.commandValue,
+                        "' with start at current position and direction with the endpoint at ", endPos.Pos())
+                else
+                    log:Error("Could not create the route")
+                end
+            end
+        end).AsString().Mandatory()
+    createVertRoute.Option("distance").AsNumber().Mandatory()
+
     printCurrent()
 
 

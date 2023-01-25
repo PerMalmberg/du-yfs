@@ -65,15 +65,15 @@ describe("RouteController #flight", function()
     end)
 
     it("Can handle missing waypoints", function()
-        local r = c.CreateRoute("a route")
+        local r = c.CreateRoute("a route2")
         assert.is_not_nil(r.AddWaypointRef("a non exsting point"))
         c.SaveRoute()
-        r = c.EditRoute("a route")
+        r = c.EditRoute("a route2")
         assert.is_nil(r)
     end)
 
     it("It doesn't activate non-existing routes", function()
-        assert.is_false(c.ActivateRoute(nil))
+        assert.is_false(c.ActivateRoute(""))
     end)
 
     it("Can activate a route in reverse", function()
