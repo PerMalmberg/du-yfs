@@ -274,16 +274,9 @@ function FlightFSM.New(settings)
     local function calcLinearApproachStart()
         local start
         if vehicle.world.IsInSpace() then
-            start = 175 -- Tested with 75, but that feel crazy fast at the end.
+            start = 20
         else
-            if TotalMass() > 10000 then
-                start = 1000
-            elseif abs(Velocity():Normalize():Dot(Forward())) < 0.2 then
-                --- When moving up or down at some degree we extend the linear part
-                start = 100
-            else
-                start = 2
-            end
+            start = 0
         end
 
         return start
@@ -306,7 +299,9 @@ function FlightFSM.New(settings)
     ---@param remainingDistance number Remaining distance
     ---@return number Speed
     local function linearApproach(currentTargetSpeed, remainingDistance)
-        if remainingDistance > calcLinearApproachStart() then
+        if remainingDistance > calcLinearApproachStart()
+            or remainingDistance <= 1 -- To not make it painfully slow in reaching the final position we let it go when it is this close from the target
+        then
             return currentTargetSpeed
         end
 
@@ -403,10 +398,6 @@ function FlightFSM.New(settings)
                         "Brake/final")
                     flightData.finalSpeed = speedLimit
                     flightData.finalSpeedDistance = remainingDistance - finalApproachDistance
-                else
-                    -- Linear, but not above the limit
-                    --targetSpeed = linearApproach(targetSpeed, remainingDistance)
-                    --targetSpeed = min(targetSpeed, speedLimit)
                 end
             end
         end
@@ -438,21 +429,10 @@ function FlightFSM.New(settings)
         targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, brakeReason)
 
         flightData.brakeMaxSpeed = brakeMaxSpeed
-
-        local gravAlignment = direction:Dot(GravityDirection())
-        if inAtmo and abs(gravAlignment) > 0.7 then
-            -- Moving vertically in atmo
-            -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
-            -- when we come to a stand still. To ensure that engines have enough time to warmup as well as
-            -- don't abruptly cut off when going upwards, we enforce a linear slowdown, down to the final speed.
-            --targetSpeed = linearApproach(targetSpeed, remainingDistance)
-        elseif not inAtmo then
-            -- In space we want a linear approach just during the last part
-            --targetSpeed = linearApproach(targetSpeed, remainingDistance)
-        end
-
-
         flightData.waypointDist = remainingDistance
+
+        targetSpeed = linearApproach(targetSpeed, remainingDistance)
+
 
         return targetSpeed
     end
