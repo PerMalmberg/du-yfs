@@ -405,8 +405,8 @@ function FlightFSM.New(settings)
                     flightData.finalSpeedDistance = remainingDistance - finalApproachDistance
                 else
                     -- Linear, but not above the limit
-                    targetSpeed = linearApproach(targetSpeed, remainingDistance)
-                    targetSpeed = min(targetSpeed, speedLimit)
+                    --targetSpeed = linearApproach(targetSpeed, remainingDistance)
+                    --targetSpeed = min(targetSpeed, speedLimit)
                 end
             end
         end
@@ -445,10 +445,10 @@ function FlightFSM.New(settings)
             -- Atmospheric brakes loose effectiveness when we slow down. This means engines must be active
             -- when we come to a stand still. To ensure that engines have enough time to warmup as well as
             -- don't abruptly cut off when going upwards, we enforce a linear slowdown, down to the final speed.
-            targetSpeed = linearApproach(targetSpeed, remainingDistance)
+            --targetSpeed = linearApproach(targetSpeed, remainingDistance)
         elseif not inAtmo then
             -- In space we want a linear approach just during the last part
-            targetSpeed = linearApproach(targetSpeed, remainingDistance)
+            --targetSpeed = linearApproach(targetSpeed, remainingDistance)
         end
 
 
@@ -582,7 +582,7 @@ function FlightFSM.New(settings)
             -- Feed the pid with 1/10:th to give it a wider working range.
             speedPid:inject(diff / 10)
         else
-            speedPid:inject(0)
+            speedPid:reset()
         end
 
         -- Don't let the pid value go outside 0 ... 1 - that would cause the calculated thrust to get
@@ -593,8 +593,8 @@ function FlightFSM.New(settings)
 
         local acceleration = nullVec
 
-        -- When we move slow, don't use the brake counter as that induces jitter, especially on small crafts.
-        if currentSpeed < ignoreAtmoBrakeLimitThreshold then
+        -- When we move slow, don't use the brake counter as that induces jitter, especially on small crafts and not when in space
+        if currentSpeed < ignoreAtmoBrakeLimitThreshold and AtmoDensity() > 0.09 then
             brakeCounter = nullVec
         end
 
