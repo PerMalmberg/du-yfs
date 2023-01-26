@@ -19,7 +19,7 @@
 # FAQ
 
 - Q: For up-and-over parking, how much above the floor of the space core must the construct enter?
-- A: 7m, high enough that it is not caught by the gravity well of the space construct.
+- A: 10m, high enough that it is not caught by the gravity well of the space construct and goes out of the well before trying to come to a stop at the first point when leaving a platform.
 
 - Q: It accelerates, then brakes when taking off
 - A: Too heavy load, brake calculations say max 0 km/h.
