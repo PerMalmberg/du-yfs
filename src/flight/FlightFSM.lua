@@ -287,10 +287,6 @@ function FlightFSM.New(settings)
         -- 1000m -> 1000km/h, 500m -> 500km/h etc.
         local speed = calc.Kph2Mps(remainingDistance)
 
-        if remainingDistance <= 6 and remainingDistance > 0.1 then
-            speed = speed * 1.5
-        end
-
         return speed
     end
 
@@ -300,7 +296,7 @@ function FlightFSM.New(settings)
     ---@return number Speed
     local function linearApproach(currentTargetSpeed, remainingDistance)
         if remainingDistance > calcLinearApproachStart()
-            or remainingDistance <= 1 -- To not make it painfully slow in reaching the final position we let it go when it is this close from the target
+            or remainingDistance <= 0.5 -- To not make it painfully slow in reaching the final position we let it go when it is this close from the target
         then
             return currentTargetSpeed
         end
