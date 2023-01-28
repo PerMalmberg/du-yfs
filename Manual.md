@@ -35,9 +35,9 @@ This procedure outlined below creates a standard route along the gravity vector.
 * Activate the remote controller and the route by clicking the "End" button by the name of the route on the screen. This will take you to the second position created earlier. Once there, the construct will hold its position.
 * You can now deactivate the remote control and deploy the space core, using the construct as a reference if you so wish.
 
-#### Option 1 - Up-and-over manouver
+#### Option 1 - Up-and-over manoeuver
 
-* Ensure that there is at least seven meter of clearance from the bottom of the construct to the floor of the space core where the construct is meant to go from space onto the core. This is needed to prevent the gravity well of the space core from affecting the construct while it enters the volume of the space core.
+* Ensure that there is at least ten meter of clearance from the bottom of the construct to the floor of the space core where the construct is meant to go from space onto the core. This is needed to prevent the gravity well of the space core from affecting the construct while it enters the volume of the space core.
 * Once the space core in place, activate the remote control again and run the following commands.
 * Use the `move` and `pos-save-as` commands to create additional positions that should be added to the route to have the construct park where you wish it.
 * Open the route using the `route-edit` command, then add the positions to the route using `route-add-named-pos` with the `-lockdir` switch to ensure that the construct points in the direction you wish. Please read up on how it works in the command list below.

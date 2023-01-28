@@ -567,14 +567,12 @@ function FlightFSM.New(settings)
 
         flightData.pid = pidValue
 
-        local acceleration = nullVec
-
         -- When we move slow, don't use the brake counter as that induces jitter, especially on small crafts and not when in space
         if currentSpeed < ignoreAtmoBrakeLimitThreshold and AtmoDensity() > 0.09 then
             brakeCounter = nullVec
         end
 
-        acceleration = direction * pidValue *
+        local acceleration = direction * pidValue *
             engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
 
         flightData.controlAcc = acceleration:Len()
