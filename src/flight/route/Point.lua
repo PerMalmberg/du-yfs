@@ -3,7 +3,7 @@ local PointOptions = require("flight/route/PointOptions")
 -- This class represents a position and behavior in a route.
 -- Keep data as small as possible.
 
----@alias PointPOD {pos:string, waypointRef?:string, opt:table}
+---@alias PointPOD {pos:string, waypointRef?:string, opt:table<string, any>}
 
 ---@class Point Represents a point/waypoint in a route
 ---@field New fun(pos:string, waypointRef?:string, options?:PointOptions):Point

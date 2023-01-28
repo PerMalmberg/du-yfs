@@ -2,12 +2,16 @@
 
 ## Overview
 
-The goal of this project was initially to write a flight system capable of working as what is known as a shaftless space elevator. i.e. vertical movement around a predefined path. The chosen design does however allow for more than just that and is capable of movement in any direction, within limits of the construct it operates. The original target of only vertical movement along the gravity vector was thus surpassed and it is possible to go in a straight line at an angle from the vertical gravity vector. Futher, it also allows you to do up-and-over manouvers where the
+The goal of this project was initially to write a flight system capable of working as what is known as a shaft-less space elevator. i.e. vertical movement around a predefined path. The chosen design does however allow for more than just that and is capable of movement in any direction, within limits of the construct it operates. The original target of only vertical movement along the gravity vector was thus surpassed and it is possible to go in a straight line at an angle from the vertical gravity vector. Further, it also allows you to do up-and-over maneuvers where the
 construct parks itself on a space platform from whichever direction you desire.
 
 ## Routes
 
-Routes is an important concept for this flight system as they are what guides the construct between positions. A route consists of two or more waypoints, a beinning, an end, and any number of waypoints inbetween. A waypoint specifies a position in the world. When added to a route a waypoint is associated with other attributes, such as alignment direction and maximum speed. A route can also contain anonumous waypoints; these exists only in one route and can't be reused. Routes are run beggining to end, unless otherwise specified during activation.
+Routes is an important concept for this flight system as they are what guides the construct between positions. A route consists of two or more waypoints, a beginning, an end, and any number of waypoints in-between. A waypoint specifies a position in the world. When added to a route a waypoint is associated with other attributes, such as alignment direction and maximum speed. A route can also contain anonymous waypoints; these exists only in one route and can't be reused. Routes are run beginning to end, unless started in reverse.
+
+### Waypoint alignment
+
+The construct will align towards the next point in the route (see setting `yawAlignmentThrustLimiter`), unless that point has a locked alignment direction, in which case the construct will keep that direction while approaching the waypoint. The construct will also automatically lock and hold the direction if the next target point is nearly straight up or down from its current position, when issued a `move` command.
 
 ## Elevator Setup Instructions (manual setup)
 
@@ -28,7 +32,7 @@ This procedure outlined below creates a standard route along the gravity vector.
 | `route-save`                                    | Saves the route and makes it ready for use                           | `route-save`                                         |
 
 * Ensure that the ECU is active and your fuel tanks are filled.
-* Activate the remote controller and the the route by clicking the "End" button by the name of the route on the screen. This will take you to the second position created earlier. Once there, the construct will hold its position.
+* Activate the remote controller and the route by clicking the "End" button by the name of the route on the screen. This will take you to the second position created earlier. Once there, the construct will hold its position.
 * You can now deactivate the remote control and deploy the space core, using the construct as a reference if you so wish.
 
 #### Option 1 - Up-and-over manouver
@@ -53,6 +57,8 @@ For example, the following command creates a route named `main` starting at the 
 
 `create-vertical-route main -distance 200000`
 
+Once created, follow the steps for setting up the space core in the instructions for a manual setup.
+
 ## Shortcuts
 
 | Key         | Description      |
@@ -75,72 +81,72 @@ For example, the following command creates a route named `main` starting at the 
 
 ## LUA console commands
 
-| Command                    | Parameters/options          | Unit    | Optional | Description                                                                                                                                         |
-| -------------------------- | --------------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| step                       | distance                    | meter   | N        | Sets the default step ASWD movement and other commands                                                                                              |
-| speed                      | speed                       | kph     | N        | Sets the max default speed for ASWD movement                                                                                                        |
-| move                       |                             |         |          | Initiates a movement relative to the current position                                                                                               |
-|                            | -f                          | meter   | Y        | Forward distance; negate to move backwards.                                                                                                         |
-|                            | -u                          | meter   | Y        | Upward distance; negate to move downwards.                                                                                                          |
-|                            | -r                          | meter   | Y        | Rightward distance; negate to move leftwards.                                                                                                       |
-|                            | -maxspeed                   | kph     | Y        | Maximum approach speed                                                                                                                              |
-|                            | -precision                  | boolean | Y        | if true, the approach will use precision mode, i.e. separated thrust and adjustment calculations. Automatically applied for near-vertical movements |
-|                            | -lockdir                    | boolean | Y        | if true, locks the direction during the approach to that which the construct had when the command was issued.                                       |
-|                            | -margin                     | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.                                        |
-| goto create-vertical-route | waypoint or ::pos{} string  |         |          | Moves to the given point                                                                                                                            |
-|                            | -maxspeed                   | kph     | Y        | See &lt;move&gt;                                                                                                                                    |
-|                            | -precision                  | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
-|                            | -lockdir                    | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
-|                            | -margin                     | meter   | Y        | See &lt;move&gt;                                                                                                                                    |
-| print-pos                  |                             |         |          | Prints the current position and current alignment point                                                                                             |
-| align-to                   | waypoint or ::pos{} string  |         |          | Aligns to the given point                                                                                                                           |
-| hold                       |                             |         |          | Stops and returns to the postion at the time of execution, then holds.                                                                              |
-| idle                       |                             |         |          | Puts the system into idle mode, engines are off.                                                                                                    |
-| turn         ez-setup      | angle                       | degrees | N        | Turns the construct the specified number of degrees around the Z-axis (up)                                                                          |
-| strafe                     | distance                    | meter   | N        | Initiates a strafing move with locked direction.                                                                                                    |
-| route-list                 |                             |         |          | Lists the currently available routes                                                                                                                |
-| route-edit                 | name of route               |         | N        | Opens a route for editing                                                                                                                           |
-| route-create               | name of route               |         | N        | Creates a new route for editing                                                                                                                     |
-| route-save                 |                             |         |          | Saves the currently open route                                                                                                                      |
-| route-activate             | name of route               |         | N        | Activates the named route and start the flight.                                                                                                     |
-|                            | -reverse                    | booean  | Y        | Runs the route in reverse, i.e. the last point becomes the first.                                                                                   |
-| route-reverse              |                             |         |          | Reverses the currently open route                                                                                                                   |
-| route-delete               | name of route               |         | N        | Deletes the named route                                                                                                                             |
-| route-delete-pos           | index of waypoint           | number  | N        | Removes the point at index from the route.                                                                                                          |
-| route-move-pos             |                             |         |          | Moves a point from one index to another                                                                                                             |
-|                            | -from                       | number  |          | The index to move from                                                                                                                              |
-|                            | -to                         |         |          | The index to move to. Positons at and after the position are shifted forward.                                                                       |
-| route-add-current-pos      |                             |         |          | Adds the current position to the current route                                                                                                      |
-|                            | -maxspeed                   | kph     | Y        | See &lt;move&gt;                                                                                                                                    |
-|                            | -precision                  | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
-|                            | -lockdir                    | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
-|                            | -margin                     | meter   | Y        | See &lt;move&gt;                                                                                                                                    |
-| route-add-named-pos        |                             |         |          |                                                                                                                                                     |
-|                            | name of waypoint            |         |          | Adds a named waypoint to the route                                                                                                                  |
-|                            | -maxspeed                   | kph     | Y        | See &lt;move&gt;                                                                                                                                    |
-|                            | -precision                  | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
-|                            | -lockdir                    | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
-|                            | -margin                     | meter   | Y        | See &lt;move&gt;                                                                                                                                    |
-| route-set-all-margins      |                             | meter   | N        | Sets margin on all points in the route to get provided value                                                                                        |
-| route-set-all-max-speeds   |                             | km/h    | N        | Sets max speed on all points in the route to get provided value                                                                                     |
-| route-print                |                             |         |          | Prints the current route to the console                                                                                                             |
-| pos-create-along-gravity   | name of waypoint            |         |          | Creates a waypoint relative to the constructs position along the gravity vector.                                                                    |
-|                            | -u                          | meter   | N        | Upward distance; negate to place point downwards the source of gravity                                                                              |
-| pos-save-as                | name of waypoint            |         | N        | Save the current position as a named waypoint for later use in a route                                                                              |
-| pos-list                   |                             |         |          | Lists the saved positions                                                                                                                           |
-| pos-delete                 |                             |         |          | Deletes a waypoint.                                                                                                                                 |
-|                            | name of waypoint            | string  | N        | The waypoint to delete.                                                                                                                             |
-| create-vertical-route      | name of route               |         |          | Creates a route by the given name from current position to a point above (or below) at the given distance along gravity.                            |
-|                            | -distance                   | number  | N        | The distance of the point above or below (when negative)                                                                                            |
-| set                        |                             |         |          | Sets the specified setting to the specified value                                                                                                   |
-|                            | -engineWarmup               | seconds | N        | Sets the engine warmup time (T50). Set this to that of the engine with longes warmup.                                                               |
-|                            | -containerProficiency       | integer | N        | Sets the container proficiency talent level, 1-5                                                                                                    |
-|                            | -fuelTankOptimization       | integer | N        | Sets the fuel tank optimization talent level, 1-5                                                                                                   |
-|                            | -atmoFuelTankHandling       | integer | N        | Sets the atmo fuel tank handling talent level, 1-5                                                                                                  |
-|                            | -spaceFuelTankHandling      | integer | N        | Sets the space fuel tank handling talent level, 1-5                                                                                                 |
-|                            | -rocketFuelTankHandling     | integer | N        | Sets the rocket fuel tank handling talent level, 1-5                                                                                                |
-|                            | -autoShutdownFloorDistance  | number  | N        | Sets the distance at which the system shuts down while in Hold-state, as measured by the 'FloorDetector' telemeter                                  |
-|                            | -yawAlignmentThrustLimitier | number  | N        | Sets the alignment limit angle which yaw must be within before accelerating to the next waypoint.                                                   |
+| Command                    | Parameters/options         | Unit    | Optional | Description                                                                                                                                         |
+| -------------------------- | -------------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| step                       | distance                   | meter   | N        | Sets the default step ASWD movement and other commands                                                                                              |
+| speed                      | speed                      | kph     | N        | Sets the max default speed for ASWD movement                                                                                                        |
+| move                       |                            |         |          | Initiates a movement relative to the current position                                                                                               |
+|                            | -f                         | meter   | Y        | Forward distance; negate to move backwards.                                                                                                         |
+|                            | -u                         | meter   | Y        | Upward distance; negate to move downwards.                                                                                                          |
+|                            | -r                         | meter   | Y        | Rightward distance; negate to move leftwards.                                                                                                       |
+|                            | -maxspeed                  | kph     | Y        | Maximum approach speed                                                                                                                              |
+|                            | -precision                 | boolean | Y        | if true, the approach will use precision mode, i.e. separated thrust and adjustment calculations. Automatically applied for near-vertical movements |
+|                            | -lockdir                   | boolean | Y        | if true, locks the direction during the approach to that which the construct had when the command was issued.                                       |
+|                            | -margin                    | meter   | Y        | The maximum distance from the destination the construct may be for the destination to be considered reached.                                        |
+| goto create-vertical-route | waypoint or ::pos{} string |         |          | Moves to the given point                                                                                                                            |
+|                            | -maxspeed                  | kph     | Y        | See &lt;move&gt;                                                                                                                                    |
+|                            | -precision                 | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
+|                            | -lockdir                   | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
+|                            | -margin                    | meter   | Y        | See &lt;move&gt;                                                                                                                                    |
+| print-pos                  |                            |         |          | Prints the current position and current alignment point                                                                                             |
+| align-to                   | waypoint or ::pos{} string |         |          | Aligns to the given point                                                                                                                           |
+| hold                       |                            |         |          | Stops and returns to the postion at the time of execution, then holds.                                                                              |
+| idle                       |                            |         |          | Puts the system into idle mode, engines are off.                                                                                                    |
+| turn         ez-setup      | angle                      | degrees | N        | Turns the construct the specified number of degrees around the Z-axis (up)                                                                          |
+| strafe                     | distance                   | meter   | N        | Initiates a strafing move with locked direction.                                                                                                    |
+| route-list                 |                            |         |          | Lists the currently available routes                                                                                                                |
+| route-edit                 | name of route              |         | N        | Opens a route for editing                                                                                                                           |
+| route-create               | name of route              |         | N        | Creates a new route for editing                                                                                                                     |
+| route-save                 |                            |         |          | Saves the currently open route                                                                                                                      |
+| route-activate             | name of route              |         | N        | Activates the named route and start the flight.                                                                                                     |
+|                            | -reverse                   | booean  | Y        | Runs the route in reverse, i.e. the last point becomes the first.                                                                                   |
+| route-reverse              |                            |         |          | Reverses the currently open route                                                                                                                   |
+| route-delete               | name of route              |         | N        | Deletes the named route                                                                                                                             |
+| route-delete-pos           | index of waypoint          | number  | N        | Removes the point at index from the route.                                                                                                          |
+| route-move-pos             |                            |         |          | Moves a point from one index to another                                                                                                             |
+|                            | -from                      | number  |          | The index to move from                                                                                                                              |
+|                            | -to                        |         |          | The index to move to. Positons at and after the position are shifted forward.                                                                       |
+| route-add-current-pos      |                            |         |          | Adds the current position to the current route                                                                                                      |
+|                            | -maxspeed                  | kph     | Y        | See &lt;move&gt;                                                                                                                                    |
+|                            | -precision                 | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
+|                            | -lockdir                   | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
+|                            | -margin                    | meter   | Y        | See &lt;move&gt;                                                                                                                                    |
+| route-add-named-pos        |                            |         |          |                                                                                                                                                     |
+|                            | name of waypoint           |         |          | Adds a named waypoint to the route                                                                                                                  |
+|                            | -maxspeed                  | kph     | Y        | See &lt;move&gt;                                                                                                                                    |
+|                            | -precision                 | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
+|                            | -lockdir                   | boolean | Y        | See &lt;move&gt;                                                                                                                                    |
+|                            | -margin                    | meter   | Y        | See &lt;move&gt;                                                                                                                                    |
+| route-set-all-margins      |                            | meter   | N        | Sets margin on all points in the route to get provided value                                                                                        |
+| route-set-all-max-speeds   |                            | km/h    | N        | Sets max speed on all points in the route to get provided value                                                                                     |
+| route-print                |                            |         |          | Prints the current route to the console                                                                                                             |
+| pos-create-along-gravity   | name of waypoint           |         |          | Creates a waypoint relative to the constructs position along the gravity vector.                                                                    |
+|                            | -u                         | meter   | N        | Upward distance; negate to place point downwards the source of gravity                                                                              |
+| pos-save-as                | name of waypoint           |         | N        | Save the current position as a named waypoint for later use in a route                                                                              |
+| pos-list                   |                            |         |          | Lists the saved positions                                                                                                                           |
+| pos-delete                 |                            |         |          | Deletes a waypoint.                                                                                                                                 |
+|                            | name of waypoint           | string  | N        | The waypoint to delete.                                                                                                                             |
+| create-vertical-route      | name of route              |         |          | Creates a route by the given name from current position to a point above (or below) at the given distance along gravity.                            |
+|                            | -distance                  | number  | N        | The distance of the point above or below (when negative)                                                                                            |
+| set                        |                            |         |          | Sets the specified setting to the specified value                                                                                                   |
+|                            | -engineWarmup              | seconds | N        | Sets the engine warmup time (T50). Set this to that of the engine with longes warmup.                                                               |
+|                            | -containerProficiency      | integer | N        | Sets the container proficiency talent level, 1-5                                                                                                    |
+|                            | -fuelTankOptimization      | integer | N        | Sets the fuel tank optimization talent level, 1-5                                                                                                   |
+|                            | -atmoFuelTankHandling      | integer | N        | Sets the atmo fuel tank handling talent level, 1-5                                                                                                  |
+|                            | -spaceFuelTankHandling     | integer | N        | Sets the space fuel tank handling talent level, 1-5                                                                                                 |
+|                            | -rocketFuelTankHandling    | integer | N        | Sets the rocket fuel tank handling talent level, 1-5                                                                                                |
+|                            | -autoShutdownFloorDistance | number  | N        | Sets the distance at which the system shuts down while in Hold-state, as measured by the 'FloorDetector' telemeter                                  |
+|                            | -yawAlignmentThrustLimiter | number  | N        | Sets the alignment limit angle which yaw must be within before accelerating to the next waypoint.                                                   |
 
 ## Mass Overload
 
@@ -149,6 +155,6 @@ Each construct has a max cargo mass it is rated for. If you load the construct w
 | Event                                                                      | Possible reasons                                                                                                 |
 | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | When taking off from planet, it will start, brake, start repeatedly.       | Too little brake force to counter gravity for the current mass, which causes the math to say max speed of 0 km/h |
-| When reaching higher atmosphere it may slow down, stop, and start falling. | Engines not being powerfull enough, and/or the thin atmosphere causing too much reduction in power               |
+| When reaching higher atmosphere it may slow down, stop, and start falling. | Engines not being powerful enough, and/or the thin atmosphere causing too much reduction in power                |
 
-Should you end up in these situations, it is easiest to just disable the controller, and let it fall back down a bit then activate it again. It will the attempt to hold the position it was at when it was started, i.e. brake and activte engines to counter the fall. You can repeat this until you're at an height the engines work again. Having said that, an overloaded ship is still overloaded and bad things are likely to happen.
+Should you end up in these situations, it is easiest to just disable the controller, and let it fall back down a bit then activate it again. It will then attempt to hold the position it was at when it was started, i.e. brake and activate engines to counter the fall. You can repeat this until you're at an height the engines work again. Having said that, an overloaded ship is still overloaded and bad things are likely to happen.

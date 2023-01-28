@@ -10,6 +10,8 @@ local Forward          = require("abstraction/Vehicle").New().orientation.Forwar
 local floorDetector    = require("controller/FloorDetector").Instance()
 require("version_out")
 
+log:SetLevel(log.LogLevel.WARNING)
+
 local Task = require("system/Task")
 
 local settingLink = library.getLinkByName("routes")

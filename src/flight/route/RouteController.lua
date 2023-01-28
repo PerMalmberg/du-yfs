@@ -8,6 +8,7 @@ require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}
 ---@alias WaypointMap table<string,Point>
+---@alias RouteData {points:PointPOD[]}
 ---@module "storage/BufferedDB"
 
 ---@class RouteController
@@ -123,7 +124,7 @@ function RouteController.Instance(bufferedDB)
     function s.loadRoute(name)
 
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
-        local data = routes[name]
+        local data = routes[name] ---@type RouteData
 
         if data == nil then
             log:Error("No route by name '", name, "' found.")
@@ -132,7 +133,14 @@ function RouteController.Instance(bufferedDB)
 
         local route = Route.New()
 
-        for _, point in ipairs(data) do
+        -- For backwards compatibility, check if we have points as a sub property or not.
+        -- This can be removed once all the development constructs have had their routes resaved.
+        if not data.points then
+            log:Warning("Route is in an old format, please re-save it!")
+            data.points = data
+        end
+
+        for _, point in ipairs(data.points) do
             local p = Point.LoadFromPOD(point)
 
             if p.HasWaypointRef() then
@@ -201,10 +209,10 @@ function RouteController.Instance(bufferedDB)
         end
 
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
-        local data = {}
+        local data = { points = {} } ---@type RouteData
 
         for _, p in ipairs(route.Points()) do
-            table.insert(data, p.Persist())
+            table.insert(data.points, p.Persist())
         end
 
         routes[name] = data
