@@ -264,6 +264,7 @@ function SystemController.New(flightCore, settings)
 
     Task.New("FloorMonitor", function()
         if floorDetector.Present() then
+            log:Info("FloorMonitor started")
             local sw = Stopwatch.New()
             sw.Start()
 
