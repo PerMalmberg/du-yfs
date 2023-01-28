@@ -139,12 +139,7 @@ function FlightFSM.New(settings)
         acceleration = 0
     }
 
-    local function warmupDistance()
-        -- Note, this doesn't take acceleration into account
-        return Velocity():Len() * warmupTime
-    end
-
-    local function getAdjustedAcceleration(accLookup, dir, distance, movingTowardsTarget, forThrust)
+    local function getAdjustedAcceleration(accLookup, distance, movingTowardsTarget)
         local selected
         for _, v in ipairs(accLookup) do
             if distance >= v.limit then selected = v
@@ -152,11 +147,7 @@ function FlightFSM.New(settings)
         end
 
         if selected.acc == 0 then
-            if forThrust and distance <= warmupDistance() then
-                return accLookup[#accLookup - 1].acc
-            else
-                return engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(dir, false)
-            end
+            return accLookup[#accLookup - 1].acc
         else
             return calc.Ternary(movingTowardsTarget, selected.acc, selected.reverse)
         end
@@ -471,23 +462,23 @@ function FlightFSM.New(settings)
                 elseif distance > lastDevDist then
                     -- Slipping away, nudge back to path
                     adjustmentAcc = dirToTarget *
-                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:Normalize(), distance, movingTowardsTarget)
+                        getAdjustedAcceleration(adjustAccLookup, distance, movingTowardsTarget)
                 elseif distance < toleranceDistance then
                     -- Add brake acc to help stop where we want
                     adjustmentAcc = -dirToTarget * CalcBrakeAcceleration(currSpeed, distance)
                 elseif currSpeed < speedLimit then
                     -- This check needs to be last so that it doesn't interfere with decelerating towards destination
                     adjustmentAcc = dirToTarget *
-                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:Normalize(), distance, movingTowardsTarget)
+                        getAdjustedAcceleration(adjustAccLookup, distance, movingTowardsTarget)
                 end
             else
                 -- Counter current movement, if any
                 if currSpeed > 0.1 then
                     adjustmentAcc = -vel:Normalize() *
-                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:Normalize(), distance, movingTowardsTarget)
+                        getAdjustedAcceleration(adjustAccLookup, distance, movingTowardsTarget)
                 else
                     adjustmentAcc = dirToTarget *
-                        getAdjustedAcceleration(adjustAccLookup, toTargetWorld:Normalize(), distance, movingTowardsTarget)
+                        getAdjustedAcceleration(adjustAccLookup, distance, movingTowardsTarget)
                 end
             end
         end
