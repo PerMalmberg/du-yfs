@@ -20,7 +20,6 @@ local Ray = require("util/Ray")
 require("flight/state/Require")
 local CurrentPos       = vehicle.position.Current
 local Velocity         = vehicle.velocity.Movement
-local TotalMass        = vehicle.mass.Total
 local Acceleration     = vehicle.acceleration.Movement
 local GravityDirection = vehicle.world.GravityDirection
 local AtmoDensity      = vehicle.world.AtmoDensity
@@ -260,23 +259,14 @@ function FlightFSM.New(settings)
         return currentLimit
     end
 
-    ---Calculates the start distance for the linear approach
-    ---@return number The linear start distance in meters
-    local function calcLinearApproachStart()
-        local start
-        if vehicle.world.IsInSpace() then
-            start = 20
-        else
-            start = 0
-        end
-
-        return start
-    end
-
     ---@param remainingDistance number Remaining distance
     local function linearSpeed(remainingDistance)
         -- 1000m -> 1000km/h, 500m -> 500km/h etc.
         local speed = calc.Kph2Mps(remainingDistance)
+
+        if remainingDistance < 2 then
+            speed = speed * 2
+        end
 
         return speed
     end
@@ -286,9 +276,19 @@ function FlightFSM.New(settings)
     ---@param remainingDistance number Remaining distance
     ---@return number Speed
     local function linearApproach(currentTargetSpeed, remainingDistance)
-        if remainingDistance > calcLinearApproachStart()
-            or remainingDistance <= 0.5 -- To not make it painfully slow in reaching the final position we let it go when it is this close from the target
-        then
+        local startDist
+        local stopDist
+
+        if vehicle.world.IsInAtmo() then
+            startDist = 0.5
+            stopDist = 0
+        else
+            startDist = 20
+            stopDist = 0.5
+        end
+
+        if remainingDistance > startDist
+            or remainingDistance <= stopDist then -- To not make it painfully slow in reaching the final position we let it go when it is this close from the target
             return currentTargetSpeed
         end
 
@@ -530,7 +530,7 @@ function FlightFSM.New(settings)
     ---@param waypoint Waypoint The next waypoint
     ---@return Vec3 The acceleration
     local function move(deltaTime, waypoint)
-        local direction = waypoint:DirectionTo()
+        local direction = waypoint.DirectionTo()
 
         local velocity = Velocity()
         local currentSpeed = velocity:Len()
@@ -538,7 +538,7 @@ function FlightFSM.New(settings)
 
         local speedLimit = getSpeedLimit(deltaTime, velocity, direction, waypoint)
 
-        local wrongDir = direction:Dot(motionDirection) < 0
+        local wrongDir = direction:Dot(motionDirection) < 0.7
         local brakeCounter = brakes.Feed(Ternary(wrongDir, 0, speedLimit), currentSpeed)
 
         local diff = speedLimit - currentSpeed
@@ -564,10 +564,10 @@ function FlightFSM.New(settings)
         end
 
         local acceleration = direction * pidValue *
-            engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction) + brakeCounter
+            engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction)
 
         flightData.controlAcc = acceleration:Len()
-        return acceleration
+        return acceleration + brakeCounter
     end
 
     ---Flush method for the FSM

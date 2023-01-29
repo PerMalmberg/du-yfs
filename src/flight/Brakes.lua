@@ -42,7 +42,7 @@ function Brake.Instance()
     end
 
     local pidHighSpeed = PID(1, 0, 0.01)
-    local pidLowSpeed = PID(0.1, 0, 0.01)
+    local pidLowSpeed = PID(0.1, 0.01, 0.01)
     local deceleration = 0
     local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0 } ---@type BrakeData
 
