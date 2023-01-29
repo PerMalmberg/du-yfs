@@ -85,9 +85,12 @@ function InfoCentral.Instance()
         else
             unit.hideWidget()
         end
+
+        system.showHelper(value)
     end)
 
     unit.hideWidget()
+    system.showHelper(false)
 
     ---@param value BrakeData
     pub.RegisterTable("BrakeData", function(topic, value)
@@ -270,7 +273,7 @@ function InfoCentral.Instance()
                 waypointInfo.wMaxSpeed = p:CreateValue("Max speed", "km/h")
                 waypointInfo.wPrecision = p:CreateValue("Precision")
                 waypointInfo.wDirLock = p:CreateValue("Dir lock")
-            elseif adjustInfo.panel and not adjustInfo.visible then
+            elseif waypointInfo.panel and not waypointInfo.visible then
                 sharedPanel:Close("Waypoint")
                 waypointInfo.panel = nil
             end

@@ -695,7 +695,6 @@ function FlightFSM.New(settings)
 
     settings.RegisterCallback("yawAlignmentThrustLimiter", function(value)
         yawAlignmentThrustLimiter = value
-        log:Info("yawAlignmentThrustLimiter:", value)
     end)
 
     ---@return Settings
