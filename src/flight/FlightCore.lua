@@ -66,19 +66,11 @@ end
 ---@return FlightCore
 function FlightCore.New(routeController, flightFSM)
     local brakes = require("flight/Brakes").Instance()
-    local sharedPanel = require("panel/SharedPanel")()
-    local p = sharedPanel:Get("Waypoint")
     local s = {}
 
     local flushHandlerId = 0
     local updateHandlerId = 0
     local axes = AxisManager.Instance()
-    local wWaypointDistance = p:CreateValue("Distance", "m")
-    local wWaypointMargin = p:CreateValue("Margin", "m")
-    local wWaypointFinalSpeed = p:CreateValue("Final speed", "km/h")
-    local wWaypointMaxSpeed = p:CreateValue("Max speed", "km/h")
-    local wWaypointPrecision = p:CreateValue("Precision")
-    local wWaypointDirLock = p:CreateValue("Dir lock")
 
     local routePublishTimer = Stopwatch.New()
 
@@ -199,12 +191,7 @@ function FlightCore.New(routeController, flightFSM)
 
                 local wp = currentWaypoint
                 if wp ~= nil then
-                    wWaypointDistance:Set(calc.Round(wp.DistanceTo(), 3))
-                    wWaypointMargin:Set(calc.Round(wp.Margin(), 3))
-                    wWaypointFinalSpeed:Set(calc.Round(calc.Kph2Mps(wp.FinalSpeed()), 1))
-                    wWaypointMaxSpeed:Set(calc.Round(calc.Kph2Mps(wp.MaxSpeed()), 1))
-                    wWaypointPrecision:Set(wp.GetPrecisionMode())
-                    wWaypointDirLock:Set(wp.DirectionLocked())
+                    pub.Publish("WaypointData", wp)
                 end
             end,
             traceback

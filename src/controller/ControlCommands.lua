@@ -10,6 +10,7 @@ local calc         = require("util/Calc")
 local universe     = require("universe/Universe").Instance()
 local keys         = require("input/Keys")
 local alignment    = require("flight/AlignmentFunctions")
+local pub          = require("util/PubSub").Instance()
 local Clamp        = calc.Clamp
 local Current      = vehicle.position.Current
 
@@ -489,6 +490,12 @@ function ControlCommands.New(input, cmd, flightCore)
             end
         end).AsString().Mandatory()
     createVertRoute.Option("distance").AsNumber().Mandatory()
+
+    cmd.Accept("show-widgets",
+        ---@param data {commandValue:boolean}
+        function(data)
+            pub.Publish("ShowInfoWidgets", data.commandValue)
+        end).AsBoolean().Mandatory()
 
     printCurrent()
 

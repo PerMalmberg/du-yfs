@@ -9,7 +9,7 @@ require("util/Table")
 ---@field RegisterCallback fun(key:string, f:fun(any))
 ---@field Reload fun()
 ---@field RegisterCommands fun()
----@field Get fun(key:string, default:any?)
+---@field Get fun(key:string, default:any?):string|number|table|nil
 
 local singleton
 local Settings = {}
@@ -40,7 +40,8 @@ function Settings.New(db)
         spaceFuelTankHandling = { key = "spaceFuelTankHandling", default = 0 },
         rocketFuelTankHandling = { key = "rocketFuelTankHandling", default = 0 },
         autoShutdownFloorDistance = { key = "autoShutdownFloorDistance", default = 0.3 },
-        yawAlignmentThrustLimiter = { key = "yawAlignmentThrustLimiter", default = 1 }
+        yawAlignmentThrustLimiter = { key = "yawAlignmentThrustLimiter", default = 1 },
+        showWidgetsOnStart = { key = "showWidgetsOnStart", default = 0 }
     }
 
     function s.ensureSingle(data)

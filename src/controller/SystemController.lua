@@ -282,24 +282,10 @@ function SystemController.New(flightCore, settings)
         log:Error(t.Name(), t.Error())
     end)
 
-    --[[ Task.New("CargoMonitor", function()
-        while true do
-            local containers = Container.GetAllCo(ContainerType.Standard)
-
-            local totalCargo = 0
-
-            for k, c in ipairs(containers) do
-                coroutine.yield()
-                totalCargo = totalCargo + c.ActualContentMass(talents)
-            end
-
-            coroutine.yield()
-            dataToScreen.Set("mass/actualCargo", totalCargo)
-        end
-
-    end).Catch(function(t)
-        log:Error(t.Name(), t.Error())
-    end) ]]
+    local show = settings.Get("showWidgetsOnStart", false)
+    if show == true or show == 1 then
+        pub.Publish("ShowInfoWidgets", true)
+    end
 
     return setmetatable(s, SystemController)
 end

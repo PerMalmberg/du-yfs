@@ -147,6 +147,9 @@ Once created, follow the steps for setting up the space core in the instructions
 |                            | -rocketFuelTankHandling    | integer | N        | Sets the rocket fuel tank handling talent level, 1-5                                                                                                |
 |                            | -autoShutdownFloorDistance | number  | N        | Sets the distance at which the system shuts down while in Hold-state, as measured by the 'FloorDetector' telemeter                                  |
 |                            | -yawAlignmentThrustLimiter | number  | N        | Sets the alignment limit angle which yaw must be within before accelerating to the next waypoint.                                                   |
+|                            | -showWidgetsOnStart        | boolean | N        | If true, diagnostics widgets are shown on start up                                                                                                  |
+| show-widgets               |                            | boolean | Y        | Show/hides widgets with diagnostic info                                                                                                             |
+
 
 ## Mass Overload
 

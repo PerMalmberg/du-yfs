@@ -17,7 +17,7 @@ function InfoCentral.Instance()
     local s = {}
 
     local brakeInfo = {
-        visible       = true,
+        visible       = false,
         panel         = nil,
         wDeceleration = nil,
         wCurrentDec   = nil,
@@ -25,7 +25,7 @@ function InfoCentral.Instance()
     }
 
     local flightInfo = {
-        visible = true,
+        visible = false,
         targetSpeed = 0,
         wStateName = nil,
         wPointDistance = nil,
@@ -47,7 +47,7 @@ function InfoCentral.Instance()
     }
 
     local adjustInfo = {
-        visible = true,
+        visible = false,
         panel = nil,
         wAdjTowards = nil,
         wAdjDist = nil,
@@ -57,11 +57,37 @@ function InfoCentral.Instance()
     }
 
     local axisInfo = {
-        visible = true,
+        visible = false,
         pitchPanels = nil,
         rollPanels = nil,
         yawPanels = nil,
     }
+
+    local waypointInfo = {
+        visible = false,
+        wDistance = nil,
+        wMargin = nil,
+        wFinalSpeed = nil,
+        wMaxSpeed = nil,
+        wPrecision = nil,
+        wDirLock = nil
+    }
+
+    pub.RegisterBool("ShowInfoWidgets", function(_, value)
+        brakeInfo.visible = value
+        flightInfo.visible = value
+        adjustInfo.visible = value
+        axisInfo.visible = value
+        waypointInfo.visible = value
+
+        if value then
+            unit.showWidget()
+        else
+            unit.hideWidget()
+        end
+    end)
+
+    unit.hideWidget()
 
     ---@param value BrakeData
     pub.RegisterTable("BrakeData", function(topic, value)
@@ -230,6 +256,34 @@ function InfoCentral.Instance()
             end
         end
     end)
+
+    pub.RegisterTable("WaypointData",
+        ---@param topic string
+        ---@param waypoint Waypoint
+        function(topic, waypoint)
+            if not waypointInfo.panel and waypointInfo.visible then
+                local p = sharedPanel:Get("Waypoint")
+                waypointInfo.panel = p
+                waypointInfo.wDistance = p:CreateValue("Distance", "m")
+                waypointInfo.wMargin = p:CreateValue("Margin", "m")
+                waypointInfo.wFinalSpeed = p:CreateValue("Final speed", "km/h")
+                waypointInfo.wMaxSpeed = p:CreateValue("Max speed", "km/h")
+                waypointInfo.wPrecision = p:CreateValue("Precision")
+                waypointInfo.wDirLock = p:CreateValue("Dir lock")
+            elseif adjustInfo.panel and not adjustInfo.visible then
+                sharedPanel:Close("Waypoint")
+                waypointInfo.panel = nil
+            end
+
+            if waypointInfo.panel then
+                waypointInfo.wDistance:Set(calc.Round(waypoint.DistanceTo(), 3))
+                waypointInfo.wMargin:Set(calc.Round(waypoint.Margin(), 3))
+                waypointInfo.wFinalSpeed:Set(calc.Round(calc.Kph2Mps(waypoint.FinalSpeed()), 1))
+                waypointInfo.wMaxSpeed:Set(calc.Round(calc.Kph2Mps(waypoint.MaxSpeed()), 1))
+                waypointInfo.wPrecision:Set(waypoint.GetPrecisionMode())
+                waypointInfo.wDirLock:Set(waypoint.DirectionLocked())
+            end
+        end)
 
     instance = setmetatable(s, InfoCentral)
     return instance
