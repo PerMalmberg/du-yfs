@@ -148,6 +148,9 @@ Once created, follow the steps for setting up the space core in the instructions
 |                            | -autoShutdownFloorDistance | number  | N        | Sets the distance at which the system shuts down while in Hold-state, as measured by the 'FloorDetector' telemeter                                  |
 |                            | -yawAlignmentThrustLimiter | number  | N        | Sets the alignment limit angle which yaw must be within before accelerating to the next waypoint.                                                   |
 |                            | -showWidgetsOnStart        | boolean | N        | If true, diagnostics widgets are shown on start up                                                                                                  |
+| get                        | See `set`                  |         | Y        | Gets and prints the setting set with the `set` command                                                                                              |
+| get-all                    |                            |         |          | Prints all current settings                                                                                                                         |
+| set-full-container-boosts  |                            |         |          | Sets all related talents for containers, atmospheric, space and rocket fuel tanks to level 5                                                        |
 | show-widgets               |                            | boolean | Y        | Show/hides widgets with diagnostic info                                                                                                             |
 
 
