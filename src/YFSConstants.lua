@@ -14,7 +14,16 @@ local constants = {
         rightOf = 1,
         leftOf = -1,
         still = 0
+    },
+    flight = {
+        speedPid = {
+            p = 0.2,
+            i = 0.005,
+            d = 100,
+            a = 0.99
+        }
     }
+
 }
 
 return constants

@@ -1,5 +1,6 @@
 local log = require("debug/Log")()
 local cmd = require("commandline/CommandLine").Instance()
+local yfsConstants = require("YFSConstants")
 require("util/Table")
 
 ---@module "storage/BufferedDB"
@@ -8,7 +9,6 @@ require("util/Table")
 ---@field New fun(db:BufferedDB)
 ---@field RegisterCallback fun(key:string, f:fun(any))
 ---@field Reload fun()
----@field RegisterCommands fun()
 ---@field Get fun(key:string, default:any?):string|number|table|nil
 
 local singleton
@@ -27,46 +27,7 @@ function Settings.New(db)
 
     local subscribers = {} ---@type table<string,fun(any)[]>
 
-    s.def = {
-        engineWarmup = { key = "engineWarmup", default = 2 },
-        speedP = { key = "speedp", default = 0.01 },
-        speedI = { key = "speedi", default = 0.005 },
-        speedD = { key = "speedd", default = 0.01 },
-        speeda = { key = "speeda", default = 0.99 },
-        containerProficiency = { key = "containerProficiency", default = 0 },
-        fuelTankOptimization = { key = "fuelTankOptimization", default = 0 },
-        containerOptimization = { key = "containerOptimization", default = 0 },
-        atmoFuelTankHandling = { key = "atmoFuelTankHandling", default = 0 },
-        spaceFuelTankHandling = { key = "spaceFuelTankHandling", default = 0 },
-        rocketFuelTankHandling = { key = "rocketFuelTankHandling", default = 0 },
-        autoShutdownFloorDistance = { key = "autoShutdownFloorDistance", default = 0.3 },
-        yawAlignmentThrustLimiter = { key = "yawAlignmentThrustLimiter", default = 1 },
-        showWidgetsOnStart = { key = "showWidgetsOnStart", default = 0 }
-    }
-
-    function s.ensureSingle(data)
-        -- Ensure only one option is given, ignore commandValue
-        local len = TableLen(data)
-        if len ~= 2 then
-            -- commandValue and one setting
-            log:Error("Please specify a single setting, got ", len)
-            return false
-        end
-
-        return true
-    end
-
-    function s.getPair(data)
-        for key, value in pairs(data) do
-            if key ~= "commandValue" then
-                return key, value
-            end
-        end
-
-        return nil, nil
-    end
-
-    function s.publishToSubscribers(key, value)
+    local function publishToSubscribers(key, value)
         -- Notify subscribers for the key
         local subs = subscribers[key]
         if subs then
@@ -75,6 +36,82 @@ function Settings.New(db)
             end
         end
     end
+
+    local containerSettings = {
+        containerProficiency = { default = 0 },
+        fuelTankOptimization = { default = 0 },
+        containerOptimization = { default = 0 },
+        atmoFuelTankHandling = { default = 0 },
+        spaceFuelTankHandling = { default = 0 },
+        rocketFuelTankHandling = { default = 0 },
+    }
+
+    local pidValues = yfsConstants.flight.speedPid
+    ---@type {key:string, default:string|number|boolean}
+    local settings = {
+        engineWarmup = { default = 1 },
+        speedp = { default = pidValues.p },
+        speedi = { default = pidValues.i },
+        speedd = { default = pidValues.d },
+        speeda = { default = pidValues.a },
+        autoShutdownFloorDistance = { default = 5 },
+        yawAlignmentThrustLimiter = { default = 1 },
+        showWidgetsOnStart = { default = false },
+    }
+
+    for k, v in pairs(containerSettings) do
+        settings[k] = v
+    end
+
+    local set = cmd.Accept("set",
+        ---@param data table
+        function(data)
+            for key, _ in pairs(settings) do
+                local val = data[key]
+                if val ~= nil then
+                    db.Put(key, val)
+                    publishToSubscribers(key, val)
+                    log:Info("Set", key, " to ", val)
+                end
+            end
+        end)
+
+    for key, v in pairs(settings) do
+        local opt = string.format("-%s", key)
+        if type(v.default) == "number" then
+            set.Option(opt).AsNumber()
+        elseif type(v.default) == "string" then
+            set.Option(opt).AsString()
+        elseif type(v.default) == "boolean" then
+            set.Option(opt).AsBoolean()
+        end
+    end
+
+    cmd.Accept("get",
+        ---@param data {commandValue:string}
+        function(data)
+            local setting = settings[data.commandValue]
+
+            if setting == nil then
+                log:Error("Unknown setting:", data.commandValue)
+                return
+            end
+
+
+            log:Info(data.commandValue, ": ", s.Get(data.commandValue, setting.default))
+        end).AsString().Mandatory()
+
+    cmd.Accept("get-all", function(_)
+        for key, v in pairs(settings) do
+            log:Info(key, ": ", s.Get(key))
+        end
+    end)
+
+    cmd.Accept("set-full-container-boosts", function(_)
+        for key, _ in pairs(containerSettings) do
+            cmd.Exec(string.format("set -%s %d", key, 5))
+        end
+    end)
 
     ---@param key string The key to get notified of
     ---@param func fun(any) A function with signature function(value)
@@ -86,57 +123,24 @@ function Settings.New(db)
         table.insert(subscribers[key], func)
     end
 
-    ---comment
     ---@param key string
-    ---@param default string|number|table|nil
+    ---@param default? string|number|table|nil
     ---@return string|number|table|nil
     function s.Get(key, default)
-        local def = s.def[key]
+        local setting = settings[key]
 
         -- If no default is provided, use the one in the definition
-        if def and not default then
-            return db.Get(key, def.default)
+        if default == nil then
+            return db.Get(key, setting.default)
         end
 
         return db.Get(key, default)
     end
 
     function s.Reload()
-        for _, setting in pairs(s.def) do
-            local stored = s.Get(setting.key, setting.default)
-            singleton.publishToSubscribers(setting.key, stored)
-        end
-    end
-
-    function s.RegisterCommands()
-        local setFunc = function(data)
-            if not s.ensureSingle(data) then
-                return
-            end
-
-            local key, value = singleton.getPair(data)
-            if key ~= nil then
-                s.publishToSubscribers(key, value)
-                db.Put(key, value)
-            end
-        end
-
-        local getFunc = function(data)
-            if not singleton.ensureSingle(data) then
-                return
-            end
-
-            local key, value = singleton.getPair(data)
-            if key ~= nil then
-                log:Info(key, ": ", db.Get(key, value))
-            end
-        end
-
-        local set = cmd.Accept("set", setFunc).AsEmpty()
-
-        for _, setting in pairs(singleton.def) do
-            -- Don't set defaults on these - prevents detecting which setting is to be set as they all have values then.
-            set.Option("-" .. setting.key).AsNumber()
+        for key, _ in pairs(settings) do
+            local stored = s.Get(key)
+            publishToSubscribers(key, stored)
         end
     end
 

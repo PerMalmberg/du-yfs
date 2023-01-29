@@ -185,35 +185,29 @@ function SystemController.New(flightCore, settings)
 
     settings.RegisterCallback("containerProficiency", function(value)
         talents.ContainerProficiency = value
-        log:Info(talents)
     end)
 
     settings.RegisterCallback("fuelTankOptimization", function(value)
         talents.FuelTankOptimization = value
-        log:Info(talents)
     end)
 
     settings.RegisterCallback("containerOptimization", function(value)
         talents.ContainerOptimization = value
-        log:Info(talents)
     end)
 
 
     settings.RegisterCallback("atmoFuelTankHandling", function(value)
         talents.AtmoFuelTankHandling = value
-        log:Info(talents)
     end)
 
 
     settings.RegisterCallback("spaceFuelTankHandling", function(value)
         talents.SpaceFuelTankHandling = value
-        log:Info(talents)
     end)
 
 
     settings.RegisterCallback("rocketFuelTankHandling", function(value)
         talents.RocketFuelTankHandling = value
-        log:Info(talents)
     end)
 
     Task.New("FuelMonitor", function()

@@ -1,6 +1,5 @@
 # Todo
 
-* Make settings separate commands to make them type safe.
 * Stuck on pad on activation - wants to move to first point? Move upwards a little first
 * Use PID for adjustment
 * Offline screen - make Y white

@@ -1,4 +1,5 @@
 local r = require("CommonRequire")
+local yfsConstants = require("YFSConstants")
 local AxisManager = require("flight/AxisManager")
 local log = r.log
 local brakes = require("flight/Brakes"):Instance()
@@ -189,7 +190,8 @@ function FlightFSM.New(settings)
 
     local delta = Stopwatch.New()
 
-    local speedPid = PID(0.2, 0.005, 100, 0.99)
+    local pidValues = yfsConstants.flight.speedPid
+    local speedPid = PID(pidValues.p, pidValues.i, pidValues.d, pidValues.a)
 
     local s = {}
 
@@ -677,24 +679,19 @@ function FlightFSM.New(settings)
 
     settings.RegisterCallback("speedp", function(value)
         speedPid = PID(value, speedPid.i, speedPid.d, speedPid.amortization)
-        log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d, " A:", speedPid.amortization)
     end)
 
     settings.RegisterCallback("speedi", function(value)
         speedPid = PID(speedPid.p, value, speedPid.d, speedPid.amortization)
-        log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d, " A:", speedPid.amortization)
     end)
 
     settings.RegisterCallback("speedd", function(value)
         speedPid = PID(speedPid.p, speedPid.i, value, speedPid.amortization)
-        log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d, " A:", speedPid.amortization)
     end)
 
     settings.RegisterCallback("speeda", function(value)
         speedPid = PID(speedPid.p, speedPid.i, speedPid.d, value)
-        log:Info("P:", speedPid.p, " I:", speedPid.i, " D:", speedPid.d, " A:", speedPid.amortization)
     end)
-
 
     settings.RegisterCallback("yawAlignmentThrustLimiter", function(value)
         yawAlignmentThrustLimiter = value

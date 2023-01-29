@@ -41,7 +41,7 @@ Task.New("Main", function()
     local fsm = FlightFSM.New(settings)
     local fc = FlightCore.New(rc, fsm)
     local cont = SystemController.New(fc, settings)
-    settings.RegisterCommands()
+    settings.Reload()
     fc.ReceiveEvents()
 
     local floor = floorDetector.Measure()
