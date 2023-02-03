@@ -17,7 +17,7 @@ local constants = {
     },
     flight = {
         speedPid = {
-            p = 0.2,
+            p = 0.02,
             i = 0.005,
             d = 100,
             a = 0.99

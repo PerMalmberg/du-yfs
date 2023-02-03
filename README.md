@@ -6,6 +6,7 @@
 * EM Stop button
 * Overload warning based on setting.
 * Changing route in transit, lock dir to new waypoint during return-to-path (if same route?)
+* When returning to beginning of route, lock direction to that of next WP
 
 * More natural manual control
 * Fix overshoot when turning
