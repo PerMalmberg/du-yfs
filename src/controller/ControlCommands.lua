@@ -66,7 +66,7 @@ function ControlCommands.New(input, cmd, flightCore)
 
     ---@param c Command
     local function addPointOptions(c)
-        c.Option("-precision").AsBoolean().Default(false)
+        c.Option("-precision").AsEmptyBoolean().Default(false)
         c.Option("-lockdir").AsEmptyBoolean().Default(false)
         c.Option("-maxspeed").AsNumber().Default(0)
         c.Option("-margin").AsNumber().Default(0.1)
