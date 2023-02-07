@@ -1,9 +1,10 @@
-local Point    = require("flight/route/Point")
-local Route    = require("flight/route/Route")
-local log      = require("debug/Log")()
-local universe = require("universe/Universe").Instance()
-local calc     = require("util/Calc")
-local Current  = require("abstraction/Vehicle").New().position.Current
+local Point        = require("flight/route/Point")
+local Route        = require("flight/route/Route")
+local log          = require("debug/Log")()
+local universe     = require("universe/Universe").Instance()
+local calc         = require("util/Calc")
+local PointOptions = require("flight/route/PointOptions")
+local Current      = require("abstraction/Vehicle").New().position.Current
 require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}
@@ -400,8 +401,12 @@ function RouteController.Instance(bufferedDB)
                 table.remove(points, 1)
             end
 
-            -- Add a new point at the nearest point
-            table.insert(points, 1, Point.New(universe.CreatePos(nearestOnRoute).AsPosString()))
+            -- Add a new point at the nearest point, with the same lock direction as the next point
+            -- so we move with that direction to this point.
+            local p = Point.New(universe.CreatePos(nearestOnRoute).AsPosString())
+            local nextOpt = points[1].Options()
+            p.Options().Set(PointOptions.LOCK_DIRECTION, nextOpt.Get(PointOptions.LOCK_DIRECTION))
+            table.insert(points, 1, p)
         end
 
         -- Check we're close enough to the closest point, which is now the first one in the route.

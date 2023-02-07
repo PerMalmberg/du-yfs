@@ -7,6 +7,7 @@
 * Overload warning based on setting.
 * Changing route in transit, lock dir to new waypoint during return-to-path (if same route?)
 * When returning to beginning of route, lock direction to that of next WP
+* When in idle, and floor detection says it is no longer withing distance, go to hold pos (with a position of that of startup)
 
 * More natural manual control
 * Fix overshoot when turning
