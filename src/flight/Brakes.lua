@@ -25,6 +25,7 @@ local spaceEfficiencyFactor = 0.9 -- Reduced from one to counter brake PID not r
 ---@field BrakeFlush fun()
 ---@field MaxBrakeAcc fun():number
 ---@field GravityInfluencedAvailableDeceleration fun():number
+---@field MaxSeenGravityInfluencedAvailableAtmoDeceleration fun():number
 ---@field AvailableDeceleration fun():number
 ---@field BrakeEfficiency fun(inAtmo:boolean, speed:number):number
 ---@field Feed fun(targetSpeed:number, currentSpeed:number)
@@ -44,6 +45,7 @@ function Brake.Instance()
     local pidHighSpeed = PID(1, 0, 0.01)
     local pidLowSpeed = PID(0.1, 0.01, 0.01)
     local deceleration = 0
+    local maxSeenBrakeAtmoAcc = 0
     local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0 } ---@type BrakeData
 
     local s = {
@@ -69,8 +71,12 @@ function Brake.Instance()
 
     function s:BrakeUpdate()
         s.totalMass = TotalMass()
-        brakeData.maxDeceleration = rawAvailableDeceleration()
+        local raw = rawAvailableDeceleration()
+        brakeData.maxDeceleration = raw
         brakeData.currentDeceleration = construct.getCurrentBrake() / s.totalMass
+        if IsInAtmo() then
+            maxSeenBrakeAtmoAcc = max(raw, maxSeenBrakeAtmoAcc)
+        end
         pub.Publish("BrakeData", brakeData)
     end
 
@@ -110,6 +116,14 @@ function Brake.Instance()
         local influence = calc.Ternary(movingTowardsGravityWell, -1, 1)
         -- Might not be enough brakes to counter gravity so don't go below 0
         return max(0, rawAvailableDeceleration() + influence * dot * G())
+    end
+
+    function s.MaxSeenGravityInfluencedAvailableAtmoDeceleration()
+        local dot = GravityDirection():Dot(Velocity():Normalize())
+        local movingTowardsGravityWell = dot > 0
+        local influence = calc.Ternary(movingTowardsGravityWell, -1, 1)
+        -- Might not be enough brakes to counter gravity so don't go below 0
+        return max(0, maxSeenBrakeAtmoAcc + influence * dot * G())
     end
 
     ---Gets the unadjusted available deceleration

@@ -24,6 +24,7 @@ local Velocity         = vehicle.velocity.Movement
 local Acceleration     = vehicle.acceleration.Movement
 local GravityDirection = vehicle.world.GravityDirection
 local AtmoDensity      = vehicle.world.AtmoDensity
+local TotalMass        = vehicle.mass.Total
 local utils            = require("cpml/utils")
 local pub              = require("util/PubSub").Instance()
 local clamp            = utils.clamp
@@ -282,8 +283,13 @@ function FlightFSM.New(settings)
         local stopDist
 
         if vehicle.world.IsInAtmo() then
-            startDist = 0.5
-            stopDist = 0
+            if TotalMass() > 50000 then
+                startDist = 20
+                stopDist = 0.3
+            else
+                startDist = 0.5
+                stopDist = 0
+            end
         else
             startDist = 20
             stopDist = 0.5
@@ -358,6 +364,11 @@ function FlightFSM.New(settings)
 
         local availableBrakeDeceleration = -brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency
 
+        if inAtmo and currentSpeed < ignoreAtmoBrakeLimitThreshold then
+            -- When standing still in atmo, assume brakes gives current g of brake acceleration (brake API gives a 0 as response in this case)
+            local maxSeen = brakes.MaxSeenGravityInfluencedAvailableAtmoDeceleration()
+            availableBrakeDeceleration = -max(maxSeen, G())
+        end
 
         -- Ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
         if willHitAtmo and remainingDistance > distanceToAtmo then -- Waypoint may be closer than atmo
@@ -370,58 +381,56 @@ function FlightFSM.New(settings)
             if distanceToAtmo <= waypoint.DistanceTo() then
                 local entrySpeed = calcMaxAllowedSpeed(availableBrakeDeceleration,
                     distanceToAtmo, atmosphericEntrySpeed)
-                targetSpeed = evaluateNewLimit(targetSpeed, entrySpeed, "Brake/entry")
+                targetSpeed = evaluateNewLimit(targetSpeed, entrySpeed, "Atmo entry")
             end
         end
 
         -- Ensure that we have a speed at which we can come to a stop with 10% of the brake force when we hit 360km/h, which is the speed at which brakes start to degrade down to 10% at 36km/h.
-        if inAtmo and not willLeaveAtmo then
-            local tenPercent = brakes.MaxBrakeAcc() * 0.1
+        local brakeDegradeSpeed = calc.Kph2Mps(360)
+        if inAtmo and not willLeaveAtmo and waypoint.FinalSpeed() <= brakeDegradeSpeed then
+            local tenPercent = brakes.MaxSeenGravityInfluencedAvailableAtmoDeceleration() * 0.1
             if tenPercent > 0 then
-                local speedLimit = calc.Kph2Mps(360)
-                local finalApproachDistance = calc.CalcBrakeDistance(speedLimit, tenPercent)
+
+                local endSpeed = waypoint.FinalSpeed()
+
+                local finalApproachDistance = calc.CalcBrakeDistance(brakeDegradeSpeed, tenPercent)
                 local toBrakePoint = remainingDistance - finalApproachDistance
+
                 if toBrakePoint > 0 then
+                    -- Not yet reached the break point
                     targetSpeed = evaluateNewLimit(targetSpeed,
-                        calcMaxAllowedSpeed(-tenPercent, remainingDistance - finalApproachDistance, speedLimit),
-                        "Brake/final")
-                    flightData.finalSpeed = speedLimit
-                    flightData.finalSpeedDistance = remainingDistance - finalApproachDistance
+                        calcMaxAllowedSpeed(-tenPercent, toBrakePoint, brakeDegradeSpeed),
+                        "Appr. fin.")
+                    flightData.finalSpeed = brakeDegradeSpeed
+                    flightData.finalSpeedDistance = toBrakePoint
+                else
+                    -- Within
+                    targetSpeed = evaluateNewLimit(targetSpeed,
+                        calcMaxAllowedSpeed(-tenPercent, remainingDistance, endSpeed),
+                        "Final")
                 end
             end
         end
 
-        local brakeMaxSpeed
-        local brakeReason = ""
-
-        local g = G()
-
-        if inAtmo and currentSpeed < ignoreAtmoBrakeLimitThreshold then
-            -- When standing still in atmo, assume brakes gives current g of brake acceleration (brake API gives a 0 as response in this case)
-            availableBrakeDeceleration = -g
-        end
-
-        if inAtmo and abs(availableBrakeDeceleration) <= g and abs(velocity:Normalize():Dot(GravityDirection())) > 0.7 then
+        if inAtmo and abs(availableBrakeDeceleration) <= G() then
             -- Brakes have become so inefficient at the current altitude or speed they are useless, use linear speed
             -- This state can be seen when entering atmo for example.
-            brakeMaxSpeed = linearSpeed(remainingDistance)
-            brakeReason = "Brake/ineff"
+            targetSpeed = evaluateNewLimit(targetSpeed, linearSpeed(remainingDistance), "Brake/ineff")
         elseif inAtmo and willLeaveAtmo then
             -- No need to further reduce
-            brakeMaxSpeed = targetSpeed
         else
-            brakeMaxSpeed = calcMaxAllowedSpeed(availableBrakeDeceleration, remainingDistance,
+            local brakeMaxSpeed = calcMaxAllowedSpeed(availableBrakeDeceleration, remainingDistance,
                 waypoint.FinalSpeed())
-            brakeReason = "Brake"
+            targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brake")
+            flightData.brakeMaxSpeed = brakeMaxSpeed
         end
 
-        targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, brakeReason)
 
-        flightData.brakeMaxSpeed = brakeMaxSpeed
         flightData.waypointDist = remainingDistance
 
-        targetSpeed = linearApproach(targetSpeed, remainingDistance)
-
+        if waypoint.FinalSpeed() == 0 then
+            targetSpeed = linearApproach(targetSpeed, remainingDistance)
+        end
 
         return targetSpeed
     end
