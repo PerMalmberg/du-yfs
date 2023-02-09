@@ -47,7 +47,7 @@ function Settings.New(db)
     }
 
     local pidValues = yfsConstants.flight.speedPid
-    ---@type {key:string, default:string|number|boolean}
+    ---@type {default:string|number|boolean}
     local settings = {
         engineWarmup = { default = 1 },
         speedp = { default = pidValues.p },
@@ -86,6 +86,15 @@ function Settings.New(db)
             set.Option(opt).AsBoolean()
         end
     end
+
+    cmd.Accept("reset-settings", function(_)
+        for key, value in pairs(settings) do
+            db.Put(key, value.default)
+            log:Info("Reset", key, " to ", value.default)
+        end
+
+        s.Reload()
+    end)
 
     cmd.Accept("get",
         ---@param data {commandValue:string}
