@@ -54,14 +54,18 @@ local deadZoneFactor = 0.8 -- Consider the inner edge of the dead zone where we 
 ---@field Update fun()
 ---@field AtWaypoint fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
 ---@field GetSettings fun():Settings
+---@field GetRouteController fun():RouteController
+---@field SetFlightCore fun(fc:FlightCore)
+---@field GetFlightCore fun():FlightCore
 
 local FlightFSM = {}
 FlightFSM.__index = FlightFSM
 
 ---Creates a new FligtFSM
 ---@param settings Settings
+---@param routeController RouteController
 ---@return FlightFSM
-function FlightFSM.New(settings)
+function FlightFSM.New(settings, routeController)
 
     local function antiG()
         return -universe:VerticalReferenceVector() * G()
@@ -597,6 +601,7 @@ function FlightFSM.New(settings)
 
         if currentState.InhibitsThrust() then
             applyAcceleration(nil, nullVec, false)
+            brakes.Feed(0, Velocity():Len())
         else
             local selectedWP = selectWP()
 
@@ -709,6 +714,21 @@ function FlightFSM.New(settings)
     ---@return Settings
     function s.GetSettings()
         return settings
+    end
+
+    ---@return RouteController
+    function s.GetRouteController()
+        return routeController
+    end
+
+    local fc ---@type FlightCore
+
+    function s.SetFlightCore(core)
+        fc = core
+    end
+
+    function s.GetFlightCore()
+        return fc
     end
 
     s.SetState(Idle.New(s))

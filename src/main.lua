@@ -38,8 +38,10 @@ Task.New("Main", function()
     end
 
     local rc = RouteController.Instance(routeDb)
-    local fsm = FlightFSM.New(settings)
+    local fsm = FlightFSM.New(settings, rc)
     local fc = FlightCore.New(rc, fsm)
+    fsm.SetFlightCore(fc)
+
     local cont = SystemController.New(fc, settings)
     settings.Reload()
     fc.ReceiveEvents()
@@ -47,9 +49,7 @@ Task.New("Main", function()
     local floor = floorDetector.Measure()
     if not floor.Hit or floor.Distance > settings.Get("autoShutdownFloorDistance") then
         log:Info("No floor detected with set limit during startup, holding postition.")
-        local route = rc.ActivateTempRoute()
-        local p = route.AddCurrentPos()
-        p.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
+        rc.ActivateHoldRoute()
         fc.StartFlight()
     else
         fsm.SetState(Idle.New(fsm))

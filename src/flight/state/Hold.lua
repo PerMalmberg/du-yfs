@@ -65,7 +65,7 @@ function Hold.New(fsm)
         if player.isFrozen() == 0
             and s.isLastWaypoint
             and hit.Hit
-            and hit.Distance < settings.Get("autoShutdownFloorDistance") then
+            and hit.Distance <= settings.Get("autoShutdownFloorDistance") then
             log:Info("Floor detected at last waypoint, shutting down.")
             unit.exit()
         end

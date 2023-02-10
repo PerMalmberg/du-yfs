@@ -1,4 +1,8 @@
-local checks = require("CommonRequire").checks
+local pub     = require("util/PubSub").Instance()
+local log     = require("debug/Log")()
+local vehicle = require("abstraction/Vehicle").New()
+local Current = vehicle.position.Current
+local Forward = vehicle.orientation.Forward
 
 ---@class Idle
 ---@field Enter fun()
@@ -17,13 +21,20 @@ local name = "Idle"
 ---@param fsm FlightFSM
 ---@return Idle
 function Idle.New(fsm)
-    checks.IsTable(fsm, "fsm", name .. ":new")
     local s = {}
 
+    local settings = fsm.GetSettings()
+    local enterPos ---@type Vec3
+    local enterForward ---@type Vec3
+
     function s.Enter()
+        pub.RegisterTable("FloorMonitor", s.floorMonitor)
+        enterPos = Current()
+        enterForward = Forward()
     end
 
     function s.Leave()
+        pub.Unregister("FloorMonitor", s.floorMonitor)
     end
 
     ---@param deltaTime number
@@ -46,6 +57,16 @@ function Idle.New(fsm)
 
     function s.InhibitsThrust()
         return true
+    end
+
+    ---@param topic string
+    ---@param hit TelemeterResult
+    function s.floorMonitor(topic, hit)
+        if not hit.Hit or hit.Distance > settings.Get("autoShutdownFloorDistance") then
+            log:Info("Floor gone, holding position.")
+            fsm.GetRouteController().ActivateHoldRoute(enterPos, enterForward)
+            fsm.GetFlightCore().StartFlight()
+        end
     end
 
     return setmetatable(s, Idle)

@@ -4,7 +4,9 @@ local log          = require("debug/Log")()
 local universe     = require("universe/Universe").Instance()
 local calc         = require("util/Calc")
 local PointOptions = require("flight/route/PointOptions")
-local Current      = require("abstraction/Vehicle").New().position.Current
+local vehicle      = require("abstraction/Vehicle").New()
+local Current      = vehicle.position.Current
+local Forward      = vehicle.orientation.Forward
 require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}
@@ -32,6 +34,7 @@ require("util/Table")
 ---@field SaveRoute fun():boolean
 ---@field Count fun():integer
 ---@field ActiveRouteName fun():string|nil
+---@field ActivateHoldRoute fun(pos:Vec3?, holdDirection:Vec3?)
 
 local RouteController = {}
 RouteController.__index = RouteController
@@ -490,6 +493,21 @@ function RouteController.Instance(bufferedDB)
     ---@return string|nil
     function s.ActiveRouteName()
         return activeRouteName
+    end
+
+    ---Activates a route to hold position
+    ---@param pos Vec3?
+    ---@param holdDirection Vec3?
+    function s.ActivateHoldRoute(pos, holdDirection)
+        local route = s.ActivateTempRoute()
+        local p
+        if pos ~= nil and holdDirection ~= nil then
+            p = route.AddCoordinate(pos)
+            p.Options().Set(PointOptions.LOCK_DIRECTION, { holdDirection:Unpack() })
+        else
+            p = route.AddCurrentPos()
+            p.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
+        end
     end
 
     singleton = setmetatable(s, RouteController)
