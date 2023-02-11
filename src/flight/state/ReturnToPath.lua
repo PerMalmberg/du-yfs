@@ -2,6 +2,7 @@ local Stopwatch = require("system/Stopwatch")
 local Waypoint = require("flight/Waypoint")
 
 ---@class ReturnToPath
+---@field New fun(fsm:FlightFSM, returnPoint:Vec3)
 ---@field Enter fun()
 ---@field Leave fun()
 ---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)

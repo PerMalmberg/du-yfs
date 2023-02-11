@@ -1,4 +1,5 @@
 ---@class FlightState
+---@field New fun(fsm:FlightFSM)
 ---@field Enter fun()
 ---@field Leave fun()
 ---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)
@@ -16,7 +17,6 @@ local name = "NameOfState"
 ---@param fsm FlightFSM
 ---@return NameOfState
 function NameOfState.New(fsm)
-
     local s = {}
 
     function s.Enter()

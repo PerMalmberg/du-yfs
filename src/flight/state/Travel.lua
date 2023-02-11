@@ -3,6 +3,7 @@ local vehicle = r.vehicle
 local CurrentPos = vehicle.position.Current
 
 ---@class Travel
+---@field New fun(fsm:FlightFSM)
 
 local Travel = {}
 Travel.__index = Travel
