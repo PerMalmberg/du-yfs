@@ -142,8 +142,8 @@ function SystemController.New(flightCore, settings)
             ---@param value TelemeterResult
             function(_, value)
                 local floor = string.format("Hit: %s, distance: %0.2f, limit: %0.2f",
-                    tostring(value.Hit), value.Distance,
-                    settings.Get("autoShutdownFloorDistance"))
+                        tostring(value.Hit), value.Distance,
+                        settings.Get("autoShutdownFloorDistance"))
                 dataToScreen.Set("floor", floor)
             end)
 
@@ -180,8 +180,8 @@ function SystemController.New(flightCore, settings)
         .Then(function(...)
             log:Info("No screen connected")
         end).Catch(function(t)
-            log:Error(t.Name(), t.Error())
-        end)
+        log:Error(t.Name(), t.Error())
+    end)
 
     settings.RegisterCallback("containerProficiency", function(value)
         talents.ContainerProficiency = value
@@ -221,7 +221,7 @@ function SystemController.New(flightCore, settings)
         }
 
         while true do
-            if sw.Elapsed() < 2 then
+            if sw.IsRunning() and sw.Elapsed() < 2 then
                 coroutine.yield()
             else
                 for fuelType, containers in pairs(tanks) do
@@ -229,10 +229,12 @@ function SystemController.New(flightCore, settings)
                     for _, tank in ipairs(containers) do
                         local factor = tank.FuelFillFactor(talents)
                         table.insert(fillFactors,
-                            { name = tank.Name(),
+                            {
+                                name = tank.Name(),
                                 factorBar = Vec2.New(1, factor),
                                 percent = factor * 100,
-                                visible = true })
+                                visible = true
+                            })
                         coroutine.yield()
                     end
 
