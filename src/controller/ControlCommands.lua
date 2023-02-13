@@ -1,23 +1,23 @@
 ---@module "commandline/CommandLine"
 ---@module "input/Input"
 
-local Criteria     = require("input/Criteria")
-local PointOptions = require("flight/route/PointOptions")
-local log          = require("debug/Log")()
-local vehicle      = require("abstraction/Vehicle").New()
-local brakes       = require("flight/Brakes").Instance()
-local calc         = require("util/Calc")
-local universe     = require("universe/Universe").Instance()
-local keys         = require("input/Keys")
-local alignment    = require("flight/AlignmentFunctions")
-local pub          = require("util/PubSub").Instance()
-local Clamp        = calc.Clamp
-local Current      = vehicle.position.Current
+local Criteria          = require("input/Criteria")
+local PointOptions      = require("flight/route/PointOptions")
+local log               = require("debug/Log")()
+local vehicle           = require("abstraction/Vehicle").New()
+local brakes            = require("flight/Brakes").Instance()
+local calc              = require("util/Calc")
+local universe          = require("universe/Universe").Instance()
+local keys              = require("input/Keys")
+local alignment         = require("flight/AlignmentFunctions")
+local pub               = require("util/PubSub").Instance()
+local Clamp             = calc.Clamp
+local Current           = vehicle.position.Current
 
 ---@class ControlCommands
 ---@field New fun(input:Input, cmd:Command, flightCore:FlightCore)
 
-local ControlCommands = {}
+local ControlCommands   = {}
 ControlCommands.__index = ControlCommands
 
 ---Creates a new RouteModeController
@@ -165,7 +165,6 @@ function ControlCommands.New(input, cmd, flightCore)
                 flightCore.StartFlight()
                 log:Info("Flight started")
             end
-
         end).AsString().Mandatory()
         .Option("reverse").AsEmptyBoolean()
 
@@ -176,40 +175,40 @@ function ControlCommands.New(input, cmd, flightCore)
     end)
 
     local addCurrentToRoute = cmd.Accept("route-add-current-pos", function(data)
-        local route = rc.CurrentEdit()
+            local route = rc.CurrentEdit()
 
-        if not route then
-            log:Error("No route open for edit")
-            return
-        end
+            if not route then
+                log:Error("No route open for edit")
+                return
+            end
 
-        local point = route.AddCurrentPos()
-        point.SetOptions(createOptions(data))
-        log:Info("Added current position to route")
-    end).AsEmpty()
+            local point = route.AddCurrentPos()
+            point.SetOptions(createOptions(data))
+            log:Info("Added current position to route")
+        end).AsEmpty()
 
     addPointOptions(addCurrentToRoute)
 
     local addNamed = cmd.Accept("route-add-named-pos",
-        ---@param data {commandValue:string}
-        function(data)
-            local ref = rc.LoadWaypoint(data.commandValue)
+            ---@param data {commandValue:string}
+            function(data)
+                local ref = rc.LoadWaypoint(data.commandValue)
 
-            if ref then
-                local route = rc.CurrentEdit()
-                if route == nil then
-                    log:Error("No route open for edit")
-                else
-                    local p = route.AddWaypointRef(data.commandValue)
-                    if p then
-                        p.SetOptions(createOptions(data))
-                        log:Info("Added position to route")
+                if ref then
+                    local route = rc.CurrentEdit()
+                    if route == nil then
+                        log:Error("No route open for edit")
                     else
-                        log:Error("Could not add postion")
+                        local p = route.AddWaypointRef(data.commandValue)
+                        if p then
+                            p.SetOptions(createOptions(data))
+                            log:Info("Added position to route")
+                        else
+                            log:Error("Could not add postion")
+                        end
                     end
                 end
-            end
-        end).AsString()
+            end).AsString()
     addPointOptions(addNamed)
 
     cmd.Accept("route-delete-pos",
@@ -297,14 +296,14 @@ function ControlCommands.New(input, cmd, flightCore)
         end).AsString().Mandatory()
 
     local rel = cmd.Accept("pos-create-along-gravity",
-        ---@param data {commandValue:string, u:number}
-        function(data)
-            local pos = Current() - universe.VerticalReferenceVector() * data.u
-            local posStr = universe.CreatePos(pos).AsPosString()
-            if rc.StoreWaypoint(data.commandValue, posStr) then
-                log:Info("Stored postion ", posStr, " as ", data.commandValue)
-            end
-        end).AsString().Mandatory()
+            ---@param data {commandValue:string, u:number}
+            function(data)
+                local pos = Current() - universe.VerticalReferenceVector() * data.u
+                local posStr = universe.CreatePos(pos).AsPosString()
+                if rc.StoreWaypoint(data.commandValue, posStr) then
+                    log:Info("Stored postion ", posStr, " as ", data.commandValue)
+                end
+            end).AsString().Mandatory()
     rel.Option("-u").AsNumber().Mandatory()
 
 
@@ -325,7 +324,7 @@ function ControlCommands.New(input, cmd, flightCore)
         options.Set(PointOptions.MAX_SPEED, speed)
         options.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
 
-        move(-vehicle.orientation.Right(), movestep, options)
+        move( -vehicle.orientation.Right(), movestep, options)
     end)
 
     input.Register(keys.straferight, Criteria.New().OnRepeat(), function()
@@ -338,12 +337,12 @@ function ControlCommands.New(input, cmd, flightCore)
 
     input.Register(keys.up, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
-        move(-universe.VerticalReferenceVector(), movestep)
+        move( -universe.VerticalReferenceVector(), movestep)
     end)
 
     input.Register(keys.down, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
-        move(-universe.VerticalReferenceVector(), -movestep)
+        move( -universe.VerticalReferenceVector(), -movestep)
     end)
 
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
@@ -353,7 +352,7 @@ function ControlCommands.New(input, cmd, flightCore)
 
     input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
-        flightCore.Turn(-turnAngle, vehicle.orientation.Up())
+        flightCore.Turn( -turnAngle, vehicle.orientation.Up())
     end)
 
     cmd.Accept("step", function(data)
@@ -375,7 +374,7 @@ function ControlCommands.New(input, cmd, flightCore)
         local route = rc.ActivateTempRoute()
         local pos = Current()
         local point = route.AddCoordinate(pos + vehicle.orientation.Forward() * data.f +
-            vehicle.orientation.Right() * data.r - universe.VerticalReferenceVector() * data.u)
+        vehicle.orientation.Right() * data.r - universe.VerticalReferenceVector() * data.u)
         point.SetOptions(createOptions(data))
 
         flightCore.StartFlight()
@@ -399,7 +398,7 @@ function ControlCommands.New(input, cmd, flightCore)
     local strafeFunc = function(data)
         local route = rc.ActivateTempRoute()
         local point = route.AddCoordinate(Current() +
-            vehicle.orientation.Right() * data.commandValue)
+        vehicle.orientation.Right() * data.commandValue)
         local p = PointOptions.New()
         point.options = p
         p.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
@@ -433,19 +432,19 @@ function ControlCommands.New(input, cmd, flightCore)
     end
 
     local gotoCmd = cmd.Accept("goto",
-        ---@param data {commandValue:string}
-        function(data)
-            local target = getPos(data.commandValue)
+            ---@param data {commandValue:string}
+            function(data)
+                local target = getPos(data.commandValue)
 
-            if target then
-                local route = rc.ActivateTempRoute()
-                route.AddCurrentPos()
-                local targetPoint = route.AddPos(target)
-                targetPoint.SetOptions(createOptions(data))
-                flightCore.StartFlight()
-                log:Info("Moving to position")
-            end
-        end).AsString().Mandatory()
+                if target then
+                    local route = rc.ActivateTempRoute()
+                    route.AddCurrentPos()
+                    local targetPoint = route.AddPos(target)
+                    targetPoint.SetOptions(createOptions(data))
+                    flightCore.StartFlight()
+                    log:Info("Moving to position")
+                end
+            end).AsString().Mandatory()
     addPointOptions(gotoCmd)
 
     cmd.Accept("align-to",
@@ -471,24 +470,24 @@ function ControlCommands.New(input, cmd, flightCore)
     end)
 
     local createVertRoute = cmd.Accept("create-vertical-route",
-        ---@param data {commandValue:string, distance:number}
-        function(data)
-            local route = rc.CreateRoute(data.commandValue)
-            if route then
-                local startPos = route.AddCurrentPos()
-                startPos.Options().Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
+            ---@param data {commandValue:string, distance:number}
+            function(data)
+                local route = rc.CreateRoute(data.commandValue)
+                if route then
+                    local startPos = route.AddCurrentPos()
+                    startPos.Options().Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
 
-                local endPos = route.AddCoordinate(Current() - universe.VerticalReferenceVector() * data.distance)
-                endPos.Options().Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
+                    local endPos = route.AddCoordinate(Current() - universe.VerticalReferenceVector() * data.distance)
+                    endPos.Options().Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
 
-                if rc.SaveRoute() then
-                    log:Info("Created a route by name '", data.commandValue,
-                        "' with start at current position and direction with the endpoint at ", endPos.Pos())
-                else
-                    log:Error("Could not create the route")
+                    if rc.SaveRoute() then
+                        log:Info("Created a route by name '", data.commandValue,
+                            "' with start at current position and direction with the endpoint at ", endPos.Pos())
+                    else
+                        log:Error("Could not create the route")
+                    end
                 end
-            end
-        end).AsString().Mandatory()
+            end).AsString().Mandatory()
     createVertRoute.Option("distance").AsNumber().Mandatory()
 
     cmd.Accept("show-widgets",
@@ -497,8 +496,17 @@ function ControlCommands.New(input, cmd, flightCore)
             pub.Publish("ShowInfoWidgets", data.commandValue)
         end).AsBoolean().Mandatory()
 
-    printCurrent()
+    local setWaypoint = cmd.Accept("set-waypoint",
+            ---@param data {commandValue:string, notify:boolean}
+            function(data)
+                local pos = getPos(data.commandValue)
+                if pos then
+                    system.setWaypoint(pos, data.notify)
+                end
+            end).AsString().Mandatory()
+    setWaypoint.Option("notify").AsEmptyBoolean()
 
+    printCurrent()
 
     return setmetatable(s, ControlCommands)
 end

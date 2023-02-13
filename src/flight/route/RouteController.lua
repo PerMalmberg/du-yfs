@@ -27,6 +27,7 @@ require("util/Table")
 ---@field DeleteWaypoint fun(name:string):boolean
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
+---@field CurrentEditName fun():string|nil
 ---@field ActivateRoute fun(name:string, order:RouteOrder?, ignoreStartMargin:boolean?):boolean
 ---@field ActivateTempRoute fun():Route
 ---@field CreateRoute fun(name:string):Route|nil
@@ -126,7 +127,6 @@ function RouteController.Instance(bufferedDB)
     ---@param name string The name of the route to load
     ---@return Route|nil
     function s.loadRoute(name)
-
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
         local data = routes[name] ---@type RouteData
 
@@ -318,6 +318,12 @@ function RouteController.Instance(bufferedDB)
         return edit
     end
 
+    ---Returns the name of the route currently being edited, or nil
+    ---@return string|nil
+    function s.CurrentEditName()
+        return editName
+    end
+
     ---Activate the route by the given name
     ---@param name string
     ---@param order RouteOrder? The order the route shall be followed, default is FORWARD
@@ -418,7 +424,8 @@ function RouteController.Instance(bufferedDB)
 
         distance = (firstPos.Coordinates() - currentPos):Len()
         if not ignoreStartMargin and distance > startMargin then
-            log:Error(string.format("Currently %0.2fm from closest point in route. Please move within %0.2fm of %s and try again."
+            log:Error(string.format(
+                "Currently %0.2fm from closest point in route. Please move within %0.2fm of %s and try again."
                 , distance, startMargin, firstPos.AsPosString()))
             return false
         end

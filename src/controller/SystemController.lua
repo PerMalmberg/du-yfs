@@ -15,6 +15,9 @@ local layout           = library.embedFile("../screen/layout_min.json")
 local Stream           = require("Stream")
 local json             = require("dkjson")
 local calc             = require("util/Calc")
+local su               = require("util/StringUtil")
+local max              = math.max
+local min              = math.min
 local distanceFormat   = require("util/DistanceFormat")
 local massFormat       = require("util/MassFormat")
 local TotalMass        = require("abstraction/Vehicle").New().mass.Total
@@ -39,16 +42,6 @@ local function deserialize(s)
     return d
 end
 
-local function dataReceived(data)
-    -- Publish data to system
-    data = deserialize(data)
-    if data == nil then return end
-    local command = data["mouse_click"]
-    if command ~= nil then
-        commandLine.Exec(command)
-    end
-end
-
 ---@class SystemController
 
 local SystemController = {}
@@ -68,19 +61,100 @@ function SystemController.New(flightCore, settings)
     local routePage = 1
     local routesPerPage = 5
 
-    ---@param stream Stream
-    local function sendRoutes(stream)
-        local t = { route = {} }
+    local stream ---@type Stream -- forward declared
+
+    local routeEditorPrefix = "#re-"
+    local editRouteIndex = 1
+    local editRouteMaxPoints = 10
+
+    ---@param cmd string
+    function s.runRouteEditorCommand(cmd)
+        system.print(cmd)
+        if cmd == "previous-route" then
+            editRouteIndex = max(1, editRouteIndex - 1)
+        elseif cmd == "next-route" then
+            editRouteIndex = min(#rc.GetRouteNames(), editRouteIndex + 1)
+        end
+
+        s.updateEditRouteData()
+    end
+
+    function s.dataReceived(data)
+        -- Publish data to system
+        data = deserialize(data)
+        if data == nil then return end
+        local command = data["mouse_click"]
+        if command ~= nil then
+            if su.StartsWith(command, routeEditorPrefix) then
+                command = su.RemovePrefix(command, routeEditorPrefix)
+                s.runRouteEditorCommand(command)
+            else
+                commandLine.Exec(command)
+            end
+
+            s.updateEditRouteData()
+        end
+    end
+
+    local function sendRoutes()
+        local route = {}
         for i, r in ipairs(rc.GetRoutePage(routePage, routesPerPage)) do
-            t.route[tostring(i)] = { visible = true, name = r }
+            route[tostring(i)] = { visible = true, name = r }
         end
 
         -- Ensure to hide the rest if routes have been removed.
-        for i = TableLen(t.route) + 1, routesPerPage, 1 do
-            t.route[tostring(i)] = { visible = false, name = "" }
+        for i = TableLen(route) + 1, routesPerPage, 1 do
+            route[tostring(i)] = { visible = false, name = "" }
         end
 
-        stream.Write(serialize(t))
+        dataToScreen.Set("route", route)
+    end
+
+    function s.updateEditRouteData()
+        local editRoute = {
+            selectRouteName = "",
+            routeName = "",
+            points = {}
+        }
+
+        local routeNames = rc.GetRouteNames()
+        if #routeNames > 0 then
+            editRoute.selectRouteName = routeNames[editRouteIndex]
+        end
+
+        local editing = rc.CurrentEdit()
+        local pointsShown = 0
+
+        if editing then
+            editRoute.name = rc.CurrentEditName()
+            local points = editing.Points()
+            pointsShown = #points
+
+            for index, p in ipairs(points) do
+                local pointInfo = {
+                    visible = true,
+                    index = index,
+                    position = p.Pos()
+                }
+
+                if p.HasWaypointRef() then
+                    pointInfo.pointName = p.WaypointRef()
+                else
+                    pointInfo.pointName = "Anonymous pos."
+                end
+
+                editRoute.points[tostring(index)] = pointInfo
+            end
+        else
+            editRoute.name = "-"
+        end
+
+        -- Clear old data
+        for i = pointsShown + 1, editRouteMaxPoints, 1 do
+            editRoute.points[tostring(i)] = { visible = false }
+        end
+
+        dataToScreen.Set("editRoute", editRoute)
     end
 
     ---@param isTimedOut boolean
@@ -91,7 +165,7 @@ function SystemController.New(flightCore, settings)
         elseif not layoutSent then
             stream.Write(serialize({ screen_layout = deserialize(layout) }))
             stream.Write(serialize({ activate_page = "routeSelection" }))
-            sendRoutes(stream)
+            sendRoutes()
             layoutSent = true
         end
     end
@@ -142,20 +216,21 @@ function SystemController.New(flightCore, settings)
             ---@param value TelemeterResult
             function(_, value)
                 local floor = string.format("Hit: %s, distance: %0.2f, limit: %0.2f",
-                        tostring(value.Hit), value.Distance,
-                        settings.Get("autoShutdownFloorDistance"))
+                    tostring(value.Hit), value.Distance,
+                    settings.Get("autoShutdownFloorDistance"))
                 dataToScreen.Set("floor", floor)
             end)
 
-        local stream = Stream.New(screen, dataReceived, 1, onTimeout)
+        stream = Stream.New(screen, s.dataReceived, 1, onTimeout)
 
         while screen do
             coroutine.yield()
             stream.Tick()
 
             if not stream.WaitingToSend() then
-                if not routeTimer.IsRunning() or routeTimer.Elapsed() > 5 then
-                    sendRoutes(stream)
+                if not routeTimer.IsRunning() or routeTimer.Elapsed() > 2 then
+                    sendRoutes()
+                    s.updateEditRouteData()
                     routeTimer.Restart()
                 end
 

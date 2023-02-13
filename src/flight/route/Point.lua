@@ -30,7 +30,8 @@ function Point.New(pos, waypointRef, options)
     local wpRef = waypointRef
     local opt = options or PointOptions.New()
 
-    ---@return string A ::pos{} string
+    ---Returns the ::pos{} string
+    ---@return string
     function s.Pos()
         return position
     end

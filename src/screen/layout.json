@@ -31,6 +31,14 @@
         "change-page": {
             "font": "Play",
             "size": 14
+        },
+        "edit-route-point": {
+            "font": "Play",
+            "size": 14
+        },
+        "edit-route-next": {
+            "font": "Play",
+            "size": 30
         }
     },
     "styles": {
@@ -93,6 +101,18 @@
         "change-page": {
             "fill": "#ffffffff",
             "align": "h0,v1"
+        },
+        "edit-route-point": {
+            "fill": "#546263ff"
+        },
+        "edit-route-next": {
+            "fill": "#546263ff"
+        },
+        "hor-split": {
+            "stroke": {
+                "distance": 2,
+                "color": "#000000FF"
+            }
         }
     },
     "pages": {
@@ -517,13 +537,179 @@
                 {
                     "type": "text",
                     "layer": 1,
-                    "pos1": "(970,590)",
-                    "text": "<data>",
+                    "pos1": "(930,585)",
+                    "text": "Edit |",
+                    "style": "change-page",
+                    "font": "change-page",
+                    "mouse": {
+                        "click": {
+                            "command": "activatepage{routeEdit}"
+                        }
+                    }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "pos1": "(970,585)",
+                    "text": "Details",
                     "style": "change-page",
                     "font": "change-page",
                     "mouse": {
                         "click": {
                             "command": "activatepage{details}"
+                        }
+                    }
+                }
+            ]
+        },
+        "routeEdit": {
+            "components": [
+                {
+                    "comment": "background",
+                    "type": "box",
+                    "layer": 1,
+                    "style": "bkg-dark",
+                    "pos1": "(0,0)",
+                    "pos2": "(1024,613)"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "style": "edit-route-next",
+                    "font": "edit-route-next",
+                    "text": "<",
+                    "pos1": "(10,10)",
+                    "mouse": {
+                        "click": {
+                            "command": "#re-previous-route"
+                        }
+                    }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "style": "edit-route-next",
+                    "font": "edit-route-next",
+                    "text": ">",
+                    "pos1": "(50,10)",
+                    "mouse": {
+                        "click": {
+                            "command": "#re-next-route"
+                        }
+                    }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "font": "edit-route-next",
+                    "style": "edit-route-next",
+                    "pos1": "(80,10)",
+                    "text": "$str(path{editRoute:selectRouteName}:init{})"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "font": "edit-route-next",
+                    "style": "edit-route-next",
+                    "pos1": "(500,10)",
+                    "text": "[Edit]",
+                    "mouse": {
+                        "click": {
+                            "command": "$str(path{editRoute:selectRouteName}:format{route-edit '%s'}:init{})"
+                        }
+                    }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "font": "edit-route-next",
+                    "style": "edit-route-next",
+                    "pos1": "(570,10)",
+                    "text": "[Save]",
+                    "mouse": {
+                        "click": {
+                            "command": "route-save"
+                        }
+                    }
+                },
+                {
+                    "type": "line",
+                    "layer": 1,
+                    "style": "hor-split",
+                    "visible": true,
+                    "pos1": "(0,45)",
+                    "pos2": "(1024,45)"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "font": "edit-route-next",
+                    "style": "edit-route-next",
+                    "pos1": "(10,60)",
+                    "text": "$str(path{editRoute:name}:init{-}:format{Editing: %s})"
+                },
+                {
+                    "comment": "Point index",
+                    "type": "text",
+                    "layer": 1,
+                    "style": "edit-route-point",
+                    "font": "edit-route-point",
+                    "pos1": "(10, 95)",
+                    "text": "$num(path{editRoute/points/[#]:index}:init{0}:format{%0.f})",
+                    "visible": "$bool(path{editRoute/points/[#]:visible}:init{false})",
+                    "replicate": {
+                        "y_count": 10,
+                        "y_step": 16
+                    }
+                },
+                {
+                    "comment": "Remove position from route",
+                    "type": "text",
+                    "layer": 1,
+                    "style": "edit-route-point",
+                    "font": "edit-route-point",
+                    "pos1": "(30, 95)",
+                    "text": "[X]",
+                    "visible": "$bool(path{editRoute/points/[#]:visible}:init{false})",
+                    "mouse": {
+                        "click": {
+                            "command": "$num(path{editRoute/points/[#]:index}:init{0}:format{route-delete-pos %0.f})"
+                        }
+                    },
+                    "replicate": {
+                        "y_count": 10,
+                        "y_step": 16
+                    }
+                },
+                {
+                    "comment": "Point position string or waypoint name",
+                    "type": "text",
+                    "layer": 1,
+                    "style": "edit-route-point",
+                    "font": "edit-route-point",
+                    "pos1": "(60, 95)",
+                    "text": "$str(path{editRoute/points/[#]:pointName}:init{})",
+                    "visible": "$bool(path{editRoute/points/[#]:visible}:init{false})",
+                    "mouse": {
+                        "click": {
+                            "command": "$str(path{editRoute/points/[#]:position}:init{}:format{set-waypoint -notify '%s'})"
+                        }
+                    },
+                    "replicate": {
+                        "y_count": 10,
+                        "y_step": 16
+                    }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "pos1": "(960,585)",
+                    "text": "Routes",
+                    "style": "change-page",
+                    "font": "change-page",
+                    "mouse": {
+                        "click": {
+                            "command": "activatepage{routeSelection}"
                         }
                     }
                 }
@@ -559,7 +745,7 @@
                     "type": "text",
                     "layer": 1,
                     "pos1": "(960,590)",
-                    "text": "<routes>",
+                    "text": "Routes",
                     "style": "change-page",
                     "font": "change-page",
                     "mouse": {
