@@ -46,3 +46,8 @@ dev: minify_layout test
 
 release: minify_layout test
 	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=release/main
+
+release-ci: minify_layout test
+	jq 'del(.targets.development)' ./project.json > ./new_project.json
+	mv ./new_project.json ./project.json
+	@LUA_PATH="$(LUA_PATH)" du-lua build release/main
