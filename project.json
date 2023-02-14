@@ -20,7 +20,7 @@
       "slots": {}
     },
     "screen/main": {
-      "name": "screen/main",
+      "name": "screen/screen",
       "type": "screen",
       "slots": {}
     }
