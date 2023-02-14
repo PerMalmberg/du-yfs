@@ -6,9 +6,6 @@ jobs:
   Tests:
     runs-on: ubuntu-latest
     steps:
-    - name: Git config
-      run: |
-        git config --global url."git@github.com:".insteadOf "https://github.com/"
     - uses: actions/checkout@v3
       with:
         submodules: recursive
