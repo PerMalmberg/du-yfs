@@ -28,7 +28,7 @@ local settings = Settings.New(settingsDb)
 
 Task.New("Main", function()
     log:Info(APP_NAME)
-    log:Info("v", APP_VERSION)
+    log:Info(APP_VERSION)
 
     settingsDb.BeginLoad()
     routeDb.BeginLoad()
