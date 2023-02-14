@@ -74,9 +74,9 @@ describe("Route #flight", function()
     end)
 
     it("Can move points within the route", function()
-        local p1 = "::pos{0,2,1.0000,2.0000,3.0000}"
+        local p1 = "::pos{0,1,1.0000,2.0000,3.0000}"
         local p2 = "::pos{0,2,4.0000,5.0000,6.0000}"
-        local p3 = "::pos{0,2,7.0000,8.0000,9.0000}"
+        local p3 = "::pos{0,3,7.0000,8.0000,9.0000}"
         local r = Route.New()
         assert.is_not_nil(r.AddPos(p1))
         assert.is_not_nil(r.AddPos(p2))
@@ -92,19 +92,24 @@ describe("Route #flight", function()
         assert.False(r.MovePoint(1, 1))
 
         assert.True(r.MovePoint(1, 2))
-        assert.Equal(p1, r.Points()[1].Pos())
-        assert.Equal(p2, r.Points()[2].Pos())
-        assert.Equal(p3, r.Points()[3].Pos())
-
-        assert.True(r.MovePoint(1, 3))
         assert.Equal(p2, r.Points()[1].Pos())
         assert.Equal(p1, r.Points()[2].Pos())
         assert.Equal(p3, r.Points()[3].Pos())
 
+        assert.True(r.MovePoint(1, 3))
+        assert.Equal(p1, r.Points()[1].Pos())
+        assert.Equal(p3, r.Points()[2].Pos())
+        assert.Equal(p2, r.Points()[3].Pos())
+
         assert.True(r.MovePoint(3, 1))
-        assert.Equal(p3, r.Points()[1].Pos())
+        assert.Equal(p2, r.Points()[1].Pos())
+        assert.Equal(p1, r.Points()[2].Pos())
+        assert.Equal(p3, r.Points()[3].Pos())
+
+        assert.True(r.MovePoint(2, 1))
+        assert.Equal(p1, r.Points()[1].Pos())
         assert.Equal(p2, r.Points()[2].Pos())
-        assert.Equal(p1, r.Points()[3].Pos())
+        assert.Equal(p3, r.Points()[3].Pos())
     end)
 
     it("Can calculate the remaining info", function()
@@ -130,7 +135,6 @@ describe("Route #flight", function()
     end)
 
     it("Can calculate the remaining info with just one remaining", function()
-
         local p1 = "::pos{0,2,49.9329,160.4477,50.3507}"
         local p2 = "::pos{0,2,49.9337,160.4739,50.3034}"
         local r = Route.New()

@@ -231,22 +231,42 @@ function ControlCommands.New(input, cmd, flightCore)
             end
         end).AsNumber().Mandatory()
 
+    ---@param from integer
+    ---@param to integer
+    local function movePoint(from, to)
+        local route = rc.CurrentEdit()
+        if route == nil then
+            log:Error("No route open for edit")
+        else
+            if route.MovePoint(from, to) then
+                log:Info("Point moved:", from, " -> ", to)
+            else
+                log:Error("Could not move point")
+            end
+        end
+    end
+
     local movePos = cmd.Accept("route-move-pos",
         ---@param data {from:number, to:number}
         function(data)
-            local route = rc.CurrentEdit()
-            if route == nil then
-                log:Error("No route open for edit")
-            else
-                if route.MovePoint(data.from, data.to) then
-                    log:Info("Point moved")
-                else
-                    log:Error("Could not move point")
-                end
-            end
+            movePoint(data.from, data.to)
         end)
     movePos.Option("from").AsNumber().Mandatory()
     movePos.Option("to").AsNumber().Mandatory()
+
+    cmd.Accept("route-move-pos-forward",
+        ---@param data {commandValue:number}
+        function(data)
+            local ix = data.commandValue
+            movePoint(ix, ix + 1)
+        end).AsNumber().Mandatory()
+
+    cmd.Accept("route-move-pos-back",
+        ---@param data {commandValue:number}
+        function(data)
+            local ix = data.commandValue
+            movePoint(ix, ix - 1)
+        end).AsNumber().Mandatory()
 
     cmd.Accept("route-set-all-margins",
         ---@param data {commandValue:number}

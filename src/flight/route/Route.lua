@@ -4,11 +4,12 @@
     and that doesn't pass through a planetary body. Extra points are not persisted.
 ]]
 --
-local vehicle  = require("abstraction/Vehicle"):New()
-local calc     = require("util/Calc")
-local log      = require("debug/Log")()
-local universe = require("universe/Universe").Instance()
-local Point    = require("flight/route/Point")
+local vehicle    = require("abstraction/Vehicle"):New()
+local calc       = require("util/Calc")
+local log        = require("debug/Log")()
+local universe   = require("universe/Universe").Instance()
+local Point      = require("flight/route/Point")
+local pagination = require("util/Pagination")
 require("util/Table")
 
 ---@alias RouteRemainingInfo {Legs:integer, TotalDistance:number}
@@ -152,13 +153,9 @@ function Route.New()
     function s.MovePoint(from, to)
         if not checkBounds(from) or not checkBounds(to) or to == from then return false end
 
-        table.insert(points, to, points[from])
+        local v = table.remove(points, from)
+        table.insert(points, to, v)
 
-        if from > to then
-            from = from + 1
-        end
-
-        table.remove(points, from)
         return true
     end
 
@@ -191,31 +188,13 @@ function Route.New()
     ---@param perPage integer
     ---@return Point[]
     function s.GetPointPage(page, perPage)
-        local all = s.Points()
-
-        if #all == 0 then return {} end
-
-        local totalPages = math.ceil(#all / perPage)
-        page = calc.Clamp(page, 1, totalPages)
-
-        local startIx = (page - 1) * perPage + 1
-        local endIx = startIx + perPage - 1
-
-        local res = {} ---@type Point[]
-        local ix = 1
-
-        for i = startIx, endIx, 1 do
-            res[ix] = all[i]
-            ix = ix + 1
-        end
-
-        return res
+        return pagination.Paginate(s.Points(), page, perPage)
     end
 
     ---@param perPage integer
     ---@return integer
     function s.GetPageCount(perPage)
-        return math.ceil(#s.Points() / perPage)
+        return pagination.GetPageCount(s.Points(), perPage)
     end
 
     return setmetatable(s, Route)

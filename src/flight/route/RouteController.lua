@@ -5,6 +5,7 @@ local universe     = require("universe/Universe").Instance()
 local calc         = require("util/Calc")
 local PointOptions = require("flight/route/PointOptions")
 local vehicle      = require("abstraction/Vehicle").New()
+local pagination   = require("util/Pagination")
 local Current      = vehicle.position.Current
 local Forward      = vehicle.orientation.Forward
 require("util/Table")
@@ -37,6 +38,8 @@ require("util/Table")
 ---@field Count fun():integer
 ---@field ActiveRouteName fun():string|nil
 ---@field ActivateHoldRoute fun(pos:Vec3?, holdDirection:Vec3?)
+---@field GetWaypointPage fun(page:integer, perPage:integer):NamedWaypoint[]
+---@field GetWaypointPages fun(perPage:integer):integer
 
 local RouteController = {}
 RouteController.__index = RouteController
@@ -83,31 +86,26 @@ function RouteController.Instance(bufferedDB)
     ---@param perPage integer
     ---@return string[]
     function s.GetRoutePage(page, perPage)
-        local all = s.GetRouteNames()
-
-        if #all == 0 then return {} end
-
-        local totalPages = math.ceil(#all / perPage)
-        page = calc.Clamp(page, 1, totalPages)
-
-        local startIx = (page - 1) * perPage + 1
-        local endIx = startIx + perPage - 1
-
-        local res = {} ---@type string[]
-        local ix = 1
-
-        for i = startIx, endIx, 1 do
-            res[ix] = all[i]
-            ix = ix + 1
-        end
-
-        return res
+        return pagination.Paginate(s.GetRouteNames(), page, perPage)
     end
 
     ---@param perPage integer
     ---@return integer
     function s.GetPageCount(perPage)
-        return math.ceil(#s.GetRouteNames() / perPage)
+        return pagination.GetPageCount(s.GetRouteNames(), perPage)
+    end
+
+    ---@param page integer
+    ---@param perPage integer
+    ---@return NamedWaypoint[]
+    function s.GetWaypointPage(page, perPage)
+        return pagination.Paginate(s.GetWaypoints(), page, perPage)
+    end
+
+    ---@param perPage integer
+    ---@return integer
+    function s.GetWaypointPages(perPage)
+        return pagination.GetPageCount(s.GetWaypoints(), perPage)
     end
 
     ---Returns the number of routes

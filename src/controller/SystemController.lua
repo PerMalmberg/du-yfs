@@ -60,13 +60,15 @@ function SystemController.New(flightCore, settings)
     local talents = ContainerTalents.New(0, 0, 0, 0, 0, 0)
     local routePage = 1
     local routesPerPage = 5
+    local waypointPage = 1
+    local waypointsPerPage = 10
 
     local stream ---@type Stream -- forward declared
 
     local routeEditorPrefix = "#re-"
 
     local editRouteIndex = 1
-    local editRouteMaxPoints = 10
+    local editRoutePointsPerPage = 10
 
     local editPointPage = 1
     pub.RegisterBool("RouteOpenedForEdit", function(_, _)
@@ -75,7 +77,6 @@ function SystemController.New(flightCore, settings)
 
     ---@param cmd string
     function s.runRouteEditorCommand(cmd)
-        system.print(cmd)
         if cmd == "previous-route" then
             editRouteIndex = max(1, editRouteIndex - 1)
         elseif cmd == "next-route" then
@@ -88,8 +89,12 @@ function SystemController.New(flightCore, settings)
         elseif cmd == "next-point-page" then
             local r = rc.CurrentEdit()
             if r then
-                editPointPage = min(editPointPage + 1, r.GetPageCount(editRouteMaxPoints))
+                editPointPage = min(editPointPage + 1, r.GetPageCount(editRoutePointsPerPage))
             end
+        elseif cmd == "prev-wp-page" then
+            waypointPage = max(1, waypointPage - 1)
+        elseif cmd == "next-wp-page" then
+            waypointPage = min(waypointPage + 1, rc.GetWaypointPages(waypointsPerPage))
         end
 
         s.updateEditRouteData()
@@ -143,13 +148,13 @@ function SystemController.New(flightCore, settings)
 
         if editing then
             editRoute.name = rc.CurrentEditName()
-            local points = editing.GetPointPage(editPointPage, editRouteMaxPoints)
+            local points = editing.GetPointPage(editPointPage, editRoutePointsPerPage)
             pointsShown = #points
 
             for index, p in ipairs(points) do
                 local pointInfo = {
                     visible = true,
-                    index = index + (editPointPage - 1) * editRouteMaxPoints,
+                    index = index + (editPointPage - 1) * editRoutePointsPerPage,
                     position = p.Pos()
                 }
 
@@ -166,11 +171,28 @@ function SystemController.New(flightCore, settings)
         end
 
         -- Clear old data
-        for i = pointsShown + 1, editRouteMaxPoints, 1 do
+        for i = pointsShown + 1, editRoutePointsPerPage, 1 do
             editRoute.points[tostring(i)] = { visible = false }
         end
 
         dataToScreen.Set("editRoute", editRoute)
+
+        local availableWaypoints = {}
+
+        local waypoints = rc.GetWaypointPage(waypointPage, waypointsPerPage)
+        for index, p in ipairs(waypoints) do
+            availableWaypoints[tostring(index)] = {
+                visible = true,
+                name = p.name,
+                pos = p.point.Pos()
+            }
+        end
+
+        for i = #waypoints + 1, waypointsPerPage, 1 do
+            availableWaypoints[tostring(i)] = { visible = false }
+        end
+
+        dataToScreen.Set("availableWaypoints", availableWaypoints)
     end
 
     ---@param isTimedOut boolean
