@@ -119,6 +119,7 @@ function ControlCommands.New(input, cmd, flightCore)
         ---@param data {commandValue:string}
         function(data)
             if rc.EditRoute(data.commandValue) then
+                pub.Publish("RouteOpenedForEdit", true)
                 log:Info("Route open for edit")
             end
         end).AsString()
@@ -132,6 +133,10 @@ function ControlCommands.New(input, cmd, flightCore)
     cmd.Accept("route-save", function(data)
         rc.SaveRoute()
     end).AsEmpty()
+
+    cmd.Accept("route-discard", function(data)
+        rc.Discard()
+    end)
 
     cmd.Accept("route-delete",
         ---@param data {commandValue:string}

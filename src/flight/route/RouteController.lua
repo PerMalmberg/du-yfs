@@ -33,6 +33,7 @@ require("util/Table")
 ---@field CreateRoute fun(name:string):Route|nil
 ---@field ReverseRoute fun():boolean
 ---@field SaveRoute fun():boolean
+---@field Discard fun()
 ---@field Count fun():integer
 ---@field ActiveRouteName fun():string|nil
 ---@field ActivateHoldRoute fun(pos:Vec3?, holdDirection:Vec3?)
@@ -479,6 +480,17 @@ function RouteController.Instance(bufferedDB)
         end
 
         return res
+    end
+
+    ---Discards and currently made changes and closes the edited route
+    function s.Discard()
+        if edit and editName ~= nil then
+            edit = nil
+            editName = nil
+            log:Info("All changes discarded.")
+        else
+            log:Error("No route currently opened for edit, nothing to discard.")
+        end
     end
 
     ---Reverses the route currently being edited

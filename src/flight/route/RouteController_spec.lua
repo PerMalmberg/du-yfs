@@ -27,7 +27,7 @@ describe("RouteController #flight", function()
     dataBank.getStringValue.on_call_with(RouteController.NAMED_POINTS).returns({})
 
     local db = BufferedDB.New(dataBank)
-    db:BeginLoad()
+    db.BeginLoad()
     local c = RouteController.Instance(db)
 
     while not db:IsLoaded() do
@@ -43,7 +43,6 @@ describe("RouteController #flight", function()
         assert.are_equal("a", c.GetWaypoints()[1].name)
         assert.are_equal("b", c.GetWaypoints()[2].name)
         assert.are_equal("c", c.GetWaypoints()[3].name)
-
     end)
 
     it("Can load routes with waypoints in it", function()
@@ -133,7 +132,6 @@ describe("RouteController #flight", function()
     end)
 
     it("Can reverse a route, save it and load it again, then restore normal order", function()
-
         local startPos = universe.ParsePosition("::pos{0,2,49.9336,160.4417,50.3573}")
         ConstructMock.Instance().SetContructPostion(startPos.Coordinates())
 
@@ -266,4 +264,21 @@ describe("RouteController #flight", function()
         ConstructMock.Instance().ResetContructPostion()
     end)
 
+    it("Can discard changes to a route", function()
+        assert.is_true(c.StoreWaypoint("a point", "::pos{0,2,2.9093,65.4697,34.7070}"))
+        assert.is_true(c.StoreWaypoint("a second point", "::pos{0,2,2.9093,65.4697,34.7070}"))
+        local r = c.CreateRoute("to be discarded")
+        local p = r.AddWaypointRef("a point")
+        assert.is_not_nil(p)
+        assert.is_true(c.SaveRoute())
+        r = c.EditRoute("to be discarded")
+        assert.is_not_nil(r)
+        assert.are_equal(1, #r.Points())
+        r.RemovePoint(1)
+        assert.are_equal(0, #r.Points())
+        c.Discard()
+        r = c.EditRoute("to be discarded")
+        assert.is_not_nil(r)
+        assert.are_equal(1, #r.Points())
+    end)
 end)

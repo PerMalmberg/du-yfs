@@ -64,8 +64,14 @@ function SystemController.New(flightCore, settings)
     local stream ---@type Stream -- forward declared
 
     local routeEditorPrefix = "#re-"
+
     local editRouteIndex = 1
     local editRouteMaxPoints = 10
+
+    local editPointPage = 1
+    pub.RegisterBool("RouteOpenedForEdit", function(_, _)
+        editPointPage = 1
+    end)
 
     ---@param cmd string
     function s.runRouteEditorCommand(cmd)
@@ -74,6 +80,16 @@ function SystemController.New(flightCore, settings)
             editRouteIndex = max(1, editRouteIndex - 1)
         elseif cmd == "next-route" then
             editRouteIndex = min(#rc.GetRouteNames(), editRouteIndex + 1)
+        elseif cmd == "prev-point-page" then
+            local r = rc.CurrentEdit()
+            if r then
+                editPointPage = max(1, editPointPage - 1)
+            end
+        elseif cmd == "next-point-page" then
+            local r = rc.CurrentEdit()
+            if r then
+                editPointPage = min(editPointPage + 1, r.GetPageCount(editRouteMaxPoints))
+            end
         end
 
         s.updateEditRouteData()
@@ -127,13 +143,13 @@ function SystemController.New(flightCore, settings)
 
         if editing then
             editRoute.name = rc.CurrentEditName()
-            local points = editing.Points()
+            local points = editing.GetPointPage(editPointPage, editRouteMaxPoints)
             pointsShown = #points
 
             for index, p in ipairs(points) do
                 local pointInfo = {
                     visible = true,
-                    index = index,
+                    index = index + (editPointPage - 1) * editRouteMaxPoints,
                     position = p.Pos()
                 }
 

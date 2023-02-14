@@ -633,12 +633,51 @@
                     }
                 },
                 {
+                    "type": "text",
+                    "layer": 1,
+                    "font": "edit-route-next",
+                    "style": "edit-route-next",
+                    "pos1": "(640,10)",
+                    "text": "[Discard]",
+                    "mouse": {
+                        "click": {
+                            "command": "route-discard"
+                        }
+                    }
+                },
+                {
                     "type": "line",
                     "layer": 1,
                     "style": "hor-split",
                     "visible": true,
                     "pos1": "(0,45)",
                     "pos2": "(1024,45)"
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "font": "edit-route-next",
+                    "style": "edit-route-next",
+                    "pos1": "(400,50)",
+                    "text": "[Up]",
+                    "mouse": {
+                        "click": {
+                            "command": "#re-prev-point-page"
+                        }
+                    }
+                },
+                {
+                    "type": "text",
+                    "layer": 1,
+                    "font": "edit-route-next",
+                    "style": "edit-route-next",
+                    "pos1": "(400,75)",
+                    "text": "[Down]",
+                    "mouse": {
+                        "click": {
+                            "command": "#re-next-point-page"
+                        }
+                    }
                 },
                 {
                     "type": "text",
