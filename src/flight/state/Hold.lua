@@ -5,7 +5,7 @@ local log = require("debug/Log")()
 
 
 ---@class Hold
----@field New fun(fsm:FlightFSM)
+---@field New fun(fsm:FlightFSM):FlightState
 ---@field Enter fun()
 ---@field Leave fun()
 ---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)
@@ -20,7 +20,7 @@ local name = "Hold"
 
 ---Creates a new Hold state
 ---@param fsm FlightFSM
----@return Hold
+---@return FlightState
 function Hold.New(fsm)
     local s = {
         isLastWaypoint = false
