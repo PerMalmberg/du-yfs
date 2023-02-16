@@ -1,14 +1,12 @@
 local log              = require("debug/Log")()
-local PointOptions     = require("flight/route/PointOptions")
 local RouteController  = require("flight/route/RouteController")
 local BufferedDB       = require("storage/BufferedDB")
 local FlightFSM        = require("flight/FlightFSM")
 local FlightCore       = require("flight/FlightCore")
 local SystemController = require("controller/SystemController")
 local Settings         = require("Settings")
-local Forward          = require("abstraction/Vehicle").New().orientation.Forward
 local floorDetector    = require("controller/FloorDetector").Instance()
-require("version_out")
+local ver              = require("version_out")
 
 log:SetLevel(log.LogLevel.WARNING)
 
@@ -27,8 +25,8 @@ local routeDb = BufferedDB.New(routeLink)
 local settings = Settings.New(settingsDb)
 
 Task.New("Main", function()
-    log:Info(APP_NAME)
-    log:Info(APP_VERSION)
+    log:Info(ver.APP_NAME)
+    log:Info(ver.GIT_INFO, "/", ver.DATE_INFO)
 
     settingsDb.BeginLoad()
     routeDb.BeginLoad()
@@ -54,7 +52,6 @@ Task.New("Main", function()
     else
         fsm.SetState(Idle.New(fsm))
     end
-
 end).Then(function()
     log:Info("Ready.")
 end).Catch(function(t)

@@ -1,50 +1,29 @@
-local Container        = require("element/Container")
-local ContainerTalents = require("element/ContainerTalents")
-local ControlCommands  = require("controller/ControlCommands")
-local Stopwatch        = require("system/Stopwatch")
-local Task             = require("system/Task")
-local ValueTree        = require("util/ValueTree")
-local InfoCentral      = require("info/InfoCentral")
-local floorDetector    = require("controller/FloorDetector").Instance()
-local log              = require("debug/Log")()
-local commandLine      = require("commandline/CommandLine").Instance()
-local pub              = require("util/PubSub").Instance()
-local input            = require("input/Input").Instance()
-local Vec2             = require("native/Vec2")
-local layout           = library.embedFile("../screen/layout_min.json")
-local Stream           = require("Stream")
-local json             = require("dkjson")
-local calc             = require("util/Calc")
-local su               = require("util/StringUtil")
-local max              = math.max
-local min              = math.min
-local distanceFormat   = require("util/DistanceFormat")
-local massFormat       = require("util/MassFormat")
-local TotalMass        = require("abstraction/Vehicle").New().mass.Total
-
----@param t table
----@return string
-local function serialize(t)
-    coroutine.yield()
-    local r = json.encode(t)
-    coroutine.yield()
-    ---@cast r string
-    return r
-end
-
----@param s string
----@return table|nil
-local function deserialize(s)
-    coroutine.yield()
-    local d = json.decode(s)
-    coroutine.yield()
-    ---@cast d table
-    return d
-end
+local Container          = require("element/Container")
+local ContainerTalents   = require("element/ContainerTalents")
+local ControlCommands    = require("controller/ControlCommands")
+local Stopwatch          = require("system/Stopwatch")
+local Task               = require("system/Task")
+local ValueTree          = require("util/ValueTree")
+local InfoCentral        = require("info/InfoCentral")
+local floorDetector      = require("controller/FloorDetector").Instance()
+local log                = require("debug/Log")()
+local commandLine        = require("commandline/CommandLine").Instance()
+local pub                = require("util/PubSub").Instance()
+local input              = require("input/Input").Instance()
+local Vec2               = require("native/Vec2")
+local layout             = require("screen/layout")
+local Stream             = require("Stream")
+local calc               = require("util/Calc")
+local su                 = require("util/StringUtil")
+local max                = math.max
+local min                = math.min
+local distanceFormat     = require("util/DistanceFormat")
+local massFormat         = require("util/MassFormat")
+local TotalMass          = require("abstraction/Vehicle").New().mass.Total
 
 ---@class SystemController
 
-local SystemController = {}
+local SystemController   = {}
 SystemController.__index = SystemController
 
 ---@param flightCore FlightCore
@@ -102,7 +81,6 @@ function SystemController.New(flightCore, settings)
 
     function s.dataReceived(data)
         -- Publish data to system
-        data = deserialize(data)
         if data == nil then return end
         local command = data["mouse_click"]
         if command ~= nil then
@@ -201,8 +179,8 @@ function SystemController.New(flightCore, settings)
         if isTimedOut then
             layoutSent = false
         elseif not layoutSent then
-            stream.Write(serialize({ screen_layout = deserialize(layout) }))
-            stream.Write(serialize({ activate_page = "routeSelection" }))
+            stream.Write({ screen_layout = layout })
+            stream.Write({ activate_page = "routeSelection" })
             sendRoutes()
             layoutSent = true
         end
@@ -276,11 +254,7 @@ function SystemController.New(flightCore, settings)
                 local data = dataToScreen.Pick()
                 -- Send data to screen
                 if data then
-                    local ser = json.encode(data)
-                    if ser then
-                        --- @cast ser string
-                        stream.Write(ser)
-                    end
+                    stream.Write(data)
                 else
                     stream.Write('{"keepalive": ""}')
                 end

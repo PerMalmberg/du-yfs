@@ -1,2 +1,5 @@
-APP_NAME = "Yoarii's Flight System"
-APP_VERSION = "GITINFO / DATEINFO"
+return {
+    APP_NAME = "Yoarii's Flight System",
+    GIT_INFO = "GITINFO",
+    DATE_INFO = "DATEINFO"
+}

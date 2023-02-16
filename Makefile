@@ -30,9 +30,7 @@ clean_report:
 clean: clean_cov clean_report
 	@rm -rf out
 
-minify_layout:
-	@jq -c . ./src/screen/layout.json > ./src/screen/layout_min.json
-	@jq -c . ./src/screen/offline.json > ./src/screen/offline_min.json
+update_version:
 	@./update_version_info.sh
 
 
@@ -41,13 +39,13 @@ test: clean
 	@luacov
 	@$(CLEAN_COV)
 
-dev: minify_layout test
+dev: update_version test
 	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=development/main
 
-release: minify_layout test
+release: update_version test
 	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=release/main
 
-release-ci: minify_layout test
+release-ci: update_version test
 	jq 'del(.targets.development)' ./project.json > ./new_project.json
 	mv ./new_project.json ./project.json
 	@LUA_PATH="$(LUA_PATH)" du-lua build release/main

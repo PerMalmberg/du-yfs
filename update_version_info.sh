@@ -6,7 +6,7 @@ date_info=$(date +'%Y%m%d %R')
 
 cp ./src/version.lua ./src/version_out.lua
 
-files=("./src/screen/layout_min.json" "./src/screen/offline_min.json" "./src/version_out.lua")
+files=("./src/version_out.lua")
 for f in ${files[@]}
 do
     sed -i "s/GITINFO/${git_info}/g" ${f}
