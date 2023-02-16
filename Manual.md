@@ -167,3 +167,7 @@ Each construct has a max cargo mass it is rated for. If you load the construct w
 | When reaching higher atmosphere it may slow down, stop, and start falling. | Engines not being powerful enough, and/or the thin atmosphere causing too much reduction in power                |
 
 Should you end up in these situations, it is easiest to just disable the controller, and let it fall back down a bit then activate it again. It will then attempt to hold the position it was at when it was started, i.e. brake and activate engines to counter the fall. You can repeat this until you're at an height the engines work again. Having said that, an overloaded ship is still overloaded and bad things are likely to happen.
+
+## Accuracy
+
+The aim is 0.1m accuracy and this is also the default for the all movements. However, during movement, depending on various factors such as engine choice, mass and talents, the construct may go off the path slightly. There is a failsafe that triggers if the nearest point on the path is more than 0.5m away, in which case the construct will calculate the point at which it went off the path and try to return to that point before continuing the route. If you want to override this behavior, you can reactivate the route again which will make the construct move to the closest point on the path from where where it is when you activate the route. This may save some travel distance.

@@ -2,7 +2,7 @@ local Stopwatch = require("system/Stopwatch")
 local Waypoint = require("flight/Waypoint")
 
 ---@class ReturnToPath
----@field New fun(fsm:FlightFSM, returnPoint:Vec3)
+---@field New fun(fsm:FlightFSM, returnPoint:Vec3):FlightState
 ---@field Enter fun()
 ---@field Leave fun()
 ---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)
@@ -16,7 +16,7 @@ local name = "ReturnToPath"
 ---Creates a new ReturnPath
 ---@param fsm FlightFSM
 ---@param returnPoint Vec3
----@return ReturnToPath
+---@return FlightState
 function ReturnToPath.New(fsm, returnPoint)
     local s = {}
     local temporaryWP = nil ---@type Waypoint|nil

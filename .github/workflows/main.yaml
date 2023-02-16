@@ -1,0 +1,28 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  Tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        token: ${{ secrets.REPO_TOKEN }}
+    - name: Install tools
+      run: |
+        set -e -o pipefail
+        ./external/du-libs/external/du-unit-testing/install_tools.sh
+        ./install_tools.sh
+    - name: Run CI Tests
+      run: |
+        make release-ci
+    - name: Release
+      uses: softprops/action-gh-release@v0.1.15
+      with:
+        files: |
+          out/release/**
+        fail_on_unmatched_files: true
+      if: startsWith(github.ref, 'refs/tags/')
+

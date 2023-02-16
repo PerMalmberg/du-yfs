@@ -5,7 +5,7 @@ local Current = vehicle.position.Current
 local Forward = vehicle.orientation.Forward
 
 ---@class Idle
----@field New fun(fsm:FlightFSM)
+---@field New fun(fsm:FlightFSM):FlightState
 ---@field Enter fun()
 ---@field Leave fun()
 ---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)
@@ -20,7 +20,7 @@ local name    = "Idle"
 
 ---Creates a new Idle state
 ---@param fsm FlightFSM
----@return Idle
+---@return FlightState
 function Idle.New(fsm)
     local s = {}
 

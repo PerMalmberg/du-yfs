@@ -3,7 +3,7 @@ local vehicle = r.vehicle
 local CurrentPos = vehicle.position.Current
 
 ---@class Travel
----@field New fun(fsm:FlightFSM)
+---@field New fun(fsm:FlightFSM):FlightState
 
 local Travel = {}
 Travel.__index = Travel
@@ -12,7 +12,7 @@ local name = "Travel"
 
 ---Creates a new Travel state
 ---@param fsm FlightFSM
----@return Travel
+---@return FlightState
 function Travel.New(fsm)
     local s = {}
 
