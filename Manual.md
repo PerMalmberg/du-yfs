@@ -168,3 +168,12 @@ Should you end up in these situations, it is easiest to just disable the control
 ## Accuracy
 
 The aim is 0.1m accuracy and this is also the default for the all movements. However, during movement, depending on various factors such as engine choice, mass and talents, the construct may go off the path slightly. There is a failsafe that triggers if the nearest point on the path is more than 0.5m away, in which case the construct will calculate the point at which it went off the path and try to return to that point before continuing the route. If you want to override this behavior, you can reactivate the route again which will make the construct move to the closest point on the path from where where it is when you activate the route. This may save some travel distance.
+
+### Non gravity-aligned planet approaches
+
+While it is possible to make routes that are not gravity aligned work, they may be somewhat unreliable, especially when the construct is heavy. In short, this is due to how atmospheric brakes function.
+
+Quote from NQ-support:
+> The speed is projected on the horizontal plane of the construct. And we add a brake force in that plane in the opposite direction of that projected speed, which induces a vertical force when the ship has a pitch.
+
+While this states "vertical force", testing has shown that during a near-vertical movements, every time brake is activated a horizontal force is induced which causes the construct to be pushed off the path. The easiest way to work around this is to ensure that the entry to the planet is aligned with the gravity vector by adding an extra point in the route outside the atmosphere directly above the point inside the atmosphere (see `pos-create-along-gravity`). Other options are lighter loads or slower speeds.
