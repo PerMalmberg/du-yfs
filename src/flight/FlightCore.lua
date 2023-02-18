@@ -5,7 +5,9 @@ local vehicle = r.vehicle
 local pub = require("util/PubSub").Instance()
 local Stopwatch = require("system/Stopwatch")
 local Current = vehicle.position.Current
+local GravityDirection = vehicle.world.GravityDirection
 local calc = r.calc
+local abs = math.abs
 local Ternary = r.calc.Ternary
 local Vec3 = r.Vec3
 local nullVec = Vec3.New()
@@ -102,6 +104,8 @@ function FlightCore.New(routeController, flightFSM)
 
         previousWaypoint = currentWaypoint
         currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached())
+
+        currentWaypoint.SetPrecisionMode(abs(currentWaypoint:DirectionTo():Dot(GravityDirection())) > 0.9)
     end
 
     ---Starts the flight
@@ -136,7 +140,7 @@ function FlightCore.New(routeController, flightFSM)
     function s.AlignTo(point)
         if currentWaypoint then
             local current = vehicle.position.Current()
-            local pointOnPlane = calc.ProjectPointOnPlane(-universe.VerticalReferenceVector(), current, point)
+            local pointOnPlane = calc.ProjectPointOnPlane( -universe.VerticalReferenceVector(), current, point)
             local dir = (pointOnPlane - current):NormalizeInPlace()
             currentWaypoint.LockDirection(dir, true)
         end
