@@ -60,7 +60,7 @@ SystemController.__index = SystemController
 function SystemController.New(flightCore, settings)
     local s = {}
     local layoutSent = false
-    local commands = ControlCommands.New(input, commandLine, flightCore)
+    local commands = ControlCommands.New(input, commandLine, flightCore, settings)
     local info = InfoCentral.Instance()
     local rc = flightCore.GetRouteController()
     local dataToScreen = ValueTree.New()
@@ -142,8 +142,8 @@ function SystemController.New(flightCore, settings)
             ---@param value TelemeterResult
             function(_, value)
                 local floor = string.format("Hit: %s, distance: %0.2f, limit: %0.2f",
-                        tostring(value.Hit), value.Distance,
-                        settings.Get("autoShutdownFloorDistance"))
+                    tostring(value.Hit), value.Distance,
+                    settings.Number("autoShutdownFloorDistance"))
                 dataToScreen.Set("floor", floor)
             end)
 

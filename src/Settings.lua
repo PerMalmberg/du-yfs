@@ -10,6 +10,7 @@ require("util/Table")
 ---@field RegisterCallback fun(key:string, f:fun(any))
 ---@field Reload fun()
 ---@field Get fun(key:string, default:any?):string|number|table|nil
+---@field Number fun(key:string, default:any?):number
 
 local singleton
 local Settings = {}
@@ -47,6 +48,7 @@ function Settings.New(db)
     }
 
     local pidValues = yfsConstants.flight.speedPid
+    local routeDefaults = yfsConstants.route
     ---@type {default:string|number|boolean}
     local settings = {
         engineWarmup = { default = 1 },
@@ -54,9 +56,10 @@ function Settings.New(db)
         speedi = { default = pidValues.i },
         speedd = { default = pidValues.d },
         speeda = { default = pidValues.a },
-        autoShutdownFloorDistance = { default = 5 },
-        yawAlignmentThrustLimiter = { default = 1 },
-        showWidgetsOnStart = { default = false },
+        autoShutdownFloorDistance = { default = routeDefaults.autoShutdownFloorDistance },
+        yawAlignmentThrustLimiter = { default = routeDefaults.yawAlignmentThrustLimiter },
+        routeStartDistanceLimit = { default = routeDefaults.routeStartDistanceLimit },
+        showWidgetsOnStart = { default = yfsConstants.widgets.showOnStart },
     }
 
     for k, v in pairs(containerSettings) do
@@ -146,6 +149,15 @@ function Settings.New(db)
         return db.Get(key, default)
     end
 
+    ---@param key string
+    ---@param default number
+    ---@return number
+    function s.Number(key, default)
+        local v = s.Get(key, default)
+        ---@cast v number
+        return v
+    end
+
     function s.Reload()
         for key, _ in pairs(settings) do
             local stored = s.Get(key)
@@ -155,7 +167,6 @@ function Settings.New(db)
 
     singleton = setmetatable(s, Settings)
     return singleton
-
 end
 
 return Settings

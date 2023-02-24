@@ -22,8 +22,15 @@ local constants = {
             d = 100,
             a = 0.99
         }
+    },
+    route = {
+        routeStartDistanceLimit = 10, -- meters
+        autoShutdownFloorDistance = 5, -- meters
+        yawAlignmentThrustLimiter = 1 -- degrees
+    },
+    widgets = {
+        showOnStart = false
     }
-
 }
 
 return constants
