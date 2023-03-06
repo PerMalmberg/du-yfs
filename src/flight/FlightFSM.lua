@@ -76,29 +76,52 @@ function FlightFSM.New(settings, routeController)
 
     local normalModeGroup = {
         thrust = {
-            engines = EngineGroup(thrustTag, airfoil), prio1Tag = airfoil, prio2Tag = thrustTag, prio3Tag = "",
+            engines = EngineGroup(thrustTag, airfoil),
+            prio1Tag = airfoil,
+            prio2Tag = thrustTag,
+            prio3Tag = "",
             antiG = antiG
         },
         adjust = { engines = EngineGroup(), prio1Tag = "", prio2Tag = "", prio3Tag = "", antiG = noAntiG }
     }
 
     local forwardGroup = {
-        thrust = { engines = EngineGroup(longitudinal), prio1Tag = thrustTag, prio2Tag = "", prio3Tag = "",
-            antiG = noAntiG },
-        adjust = { engines = EngineGroup(airfoil, lateral, vertical), prio1Tag = airfoil, prio2Tag = lateral,
-            prio3Tag = vertical, antiG = antiG }
+        thrust = {
+            engines = EngineGroup(longitudinal),
+            prio1Tag = thrustTag,
+            prio2Tag = "",
+            prio3Tag = "",
+            antiG = noAntiG
+        },
+        adjust = {
+            engines = EngineGroup(airfoil, lateral, vertical),
+            prio1Tag = airfoil,
+            prio2Tag = lateral,
+            prio3Tag = vertical,
+            antiG = antiG
+        }
     }
 
     local rightGroup = {
         thrust = { engines = EngineGroup(lateral), prio1Tag = thrustTag, prio2Tag = "", prio3Tag = "", antiG = noAntiG },
-        adjust = { engines = EngineGroup(vertical, longitudinal), prio1Tag = vertical, prio2Tag = longitudinal,
-            prio3Tag = "", antiG = antiG }
+        adjust = {
+            engines = EngineGroup(vertical, longitudinal),
+            prio1Tag = vertical,
+            prio2Tag = longitudinal,
+            prio3Tag = "",
+            antiG = antiG
+        }
     }
 
     local upGroup = {
         thrust = { engines = EngineGroup(vertical), prio1Tag = vertical, prio2Tag = "", prio3Tag = "", antiG = antiG },
-        adjust = { engines = EngineGroup(lateral, longitudinal), prio1Tag = vertical, prio2Tag = longitudinal,
-            prio3Tag = "", antiG = noAntiG }
+        adjust = {
+            engines = EngineGroup(lateral, longitudinal),
+            prio1Tag = vertical,
+            prio2Tag = longitudinal,
+            prio3Tag = "",
+            antiG = noAntiG
+        }
     }
 
     local adjustAccLookup = {
@@ -107,7 +130,8 @@ function FlightFSM.New(settings, routeController)
         { limit = 0.1,  acc = 0.30,  reverse = 0.7 },
         { limit = 0.15, acc = 0.40,  reverse = 0.8 },
         { limit = 0.2,  acc = 0.40,  reverse = 1 },
-        { limit = 0.25, acc = 0,     reverse = 0 }
+        { limit = 1,    acc = 1,     reverse = 2 },
+        { limit = 1.25, acc = 0,     reverse = 0 }
     }
 
     local toleranceDistance = 2 -- meters. This limit affects the steepness of the acceleration curve used by the deviation adjustment
@@ -405,14 +429,14 @@ function FlightFSM.New(settings, routeController)
                 if toBrakePoint > 0 then
                     -- Not yet reached the break point
                     targetSpeed = evaluateNewLimit(targetSpeed,
-                        calcMaxAllowedSpeed( -tenPercent, toBrakePoint, brakeDegradeSpeed),
+                        calcMaxAllowedSpeed(-tenPercent, toBrakePoint, brakeDegradeSpeed),
                         "Appr. fin.")
                     flightData.finalSpeed = brakeDegradeSpeed
                     flightData.finalSpeedDistance = toBrakePoint
                 else
                     -- Within
                     targetSpeed = evaluateNewLimit(targetSpeed,
-                        calcMaxAllowedSpeed( -tenPercent, remainingDistance, endSpeed),
+                        calcMaxAllowedSpeed(-tenPercent, remainingDistance, endSpeed),
                         "Final")
                 end
             end
@@ -459,7 +483,7 @@ function FlightFSM.New(settings, routeController)
 
         local movingTowardsTarget = deviationAccum:Add(vel:Normalize():Dot(dirToTarget) > 0.8) > 0.5
 
-        local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow( -toTargetWorld:Normalize(),
+        local maxBrakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-toTargetWorld:Normalize(),
             false)
         local brakeDistance = CalcBrakeDistance(currSpeed, maxBrakeAcc) + warmupTime * currSpeed
         local speedLimit = calc.Scale(distance, 0, toleranceDistance, adjustmentSpeedMin, adjustmentSpeedMax)
@@ -654,12 +678,20 @@ function FlightFSM.New(settings, routeController)
         --[[ As waypoints can have large margins, we need to ensure that we allow for offsets as large as the margins, at each end.
             The outer edges are a straight line between the edges of the start and end point spheres so allowed offset can be calculated linearly.
         ]]
-        local dist = (previousWaypoint.Destination() - nextWaypoint.Destination()):Len()
-        local diff = previousWaypoint.Margin() - nextWaypoint.Margin()
-        local koeff = diff / dist
+        local startPos = previousWaypoint.Destination()
+        local startMargin = previousWaypoint.Margin()
+        local endPos = nextWaypoint.Destination()
+        local endMargin = nextWaypoint.Margin()
 
-        local travelDist = min(dist, (previousWaypoint.Destination() - CurrentPos()):Len())
-        local allowedOffset = previousWaypoint.Margin() + koeff * travelDist
+        local dist = (endPos - startPos):Len()
+        local diff = endMargin - startMargin
+        local koeff = 0
+        if dist ~= 0 then
+            koeff = diff / dist
+        end
+
+        local travelDist = min(dist, (startPos - CurrentPos()):Len())
+        local allowedOffset = startMargin + koeff * travelDist
         local toNearest = (nearestPointOnPath - currentPos):Len()
 
         return toNearest <= max(0.5, allowedOffset)
