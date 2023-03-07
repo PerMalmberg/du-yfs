@@ -18,9 +18,8 @@ jobs:
     - name: Run CI Tests
       run: |
         make release-ci
-   - name: Build PDF
-    runs-on: ubuntu-latest
-    steps:
+    - name: Build PDF
+      runs-on: ubuntu-latest
       - uses: actions/checkout@v3
       - uses: baileyjm02/markdown-to-pdf@v1
         with:
@@ -28,10 +27,6 @@ jobs:
           output_dir: pdfs
           build_html: false
           table_of_contents: true
-      - uses: actions/upload-artifact@v3
-        with:
-          name: Manual.pdf
-          path: pdfs/Manual.pdf
    - name: Release
       uses: softprops/action-gh-release@v0.1.15
       with:
