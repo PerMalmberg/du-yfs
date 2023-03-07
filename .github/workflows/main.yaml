@@ -18,15 +18,7 @@ jobs:
     - name: Run CI Tests
       run: |
         make release-ci
-    - name: Release
-      uses: softprops/action-gh-release@v0.1.15
-      with:
-        files: |
-          out/release/**
-        fail_on_unmatched_files: true
-      if: startsWith(github.ref, 'refs/tags/')
-  converttopdf:
-    name: Build PDF
+   - name: Build PDF
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -40,4 +32,11 @@ jobs:
         with:
           name: Manual.pdf
           path: pdfs/Manual.pdf
-
+   - name: Release
+      uses: softprops/action-gh-release@v0.1.15
+      with:
+        files: |
+          out/release/**
+          pdfs/**
+        fail_on_unmatched_files: true
+      if: startsWith(github.ref, 'refs/tags/')
