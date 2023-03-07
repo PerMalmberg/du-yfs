@@ -3,6 +3,7 @@
 
 local Criteria                = require("input/Criteria")
 local PointOptions            = require("flight/route/PointOptions")
+local Vec3                    = require("math/Vec3")
 local log                     = require("debug/Log")()
 local vehicle                 = require("abstraction/Vehicle").New()
 local brakes                  = require("flight/Brakes").Instance()
@@ -546,14 +547,14 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     createGravRoute.Option("distance").AsNumber().Mandatory()
 
     local createVertRoute = cmd.Accept("create-vertical-route",
-            ---@param data {commandValue:string, distance:number, followGravInAtmo:boolean, extraPointMargin:number}
+            ---@param data {commandValue:string, distance:number, followGravInAtmo:boolean, extraPointMargin:number, vertX:number, vertY:number, vertZ:number}
             function(data)
                 local route = rc.CreateRoute(data.commandValue)
                 if route then
                     local startPos = route.AddCurrentPos()
                     startPos.Options().Set(PointOptions.LOCK_DIRECTION, Forward())
 
-                    local targetPos = Current() + Up() * data.distance
+                    local targetPos = Current() + Vec3.New(data.vertX, data.vertY, data.vertZ) * data.distance
 
                     local startBody = universe.ClosestBody(Current())
                     local startInAtmo = startBody:IsInAtmo(Current())
@@ -596,6 +597,9 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     createVertRoute.Option("distance").AsNumber().Mandatory()
     createVertRoute.Option("followGravInAtmo").AsBoolean().Default(true)
     createVertRoute.Option("extraPointMargin").AsNumber().Default(5)
+    createVertRoute.Option("vertX").AsNumber().Mandatory()
+    createVertRoute.Option("vertY").AsNumber().Mandatory()
+    createVertRoute.Option("vertZ").AsNumber().Mandatory()
 
     cmd.Accept("show-widgets",
         ---@param data {commandValue:boolean}
