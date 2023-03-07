@@ -25,4 +25,19 @@ jobs:
           out/release/**
         fail_on_unmatched_files: true
       if: startsWith(github.ref, 'refs/tags/')
+  converttopdf:
+    name: Build PDF
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: baileyjm02/markdown-to-pdf@v1
+        with:
+          input_path: Manual.md
+          output_dir: pdfs
+          build_html: false
+          table_of_contents: true
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Manual.pdf
+          path: pdfs/Manual.pdf
 
