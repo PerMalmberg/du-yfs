@@ -230,6 +230,6 @@ unit.exit()
 
 By default this will create a route with an extra path-correction point outside atmosphere where the construct will stop both on the way in and out of atmosphere. If you disable this (using `-followGravInAtmo false`) you should probably increase the margin of the waypoints in the route from the default 0.1m to something larger, depending on the angle of the path toward the gravity vector.
 
-#### Reason for the up-vector of the construct itself is not used
+#### The reason that the up-vector of the construct itself is not used
 
 Even though a parked construct appears to be sitting perfectly flat onto another, this is seldom actually the case. As such, assuming the up-vector is the same as that on which the construct is parked results in different results between different positions as well as different park attempts. With distances of 100km, even a tiny tilt results in large differences at the other end.
