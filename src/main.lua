@@ -14,12 +14,20 @@ log:SetLevel(log.LogLevel.WARNING)
 
 local Task = require("system/Task")
 
-local settingLink = library.getLinkByName("routes")
-local routeLink = library.getLinkByName("routes")
+local routeDbName = "Routes"
+local routeLink = library.getLinkByName(routeDbName)
 
-if not settingLink or not routeLink then
-    log:Error("Link databank named 'routes'")
+if not routeLink then
+    log:Error("Must link a databank named '", routeDbName, "'")
     unit.exit()
+    return
+end
+
+local settingsDbName = "Settings"
+local settingLink = library.getLinkByName(settingsDbName)
+if not settingLink then
+    log:Info("No DB named '", settingsDbName, "' linked falling back to route DB.")
+    settingLink = routeLink
 end
 
 local settingsDb = BufferedDB.New(settingLink)
@@ -54,7 +62,6 @@ Task.New("Main", function()
     else
         fsm.SetState(Idle.New(fsm))
     end
-
 end).Then(function()
     log:Info("Ready.")
 end).Catch(function(t)

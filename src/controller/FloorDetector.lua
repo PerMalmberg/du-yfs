@@ -1,15 +1,15 @@
-local Telemeter = require("element/Telemeter")
-local pub       = require("util/PubSub").Instance()
-local log       = require("debug/Log")()
-local Vec3      = require("math/Vec3")
+local Telemeter         = require("element/Telemeter")
+local pub               = require("util/PubSub").Instance()
+local log               = require("debug/Log")()
+local Vec3              = require("math/Vec3")
 
 ---@class FloorDetector
 ---@field Instance fun():FloorDetector
 ---@field Measure fun():TelemeterResult
 ---@field Present fun():boolean
 
-local FloorDetector = {}
-FloorDetector.__index = FloorDetector
+local FloorDetector     = {}
+FloorDetector.__index   = FloorDetector
 
 local instance
 local floorDetectorName = "FloorDetector"

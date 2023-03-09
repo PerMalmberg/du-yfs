@@ -6,7 +6,14 @@ Please read the entire manual before attempting to perform an installation, ther
 
 The goal of this project was initially to write a flight system capable of working as what is known as a shaft-less space elevator. i.e. vertical movement around a predefined path. The chosen design does however allow for more than just that and is capable of movement in any direction, within limits of the construct it operates. The original target of only vertical movement along the gravity vector was thus surpassed and it is possible to go in a straight line at an angle from the vertical gravity vector. Further, it also allows you to do up-and-over maneuvers where the construct parks itself on a space platform from whichever direction you desire.
 
-## Routes
+### Required elements
+
+* A data bank named "Routes"
+* A telemeter named "FloorDetector", pointing downwards
+* Optional data bank named "Settings"
+* Screen (optional, but strongly recommended)
+
+### Routes
 
 Routes is an important concept for this flight system as they are what guides the construct between positions. A route consists of two or more waypoints, a beginning, an end, and any number of waypoints in-between. A waypoint specifies a position in the world. When added to a route a waypoint is associated with other attributes, such as alignment direction and maximum speed. A route can also contain anonymous waypoints; these exists only in one route and can't be reused. Routes are run beginning to end, unless started in reverse.
 
@@ -14,51 +21,71 @@ Routes is an important concept for this flight system as they are what guides th
 
 The construct will align towards the next point in the route (see setting `yawAlignmentThrustLimiter`), unless that point has a locked alignment direction, in which case the construct will keep that direction while approaching the waypoint. The construct will also automatically lock and hold the direction if the next target point is nearly straight up or down from its current position, when issued a `move` command.
 
-## Elevator Setup Instructions (manual setup)
+### Enclosures
 
-### Common steps
+If you intend to build an enclosure for the construct remember that physics in Dual Universe creates a hit box around constructs in the shape of a box, not the visual contours. As such yor enclosure must be able to fit a box the size of the extreme distances of the construct on all three axes.
 
-This procedure outlined below creates a standard route along the gravity vector. From this you can then opt to either expand it to do an automated parking operation from the side onto a platform. It is assumed a space platform is not already in place. If it is, adjustments have to be taken such that the positions added to the route do not cause a collision. The entire procedure can be reversed such that the construct is first placed in space, but some adjustments are needed to the commands, such as negating distances or adding waypoints in a different order.
+### Floors for parking; ground and space
 
-* Place the construct at its planet starting position.
-* In Lua chat, enter the following commands in order, replacing the values as needed.
+Due to Dual Universe's slightly wonky physics, when creating floors for any dynamic construct, ensure that the floor fully encompasses the dynamic construct or it might clip through and fall, or worse, explode.
 
-| Command                                         | Explanation                                                          | Example                                              |
-| ----------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------- |
-| `pos-save-as <pos1>`                            | Saves the current position as the given name                         | `pos-save-as factory`                                |
-| `pos-create-along-gravity <pos2> -u <distance>` | Creates a new position at N meters up along the gravity vector       | `pos-create-along-gravity beside-platform -u 200000` |
-| `route-create <name>`                           | Creates a new route by the given name                                | `route-create Main`                                  |
-| `route-add-named-pos pos1 -lockdir`             | Adds the first position to the route, with a locked alignment point  | `route-add-named-pos factory -lockdir`               |
-| `route-add-named-pos pos2 -lockdir`             | Adds the second position to the route, with a locked alignment point | `route-add-named-pos beside-platform -lockdir`       |
-| `route-save`                                    | Saves the route and makes it ready for use                           | `route-save`                                         |
+## Installation as an elevator (ground to space)
 
-* Ensure that the ECU is active and your fuel tanks are filled.
-* Activate the remote controller and the route by clicking the "End" button by the name of the route on the screen. This will take you to the second position created earlier. Once there, the construct will hold its position.
-* You can now deactivate the remote control and deploy the space core, using the construct as a reference if you so wish.
+First, select which type of installation you want:
 
-#### Option 1 - Up-and-over manoeuver
+* Gravity-aligned - this is the standard option where the the construct follows the gravity vector between two points. It is easy to setup but the drawback is that an installations with multiple elevators results in a wider spread of them in space, compared to the ground location due to the gravity vector pointing in a different direction at each location on the ground (Imagine an arrow from the center of the planet through the ground location; when you move so does it.).
 
-* Ensure that there is at least ten meter of clearance from the bottom of the construct to the floor of the space core where the construct is meant to go from space onto the core. This is needed to prevent the gravity well of the space core from affecting the construct while it enters the volume of the space core.
-* Once the space core in place, activate the remote control again and run the following commands.
-* Use the `move` and `pos-save-as` commands to create additional positions that should be added to the route to have the construct park where you wish it.
-* Open the route using the `route-edit` command, then add the positions to the route using `route-add-named-pos` with the `-lockdir` switch to ensure that the construct points in the direction you wish. Please read up on how it works in the command list below.
-* Finally, save the route with `route-save`.
+* Vertical - this option creates a two-part route with the atmospheric part being gravity aligned and the space part being vertically aligned with the construct the elevator parks on at the ground. This option requires a few extra steps to setup but allows you to easily park multiple elevators close to each other
+both at the ground location as well as in space. The drawback is the stop-and-go at the extra midpoint needed to realign which slightly increases travel time.
 
-> Note: You can opt to directly add the final waypoints to the route using the `route-add-current-pos` command instead of first creating named positions.
+No matter which option you chose you can always adjust the routes at a later date. There is also the option to use gravity-aligned in combination with extra waypoints at the end of the route in space to maneuver the elevator into its target destination.
 
-### Option 2 - Standard elevator with space parking using doors as a docking lock.
+### Gravity-aligned setup
 
-* With the space core in place, place doors such that when they close, they give support to the construct and also covers the telemeter on the bottom of the construct so that it can detect a 'floor'. You can use logic components to create a circuit that auto-closes the doors when it is in position or use a manual switch.
+1. Place the elevator at the ground location you want it at and make sure that it is facing the desired direction. It is recommended that you use a voxel floor instead of the ground.
+2. Activate the remote controller
+3. Ensure that location and direction is still what you want them to be. If not you can do fine adjustments using the available movement commands.
+4. Replacing `<name>` and `<distance>` with the the actual name and distance (in meter), execute the following in Lua chat:
 
-## Elevator Setup Instructions (automated setup, along gravity)
+   `create-gravity-route <name> -distance <distance>`
 
-Use the `create-gravity-route` command to create a "standard" elevator setup with a route along the gravity vector.
+    Example: `create-gravity-route Space -distance 100000`
 
-For example, the following command creates a route named `main` starting at the current position with the end position 200km straight up.
+    This creates a route named "Space" with an endpoint 100km above, along the gravity vector.
 
-`create-gravity-route main -distance 200000`
+The screen will now show the name of your route with two buttons, one for the beginning (ground) and end (space). simply clicking these buttons will make the elevator move to those respective locations.
 
-Once created, follow the steps for setting up the space core in the instructions for a manual setup.
+### Vertical setup
+
+1. Ensure that the ground construct you want to use as the vertical reference is where you want it to be.
+2. Place a Programming Board on the construct that will determine what constitutes as "vertically up".
+3. Paste this code in `unit -> start`
+```lua
+local Vec3 = require("cpml/vec3")
+local up = Vec3(construct.getWorldOrientationUp())
+system.print("Use these values as the vertical vector: ")
+system.print("X: " .. up.x)
+system.print("Y: " .. up.y)
+system.print("Z: " .. up.z)
+unit.exit()
+```
+4. Start the Programming Board and copy the X, Y and Z values. You can right-click on the chat tab to copy the contents of the chat window in Json-format. Tools like visual Studio can easily format this to make it more readable.
+5. Execute the following command in Lua-chat on the construct you want to create the vertical route for
+`create-vertical-route <name>; -distance <nnn>; -vertX <X>; -vertY <Y>; -vertZ <Z>`, replacing the respective placeholders with the actual values.
+
+   Example: `create-vertical-route test -distance 100000 -vertX -0.60683256387711 -vertY 0.2140174806118 -vertZ 0.76547425985336`
+
+By default this will create a route with an extra path-correction point outside atmosphere where the construct will stop both on the way in and out of atmosphere. If you disable this (using `-followGravInAtmo false`) you should probably increase the margin of the waypoints in the route from the default 0.1m to something larger, depending on the angle of the path toward the gravity vector.
+
+#### The reason the up-vector of the construct itself is not used
+
+Even though a parked construct appears to be sitting perfectly flat onto another, this is seldom actually the case. As such, assuming the up-vector of the elevator is the same as that of the construct on which the elevator is parked on results in different results between different positions as well as different park attempts. With distances of 100km, even a tiny difference results in large differences at the far end.
+
+## Space core placement
+
+When placing the space core/construct, using the snapping mode on the elevator can make it much easier to align it correctly. Just keep in mind where the parking spot is meant to be etc.
+
+Hint: To activate snapping mode, point into empty space, then click middle mouse button, then left click on the elevator to select it as a reference construct and move the new core/construct using normal adjustment keys. If you're doing it alone, the ECU must be holding the elevator in place, you can't actively run the remote controller while deploying a core/construct.
 
 ## Shortcuts
 
@@ -69,16 +96,16 @@ Once created, follow the steps for setting up the space core in the instructions
 
 ## Controls (when user is locked in place)
 
-| Key   | Description             |
-| ----- | ----------------------- |
-| A     | Turn left               |
-| S     | Move one step backwards |
-| W     | Move one step forward   |
-| D     | Turn right              |
-| C     | Move one step down      |
-| Space | Move one step up        |
-| Alt-A | Strafe left             |
-| Alt-D | Strafe right            |
+| Key   | Description                        |
+| ----- | ---------------------------------- |
+| A     | Turn left                          |
+| S     | Move one step backwards (and turn) |
+| W     | Move one step forward              |
+| D     | Turn right                         |
+| C     | Move one step down                 |
+| Space | Move one step up                   |
+| Alt-A | Strafe left                        |
+| Alt-D | Strafe right                       |
 
 ## LUA console commands
 
@@ -190,7 +217,7 @@ The aim is 0.1m accuracy and this is also the default for the all movements. How
 
 You may also increase the margin on the waypoints to allow a bit more wiggle room during travel, this may be especially useful on waypoints towards which the acceleration/speed is high or the path is diagonal relative to the gravity vector. Alternatively, you can set a maximum speed to reduce acceleration duration and speed.
 
-### Non gravity-aligned atmospheric accent/decent and angled flight paths
+### A note on non gravity-aligned atmospheric accent/decent and angled flight paths
 
 While it is possible to make routes that are not gravity aligned work, they may be somewhat unreliable. These are the main reasons:
 
@@ -204,32 +231,3 @@ While it is possible to make routes that are not gravity aligned work, they may 
 * Strong acceleration
 
   Sideways engines are generally weaker than the main downward pointing engines so when accelerating, the weaker ones may have difficulties to keep the construct on the path.
-
-### Creating vertical routes
-
-The command `create-vertical-route` is used to create a route that follows a vertical path along a user-provided direction vector, instead of along the gravity vector. Typically this vector is taken from the construct that acts as the parking platform; this is also the procedure described below.
-
-The benefit of creating a vertical route is that you end up with nearly the exact relative positions up top as you do down on the planet between multiple elevators. Compare this to gravity aligned paths where you end up with larger and larger distances between two constructs the higher up you travel.
-
-#### Steps to create a vertical route
-
-1. Place a Programming Board on the construct that will determine what constitutes as "vertically up".
-2. Put this code in `unit -> start`
-```lua
-local Vec3 = require("cpml/vec3")
-local up = Vec3(construct.getWorldOrientationUp())
-system.print("Use these values as the vertical vector: ")
-system.print("X: " .. up.x)
-system.print("Y: " .. up.y)
-system.print("Z: " .. up.z)
-unit.exit()
-```
-3. Start the Programming Board and copy the X, Y and Z values
-4. Execute the following command in Lua-chat on the construct you want to create the vertical route for
-`create-vertical-route <name>; -distance <nnn>; -vertX <X>; -vertY <Y>; -vertZ <Z>` replacing the respective placeholders with the actual values.
-
-By default this will create a route with an extra path-correction point outside atmosphere where the construct will stop both on the way in and out of atmosphere. If you disable this (using `-followGravInAtmo false`) you should probably increase the margin of the waypoints in the route from the default 0.1m to something larger, depending on the angle of the path toward the gravity vector.
-
-#### The reason that the up-vector of the construct itself is not used
-
-Even though a parked construct appears to be sitting perfectly flat onto another, this is seldom actually the case. As such, assuming the up-vector is the same as that on which the construct is parked results in different results between different positions as well as different park attempts. With distances of 100km, even a tiny tilt results in large differences at the other end.
