@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.7 - 2023-03-11
+
+### Changed
+
+* Refactored alignment functions.
+
 ## 0.0.6 - 2023-03-09
 
 ### Changed
