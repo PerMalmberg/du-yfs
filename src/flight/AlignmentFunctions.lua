@@ -20,6 +20,23 @@ function alignment.NoAdjust()
     return nil
 end
 
+---@return Vec3
+local function pointAtSameHeightAsConstructParallelToVerticalRef()
+    local current = Current()
+    local normal = -universe.VerticalReferenceVector()
+
+    local alignmentPoint = current + vehicle.orientation.Forward() * directionMargin
+    alignmentPoint = calc.ProjectPointOnPlane(normal, current, alignmentPoint)
+
+    return alignmentPoint
+end
+
+---@return Vec3
+local function targetDirectionOrthogonalToVerticalReference()
+    local alignmentPoint = pointAtSameHeightAsConstructParallelToVerticalRef()
+    return (alignmentPoint - Current()):NormalizeInPlace()
+end
+
 ---@param waypoint Waypoint
 ---@param previousWaypoint Waypoint
 ---@return {yaw:Vec3, pitch:Vec3}
@@ -30,8 +47,10 @@ function alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference(wa
     local nearest = calc.NearestPointOnLine(previousWaypoint.Destination(), travelDir, current)
     local point = nearest + waypoint.YawPitchDirection() * directionMargin
 
-    return { yaw = point,
-        pitch = alignment.PointAtSameHeightAsConstructParallelToVerticalRef() }
+    return {
+        yaw = point,
+        pitch = pointAtSameHeightAsConstructParallelToVerticalRef()
+    }
 end
 
 ---@param waypoint Waypoint
@@ -50,37 +69,20 @@ function alignment.YawPitchKeepOrthogonalToVerticalReference(waypoint, previousW
 
     -- When the next waypoint is nearly above or below us, switch alignment mode.
     if abs((withMargin - current):Normalize():Dot(normal)) > 0.9 then
-        local dir = alignment.TargetDirectionOrthogonalToVerticalReference()
+        local dir = targetDirectionOrthogonalToVerticalReference()
 
         waypoint.LockDirection(dir, true)
         res = waypoint.YawAndPitch(previousWaypoint)
     else
         res.yaw = calc.ProjectPointOnPlane(normal, current, withMargin)
-        res.pitch = alignment.PointAtSameHeightAsConstructParallelToVerticalRef()
+        res.pitch = pointAtSameHeightAsConstructParallelToVerticalRef()
     end
 
     return res
 end
 
 function alignment.RollTopsideAwayFromVerticalReference(waypoint, previousWaypoint)
-    return Current() - universe:VerticalReferenceVector() * directionMargin
-end
-
----@return Vec3
-function alignment.TargetDirectionOrthogonalToVerticalReference()
-    local alignmentPoint = alignment.PointAtSameHeightAsConstructParallelToVerticalRef()
-    return (alignmentPoint - Current()):NormalizeInPlace()
-end
-
----@return Vec3
-function alignment.PointAtSameHeightAsConstructParallelToVerticalRef()
-    local current = Current()
-    local normal = -universe:VerticalReferenceVector()
-
-    local alignmentPoint = current + vehicle.orientation.Forward() * directionMargin
-    alignmentPoint = calc.ProjectPointOnPlane(normal, current, alignmentPoint)
-
-    return alignmentPoint
+    return Current() - universe.VerticalReferenceVector() * directionMargin
 end
 
 ---@param previous Waypoint
