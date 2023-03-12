@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.8 - 2023-03-12
+
+### Changed
+
+* Threshold for triggering precision movement for a path increased to 0.95.
+* Path alignment now only checked when moving along a precision path; this makes diagonal movement more smooth (at the cost of less accuracy during the acceleration phase)
+* Adjusted low speed control to be a bit more responsive.
+* Adjusted roll/yaw/pitch controls to reduce overshoot.
+
 ## 0.0.7 - 2023-03-11
 
 ### Changed

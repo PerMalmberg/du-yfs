@@ -675,6 +675,11 @@ function FlightFSM.New(settings, routeController)
     ---@param nextWaypoint Waypoint
     ---@return boolean
     function s.CheckPathAlignment(currentPos, nearestPointOnPath, previousWaypoint, nextWaypoint)
+        -- Only check if we're moving along a precision path
+        if not nextWaypoint.GetPrecisionMode() then
+            return true
+        end
+
         --[[ As waypoints can have large margins, we need to ensure that we allow for offsets as large as the margins, at each end.
             The outer edges are a straight line between the edges of the start and end point spheres so allowed offset can be calculated linearly.
         ]]

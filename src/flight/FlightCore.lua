@@ -82,7 +82,7 @@ function FlightCore.New(routeController, flightFSM)
 
     -- Setup start waypoints to prevent nil values
     local currentWaypoint = createDefaultWP() -- The positions we want to move to
-    local previousWaypoint = currentWaypoint -- Previous waypoint
+    local previousWaypoint = currentWaypoint  -- Previous waypoint
     local route = nil ---@type Route|nil
 
     ---Gets the route controller
@@ -105,7 +105,7 @@ function FlightCore.New(routeController, flightFSM)
         previousWaypoint = currentWaypoint
         currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached())
 
-        currentWaypoint.SetPrecisionMode(abs(currentWaypoint:DirectionTo():Dot(GravityDirection())) > 0.9)
+        currentWaypoint.SetPrecisionMode(abs(currentWaypoint:DirectionTo():Dot(GravityDirection())) > 0.985)
     end
 
     ---Starts the flight
@@ -140,7 +140,7 @@ function FlightCore.New(routeController, flightFSM)
     function s.AlignTo(point)
         if currentWaypoint then
             local current = vehicle.position.Current()
-            local pointOnPlane = calc.ProjectPointOnPlane( -universe.VerticalReferenceVector(), current, point)
+            local pointOnPlane = calc.ProjectPointOnPlane(-universe.VerticalReferenceVector(), current, point)
             local dir = (pointOnPlane - current):NormalizeInPlace()
             currentWaypoint.LockDirection(dir, true)
         end
