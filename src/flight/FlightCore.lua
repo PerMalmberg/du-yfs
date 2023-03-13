@@ -5,7 +5,9 @@ local vehicle = r.vehicle
 local pub = require("util/PubSub").Instance()
 local Stopwatch = require("system/Stopwatch")
 local Current = vehicle.position.Current
+local GravityDirection = vehicle.world.GravityDirection
 local calc = r.calc
+local abs = math.abs
 local Ternary = r.calc.Ternary
 local Vec3 = r.Vec3
 local nullVec = Vec3.New()
@@ -80,7 +82,7 @@ function FlightCore.New(routeController, flightFSM)
 
     -- Setup start waypoints to prevent nil values
     local currentWaypoint = createDefaultWP() -- The positions we want to move to
-    local previousWaypoint = currentWaypoint -- Previous waypoint
+    local previousWaypoint = currentWaypoint  -- Previous waypoint
     local route = nil ---@type Route|nil
 
     ---Gets the route controller
@@ -102,6 +104,8 @@ function FlightCore.New(routeController, flightFSM)
 
         previousWaypoint = currentWaypoint
         currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached())
+
+        currentWaypoint.SetPrecisionMode(abs(currentWaypoint:DirectionTo():Dot(GravityDirection())) > 0.985)
     end
 
     ---Starts the flight

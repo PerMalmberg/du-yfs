@@ -19,30 +19,30 @@ local Stopwatch = require("system/Stopwatch")
 local PID = require("cpml/pid")
 local Ray = require("util/Ray")
 require("flight/state/Require")
-local CurrentPos       = vehicle.position.Current
-local Velocity         = vehicle.velocity.Movement
-local Acceleration     = vehicle.acceleration.Movement
-local GravityDirection = vehicle.world.GravityDirection
-local AtmoDensity      = vehicle.world.AtmoDensity
-local TotalMass        = vehicle.mass.Total
-local utils            = require("cpml/utils")
-local pub              = require("util/PubSub").Instance()
-local clamp            = utils.clamp
-local abs              = math.abs
-local min              = math.min
-local max              = math.max
-local MAX_INT          = math.maxinteger
+local CurrentPos                    = vehicle.position.Current
+local Velocity                      = vehicle.velocity.Movement
+local Acceleration                  = vehicle.acceleration.Movement
+local GravityDirection              = vehicle.world.GravityDirection
+local AtmoDensity                   = vehicle.world.AtmoDensity
+local TotalMass                     = vehicle.mass.Total
+local utils                         = require("cpml/utils")
+local pub                           = require("util/PubSub").Instance()
+local clamp                         = utils.clamp
+local abs                           = math.abs
+local min                           = math.min
+local max                           = math.max
+local MAX_INT                       = math.maxinteger
 
 local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
 
-local longitudinal = "longitudinal"
-local vertical = "vertical"
-local lateral = "lateral"
-local airfoil = "airfoil"
-local thrustTag = "thrust"
-local Forward = vehicle.orientation.Forward
-local Right = vehicle.orientation.Right
-local deadZoneFactor = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
+local longitudinal                  = "longitudinal"
+local vertical                      = "vertical"
+local lateral                       = "lateral"
+local airfoil                       = "airfoil"
+local thrustTag                     = "thrust"
+local Forward                       = vehicle.orientation.Forward
+local Right                         = vehicle.orientation.Right
+local deadZoneFactor                = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
 
 ---@class FlightFSM
 ---@field New fun(settings:Settings):FlightFSM
@@ -58,15 +58,14 @@ local deadZoneFactor = 0.8 -- Consider the inner edge of the dead zone where we 
 ---@field SetFlightCore fun(fc:FlightCore)
 ---@field GetFlightCore fun():FlightCore
 
-local FlightFSM = {}
-FlightFSM.__index = FlightFSM
+local FlightFSM                     = {}
+FlightFSM.__index                   = FlightFSM
 
 ---Creates a new FligtFSM
 ---@param settings Settings
 ---@param routeController RouteController
 ---@return FlightFSM
 function FlightFSM.New(settings, routeController)
-
     local function antiG()
         return -universe:VerticalReferenceVector() * G()
     end
@@ -77,37 +76,62 @@ function FlightFSM.New(settings, routeController)
 
     local normalModeGroup = {
         thrust = {
-            engines = EngineGroup(thrustTag, airfoil), prio1Tag = airfoil, prio2Tag = thrustTag, prio3Tag = "",
+            engines = EngineGroup(thrustTag, airfoil),
+            prio1Tag = airfoil,
+            prio2Tag = thrustTag,
+            prio3Tag = "",
             antiG = antiG
         },
         adjust = { engines = EngineGroup(), prio1Tag = "", prio2Tag = "", prio3Tag = "", antiG = noAntiG }
     }
 
     local forwardGroup = {
-        thrust = { engines = EngineGroup(longitudinal), prio1Tag = thrustTag, prio2Tag = "", prio3Tag = "",
-            antiG = noAntiG },
-        adjust = { engines = EngineGroup(airfoil, lateral, vertical), prio1Tag = airfoil, prio2Tag = lateral,
-            prio3Tag = vertical, antiG = antiG }
+        thrust = {
+            engines = EngineGroup(longitudinal),
+            prio1Tag = thrustTag,
+            prio2Tag = "",
+            prio3Tag = "",
+            antiG = noAntiG
+        },
+        adjust = {
+            engines = EngineGroup(airfoil, lateral, vertical),
+            prio1Tag = airfoil,
+            prio2Tag = lateral,
+            prio3Tag = vertical,
+            antiG = antiG
+        }
     }
 
     local rightGroup = {
         thrust = { engines = EngineGroup(lateral), prio1Tag = thrustTag, prio2Tag = "", prio3Tag = "", antiG = noAntiG },
-        adjust = { engines = EngineGroup(vertical, longitudinal), prio1Tag = vertical, prio2Tag = longitudinal,
-            prio3Tag = "", antiG = antiG }
+        adjust = {
+            engines = EngineGroup(vertical, longitudinal),
+            prio1Tag = vertical,
+            prio2Tag = longitudinal,
+            prio3Tag = "",
+            antiG = antiG
+        }
     }
 
     local upGroup = {
         thrust = { engines = EngineGroup(vertical), prio1Tag = vertical, prio2Tag = "", prio3Tag = "", antiG = antiG },
-        adjust = { engines = EngineGroup(lateral, longitudinal), prio1Tag = vertical, prio2Tag = longitudinal,
-            prio3Tag = "", antiG = noAntiG }
+        adjust = {
+            engines = EngineGroup(lateral, longitudinal),
+            prio1Tag = vertical,
+            prio2Tag = longitudinal,
+            prio3Tag = "",
+            antiG = noAntiG
+        }
     }
 
     local adjustAccLookup = {
-        { limit = 0, acc = 0.15, reverse = 0.3 },
-        { limit = 0.01, acc = 0.20, reverse = 0.35 },
-        { limit = 0.03, acc = 0.30, reverse = 0.40 },
-        { limit = 0.05, acc = 0.40, reverse = 0.45 },
-        { limit = 0.1, acc = 0, reverse = 0 }
+        { limit = 0,    acc = 0.001, reverse = 0.001 },
+        { limit = 0.05, acc = 0.20,  reverse = 0.4 },
+        { limit = 0.1,  acc = 0.30,  reverse = 0.7 },
+        { limit = 0.15, acc = 0.40,  reverse = 0.8 },
+        { limit = 0.2,  acc = 0.40,  reverse = 1 },
+        { limit = 1,    acc = 1,     reverse = 2 },
+        { limit = 1.25, acc = 0,     reverse = 0 }
     }
 
     local toleranceDistance = 2 -- meters. This limit affects the steepness of the acceleration curve used by the deviation adjustment
@@ -147,15 +171,18 @@ function FlightFSM.New(settings, routeController)
     local function getAdjustedAcceleration(accLookup, distance, movingTowardsTarget)
         local selected
         for _, v in ipairs(accLookup) do
-            if distance >= v.limit then selected = v
-            else break end
+            if distance >= v.limit then
+                selected = v
+            else
+                break
+            end
         end
 
         if selected.acc == 0 then
-            return accLookup[#accLookup - 1].acc
-        else
-            return calc.Ternary(movingTowardsTarget, selected.acc, selected.reverse)
+            selected = accLookup[#accLookup - 1]
         end
+
+        return calc.Ternary(movingTowardsTarget, selected.acc, selected.reverse)
     end
 
     local function getEngines(moveDirection, precision)
@@ -394,7 +421,6 @@ function FlightFSM.New(settings, routeController)
         if inAtmo and not willLeaveAtmo and waypoint.FinalSpeed() <= brakeDegradeSpeed then
             local tenPercent = brakes.MaxSeenGravityInfluencedAvailableAtmoDeceleration() * 0.1
             if tenPercent > 0 then
-
                 local endSpeed = waypoint.FinalSpeed()
 
                 local finalApproachDistance = calc.CalcBrakeDistance(brakeDegradeSpeed, tenPercent)
@@ -649,16 +675,28 @@ function FlightFSM.New(settings, routeController)
     ---@param nextWaypoint Waypoint
     ---@return boolean
     function s.CheckPathAlignment(currentPos, nearestPointOnPath, previousWaypoint, nextWaypoint)
+        -- Only check if we're moving along a precision path
+        if not nextWaypoint.GetPrecisionMode() then
+            return true
+        end
+
         --[[ As waypoints can have large margins, we need to ensure that we allow for offsets as large as the margins, at each end.
             The outer edges are a straight line between the edges of the start and end point spheres so allowed offset can be calculated linearly.
         ]]
+        local startPos = previousWaypoint.Destination()
+        local startMargin = previousWaypoint.Margin()
+        local endPos = nextWaypoint.Destination()
+        local endMargin = nextWaypoint.Margin()
 
-        local dist = (previousWaypoint.Destination() - nextWaypoint.Destination()):Len()
-        local diff = previousWaypoint.Margin() - nextWaypoint.Margin()
-        local koeff = diff / dist
+        local dist = (endPos - startPos):Len()
+        local diff = endMargin - startMargin
+        local koeff = 0
+        if dist ~= 0 then
+            koeff = diff / dist
+        end
 
-        local travelDist = min(dist, (previousWaypoint.Destination() - CurrentPos()):Len())
-        local allowedOffset = previousWaypoint.Margin() + koeff * travelDist
+        local travelDist = min(dist, (startPos - CurrentPos()):Len())
+        local allowedOffset = startMargin + koeff * travelDist
         local toNearest = (nearestPointOnPath - currentPos):Len()
 
         return toNearest <= max(0.5, allowedOffset)

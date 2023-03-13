@@ -5,6 +5,7 @@ local universe = require("universe/Universe").Instance()
 local stub = require("luassert.stub")
 require("util/Table")
 local ConstructMock = require("mocks/ConstructMock")
+local constants = require("YFSConstants")
 
 local function runTicks()
     for i = 1, 1000, 1 do
@@ -96,7 +97,7 @@ describe("RouteController #flight", function()
         assert.is_true(c.SaveRoute())
 
         -- Load it in normal order
-        assert.is_true(c.ActivateRoute("route_name", RouteOrder.FORWARD, true))
+        assert.is_true(c.ActivateRoute("route_name"))
         r = c.CurrentRoute()
         local p = r.Next()
 
@@ -107,7 +108,7 @@ describe("RouteController #flight", function()
         assert.are_equal("C", p.WaypointRef())
 
         -- Load it reversed
-        assert.is_true(c.ActivateRoute("route_name", RouteOrder.REVERSED, true))
+        assert.is_true(c.ActivateRoute("route_name", RouteOrder.REVERSED))
         r = c.CurrentRoute()
         local p = r.Next()
 
@@ -118,7 +119,7 @@ describe("RouteController #flight", function()
         assert.is_nil(r.Next())
 
         -- Load it again, making sure that it is now in the right normal order
-        assert.is_true(c.ActivateRoute("route_name", RouteOrder.FORWARD, true))
+        assert.is_true(c.ActivateRoute("route_name"))
         r = c.CurrentRoute()
         local p = r.Next()
 
@@ -154,7 +155,7 @@ describe("RouteController #flight", function()
         assert.is_true(c.SaveRoute())
 
         -- Load it and ensure it is normal order
-        assert.is_true(c.ActivateRoute("to_be_reversed", RouteOrder.FORWARD, true))
+        assert.is_true(c.ActivateRoute("to_be_reversed"))
         r = c.CurrentRoute()
         local p = r.Next()
 
@@ -178,7 +179,7 @@ describe("RouteController #flight", function()
         assert.True(c.SaveRoute())
 
         -- Load it again, making sure that it is now in the right normal order
-        assert.is_true(c.ActivateRoute("to_be_reversed", RouteOrder.FORWARD, true))
+        assert.is_true(c.ActivateRoute("to_be_reversed"))
         r = c.CurrentRoute()
         local p = r.Next()
 
@@ -255,30 +256,13 @@ describe("RouteController #flight", function()
         end
 
         assert.True(c.SaveRoute())
-        assert.False(c.ActivateRoute("refuse"))
-        assert.False(c.ActivateRoute("refuse", RouteOrder.REVERSED))
+        local margin = constants.route.routeStartDistanceLimit
+        assert.False(c.ActivateRoute("refuse", RouteOrder.FORWARD, margin))
+        assert.False(c.ActivateRoute("refuse", RouteOrder.REVERSED, margin))
 
         ConstructMock.Instance().SetContructPostion(pointInsideRoute.Coordinates())
         assert.True(c.ActivateRoute("refuse"))
 
         ConstructMock.Instance().ResetContructPostion()
-    end)
-
-    it("Can discard changes to a route", function()
-        assert.is_true(c.StoreWaypoint("a point", "::pos{0,2,2.9093,65.4697,34.7070}"))
-        assert.is_true(c.StoreWaypoint("a second point", "::pos{0,2,2.9093,65.4697,34.7070}"))
-        local r = c.CreateRoute("to be discarded")
-        local p = r.AddWaypointRef("a point")
-        assert.is_not_nil(p)
-        assert.is_true(c.SaveRoute())
-        r = c.EditRoute("to be discarded")
-        assert.is_not_nil(r)
-        assert.are_equal(1, #r.Points())
-        r.RemovePoint(1)
-        assert.are_equal(0, #r.Points())
-        c.Discard()
-        r = c.EditRoute("to be discarded")
-        assert.is_not_nil(r)
-        assert.are_equal(1, #r.Points())
     end)
 end)

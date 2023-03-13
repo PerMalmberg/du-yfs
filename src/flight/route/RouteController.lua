@@ -28,8 +28,7 @@ require("util/Table")
 ---@field DeleteWaypoint fun(name:string):boolean
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
----@field CurrentEditName fun():string|nil
----@field ActivateRoute fun(name:string, order:RouteOrder?, ignoreStartMargin:boolean?):boolean
+---@field ActivateRoute fun(name:string, order?:RouteOrder, startMargin?:number):boolean
 ---@field ActivateTempRoute fun():Route
 ---@field CreateRoute fun(name:string):Route|nil
 ---@field ReverseRoute fun():boolean
@@ -47,7 +46,6 @@ local singleton
 
 RouteController.NAMED_POINTS = "NamedPoints"
 RouteController.NAMED_ROUTES = "NamedRoutes"
-local startMargin = 10 -- Don't allow a route to be started if we're more than this away from the start of the route
 
 ---Create a new route controller instance
 ---@param bufferedDB BufferedDB
@@ -326,13 +324,11 @@ function RouteController.Instance(bufferedDB)
     ---Activate the route by the given name
     ---@param name string
     ---@param order RouteOrder? The order the route shall be followed, default is FORWARD
-    ---@param ignoreStartMargin boolean? If true, the route will be activated even if currently outside the start margin. Default is false.
+    ---@param startMargin number? If true, the route will be activated if within this distance.
     ---@return boolean
-    function s.ActivateRoute(name, order, ignoreStartMargin)
+    function s.ActivateRoute(name, order, startMargin)
         order = order or RouteOrder.FORWARD
-        if ignoreStartMargin == nil then
-            ignoreStartMargin = false
-        end
+        startMargin = startMargin or 0
 
         if not name or string.len(name) == 0 then
             log:Error("No route name provided")
@@ -422,7 +418,7 @@ function RouteController.Instance(bufferedDB)
         if not firstPos then return false end
 
         distance = (firstPos.Coordinates() - currentPos):Len()
-        if not ignoreStartMargin and distance > startMargin then
+        if startMargin > 0 and distance > startMargin then
             log:Error(string.format(
                 "Currently %0.2fm from closest point in route. Please move within %0.2fm of %s and try again."
                 , distance, startMargin, firstPos.AsPosString()))

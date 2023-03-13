@@ -1,5 +1,6 @@
 local r = require("CommonRequire")
 local vehicle = r.vehicle
+local TotalMass = vehicle.mass.Total
 local calc = r.calc
 local nullVec = r.Vec3.New()
 local AngVel = vehicle.velocity.localized.Angular
@@ -56,8 +57,11 @@ function AxisControl.New(axis)
 
     local updateHandlerId = nil
     local targetCoordinate = nil ---@type Vec3|nil
-    local pid = PID(24, 1, 1600, 0.1) -- 0.5 amortization makes it alot smoother
+
+    local lightPid = PID(6.5, 20, 1600, 0.1)
+    local heavyPid = PID(6, 1, 1600, 0.1)
     local pubTopic
+    local lastReadMass = TotalMass()
 
     local axisData = {
         angle = 0,
@@ -145,9 +149,17 @@ function AxisControl.New(axis)
 
             local movingTowardsTarget = (isLeftOf and movingRight) or (isRightOf and movingLeft)
 
-            pid:inject(offset)
+            lightPid:inject(offset)
+            heavyPid:inject(offset)
 
-            finalAcceleration[axis] = normal() * pid:get() * deg2rad
+            local v
+            if lastReadMass > 100 then -- above 100 tons
+                v = heavyPid:get()
+            else
+                v = lightPid:get()
+            end
+
+            finalAcceleration[axis] = normal() * v * deg2rad
         end
 
         if apply then
@@ -161,6 +173,7 @@ function AxisControl.New(axis)
         axisData.speed = s.Speed()
         axisData.acceleration = s.Acceleration()
         pub.Publish(pubTopic, axisData)
+        lastReadMass = TotalMass()
     end
 
     ---Returns the current offset, in degrees

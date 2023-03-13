@@ -15,8 +15,8 @@ local max = math.max
 
 
 local atmoBrakeCutoffSpeed = calc.Kph2Mps(360) -- Speed limit under which atmospheric brakes become less effective (down to 10m/s [36km/h] where they give 0.1 of max)
-local atmoBrakeEfficiencyFactor = 0.9 -- Kept at 0.9
-local spaceEfficiencyFactor = 0.9 -- Reduced from one to counter brake PID not reacting immediately, thus inducing a delay and subsequent overshoot.
+local atmoBrakeEfficiencyFactor = 0.9          -- Kept at 0.9
+local spaceEfficiencyFactor = 0.9              -- Reduced from one to counter brake PID not reacting immediately, thus inducing a delay and subsequent overshoot.
 
 ---@class Brake
 ---@field Instance fun() Brake
@@ -43,7 +43,7 @@ function Brake.Instance()
     end
 
     local pidHighSpeed = PID(1, 0, 0.01)
-    local pidLowSpeed = PID(0.1, 0.01, 0.01)
+    local pidLowSpeed = PID(0.1, 0.0, 1)
     local deceleration = 0
     local maxSeenBrakeAtmoAcc = 0
     local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0 } ---@type BrakeData
@@ -136,7 +136,6 @@ function Brake.Instance()
     ---@param currentSpeed number The current speed
     ---@return Vec3 The thrust needed to counter the thrust induced by the braking operation
     function s.Feed(targetSpeed, currentSpeed)
-
         local diff = targetSpeed - currentSpeed
         diff = -diff -- Negate to make PID become positive when we have too high speed.
         pidHighSpeed:inject(diff)
