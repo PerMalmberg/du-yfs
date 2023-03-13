@@ -756,7 +756,8 @@ local layout = {
                     visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
                     mouse = {
                         click = {
-                            command = "$num(path{editRoute/points/[#]:index}:init{0}:format{route-move-pos-forward %0.f})"
+                            command =
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-move-pos-forward %0.f})"
                         }
                     },
                     replicate = {
@@ -775,7 +776,8 @@ local layout = {
                     visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
                     mouse = {
                         click = {
-                            command = "$str(path{editRoute/points/[#]:position}:init{}:format{set-waypoint -notify '%s'})"
+                            command =
+                            "$str(path{editRoute/points/[#]:position}:init{}:format{set-waypoint -notify '%s'})"
                         }
                     },
                     replicate = {
