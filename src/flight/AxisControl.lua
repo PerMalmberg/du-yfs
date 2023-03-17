@@ -14,6 +14,7 @@ local pub = require("util/PubSub").Instance()
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
+local hundredTons = 100 * 100
 
 local control = {}
 control.__index = control
@@ -153,7 +154,7 @@ function AxisControl.New(axis)
             heavyPid:inject(offset)
 
             local v
-            if lastReadMass > 100 then -- above 100 tons
+            if lastReadMass > hundredTons then
                 v = heavyPid:get()
             else
                 v = lightPid:get()
