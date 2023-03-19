@@ -37,8 +37,6 @@ end
 
 --- Unit vector in world coordinates in format {x,y,z}. Causes the direction of the construct to be locked to the direction stored in the point throughout the approach to the point.
 PointOptions.LOCK_DIRECTION = "lockDir"
---- Boolean. Construct behaves as if it had wings, i.e. it will pitch/yaw/roll
-PointOptions.USE_WINGS = "useWings"
 --- Meters. How close must the construct be to consider the point reached.
 PointOptions.MARGIN = "margin"
 --- m/s. Desired speed when the point is reached.
