@@ -40,15 +40,9 @@ end
 ---@param waypoint Waypoint
 ---@param previousWaypoint Waypoint
 ---@return {yaw:Vec3, pitch:Vec3}
-function alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference(waypoint, previousWaypoint)
-    local current = Current()
-    local travelDir = (waypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
-
-    local nearest = calc.NearestPointOnLine(previousWaypoint.Destination(), travelDir, current)
-    local point = nearest + waypoint.YawPitchDirection() * directionMargin
-
+function alignment.YawPitchKeepLockedWaypointDirectionOrthogonalToVerticalReference(waypoint, previousWaypoint)
     return {
-        yaw = point,
+        yaw = Current() + waypoint.YawPitchDirection() * directionMargin,
         pitch = pointAtSameHeightAsConstructParallelToVerticalRef()
     }
 end

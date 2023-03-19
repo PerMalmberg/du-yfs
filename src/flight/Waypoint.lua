@@ -125,7 +125,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
     function s.LockDirection(direction, forced)
         if s.yawPitchDirection == nil or forced then
             s.yawPitchDirection = direction
-            s.yawPitchFunc = alignment.YawPitchKeepWaypointDirectionOrthogonalToVerticalReference
+            s.yawPitchFunc = alignment.YawPitchKeepLockedWaypointDirectionOrthogonalToVerticalReference
         end
     end
 
