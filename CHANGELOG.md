@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 * Fixed PID selection for axis control relating to lighter constructs.
+* WASD, Alt-A/D controls no longer moves by steps and instead accelerates as longs as the key is held.
 
 ## 0.0.8 - 2023-03-12
 
