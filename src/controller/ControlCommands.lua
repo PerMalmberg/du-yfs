@@ -4,6 +4,7 @@
 local Criteria                = require("input/Criteria")
 local PointOptions            = require("flight/route/PointOptions")
 local Vec3                    = require("math/Vec3")
+local Task                    = require("system/Task")
 local log                     = require("debug/Log")()
 local vehicle                 = require("abstraction/Vehicle").New()
 local brakes                  = require("flight/Brakes").Instance()
@@ -13,13 +14,14 @@ local keys                    = require("input/Keys")
 local alignment               = require("flight/AlignmentFunctions")
 local pub                     = require("util/PubSub").Instance()
 local constants               = require("YFSConstants")
+local Stopwatch               = require("system/Stopwatch")
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local Clamp                   = calc.Clamp
 local Current                 = vehicle.position.Current
 local Forward                 = vehicle.orientation.Forward
 local Right                   = vehicle.orientation.Right
 local Up                      = vehicle.orientation.Up
-local MANUAL_MOVE_DISTANCE    = 1000000
+local max                     = math.max
 
 ---@class ControlCommands
 ---@field New fun(input:Input, cmd:Command, flightCore:FlightCore)
@@ -41,7 +43,9 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     local speed = construct.getMaxSpeed()
     local rc = flightCore.GetRouteController()
 
-    local manualMaxSpeed = 0
+    local wsadDirection = Vec3.zero
+    local wasdHeight = 0
+    local wsadFunc ---@type fun(body:Body, direction:Vec3, interval:number):Vec3
 
     local function manualInputEnabled()
         return player.isFrozen() == 1
@@ -63,7 +67,48 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         flightCore.StartFlight()
     end
 
+    ---@param body Body
+    ---@param direction Vec3
+    ---@param interval number
+    local function wasdVertical(body, direction, interval)
+        -- Put the point 1.5 times the distance we travel per timer interval
+        local dist = max(10, vehicle.velocity.Movement():Len() * interval * 1.5)
+        return Current() + direction * dist
+    end
+
+    ---@param body Body
+    ---@param direction Vec3
+    ---@param interval number
+    local function wsadLongLat(body, direction, interval)
+        local curr = Current()
+        local dist = max(10, vehicle.velocity.Movement():Len() * interval * 1.5)
+
+        if body:IsInAtmo(curr) then
+            local pointInDir = curr + direction * dist
+            -- Find the direction from body center to forward point and calculate a new point with same height as the movement started at.
+            return body.Geography.Center + (pointInDir - body.Geography.Center):NormalizeInPlace() * wasdHeight
+        else
+            return dist
+        end
+    end
+
+    ---@param direction Vec3
+    local function activateManualLongLat(direction)
+        local curr = Current()
+        local body = universe.ClosestBody(curr)
+        wasdHeight = (curr - body.Geography.Center):Len()
+        wsadDirection = direction
+        wsadFunc = wsadLongLat
+    end
+
+    ---@param direction Vec3
+    local function activateManualGravityMovement(direction)
+        wsadDirection = direction
+        wsadFunc = wasdVertical
+    end
+
     local function comeToStandStill()
+        wsadDirection = Vec3.zero
         local r = rc.ActivateTempRoute().AddCurrentPos()
         r.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
         r.Options().Set(PointOptions.MAX_SPEED, constants.flight.standStillSpeed)
@@ -73,15 +118,17 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     ---@param target Vec3
     ---@param precision boolean
     ---@param lockdir boolean
-    ---@param margin any
-    ---@param maxSpeed any
-    local function gotoTarget(target, precision, lockdir, margin, maxSpeed)
+    ---@param margin number
+    ---@param maxSpeed number
+    ---@param finalSpeed? number
+    local function gotoTarget(target, precision, lockdir, margin, maxSpeed, finalSpeed)
         local route = rc.ActivateTempRoute()
         local targetPoint = route.AddCoordinate(target)
         local opt = targetPoint.Options()
         opt.Set(PointOptions.PRECISION, precision)
         opt.Set(PointOptions.MAX_SPEED, maxSpeed)
         opt.Set(PointOptions.MARGIN, margin)
+        opt.Set(PointOptions.FINAL_SPEED, finalSpeed or 0)
 
         if lockdir then
             opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
@@ -89,6 +136,27 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
         flightCore.StartFlight()
     end
+
+    Task.New("WASD", function()
+        local t = 0.5
+        local sw = Stopwatch.New()
+        sw.Start()
+
+        while true do
+            local curr = Current()
+            local body = universe.ClosestBody(curr)
+
+            if wsadDirection:Len2() > 0 and sw.Elapsed() > t then
+                sw.Restart()
+
+                local target = wsadFunc(body, wsadDirection, t)
+                gotoTarget(target, false, true, 5, constants.flight.ignoreThatPointIsLastInRoute, construct.getMaxSpeed())
+            end
+
+            coroutine.yield()
+        end
+    end)
+
 
     -- shift + alt + Option9 to switch modes
     input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), lockUser)
@@ -383,8 +451,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.forward, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        local target = Current() + Forward() * MANUAL_MOVE_DISTANCE
-        gotoTarget(target, false, true, 5, 0)
+        activateManualLongLat(Forward())
     end)
 
     input.Register(keys.forward, Criteria.New().OnRelease(), function()
@@ -394,9 +461,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.backward, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-
-        local target = Current() - Forward() * MANUAL_MOVE_DISTANCE
-        gotoTarget(target, false, true, 5, 0)
+        activateManualLongLat(-Forward())
     end)
 
     input.Register(keys.backward, Criteria.New().OnRelease(), function()
@@ -406,9 +471,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.strafeleft, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-
-        local target = Current() - Right() * MANUAL_MOVE_DISTANCE
-        gotoTarget(target, false, true, 5, 0)
+        activateManualLongLat(-Right())
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnRelease(), function()
@@ -418,8 +481,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.straferight, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        local target = Current() + Right() * MANUAL_MOVE_DISTANCE
-        gotoTarget(target, false, true, 5, 0)
+        activateManualLongLat(Right())
     end)
 
     input.Register(keys.straferight, Criteria.New().OnRelease(), function()
@@ -429,8 +491,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.up, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        local target = Current() - VerticalReferenceVector() * MANUAL_MOVE_DISTANCE
-        gotoTarget(target, false, true, 5, 0)
+        activateManualGravityMovement(-VerticalReferenceVector())
     end)
 
     input.Register(keys.up, Criteria.New().OnRelease(), function()
@@ -440,8 +501,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.down, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        local target = Current() + VerticalReferenceVector() * MANUAL_MOVE_DISTANCE
-        gotoTarget(target, false, true, 5, 0)
+        activateManualGravityMovement(VerticalReferenceVector())
     end)
 
     input.Register(keys.down, Criteria.New().OnRelease(), function()

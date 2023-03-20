@@ -33,6 +33,7 @@ local min                           = math.min
 local max                           = math.max
 local MAX_INT                       = math.maxinteger
 local standStillSpeed               = yfsConstants.flight.standStillSpeed
+local ignoreThatPointIsLastInRoute  = yfsConstants.flight.ignoreThatPointIsLastInRoute
 
 local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
 
@@ -366,6 +367,12 @@ function FlightFSM.New(settings, routeController)
 
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
 
+        if waypoint.MaxSpeed() == standStillSpeed then
+            return evaluateNewLimit(targetSpeed, 0, "Standstill")
+        elseif waypoint.MaxSpeed() == ignoreThatPointIsLastInRoute then
+            return targetSpeed
+        end
+
         if firstBody then
             willHitAtmo, _, distanceToAtmo = willEnterAtmo(waypoint, firstBody)
             inAtmo = firstBody:IsInAtmo(pos)
@@ -377,8 +384,6 @@ function FlightFSM.New(settings, routeController)
 
         if waypoint.MaxSpeed() > 0 then
             targetSpeed = evaluateNewLimit(targetSpeed, waypoint.MaxSpeed(), "Route")
-        elseif waypoint.MaxSpeed() == standStillSpeed then
-            targetSpeed = evaluateNewLimit(targetSpeed, 0, "Standstill")
         end
 
         --- Don't allow us to burn
