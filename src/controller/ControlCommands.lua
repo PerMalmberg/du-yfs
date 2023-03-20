@@ -12,6 +12,7 @@ local universe                = require("universe/Universe").Instance()
 local keys                    = require("input/Keys")
 local alignment               = require("flight/AlignmentFunctions")
 local pub                     = require("util/PubSub").Instance()
+local constants               = require("YFSConstants")
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local Clamp                   = calc.Clamp
 local Current                 = vehicle.position.Current
@@ -59,6 +60,13 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     local function holdPosition()
         local r = rc.ActivateTempRoute().AddCurrentPos()
         r.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
+        flightCore.StartFlight()
+    end
+
+    local function comeToStandStill()
+        local r = rc.ActivateTempRoute().AddCurrentPos()
+        r.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
+        r.Options().Set(PointOptions.MAX_SPEED, constants.flight.standStillSpeed)
         flightCore.StartFlight()
     end
 
@@ -381,7 +389,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.forward, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        holdPosition()
+        comeToStandStill()
     end)
 
     input.Register(keys.backward, Criteria.New().OnPress(), function()
@@ -393,7 +401,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.backward, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        holdPosition()
+        comeToStandStill()
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnPress(), function()
@@ -405,7 +413,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.strafeleft, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        holdPosition()
+        comeToStandStill()
     end)
 
     input.Register(keys.straferight, Criteria.New().OnPress(), function()
@@ -416,7 +424,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.straferight, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        holdPosition()
+        comeToStandStill()
     end)
 
     input.Register(keys.up, Criteria.New().OnPress(), function()
@@ -427,7 +435,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.up, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        holdPosition()
+        comeToStandStill()
     end)
 
     input.Register(keys.down, Criteria.New().OnPress(), function()
@@ -438,7 +446,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.down, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        holdPosition()
+        comeToStandStill()
     end)
 
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()

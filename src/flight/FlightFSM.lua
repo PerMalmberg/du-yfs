@@ -32,6 +32,7 @@ local abs                           = math.abs
 local min                           = math.min
 local max                           = math.max
 local MAX_INT                       = math.maxinteger
+local standStillSpeed               = yfsConstants.flight.standStillSpeed
 
 local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
 
@@ -376,6 +377,8 @@ function FlightFSM.New(settings, routeController)
 
         if waypoint.MaxSpeed() > 0 then
             targetSpeed = evaluateNewLimit(targetSpeed, waypoint.MaxSpeed(), "Route")
+        elseif waypoint.MaxSpeed() == standStillSpeed then
+            targetSpeed = evaluateNewLimit(targetSpeed, 0, "Standstill")
         end
 
         --- Don't allow us to burn
