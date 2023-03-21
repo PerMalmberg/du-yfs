@@ -77,21 +77,16 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         -- Put the point 1.5 times the distance we travel per timer interval
         local dist = max(10, vehicle.velocity.Movement():Len() * interval * 1.5)
 
-        if body:IsInAtmo(curr) then
-            local dir = (direction.longLat + direction.vert):Normalize()
+        local dir = (direction.longLat + direction.vert):Normalize()
 
-            local pointInDir = curr + dir * dist
-
-            if direction.vert:IsZero() then
-                -- Find the direction from body center to forward point and calculate a new point with same
-                -- height as the movement started at so that we move along the curvature of the body.
-                return body.Geography.Center + (pointInDir - body.Geography.Center):NormalizeInPlace() * wasdHeight
-            else
-                return Current() + dir * dist
-            end
-        else
-            return Vec3.zero
+        local pointInDir = curr + dir * dist
+        if body:IsInAtmo(curr) and direction.vert:IsZero() then
+            -- Find the direction from body center to forward point and calculate a new point with same
+            -- height as the movement started at so that we move along the curvature of the body.
+            return body.Geography.Center + (pointInDir - body.Geography.Center):NormalizeInPlace() * wasdHeight
         end
+
+        return Current() + dir * dist
     end
 
     local function setWSADHeight()
@@ -110,6 +105,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
         if vert then
             wsadDirection.vert = vert
+            setWSADHeight()
         end
     end
 
@@ -156,7 +152,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     end
 
     Task.New("WASD", function()
-        local t = 0.5
+        local t = 0.1
         local sw = Stopwatch.New()
         sw.Start()
 
@@ -168,7 +164,8 @@ function ControlCommands.New(input, cmd, flightCore, settings)
                 sw.Restart()
 
                 local target = wsadMovement(body, wsadDirection, t)
-                gotoTarget(target, false, true, 5, constants.flight.ignoreThatPointIsLastInRoute, construct.getMaxSpeed())
+                gotoTarget(target, false, true, 5, constants.flight.ignoreThatPointIsLastInRoute,
+                    construct.getMaxSpeed())
             end
 
             coroutine.yield()
@@ -531,12 +528,18 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
-        flightCore.Turn(turnAngle, vehicle.orientation.Up())
+        local dir = flightCore.Turn(turnAngle, Up())
+        if not wsadDirection.longLat:IsZero() then
+            wsadDirection.longLat = dir
+        end
     end)
 
     input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
-        flightCore.Turn(-turnAngle, vehicle.orientation.Up())
+        local dir = flightCore.Turn(-turnAngle, Up())
+        if not wsadDirection.longLat:IsZero() then
+            wsadDirection.longLat = dir
+        end
     end)
 
     cmd.Accept("step", function(data)
@@ -573,8 +576,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     local turnFunc = function(data)
         -- Turn in the expected way, i.e. clockwise on positive values.
         local angle = -data.commandValue
-
-        flightCore.Turn(angle, vehicle.orientation.Up())
+        flightCore.Turn(angle, Up())
     end
 
     cmd.Accept("turn", turnFunc).AsNumber()

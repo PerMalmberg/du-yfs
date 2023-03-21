@@ -96,22 +96,23 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 
 ## Controls (when user is locked in place)
 
-| Key   | Description                        |
-| ----- | ---------------------------------- |
-| A     | Turn left                          |
-| S     | Move one step backwards (and turn) |
-| W     | Move one step forward              |
-| D     | Turn right                         |
-| C     | Move one step down                 |
-| Space | Move one step up                   |
-| Alt-A | Strafe left                        |
-| Alt-D | Strafe right                       |
+| Key   | Description    |
+| ----- | -------------- |
+| A     | Turn left      |
+| S     | Move backwards |
+| W     | Move forward   |
+| D     | Turn right     |
+| C     | Move down      |
+| Space | Move  up       |
+| Alt-A | Strafe left    |
+| Alt-D | Strafe right   |
 
 ## LUA console commands
 
 | Command                   | Parameters/options         | Unit    | Optional | Description                                                                                                                                         |
 | ------------------------- | -------------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | step                      | distance                   | meter   | N        | Sets the default step ASWD movement and other commands                                                                                              |
+| turn-angle                | angle                      | degrees | N        | Sets the angle step for A/D keys                                                                                                                    |
 | speed                     | speed                      | kph     | N        | Sets the max default speed for ASWD movement                                                                                                        |
 | move                      |                            |         |          | Initiates a movement relative to the current position                                                                                               |
 |                           | -f                         | meter   | Y        | Forward distance; negate to move backwards.                                                                                                         |

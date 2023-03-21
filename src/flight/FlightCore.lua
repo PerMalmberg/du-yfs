@@ -124,15 +124,18 @@ function FlightCore.New(routeController, flightFSM)
         flightFSM.SetState(Idle.New(flightFSM))
     end
 
-    ---Rotates all waypoints around the axis with the given angle
+    ---Rotates current waypoint with the given angle
     ---@param degrees number The angle to turn
     ---@param axis Vec3
+    ---@return Vec3 # The alignment direction
     function s.Turn(degrees, axis)
         local current = vehicle.position.Current()
         local forwardPointOnPlane = calc.ProjectPointOnPlane(axis, current,
             current + vehicle.orientation.Forward() * alignment.DirectionMargin)
         forwardPointOnPlane = calc.RotateAroundAxis(forwardPointOnPlane, current, degrees, axis)
-        currentWaypoint.LockDirection((forwardPointOnPlane - Current()):NormalizeInPlace(), true)
+        local dir = (forwardPointOnPlane - Current()):NormalizeInPlace()
+        currentWaypoint.LockDirection(dir, true)
+        return dir
     end
 
     ---Aligns to the point
