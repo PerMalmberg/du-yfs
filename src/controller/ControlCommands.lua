@@ -23,6 +23,8 @@ local Right                   = vehicle.orientation.Right
 local Up                      = vehicle.orientation.Up
 local max                     = math.max
 
+---@alias PointOptionArguments { commandValue:string, precision:boolean, maxspeed:number, margin:number, lockdir:boolean}
+
 ---@class ControlCommands
 ---@field New fun(input:Input, cmd:Command, flightCore:FlightCore)
 
@@ -43,9 +45,8 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     local speed = construct.getMaxSpeed()
     local rc = flightCore.GetRouteController()
 
-    local wsadDirection = Vec3.zero
+    local wsadDirection = { longLat = Vec3.zero, vert = Vec3.zero }
     local wasdHeight = 0
-    local wsadFunc ---@type fun(body:Body, direction:Vec3, interval:number):Vec3
 
     local function manualInputEnabled()
         return player.isFrozen() == 1
@@ -68,51 +69,68 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     end
 
     ---@param body Body
-    ---@param direction Vec3
+    ---@param direction {longLat:Vec3, vert:Vec3}
     ---@param interval number
-    local function wasdVertical(body, direction, interval)
-        -- Put the point 1.5 times the distance we travel per timer interval
-        local dist = max(10, vehicle.velocity.Movement():Len() * interval * 1.5)
-        return Current() + direction * dist
-    end
-
-    ---@param body Body
-    ---@param direction Vec3
-    ---@param interval number
-    local function wsadLongLat(body, direction, interval)
+    ---@return Vec3
+    local function wsadMovement(body, direction, interval)
         local curr = Current()
+        -- Put the point 1.5 times the distance we travel per timer interval
         local dist = max(10, vehicle.velocity.Movement():Len() * interval * 1.5)
 
         if body:IsInAtmo(curr) then
-            local pointInDir = curr + direction * dist
-            -- Find the direction from body center to forward point and calculate a new point with same height as the movement started at.
-            return body.Geography.Center + (pointInDir - body.Geography.Center):NormalizeInPlace() * wasdHeight
+            local dir = (direction.longLat + direction.vert):Normalize()
+
+            local pointInDir = curr + dir * dist
+
+            if direction.vert:IsZero() then
+                -- Find the direction from body center to forward point and calculate a new point with same
+                -- height as the movement started at so that we move along the curvature of the body.
+                return body.Geography.Center + (pointInDir - body.Geography.Center):NormalizeInPlace() * wasdHeight
+            else
+                return Current() + dir * dist
+            end
         else
-            return dist
+            return Vec3.zero
         end
     end
 
-    ---@param direction Vec3
-    local function activateManualLongLat(direction)
+    local function setWSADHeight()
         local curr = Current()
         local body = universe.ClosestBody(curr)
         wasdHeight = (curr - body.Geography.Center):Len()
-        wsadDirection = direction
-        wsadFunc = wsadLongLat
     end
 
-    ---@param direction Vec3
-    local function activateManualGravityMovement(direction)
-        wsadDirection = direction
-        wsadFunc = wasdVertical
+    ---@param longLat Vec3|nil
+    ---@param vert Vec3|nil
+    local function activateManualMovement(longLat, vert)
+        if longLat then
+            setWSADHeight()
+            wsadDirection.longLat = longLat
+        end
+
+        if vert then
+            wsadDirection.vert = vert
+        end
     end
 
-    local function comeToStandStill()
-        wsadDirection = Vec3.zero
-        local r = rc.ActivateTempRoute().AddCurrentPos()
-        r.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
-        r.Options().Set(PointOptions.MAX_SPEED, constants.flight.standStillSpeed)
-        flightCore.StartFlight()
+    ---@param longLat boolean
+    ---@param vert boolean
+    local function comeToStandStill(longLat, vert)
+        if longLat then
+            wsadDirection.longLat = Vec3.zero
+        end
+
+        if vert then
+            wsadDirection.vert = Vec3.zero
+            setWSADHeight()
+        end
+
+        if wsadDirection.longLat:IsZero() and wsadDirection.vert:IsVec3() then
+            local r = rc.ActivateTempRoute().AddCurrentPos()
+            r.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
+            r.Options().Set(PointOptions.MAX_SPEED, constants.flight.standStillSpeed)
+            flightCore.StartFlight()
+        end
     end
 
     ---@param target Vec3
@@ -146,10 +164,10 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             local curr = Current()
             local body = universe.ClosestBody(curr)
 
-            if wsadDirection:Len2() > 0 and sw.Elapsed() > t then
+            if not (wsadDirection.longLat:IsZero() and wsadDirection.vert:IsZero()) and sw.Elapsed() > t then
                 sw.Restart()
 
-                local target = wsadFunc(body, wsadDirection, t)
+                local target = wsadMovement(body, wsadDirection, t)
                 gotoTarget(target, false, true, 5, constants.flight.ignoreThatPointIsLastInRoute, construct.getMaxSpeed())
             end
 
@@ -182,7 +200,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         c.Option("-margin").AsNumber().Default(0.1)
     end
 
-    ---@param data {precision:boolean, maxspeed:number, margin:number, lockdir:boolean}
+    ---@param data PointOptionArguments
     ---@return PointOptions
     local function createOptions(data)
         local opt = PointOptions.New()
@@ -268,23 +286,25 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         end
     end)
 
-    local addCurrentToRoute = cmd.Accept("route-add-current-pos", function(data)
-        local route = rc.CurrentEdit()
+    local addCurrentToRoute = cmd.Accept("route-add-current-pos",
+        ---@param data PointOptionArguments
+        function(data)
+            local route = rc.CurrentEdit()
 
-        if not route then
-            log:Error("No route open for edit")
-            return
-        end
+            if not route then
+                log:Error("No route open for edit")
+                return
+            end
 
-        local point = route.AddCurrentPos()
-        point.SetOptions(createOptions(data))
-        log:Info("Added current position to route")
-    end).AsEmpty()
+            local point = route.AddCurrentPos()
+            point.SetOptions(createOptions(data))
+            log:Info("Added current position to route")
+        end).AsEmpty()
 
     addPointOptions(addCurrentToRoute)
 
     local addNamed = cmd.Accept("route-add-named-pos",
-        ---@param data {commandValue:string}
+        ---@param data PointOptionArguments
         function(data)
             local ref = rc.LoadWaypoint(data.commandValue)
 
@@ -451,62 +471,62 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     input.Register(keys.forward, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualLongLat(Forward())
+        activateManualMovement(Forward(), nil)
     end)
 
     input.Register(keys.forward, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill()
+        comeToStandStill(true, false)
     end)
 
     input.Register(keys.backward, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualLongLat(-Forward())
+        activateManualMovement(-Forward(), nil)
     end)
 
     input.Register(keys.backward, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill()
+        comeToStandStill(true, false)
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualLongLat(-Right())
+        activateManualMovement(-Right(), nil)
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill()
+        comeToStandStill(true, false)
     end)
 
     input.Register(keys.straferight, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualLongLat(Right())
+        activateManualMovement(Right(), nil)
     end)
 
     input.Register(keys.straferight, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill()
+        comeToStandStill(true, false)
     end)
 
     input.Register(keys.up, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualGravityMovement(-VerticalReferenceVector())
+        activateManualMovement(nil, -VerticalReferenceVector())
     end)
 
     input.Register(keys.up, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill()
+        comeToStandStill(false, true)
     end)
 
     input.Register(keys.down, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualGravityMovement(VerticalReferenceVector())
+        activateManualMovement(nil, VerticalReferenceVector())
     end)
 
     input.Register(keys.down, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill()
+        comeToStandStill(false, true)
     end)
 
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
