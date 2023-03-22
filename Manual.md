@@ -111,7 +111,6 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 
 | Command                   | Parameters/options         | Unit    | Optional | Description                                                                                                                                         |
 | ------------------------- | -------------------------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| step                      | distance                   | meter   | N        | Sets the default step ASWD movement and other commands                                                                                              |
 | turn-angle                | angle                      | degrees | N        | Sets the angle step for A/D keys                                                                                                                    |
 | speed                     | speed                      | kph     | N        | Sets the max default speed for ASWD movement                                                                                                        |
 | move                      |                            |         |          | Initiates a movement relative to the current position                                                                                               |

@@ -40,7 +40,6 @@ ControlCommands.__index       = ControlCommands
 function ControlCommands.New(input, cmd, flightCore, settings)
     local s = {}
 
-    local movestep = 0.1
     local turnAngle = 1
     local speed = construct.getMaxSpeed()
     local rc = flightCore.GetRouteController()
@@ -212,7 +211,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     end
 
     local function printCurrent()
-        log:Info("Turn angle: ", turnAngle, "°, step: ", movestep, "m, speed: ", speed, "km/h")
+        log:Info("Turn angle: ", turnAngle, "°, speed: ", speed, "km/h")
     end
 
     cmd.Accept("route-list", function(data)
@@ -541,11 +540,6 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             wsadDirection.longLat = dir
         end
     end)
-
-    cmd.Accept("step", function(data)
-        movestep = Clamp(data.commandValue, 0.1, 200000)
-        printCurrent()
-    end).AsNumber().Mandatory()
 
     cmd.Accept("speed", function(data)
         speed = calc.Kph2Mps(Clamp(data.commandValue, 1, calc.Mps2Kph(construct.getMaxSpeed())))
