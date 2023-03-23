@@ -15,12 +15,14 @@ local alignment               = require("flight/AlignmentFunctions")
 local pub                     = require("util/PubSub").Instance()
 local constants               = require("YFSConstants")
 local Stopwatch               = require("system/Stopwatch")
+local input                   = require("input/Input").Instance()
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local Clamp                   = calc.Clamp
 local Current                 = vehicle.position.Current
 local Forward                 = vehicle.orientation.Forward
 local Right                   = vehicle.orientation.Right
 local Up                      = vehicle.orientation.Up
+local IsInAtmo                = vehicle.world.IsInAtmo
 local max                     = math.max
 
 ---@alias PointOptionArguments { commandValue:string, precision:boolean, maxspeed:number, margin:number, lockdir:boolean}
@@ -41,11 +43,24 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     local s = {}
 
     local turnAngle = 1
-    local speed = construct.getMaxSpeed()
     local rc = flightCore.GetRouteController()
 
     local wsadDirection = { longLat = Vec3.zero, vert = Vec3.zero }
     local wasdHeight = 0
+
+    local function getMaxSpeed()
+        if IsInAtmo() then
+            return construct.getFrictionBurnSpeed() * 0.99
+        end
+
+        return construct.getMaxSpeed()
+    end
+
+    local speed = getMaxSpeed()
+
+    local function getThrottleSpeed()
+        return getMaxSpeed() * input.Throttle() / 100
+    end
 
     local function manualInputEnabled()
         return player.isFrozen() == 1
@@ -133,15 +148,17 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     ---@param lockdir boolean
     ---@param margin number
     ---@param maxSpeed number
-    ---@param finalSpeed? number
-    local function gotoTarget(target, precision, lockdir, margin, maxSpeed, finalSpeed)
+    ---@param finalSpeed number
+    ---@param ignoreLastInRoute boolean
+    local function gotoTarget(target, precision, lockdir, margin, maxSpeed, finalSpeed, ignoreLastInRoute)
         local route = rc.ActivateTempRoute()
         local targetPoint = route.AddCoordinate(target)
         local opt = targetPoint.Options()
         opt.Set(PointOptions.PRECISION, precision)
         opt.Set(PointOptions.MAX_SPEED, maxSpeed)
         opt.Set(PointOptions.MARGIN, margin)
-        opt.Set(PointOptions.FINAL_SPEED, finalSpeed or 0)
+        opt.Set(PointOptions.FINAL_SPEED, finalSpeed)
+        opt.Set(PointOptions.IGNORE_IF_LAST_IN_ROUTE, ignoreLastInRoute)
 
         if lockdir then
             opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
@@ -163,8 +180,8 @@ function ControlCommands.New(input, cmd, flightCore, settings)
                 sw.Restart()
 
                 local target = wsadMovement(body, wsadDirection, t)
-                gotoTarget(target, false, true, 5, constants.flight.ignoreThatPointIsLastInRoute,
-                    construct.getMaxSpeed())
+                local throttleSpeed = getThrottleSpeed()
+                gotoTarget(target, false, true, 5, throttleSpeed, throttleSpeed, true)
             end
 
             coroutine.yield()
@@ -542,7 +559,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     end)
 
     cmd.Accept("speed", function(data)
-        speed = calc.Kph2Mps(Clamp(data.commandValue, 1, calc.Mps2Kph(construct.getMaxSpeed())))
+        speed = calc.Kph2Mps(Clamp(data.commandValue, 1, calc.Mps2Kph(getMaxSpeed())))
         printCurrent()
     end).AsNumber().Mandatory()
 
@@ -617,7 +634,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             local target = getPos(data.commandValue)
 
             if target then
-                gotoTarget(target.coord, data.precision, data.lockdir, data.margin, data.maxspeed)
+                gotoTarget(target.coord, data.precision, data.lockdir, data.margin, data.maxspeed, 0, false)
                 log:Info("Moving to position")
             end
         end).AsString().Mandatory()

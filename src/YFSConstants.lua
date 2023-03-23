@@ -22,8 +22,7 @@ local constants = {
             d = 100,
             a = 0.99
         },
-        standStillSpeed = -1,
-        ignoreThatPointIsLastInRoute = -2
+        standStillSpeed = -1
     },
     route = {
         routeStartDistanceLimit = 10,  -- meters

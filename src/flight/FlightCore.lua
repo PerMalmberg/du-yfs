@@ -45,7 +45,12 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
     local opt = point.Options()
     local dir = Vec3.New(opt.Get(PointOptions.LOCK_DIRECTION, nullVec))
     local margin = opt.Get(PointOptions.MARGIN, defaultMargin)
-    local finalSpeed = Ternary(lastInRoute, 0, opt.Get(PointOptions.FINAL_SPEED, defaultFinalSpeed))
+    local finalSpeed
+    if opt.Get(PointOptions.IGNORE_IF_LAST_IN_ROUTE) then
+        finalSpeed = opt.Get(PointOptions.FINAL_SPEED, defaultFinalSpeed)
+    else
+        finalSpeed = Ternary(lastInRoute, 0, opt.Get(PointOptions.FINAL_SPEED, defaultFinalSpeed))
+    end
     local maxSpeed = opt.Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored/max speed.
 
     local coordinate = universe.ParsePosition(point.Pos()).Coordinates()

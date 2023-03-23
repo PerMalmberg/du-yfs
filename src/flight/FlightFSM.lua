@@ -33,7 +33,6 @@ local min                           = math.min
 local max                           = math.max
 local MAX_INT                       = math.maxinteger
 local standStillSpeed               = yfsConstants.flight.standStillSpeed
-local ignoreThatPointIsLastInRoute  = yfsConstants.flight.ignoreThatPointIsLastInRoute
 
 local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
 
@@ -369,8 +368,6 @@ function FlightFSM.New(settings, routeController)
 
         if waypoint.MaxSpeed() == standStillSpeed then
             return evaluateNewLimit(targetSpeed, 0, "Standstill")
-        elseif waypoint.MaxSpeed() == ignoreThatPointIsLastInRoute then
-            return targetSpeed
         end
 
         if firstBody then
@@ -445,7 +442,7 @@ function FlightFSM.New(settings, routeController)
                     -- Within
                     targetSpeed = evaluateNewLimit(targetSpeed,
                         calcMaxAllowedSpeed(-tenPercent, remainingDistance, endSpeed),
-                        "Final")
+                        "Final atmo")
                 end
             end
         end
@@ -454,6 +451,11 @@ function FlightFSM.New(settings, routeController)
             -- Brakes have become so inefficient at the current altitude or speed they are useless, use linear speed
             -- This state can be seen when entering atmo for example.
             targetSpeed = evaluateNewLimit(targetSpeed, linearSpeed(remainingDistance), "Brake/ineff")
+            -- Does final speed override?
+            local finalSpeed = waypoint.FinalSpeed()
+            if targetSpeed < finalSpeed and finalSpeed > 0 then
+                targetSpeed = evaluateNewLimit(finalSpeed + 1, finalSpeed, "Final spd")
+            end
         elseif inAtmo and willLeaveAtmo then
             -- No need to further reduce
         else
