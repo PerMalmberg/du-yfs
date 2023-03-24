@@ -7,7 +7,14 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 * Fixed PID selection for axis control relating to lighter constructs.
-* WASD, Alt-A/D controls no longer moves by steps and instead accelerates as longs as the key is held.
+* Manual control (WASD, Alt-A/D) controls no longer moves by steps and instead accelerates as longs as the key is held.
+* Manual control speed now controlled via mouse scroll wheel.
+* Removed speed command
+* `goto` not takes and `offset` option so that it is possible to stop at an offset from the given point. Negative offsets means the other side of the point.
+
+### Fixed
+
+* 'strafe' command no longer turns towards the new position
 
 ## 0.0.8 - 2023-03-12
 

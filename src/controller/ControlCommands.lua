@@ -4,7 +4,6 @@
 local Criteria                = require("input/Criteria")
 local PointOptions            = require("flight/route/PointOptions")
 local Vec3                    = require("math/Vec3")
-local Task                    = require("system/Task")
 local log                     = require("debug/Log")()
 local vehicle                 = require("abstraction/Vehicle").New()
 local brakes                  = require("flight/Brakes").Instance()
@@ -13,17 +12,11 @@ local universe                = require("universe/Universe").Instance()
 local keys                    = require("input/Keys")
 local alignment               = require("flight/AlignmentFunctions")
 local pub                     = require("util/PubSub").Instance()
-local constants               = require("YFSConstants")
-local Stopwatch               = require("system/Stopwatch")
-local input                   = require("input/Input").Instance()
 local VerticalReferenceVector = universe.VerticalReferenceVector
-local Clamp                   = calc.Clamp
 local Current                 = vehicle.position.Current
 local Forward                 = vehicle.orientation.Forward
 local Right                   = vehicle.orientation.Right
 local Up                      = vehicle.orientation.Up
-local IsInAtmo                = vehicle.world.IsInAtmo
-local max                     = math.max
 
 ---@alias PointOptionArguments { commandValue:string, precision:boolean, maxspeed:number, margin:number, lockdir:boolean}
 
@@ -42,155 +35,13 @@ ControlCommands.__index       = ControlCommands
 function ControlCommands.New(input, cmd, flightCore, settings)
     local s = {}
 
-    local turnAngle = 1
     local rc = flightCore.GetRouteController()
-
-    local wsadDirection = { longLat = Vec3.zero, vert = Vec3.zero }
-    local wasdHeight = 0
-
-    local function getMaxSpeed()
-        if IsInAtmo() then
-            return construct.getFrictionBurnSpeed() * 0.99
-        end
-
-        return construct.getMaxSpeed()
-    end
-
-    local speed = getMaxSpeed()
-
-    local function getThrottleSpeed()
-        return getMaxSpeed() * input.Throttle() / 100
-    end
-
-    local function manualInputEnabled()
-        return player.isFrozen() == 1
-    end
-
-    local function lockUser()
-        if manualInputEnabled() then
-            player.freeze(false)
-            log:Info("Player released and auto shutdown enabled.")
-        else
-            player.freeze(true)
-            log:Info("Player locked and auto shutdown disabled.")
-        end
-    end
 
     local function holdPosition()
         local r = rc.ActivateTempRoute().AddCurrentPos()
         r.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
         flightCore.StartFlight()
     end
-
-    ---@param body Body
-    ---@param direction {longLat:Vec3, vert:Vec3}
-    ---@param interval number
-    ---@return Vec3
-    local function wsadMovement(body, direction, interval)
-        local curr = Current()
-        -- Put the point 1.5 times the distance we travel per timer interval
-        local dist = max(10, vehicle.velocity.Movement():Len() * interval * 1.5)
-
-        local dir = (direction.longLat + direction.vert):Normalize()
-
-        local pointInDir = curr + dir * dist
-        if body:IsInAtmo(curr) and direction.vert:IsZero() then
-            -- Find the direction from body center to forward point and calculate a new point with same
-            -- height as the movement started at so that we move along the curvature of the body.
-            return body.Geography.Center + (pointInDir - body.Geography.Center):NormalizeInPlace() * wasdHeight
-        end
-
-        return Current() + dir * dist
-    end
-
-    local function setWSADHeight()
-        local curr = Current()
-        local body = universe.ClosestBody(curr)
-        wasdHeight = (curr - body.Geography.Center):Len()
-    end
-
-    ---@param longLat Vec3|nil
-    ---@param vert Vec3|nil
-    local function activateManualMovement(longLat, vert)
-        if longLat then
-            setWSADHeight()
-            wsadDirection.longLat = longLat
-        end
-
-        if vert then
-            wsadDirection.vert = vert
-            setWSADHeight()
-        end
-    end
-
-    ---@param longLat boolean
-    ---@param vert boolean
-    local function comeToStandStill(longLat, vert)
-        if longLat then
-            wsadDirection.longLat = Vec3.zero
-        end
-
-        if vert then
-            wsadDirection.vert = Vec3.zero
-            setWSADHeight()
-        end
-
-        if wsadDirection.longLat:IsZero() and wsadDirection.vert:IsVec3() then
-            local r = rc.ActivateTempRoute().AddCurrentPos()
-            r.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
-            r.Options().Set(PointOptions.MAX_SPEED, constants.flight.standStillSpeed)
-            flightCore.StartFlight()
-        end
-    end
-
-    ---@param target Vec3
-    ---@param precision boolean
-    ---@param lockdir boolean
-    ---@param margin number
-    ---@param maxSpeed number
-    ---@param finalSpeed number
-    ---@param ignoreLastInRoute boolean
-    local function gotoTarget(target, precision, lockdir, margin, maxSpeed, finalSpeed, ignoreLastInRoute)
-        local route = rc.ActivateTempRoute()
-        local targetPoint = route.AddCoordinate(target)
-        local opt = targetPoint.Options()
-        opt.Set(PointOptions.PRECISION, precision)
-        opt.Set(PointOptions.MAX_SPEED, maxSpeed)
-        opt.Set(PointOptions.MARGIN, margin)
-        opt.Set(PointOptions.FINAL_SPEED, finalSpeed)
-        opt.Set(PointOptions.IGNORE_IF_LAST_IN_ROUTE, ignoreLastInRoute)
-
-        if lockdir then
-            opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
-        end
-
-        flightCore.StartFlight()
-    end
-
-    Task.New("WASD", function()
-        local t = 0.1
-        local sw = Stopwatch.New()
-        sw.Start()
-
-        while true do
-            local curr = Current()
-            local body = universe.ClosestBody(curr)
-
-            if not (wsadDirection.longLat:IsZero() and wsadDirection.vert:IsZero()) and sw.Elapsed() > t then
-                sw.Restart()
-
-                local target = wsadMovement(body, wsadDirection, t)
-                local throttleSpeed = getThrottleSpeed()
-                gotoTarget(target, false, true, 5, throttleSpeed, throttleSpeed, true)
-            end
-
-            coroutine.yield()
-        end
-    end)
-
-
-    -- shift + alt + Option9 to switch modes
-    input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), lockUser)
 
     -- Setup brakes
     input.Register(keys.brake, Criteria.New().OnPress(), function() brakes.Forced(true) end)
@@ -225,10 +76,6 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
         end
         return opt
-    end
-
-    local function printCurrent()
-        log:Info("Turn angle: ", turnAngle, "°, speed: ", speed, "km/h")
     end
 
     cmd.Accept("route-list", function(data)
@@ -482,98 +329,13 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     printRelative.Option("f").AsNumber()
     printRelative.Option("r").AsNumber()
 
-    input.Register(keys.forward, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
-        activateManualMovement(Forward(), nil)
-    end)
-
-    input.Register(keys.forward, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
-        comeToStandStill(true, false)
-    end)
-
-    input.Register(keys.backward, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
-        activateManualMovement(-Forward(), nil)
-    end)
-
-    input.Register(keys.backward, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
-        comeToStandStill(true, false)
-    end)
-
-    input.Register(keys.strafeleft, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
-        activateManualMovement(-Right(), nil)
-    end)
-
-    input.Register(keys.strafeleft, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
-        comeToStandStill(true, false)
-    end)
-
-    input.Register(keys.straferight, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
-        activateManualMovement(Right(), nil)
-    end)
-
-    input.Register(keys.straferight, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
-        comeToStandStill(true, false)
-    end)
-
-    input.Register(keys.up, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
-        activateManualMovement(nil, -VerticalReferenceVector())
-    end)
-
-    input.Register(keys.up, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
-        comeToStandStill(false, true)
-    end)
-
-    input.Register(keys.down, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
-        activateManualMovement(nil, VerticalReferenceVector())
-    end)
-
-    input.Register(keys.down, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
-        comeToStandStill(false, true)
-    end)
-
-    input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
-        if not manualInputEnabled() then return end
-        local dir = flightCore.Turn(turnAngle, Up())
-        if not wsadDirection.longLat:IsZero() then
-            wsadDirection.longLat = dir
-        end
-    end)
-
-    input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
-        if not manualInputEnabled() then return end
-        local dir = flightCore.Turn(-turnAngle, Up())
-        if not wsadDirection.longLat:IsZero() then
-            wsadDirection.longLat = dir
-        end
-    end)
-
-    cmd.Accept("speed", function(data)
-        speed = calc.Kph2Mps(Clamp(data.commandValue, 1, calc.Mps2Kph(getMaxSpeed())))
-        printCurrent()
-    end).AsNumber().Mandatory()
-
-    cmd.Accept("turn-angle", function(data)
-        turnAngle = Clamp(data.commandValue, 0, 360)
-        printCurrent()
-    end).AsNumber().Mandatory()
-
     local moveFunc = function(data)
         local route = rc.ActivateTempRoute()
         local pos = Current()
         local point = route.AddCoordinate(pos + vehicle.orientation.Forward() * data.f +
             vehicle.orientation.Right() * data.r - universe.VerticalReferenceVector() * data.u)
         point.SetOptions(createOptions(data))
+        log:Info("Moving to ", point.Pos())
 
         flightCore.StartFlight()
     end
@@ -596,10 +358,9 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         local route = rc.ActivateTempRoute()
         local point = route.AddCoordinate(Current() +
             vehicle.orientation.Right() * data.commandValue)
-        local p = PointOptions.New()
-        point.options = p
+        local p = point.Options()
         p.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
-        p.Set(PointOptions.MAX_SPEED, data.maxspeed or speed)
+        p.Set(PointOptions.MAX_SPEED, data.maxspeed or vehicle.speed.MaxSpeed())
 
         flightCore.StartFlight()
     end
@@ -629,16 +390,27 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     end
 
     local gotoCmd = cmd.Accept("goto",
-        ---@param data {commandValue:string, precision:boolean, lockdir:boolean, maxspeed:number, margin:number}
+        ---@param data {commandValue:string, precision:boolean, lockdir:boolean, maxspeed:number, margin:number, offset:number}
         function(data)
             local target = getPos(data.commandValue)
 
             if target then
-                gotoTarget(target.coord, data.precision, data.lockdir, data.margin, data.maxspeed, 0, false)
-                log:Info("Moving to position")
+                local direction, distance = (target.coord - Current()):NormalizeLen()
+                local remaining = distance - data.offset
+
+                local offsetTarget
+                if remaining > 0 then
+                    offsetTarget = Current() + direction * remaining
+                else
+                    offsetTarget = target.coord
+                end
+
+                flightCore.GotoTarget(offsetTarget, data.precision, data.lockdir, data.margin, data.maxspeed, 0, false)
+                log:Info("Moving to ", universe.CreatePos(offsetTarget).AsPosString())
             end
         end).AsString().Mandatory()
     addPointOptions(gotoCmd)
+    gotoCmd.Option("offset").AsNumber()
 
     cmd.Accept("align-to",
         ---@param data {commandValue:string}
@@ -647,11 +419,11 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             if target then
                 local pos = universe.ParsePosition(target.pos)
                 if pos then
-                    log:Info("Aligning to ", pos.AsPosString())
                     local route = rc.ActivateTempRoute()
                     route.AddCurrentPos()
                     flightCore.StartFlight()
                     flightCore.AlignTo(pos.Coordinates())
+                    log:Info("Aligning to ", pos.AsPosString())
                 end
             end
         end).AsString().Mandatory()
@@ -743,9 +515,6 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         function(data)
             pub.Publish("ShowInfoWidgets", data.commandValue)
         end).AsBoolean().Mandatory()
-
-    printCurrent()
-
 
     return setmetatable(s, ControlCommands)
 end

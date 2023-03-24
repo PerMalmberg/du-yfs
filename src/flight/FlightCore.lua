@@ -28,6 +28,7 @@ require("flight/state/Require")
 ---@field StopEvents fun()
 ---@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean):Waypoint
 ---@field GoIdle fun()
+---@field GotoTarget fun(target:Vec3, precision:boolean, lockdir:boolean, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean)
 
 
 local FlightCore = {}
@@ -170,6 +171,31 @@ function FlightCore.New(routeController, flightFSM)
         ---@diagnostic disable-next-line: undefined-field
         system:clearEvent("update", updateHandlerId)
         axes.StopEvents()
+    end
+
+    ---Starts a movement towards the given coordinate.
+    ---@param target Vec3
+    ---@param precision boolean
+    ---@param lockdir boolean
+    ---@param margin number
+    ---@param maxSpeed number
+    ---@param finalSpeed number
+    ---@param ignoreLastInRoute boolean If true, the construct will not slow down to come to a stop if the point is last in the route (used for manual control)
+    function s.GotoTarget(target, precision, lockdir, margin, maxSpeed, finalSpeed, ignoreLastInRoute)
+        local temp = routeController.ActivateTempRoute()
+        local targetPoint = temp.AddCoordinate(target)
+        local opt = targetPoint.Options()
+        opt.Set(PointOptions.PRECISION, precision)
+        opt.Set(PointOptions.MAX_SPEED, maxSpeed)
+        opt.Set(PointOptions.MARGIN, margin)
+        opt.Set(PointOptions.FINAL_SPEED, finalSpeed)
+        opt.Set(PointOptions.IGNORE_IF_LAST_IN_ROUTE, ignoreLastInRoute)
+
+        if lockdir then
+            opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
+        end
+
+        s.StartFlight()
     end
 
     local function align()
