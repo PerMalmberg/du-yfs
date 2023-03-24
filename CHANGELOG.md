@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 * Manual control (WASD, Alt-A/D) controls no longer moves by steps and instead accelerates as longs as the key is held.
 * Manual control speed now controlled via mouse scroll wheel.
 * Removed speed command
-* `goto` not takes and `offset` option so that it is possible to stop at an offset from the given point. Negative offsets means the other side of the point.
+* `goto` now takes and `offset` option so that it is possible to stop at an offset from the given point. Negative offsets means the other side of the point from where the approach happens.
 
 ### Fixed
 
