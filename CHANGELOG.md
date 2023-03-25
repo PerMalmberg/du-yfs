@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.0.9 - 2023-03-xx
+## 0.0.9 - 2023-03-25
 
 ### Changed
 
@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 * Manual control speed now controlled via mouse scroll wheel.
 * Removed speed command
 * `goto` now takes and `offset` option so that it is possible to stop at an offset from the given point. Negative offsets means the other side of the point from where the approach happens.
-* Added a small logo at the bottom of the screen to show that the script is running
+* Added a tiny hud showing target speed and max speed in upper left corner of the screen.
 
 ### Fixed
 

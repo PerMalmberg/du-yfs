@@ -10,6 +10,7 @@ local keys                    = require("input/Keys")
 local constants               = require("YFSConstants")
 local Stopwatch               = require("system/Stopwatch")
 local input                   = require("input/Input").Instance()
+local pub                     = require("util/PubSub").Instance()
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local MaxSpeed                = vehicle.speed.MaxSpeed
 local Clamp                   = calc.Clamp
@@ -33,6 +34,9 @@ function Wsad.New(flightCore, cmd)
     local turnAngle = 1
     local wsadDirection = { longLat = Vec3.zero, vert = Vec3.zero }
     local wasdHeight = 0
+
+    input.SetThrottle(100) -- Start at max speed
+
     local rc = flightCore.GetRouteController()
 
     local function checkControlMode()
@@ -140,6 +144,8 @@ function Wsad.New(flightCore, cmd)
                 local throttleSpeed = getThrottleSpeed()
                 flightCore.GotoTarget(target, false, true, 5, throttleSpeed, throttleSpeed, true)
             end
+
+            pub.Publish("ThrottleValue", input.Throttle())
 
             coroutine.yield()
         end

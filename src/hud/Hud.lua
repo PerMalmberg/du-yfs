@@ -21,6 +21,7 @@ Hud.__index = Hud
 function Hud.New()
     local s = {}
     local lastData ---@type FlightData
+    local throttleValue = 0
     system.showScreen(true)
 
     local t = Task.New("HUD", function()
@@ -32,7 +33,8 @@ function Hud.New()
             if lastData then
                 local html = tpl({
                     targetSpeed = Round(Mps2Kph(lastData.targetSpeed), 1),
-                    maxSpeed = Round(Mps2Kph(MaxSpeed()), 1)
+                    maxSpeed = Round(Mps2Kph(MaxSpeed()), 1),
+                    throttleValue = throttleValue
                 })
                 system.setScreen(html)
             end
@@ -48,6 +50,11 @@ function Hud.New()
         ---@param data FlightData
         function(_, data)
             lastData = data
+        end)
+
+    pub.RegisterNumber("ThrottleValue",
+        function(_, value)
+            throttleValue = value
         end)
 
     return setmetatable(s, Hud)
