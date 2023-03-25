@@ -13,8 +13,12 @@
 
         .speed {
             position: fixed;
-            top: 2%;
+            top: 1%;
             left: 2%;
+            color: white;
+            font-size: 1em;
+            font-family: Oxanium;
+            text-shadow: 2px 2px black;
         }
     </style>
 </head>
@@ -28,7 +32,17 @@
         </svg>
     </div>
     <div class="speed">
-        {{targetSpeed}} / {{maxSpeed}} km/h
+        <table>
+            <tr>
+                <td style="text-align: right;">{{targetSpeed}}</td>
+                <td>km/h</td>
+            </tr>
+            <tr>
+                <td style="text-align: right;">{{maxSpeed}}</td>
+                <td>max.</td>
+            </tr>
+
+        </table>
     </div>
 </body>
 
