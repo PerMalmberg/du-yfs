@@ -209,6 +209,9 @@ function Wsad.New(flightCore, cmd)
         if not manualInputEnabled() then return end
         local dir = flightCore.Turn(turnAngle, Up())
         if not wsadDirection.longLat:IsZero() then
+            if input.IsPressed(keys.backward) then
+                dir = -dir
+            end
             wsadDirection.longLat = dir
         end
     end)
@@ -217,6 +220,9 @@ function Wsad.New(flightCore, cmd)
         if not manualInputEnabled() then return end
         local dir = flightCore.Turn(-turnAngle, Up())
         if not wsadDirection.longLat:IsZero() then
+            if input.IsPressed(keys.backward) then
+                dir = -dir
+            end
             wsadDirection.longLat = dir
         end
     end)
