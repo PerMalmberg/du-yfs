@@ -62,6 +62,10 @@ Task.New("Main", function()
     else
         fsm.SetState(Idle.New(fsm))
     end
+
+    local hud = library.embedFile("hud/hud.html")
+    system.setScreen(hud)
+    system.showScreen(true)
 end).Then(function()
     log:Info("Ready.")
 end).Catch(function(t)
