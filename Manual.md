@@ -12,6 +12,7 @@ The goal of this project was initially to write a flight system capable of worki
 * A telemeter named "FloorDetector", pointing downwards
 * Optional data bank named "Settings"
 * Screen (optional, but strongly recommended)
+* In space, you need engines in all directions.
 
 ### Routes
 

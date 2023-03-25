@@ -6,7 +6,7 @@ local FlightFSM        = require("flight/FlightFSM")
 local FlightCore       = require("flight/FlightCore")
 local SystemController = require("controller/SystemController")
 local Settings         = require("Settings")
-local Forward          = require("abstraction/Vehicle").New().orientation.Forward
+local Hud              = require("hud/Hud")
 local floorDetector    = require("controller/FloorDetector").Instance()
 require("version_out")
 
@@ -63,9 +63,7 @@ Task.New("Main", function()
         fsm.SetState(Idle.New(fsm))
     end
 
-    local hud = library.embedFile("hud/hud.html")
-    system.setScreen(hud)
-    system.showScreen(true)
+    local hud = Hud.New()
 end).Then(function()
     log:Info("Ready.")
 end).Catch(function(t)

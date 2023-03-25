@@ -4,22 +4,31 @@
 <head>
     <title>SVG with Red Glow Effect</title>
     <style>
-        .svg-container {
+        .logo {
             position: fixed;
-            bottom: 14%;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 2%;
+            left: 0.5%;
+            /* transform: translateX(-10%); */
+        }
+
+        .speed {
+            position: fixed;
+            top: 2%;
+            left: 2%;
         }
     </style>
 </head>
 
 <body>
-    <div class="svg-container">
-        <svg x="0" y="0" width="24" height="28" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg">
+    <div class="logo">
+        <svg width="24" height="28" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg">
             <g>
                 <path d="M14 12L24 0L12 10L0 0L10 12L12 28L14 12Z" fill="white" />
             </g>
         </svg>
+    </div>
+    <div class="speed">
+        {{targetSpeed}} / {{maxSpeed}} km/h
     </div>
 </body>
 
