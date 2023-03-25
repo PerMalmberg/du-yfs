@@ -410,7 +410,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             end
         end).AsString().Mandatory()
     addPointOptions(gotoCmd)
-    gotoCmd.Option("offset").AsNumber()
+    gotoCmd.Option("offset").AsNumber().Default(0)
 
     cmd.Accept("align-to",
         ---@param data {commandValue:string}
