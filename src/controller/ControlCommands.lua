@@ -405,7 +405,11 @@ function ControlCommands.New(input, cmd, flightCore, settings)
                     offsetTarget = target.coord
                 end
 
-                flightCore.GotoTarget(offsetTarget, data.precision, data.lockdir, data.margin, data.maxspeed, 0, false)
+                local lockToDir = Vec3.zero
+                if data.lockdir then
+                    lockToDir = Forward()
+                end
+                flightCore.GotoTarget(offsetTarget, data.precision, lockToDir, data.margin, data.maxspeed, 0, false)
                 log:Info("Moving to ", universe.CreatePos(offsetTarget).AsPosString())
             end
         end).AsString().Mandatory()

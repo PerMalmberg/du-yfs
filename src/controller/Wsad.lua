@@ -34,6 +34,7 @@ function Wsad.New(flightCore, cmd, settings)
     local s = {}
     local turnAngle = 1
     local wsadDirection = { longLat = Vec3.zero, vert = Vec3.zero }
+    local lockDir = Vec3.zero
     local wasdHeight = 0
 
     input.SetThrottle(1) -- Start at max speed
@@ -102,15 +103,18 @@ function Wsad.New(flightCore, cmd, settings)
         wasdHeight = (curr - body.Geography.Center):Len()
     end
 
-    ---@param longLat Vec3|nil
-    ---@param vert Vec3|nil
-    local function activateManualMovement(longLat, vert)
-        if longLat then
+    ---@param longLat Vec3
+    ---@param vert Vec3
+    ---@param lockDirection Vec3
+    local function activateManualMovement(longLat, vert, lockDirection)
+        lockDir = lockDirection
+
+        if not longLat:IsZero() then
             setWSADHeight()
             wsadDirection.longLat = longLat
         end
 
-        if vert then
+        if not vert:IsZero() then
             wsadDirection.vert = vert
             setWSADHeight()
         end
@@ -150,7 +154,8 @@ function Wsad.New(flightCore, cmd, settings)
 
                 local target = wsadMovement(body, wsadDirection, t)
                 local throttleSpeed = getThrottleSpeed()
-                flightCore.GotoTarget(target, false, true, 5, throttleSpeed, throttleSpeed, true)
+
+                flightCore.GotoTarget(target, false, lockDir, 5, throttleSpeed, throttleSpeed, true)
             end
 
             pub.Publish("ThrottleValue", input.Throttle() * 100)
@@ -161,7 +166,7 @@ function Wsad.New(flightCore, cmd, settings)
 
     input.Register(keys.forward, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(Forward(), nil)
+        activateManualMovement(Forward(), Vec3.zero, Forward())
     end)
 
     input.Register(keys.forward, Criteria.New().OnRelease(), function()
@@ -171,7 +176,7 @@ function Wsad.New(flightCore, cmd, settings)
 
     input.Register(keys.backward, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(-Forward(), nil)
+        activateManualMovement(-Forward(), Vec3.zero, Forward())
     end)
 
     input.Register(keys.backward, Criteria.New().OnRelease(), function()
@@ -181,7 +186,7 @@ function Wsad.New(flightCore, cmd, settings)
 
     input.Register(keys.strafeleft, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(-Right(), nil)
+        activateManualMovement(-Right(), Vec3.zero, Forward())
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnRelease(), function()
@@ -191,7 +196,7 @@ function Wsad.New(flightCore, cmd, settings)
 
     input.Register(keys.straferight, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(Right(), nil)
+        activateManualMovement(Right(), Vec3.zero, Forward())
     end)
 
     input.Register(keys.straferight, Criteria.New().OnRelease(), function()
@@ -201,7 +206,7 @@ function Wsad.New(flightCore, cmd, settings)
 
     input.Register(keys.up, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(nil, -VerticalReferenceVector())
+        activateManualMovement(Vec3.zero, -VerticalReferenceVector(), Forward())
     end)
 
     input.Register(keys.up, Criteria.New().OnRelease(), function()
@@ -211,7 +216,7 @@ function Wsad.New(flightCore, cmd, settings)
 
     input.Register(keys.down, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(nil, VerticalReferenceVector())
+        activateManualMovement(Vec3.zero, VerticalReferenceVector(), Forward())
     end)
 
     input.Register(keys.down, Criteria.New().OnRelease(), function()
@@ -222,48 +227,20 @@ function Wsad.New(flightCore, cmd, settings)
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
         local dir = flightCore.Turn(turnAngle, Up())
+        activateManualMovement(Vec3.zero, Vec3.zero, dir)
         if not wsadDirection.longLat:IsZero() then
-            if input.IsPressed(keys.backward) then
-                dir = -dir
-            end
-            wsadDirection.longLat = dir
+            activateManualMovement(dir, Vec3.zero, Vec3.zero)
         end
     end)
-
-    local function endTurn()
-        if not manualInputEnabled() then return end
-
-        local longLat = nil
-        if input.IsPressed(keys.forward) then
-            longLat = Forward()
-        elseif input.IsPressed(keys.backward) then
-            longLat = -Forward()
-        end
-
-        local vert = nil
-        if input.IsPressed(keys.up) then
-            vert = -universe.VerticalReferenceVector()
-        elseif input.IsPressed(keys.down) then
-            vert = universe.VerticalReferenceVector()
-        end
-
-        activateManualMovement(longLat, vert)
-    end
-
-    input.Register(keys.yawleft, Criteria.New().OnRelease(), endTurn)
 
     input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
         local dir = flightCore.Turn(-turnAngle, Up())
+        activateManualMovement(Vec3.zero, Vec3.zero, dir)
         if not wsadDirection.longLat:IsZero() then
-            if input.IsPressed(keys.backward) then
-                dir = -dir
-            end
-            wsadDirection.longLat = dir
+            activateManualMovement(dir, Vec3.zero, Vec3.zero)
         end
     end)
-
-    input.Register(keys.yawright, Criteria.New().OnRelease(), endTurn)
 
     -- shift + alt + Option9 to switch modes
     input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), lockUser)
