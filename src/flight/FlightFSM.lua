@@ -366,6 +366,10 @@ function FlightFSM.New(settings, routeController)
 
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
 
+        if waypoint.MaxSpeed() == standStillSpeed then
+            return evaluateNewLimit(targetSpeed, 0, "Standstill")
+        end
+
         if firstBody then
             willHitAtmo, _, distanceToAtmo = willEnterAtmo(waypoint, firstBody)
             inAtmo = firstBody:IsInAtmo(pos)
@@ -377,8 +381,6 @@ function FlightFSM.New(settings, routeController)
 
         if waypoint.MaxSpeed() > 0 then
             targetSpeed = evaluateNewLimit(targetSpeed, waypoint.MaxSpeed(), "Route")
-        elseif waypoint.MaxSpeed() == standStillSpeed then
-            targetSpeed = evaluateNewLimit(targetSpeed, 0, "Standstill")
         end
 
         --- Don't allow us to burn
@@ -440,7 +442,7 @@ function FlightFSM.New(settings, routeController)
                     -- Within
                     targetSpeed = evaluateNewLimit(targetSpeed,
                         calcMaxAllowedSpeed(-tenPercent, remainingDistance, endSpeed),
-                        "Final")
+                        "Final atmo")
                 end
             end
         end
@@ -449,6 +451,11 @@ function FlightFSM.New(settings, routeController)
             -- Brakes have become so inefficient at the current altitude or speed they are useless, use linear speed
             -- This state can be seen when entering atmo for example.
             targetSpeed = evaluateNewLimit(targetSpeed, linearSpeed(remainingDistance), "Brake/ineff")
+            -- Does final speed override?
+            local finalSpeed = waypoint.FinalSpeed()
+            if targetSpeed < finalSpeed and finalSpeed > 0 then
+                targetSpeed = evaluateNewLimit(finalSpeed + 1, finalSpeed, "Final spd")
+            end
         elseif inAtmo and willLeaveAtmo then
             -- No need to further reduce
         else

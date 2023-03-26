@@ -28,6 +28,7 @@ require("flight/state/Require")
 ---@field StopEvents fun()
 ---@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean):Waypoint
 ---@field GoIdle fun()
+---@field GotoTarget fun(target:Vec3, precision:boolean, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean)
 
 
 local FlightCore = {}
@@ -45,7 +46,12 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
     local opt = point.Options()
     local dir = Vec3.New(opt.Get(PointOptions.LOCK_DIRECTION, nullVec))
     local margin = opt.Get(PointOptions.MARGIN, defaultMargin)
-    local finalSpeed = Ternary(lastInRoute, 0, opt.Get(PointOptions.FINAL_SPEED, defaultFinalSpeed))
+    local finalSpeed
+    if opt.Get(PointOptions.IGNORE_IF_LAST_IN_ROUTE) then
+        finalSpeed = opt.Get(PointOptions.FINAL_SPEED, defaultFinalSpeed)
+    else
+        finalSpeed = Ternary(lastInRoute, 0, opt.Get(PointOptions.FINAL_SPEED, defaultFinalSpeed))
+    end
     local maxSpeed = opt.Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored/max speed.
 
     local coordinate = universe.ParsePosition(point.Pos()).Coordinates()
@@ -124,15 +130,18 @@ function FlightCore.New(routeController, flightFSM)
         flightFSM.SetState(Idle.New(flightFSM))
     end
 
-    ---Rotates all waypoints around the axis with the given angle
+    ---Rotates current waypoint with the given angle
     ---@param degrees number The angle to turn
     ---@param axis Vec3
+    ---@return Vec3 # The alignment direction
     function s.Turn(degrees, axis)
         local current = vehicle.position.Current()
         local forwardPointOnPlane = calc.ProjectPointOnPlane(axis, current,
             current + vehicle.orientation.Forward() * alignment.DirectionMargin)
         forwardPointOnPlane = calc.RotateAroundAxis(forwardPointOnPlane, current, degrees, axis)
-        currentWaypoint.LockDirection((forwardPointOnPlane - Current()):NormalizeInPlace(), true)
+        local dir = (forwardPointOnPlane - Current()):NormalizeInPlace()
+        currentWaypoint.LockDirection(dir, true)
+        return dir
     end
 
     ---Aligns to the point
@@ -162,6 +171,31 @@ function FlightCore.New(routeController, flightFSM)
         ---@diagnostic disable-next-line: undefined-field
         system:clearEvent("update", updateHandlerId)
         axes.StopEvents()
+    end
+
+    ---Starts a movement towards the given coordinate.
+    ---@param target Vec3
+    ---@param precision boolean
+    ---@param lockDir Vec3 If not zero, direction is locked to this direction
+    ---@param margin number
+    ---@param maxSpeed number
+    ---@param finalSpeed number
+    ---@param ignoreLastInRoute boolean If true, the construct will not slow down to come to a stop if the point is last in the route (used for manual control)
+    function s.GotoTarget(target, precision, lockDir, margin, maxSpeed, finalSpeed, ignoreLastInRoute)
+        local temp = routeController.ActivateTempRoute()
+        local targetPoint = temp.AddCoordinate(target)
+        local opt = targetPoint.Options()
+        opt.Set(PointOptions.PRECISION, precision)
+        opt.Set(PointOptions.MAX_SPEED, maxSpeed)
+        opt.Set(PointOptions.MARGIN, margin)
+        opt.Set(PointOptions.FINAL_SPEED, finalSpeed)
+        opt.Set(PointOptions.IGNORE_IF_LAST_IN_ROUTE, ignoreLastInRoute)
+
+        if not lockDir:IsZero() then
+            opt.Set(PointOptions.LOCK_DIRECTION, { lockDir:Unpack() })
+        end
+
+        s.StartFlight()
     end
 
     local function align()

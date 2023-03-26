@@ -45,5 +45,7 @@ PointOptions.FINAL_SPEED = "finalSpeed"
 PointOptions.MAX_SPEED = "maxSpeed"
 -- Boolean. If true, the approach to the point will be done using precision mode. Enable this for maneuvers like straight up/down travel
 PointOptions.PRECISION = "precision"
+-- Boolean. If true, final speed takese precedence over last-point in route check.
+PointOptions.IGNORE_IF_LAST_IN_ROUTE = "ignorelast"
 
 return PointOptions
