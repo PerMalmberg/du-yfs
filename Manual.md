@@ -95,18 +95,19 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 | Alt-Shift-9 | (Un)locks player |
 
 
-## Controls (when user is locked in place)
+## Manual Controls (when user is locked in place)
 
-| Key   | Description    |
-| ----- | -------------- |
-| A     | Turn left      |
-| S     | Move backwards |
-| W     | Move forward   |
-| D     | Turn right     |
-| C     | Move down      |
-| Space | Move  up       |
-| Alt-A | Strafe left    |
-| Alt-D | Strafe right   |
+| Key                | Description                 |
+| ------------------ | --------------------------- |
+| A                  | Turn left                   |
+| S                  | Move backwards              |
+| W                  | Move forward                |
+| D                  | Turn right                  |
+| C                  | Move down                   |
+| Space              | Move  up                    |
+| Alt-A              | Strafe left                 |
+| Alt-D              | Strafe right                |
+| Mouse scroll wheel | Increase/decrease max speed |
 
 ## LUA console commands
 
@@ -195,6 +196,7 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 |                           | -yawAlignmentThrustLimiter | number  | Y        | Sets the alignment limit angle which yaw must be within before accelerating to the next waypoint.                                                                                                    |
 |                           | -showWidgetsOnStart        | boolean | Y        | If true, diagnostics widgets are shown on start up                                                                                                                                                   |
 |                           | -routeStartDistanceLimit   | number  | Y        | Sets the maximum allowed activation distance between the construct and the closest point of a route                                                                                                  |
+| -                         | -throttleStep              | number  | Y        | Sets the step size of the throttle in manual control mode in percent, default 10                                                                                                                     |
 | get                       | See `set`                  |         | Y        | Prints the setting set with the `set` command                                                                                                                                                        |
 | get-all                   |                            |         |          | Prints all current settings                                                                                                                                                                          |
 | set-full-container-boosts |                            |         |          | Sets all related talents for containers, atmospheric, space and rocket fuel tanks to level 5                                                                                                         |

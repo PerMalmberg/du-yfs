@@ -1,5 +1,4 @@
 local log              = require("debug/Log")()
-local PointOptions     = require("flight/route/PointOptions")
 local RouteController  = require("flight/route/RouteController")
 local BufferedDB       = require("storage/BufferedDB")
 local FlightFSM        = require("flight/FlightFSM")
@@ -8,6 +7,8 @@ local SystemController = require("controller/SystemController")
 local Settings         = require("Settings")
 local Hud              = require("hud/Hud")
 local floorDetector    = require("controller/FloorDetector").Instance()
+local commandLine      = require("commandline/CommandLine").Instance()
+local Wsad             = require("controller/Wsad")
 require("version_out")
 
 log:SetLevel(log.LogLevel.WARNING)
@@ -33,6 +34,8 @@ end
 local settingsDb = BufferedDB.New(settingLink)
 local routeDb = BufferedDB.New(routeLink)
 local settings = Settings.New(settingsDb)
+local hud ---@type Hud
+local wsad ---@type Wsad
 
 Task.New("Main", function()
     log:Info(APP_NAME)
@@ -63,7 +66,8 @@ Task.New("Main", function()
         fsm.SetState(Idle.New(fsm))
     end
 
-    local hud = Hud.New()
+    hud = Hud.New()
+    wsad = Wsad.New(fc, commandLine, settings)
 end).Then(function()
     log:Info("Ready.")
 end).Catch(function(t)

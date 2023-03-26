@@ -2,20 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.0.9 - 2023-03-25
+## 0.0.9 - 2023-03-26
 
 ### Changed
 
 * Fixed PID selection for axis control relating to lighter constructs.
 * Manual control (WASD, Alt-A/D) controls no longer moves by steps and instead accelerates as longs as the key is held.
 * Manual control speed now controlled via mouse scroll wheel.
-* Removed speed command
 * `goto` now takes and `offset` option so that it is possible to stop at an offset from the given point. Negative offsets means the other side of the point from where the approach happens.
-* Added a tiny hud showing target speed and max speed in upper left corner of the screen.
+
+### Added
+* A tiny hud showing target speed and max speed in upper left corner of the screen.
+* New setting `-throttleStep` to control step size for manual control
+
+### Removed
+* `speed` command
 
 ### Fixed
 
-* 'strafe' command no longer turns towards the new position
+* `strafe` command no longer turns towards the new position
 
 ## 0.0.8 - 2023-03-12
 

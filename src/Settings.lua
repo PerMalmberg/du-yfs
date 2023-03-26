@@ -60,6 +60,7 @@ function Settings.New(db)
         yawAlignmentThrustLimiter = { default = routeDefaults.yawAlignmentThrustLimiter },
         routeStartDistanceLimit = { default = routeDefaults.routeStartDistanceLimit },
         showWidgetsOnStart = { default = yfsConstants.widgets.showOnStart },
+        throttleStep = { default = yfsConstants.flight.throttleStep }
     }
 
     for k, v in pairs(containerSettings) do

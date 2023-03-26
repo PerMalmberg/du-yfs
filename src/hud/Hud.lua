@@ -11,7 +11,7 @@ local Round = calc.Round
 ---@alias HudData {speed:number, maxSpeed:number}
 
 ---@class Hud
----@field New fun(table):Hud
+---@field New fun():Hud
 
 local Hud = {}
 Hud.__index = Hud

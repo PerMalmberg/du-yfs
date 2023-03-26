@@ -28,14 +28,22 @@ Wsad.__index                  = Wsad
 
 ---@param flightCore FlightCore
 ---@param cmd CommandLine
+---@param settings Settings
 ---@return Wsad
-function Wsad.New(flightCore, cmd)
+function Wsad.New(flightCore, cmd, settings)
     local s = {}
     local turnAngle = 1
     local wsadDirection = { longLat = Vec3.zero, vert = Vec3.zero }
     local wasdHeight = 0
 
-    input.SetThrottle(100) -- Start at max speed
+    input.SetThrottle(1) -- Start at max speed
+    local throttleStep = settings.Get("throttleStep", constants.flight.throttleStep) / 100
+    ---@cast throttleStep number
+    input.SetThrottleStep(throttleStep)
+
+    settings.RegisterCallback("throttleStep", function(step)
+        input.SetThrottleStep(step / 100)
+    end)
 
     local rc = flightCore.GetRouteController()
 
@@ -64,7 +72,7 @@ function Wsad.New(flightCore, cmd)
 
 
     local function getThrottleSpeed()
-        return MaxSpeed() * input.Throttle() / 100
+        return MaxSpeed() * input.Throttle()
     end
 
     ---@param body Body
@@ -120,7 +128,7 @@ function Wsad.New(flightCore, cmd)
             setWSADHeight()
         end
 
-        if wsadDirection.longLat:IsZero() and wsadDirection.vert:IsVec3() then
+        if wsadDirection.longLat:IsZero() and wsadDirection.vert:IsZero() then
             local r = rc.ActivateTempRoute().AddCurrentPos()
             r.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
             r.Options().Set(PointOptions.MAX_SPEED, constants.flight.standStillSpeed)
@@ -137,7 +145,7 @@ function Wsad.New(flightCore, cmd)
             local curr = Current()
             local body = universe.ClosestBody(curr)
 
-            if not (wsadDirection.longLat:IsZero() and wsadDirection.vert:IsZero()) and sw.Elapsed() > t then
+            if (not wsadDirection.longLat:IsZero() or not wsadDirection.vert:IsZero()) and sw.Elapsed() > t then
                 sw.Restart()
 
                 local target = wsadMovement(body, wsadDirection, t)
@@ -145,7 +153,7 @@ function Wsad.New(flightCore, cmd)
                 flightCore.GotoTarget(target, false, true, 5, throttleSpeed, throttleSpeed, true)
             end
 
-            pub.Publish("ThrottleValue", input.Throttle())
+            pub.Publish("ThrottleValue", input.Throttle() * 100)
 
             coroutine.yield()
         end
@@ -222,6 +230,28 @@ function Wsad.New(flightCore, cmd)
         end
     end)
 
+    local function endTurn()
+        if not manualInputEnabled() then return end
+
+        local longLat = nil
+        if input.IsPressed(keys.forward) then
+            longLat = Forward()
+        elseif input.IsPressed(keys.backward) then
+            longLat = -Forward()
+        end
+
+        local vert = nil
+        if input.IsPressed(keys.up) then
+            vert = -universe.VerticalReferenceVector()
+        elseif input.IsPressed(keys.down) then
+            vert = universe.VerticalReferenceVector()
+        end
+
+        activateManualMovement(longLat, vert)
+    end
+
+    input.Register(keys.yawleft, Criteria.New().OnRelease(), endTurn)
+
     input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
         local dir = flightCore.Turn(-turnAngle, Up())
@@ -232,6 +262,8 @@ function Wsad.New(flightCore, cmd)
             wsadDirection.longLat = dir
         end
     end)
+
+    input.Register(keys.yawright, Criteria.New().OnRelease(), endTurn)
 
     -- shift + alt + Option9 to switch modes
     input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), lockUser)
