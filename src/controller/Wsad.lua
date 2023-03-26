@@ -62,15 +62,18 @@ function Wsad.New(flightCore, cmd, settings)
     end
 
     local function lockUser()
+        player.freeze(true)
+        log:Info("Player locked and auto shutdown disabled.")
+    end
+
+    local function toggleUSerLock()
         if manualInputEnabled() then
             player.freeze(false)
             log:Info("Player released and auto shutdown enabled.")
         else
-            player.freeze(true)
-            log:Info("Player locked and auto shutdown disabled.")
+            lockUser()
         end
     end
-
 
     local function getThrottleSpeed()
         return MaxSpeed() * input.Throttle()
@@ -227,23 +230,30 @@ function Wsad.New(flightCore, cmd, settings)
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
         local dir = flightCore.Turn(turnAngle, Up())
-        activateManualMovement(Vec3.zero, Vec3.zero, dir)
-        if not wsadDirection.longLat:IsZero() then
-            activateManualMovement(dir, Vec3.zero, Vec3.zero)
+        if input.IsPressed(keys.backward) then
+            activateManualMovement(-dir, Vec3.zero, dir)
+        elseif input.IsPressed(keys.forward) then
+            activateManualMovement(dir, Vec3.zero, dir)
+        else
+            activateManualMovement(Vec3.zero, Vec3.zero, dir)
         end
     end)
 
     input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
         local dir = flightCore.Turn(-turnAngle, Up())
-        activateManualMovement(Vec3.zero, Vec3.zero, dir)
-        if not wsadDirection.longLat:IsZero() then
-            activateManualMovement(dir, Vec3.zero, Vec3.zero)
+
+        if input.IsPressed(keys.backward) then
+            activateManualMovement(-dir, Vec3.zero, dir)
+        elseif input.IsPressed(keys.forward) then
+            activateManualMovement(dir, Vec3.zero, dir)
+        else
+            activateManualMovement(Vec3.zero, Vec3.zero, dir)
         end
     end)
 
     -- shift + alt + Option9 to switch modes
-    input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), lockUser)
+    input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), toggleUSerLock)
 
     cmd.Accept("turn-angle",
         ---@param data {commandValue:number}
@@ -251,6 +261,11 @@ function Wsad.New(flightCore, cmd, settings)
             turnAngle = Clamp(data.commandValue, 0, 360)
             log:Info("Turn angle: ", turnAngle, "°")
         end).AsNumber().Mandatory()
+
+    if settings.Get("manualControlOnStartup", false) then
+        log:Info("Manual control on startup active.")
+        lockUser()
+    end
 
     return setmetatable(s, Wsad)
 end

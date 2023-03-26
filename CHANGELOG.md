@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 * A tiny hud showing target speed and max speed in upper left corner of the screen.
 * New setting `-throttleStep` to control step size for manual control
+* New setting `-manualControlOnStartup` to make the controller enable manual control on startup.
 
 ### Removed
 * `speed` command
