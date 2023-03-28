@@ -24,11 +24,11 @@ The construct will align towards the next point in the route (see setting `yawAl
 
 ### Enclosures
 
-If you intend to build an enclosure for the construct remember that physics in Dual Universe creates a hit box around constructs in the shape of a box, not the visual contours. As such yor enclosure must be able to fit a box the size of the extreme distances of the construct on all three axes.
+If you intend to build an enclosure for the construct remember that physics in Dual Universe creates a hit box around constructs in the shape of a box, not the visual contours. As such your enclosure must be able to fit a box the size of the extreme distances of the construct on all three axes.
 
 ### Floors for parking; ground and space
 
-Due to Dual Universe's slightly wonky physics, when creating floors for any dynamic construct, ensure that the floor fully encompasses the dynamic construct or it might clip through and fall, or worse, explode.
+Due to Dual Universe's slightly wonky physics, when creating floors for any dynamic construct, ensure that the floor fully encompasses the dynamic construct and it does NOT cross core boundaries or it might clip through and fall, or worse, explode.
 
 ## Installation as an elevator (ground to space)
 
