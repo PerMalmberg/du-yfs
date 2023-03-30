@@ -36,19 +36,18 @@ minify_layout:
 	@jq -c . ./src/screen/offline.json > ./src/screen/offline_min.json
 	@./update_version_info.sh
 
-
 test: clean
 	@LUA_PATH="$(LUA_PATH_TEST)" busted -t "flight" .
 	@luacov
 	@$(CLEAN_COV)
 
-dev: minify_layout test
-	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=development/main
+dev: test
+	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=development/Unlimited
 
 release: minify_layout test
-	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=release/main
+	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=release/variants/Unlimited
 
 release-ci: minify_layout test
 	jq 'del(.targets.development)' ./project.json > ./new_project.json
 	mv ./new_project.json ./project.json
-	@LUA_PATH="$(LUA_PATH)" du-lua build release/main
+	@LUA_PATH="$(LUA_PATH)" du-lua build

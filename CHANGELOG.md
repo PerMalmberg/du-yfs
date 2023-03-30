@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.10 - 2023-03-31
+
+### Added
+* Support for setting limits on engine type, size and count. This is to allow selling smaller, purpose built, ships without giving away the entire script for a reduced price.
+
 ## 0.0.9 - 2023-03-26
 
 ### Changed
