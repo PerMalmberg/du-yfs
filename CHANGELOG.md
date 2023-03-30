@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 ### Added
 * Support for setting limits on engine type, size and count. This is to allow selling smaller, purpose built, ships without giving away the entire script for a reduced price.
 
+### Fixed
+* Made correction to properly read boolean 'false' from settings.
+
 ## 0.0.9 - 2023-03-26
 
 ### Changed
