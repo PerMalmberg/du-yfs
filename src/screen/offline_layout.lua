@@ -1,7 +1,8 @@
 local ver = require("version_out")
 local layout = {
     fonts = {
-        version = { font = "Play",
+        version = {
+            font = "Play",
             size = 18
         },
         offline = {
@@ -60,7 +61,7 @@ local layout = {
                 {
                     type = "text",
                     pos1 = "(1004,593)",
-                    text = "Screen code version: " .. ver.GIT_INFO .. " / " .. ver.DATE_INFO,
+                    text = "Screen code version: " .. ver.APP_VERSION,
                     layer = 1,
                     font = "version",
                     style = "version"

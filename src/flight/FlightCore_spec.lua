@@ -15,7 +15,6 @@ describe("FlightCore #flight", function()
         o.Set(PointOptions.LOCK_DIRECTION, { Vec3.New(1, 2, 3):Unpack() })
         o.Set(PointOptions.MARGIN, 456)
         o.Set(PointOptions.PRECISION, true)
-        o.Set(PointOptions.USE_WINGS, true)
         local p = Point.New("::pos{0,2,2.9093,65.4697,34.7070}", nil, o)
 
         local wp = FlightCore.CreateWPFromPoint(p, false)

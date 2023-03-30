@@ -1,5 +1,7 @@
-return {
+local version =
+{
     APP_NAME = "Yoarii's Flight System",
-    GIT_INFO = "GITINFO",
-    DATE_INFO = "DATEINFO"
+    APP_VERSION = "GITINFO / DATEINFO"
 }
+
+return version

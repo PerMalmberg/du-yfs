@@ -4,3 +4,6 @@
 [submodule "external/du-render"]
 	path = external/du-render
 	url = git@github.com:PerMalmberg/du-render.git
+[submodule "external/SmartTemplateLibrary"]
+	path = external/SmartTemplateLibrary
+	url = git@github.com:PerMalmberg/SmartTemplateLibrary.git

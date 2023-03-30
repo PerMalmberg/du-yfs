@@ -14,8 +14,13 @@
     }
   ],
   "builds": {
-    "main": {
-      "name": "main",
+    "Unlimited": {
+      "name": "variants/Unlimited",
+      "type": "control",
+      "slots": {}
+    },
+    "Atmo12XS": {
+      "name": "variants/Atmo12XS",
       "type": "control",
       "slots": {}
     },

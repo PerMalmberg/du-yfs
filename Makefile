@@ -5,6 +5,7 @@ PWD=$(shell pwd)
 LUA_PATH := ./src/?.lua
 LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/src/?.lua
 LUA_PATH := $(LUA_PATH);$(PWD)/external/du-render/src/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/external/SmartTemplateLibrary/src/?.lua
 
 LUA_PATH_TEST := $(LUA_PATH);$(PWD)/external/du-libs/src/builtin/du_provided/?.lua
 LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-lua-examples/api-mockup/?.lua
@@ -33,19 +34,18 @@ clean: clean_cov clean_report
 update_version:
 	@./update_version_info.sh
 
-
 test: clean
 	@LUA_PATH="$(LUA_PATH_TEST)" busted -t "flight" .
 	@luacov
 	@$(CLEAN_COV)
 
 dev: update_version test
-	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=development/main
+	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=development/variants/Unlimited
 
 release: update_version test
-	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=release/main
+	@LUA_PATH="$(LUA_PATH)" du-lua build --copy=release/variants/Unlimited
 
 release-ci: update_version test
 	jq 'del(.targets.development)' ./project.json > ./new_project.json
 	mv ./new_project.json ./project.json
-	@LUA_PATH="$(LUA_PATH)" du-lua build release/main
+	@LUA_PATH="$(LUA_PATH)" du-lua build

@@ -9,7 +9,6 @@ describe("Point #flight", function()
     opt.Set(PointOptions.LOCK_DIRECTION, true)
     opt.Set(PointOptions.MARGIN, 3)
     opt.Set(PointOptions.PRECISION, true)
-    opt.Set(PointOptions.USE_WINGS, true)
 
     it("returns what is passed in", function()
         local point = Point.New(posString, "named reference", opt)
@@ -29,7 +28,6 @@ describe("Point #flight", function()
         assert.are.equal(true, data.opt[PointOptions.LOCK_DIRECTION])
         assert.are.equal(3, data.opt[PointOptions.MARGIN])
         assert.are.equal(true, data.opt[PointOptions.PRECISION])
-        assert.are.equal(true, data.opt[PointOptions.USE_WINGS])
 
         local loaded = Point.LoadFromPOD(data)
 
@@ -40,7 +38,5 @@ describe("Point #flight", function()
         assert.are.equal(true, loaded.Options()[PointOptions.LOCK_DIRECTION])
         assert.are.equal(3, loaded.Options()[PointOptions.MARGIN])
         assert.are.equal(true, loaded.Options()[PointOptions.PRECISION])
-        assert.are.equal(true, loaded.Options()[PointOptions.USE_WINGS])
-
     end)
 end)
