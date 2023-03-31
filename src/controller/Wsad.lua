@@ -36,6 +36,10 @@ function Wsad.New(flightCore, cmd, settings)
     local wsadDirection = { longLat = Vec3.zero, vert = Vec3.zero }
     local lockDir = Vec3.zero
     local wasdHeight = 0
+    local vertical = 0
+    local lateral = 0
+    local strafe = 0
+    local pointDir = Forward()
 
     input.SetThrottle(1) -- Start at max speed
     local throttleStep = settings.Get("throttleStep", constants.flight.throttleStep) / 100
@@ -66,7 +70,7 @@ function Wsad.New(flightCore, cmd, settings)
         log:Info("Player locked and auto shutdown disabled.")
     end
 
-    local function toggleUSerLock()
+    local function toggleUserLock()
         if manualInputEnabled() then
             player.freeze(false)
             log:Info("Player released and auto shutdown enabled.")
@@ -80,18 +84,17 @@ function Wsad.New(flightCore, cmd, settings)
     end
 
     ---@param body Body
-    ---@param direction {longLat:Vec3, vert:Vec3}
     ---@param interval number
     ---@return Vec3
-    local function wsadMovement(body, direction, interval)
+    local function wsadMovement(body, interval)
         local curr = Current()
         -- Put the point 1.5 times the distance we travel per timer interval
         local dist = max(10, vehicle.velocity.Movement():Len() * interval * 1.5)
 
-        local dir = (direction.longLat + direction.vert):Normalize()
+        local dir = (Forward() * lateral + Right() * strafe - VerticalReferenceVector() * vertical):Normalize()
 
         local pointInDir = curr + dir * dist
-        if body:IsInAtmo(curr) and direction.vert:IsZero() then
+        if body:IsInAtmo(curr) and vertical == 0 then
             -- Find the direction from body center to forward point and calculate a new point with same
             -- height as the movement started at so that we move along the curvature of the body.
             return body.Geography.Center + (pointInDir - body.Geography.Center):NormalizeInPlace() * wasdHeight
@@ -106,59 +109,32 @@ function Wsad.New(flightCore, cmd, settings)
         wasdHeight = (curr - body.Geography.Center):Len()
     end
 
-    ---@param longLat Vec3
-    ---@param vert Vec3
-    ---@param lockDirection Vec3
-    local function activateManualMovement(longLat, vert, lockDirection)
-        lockDir = lockDirection
-
-        if not longLat:IsZero() then
-            setWSADHeight()
-            wsadDirection.longLat = longLat
-        end
-
-        if not vert:IsZero() then
-            wsadDirection.vert = vert
-            setWSADHeight()
-        end
-    end
-
-    ---@param longLat boolean
-    ---@param vert boolean
-    local function comeToStandStill(longLat, vert)
-        if longLat then
-            wsadDirection.longLat = Vec3.zero
-        end
-
-        if vert then
-            wsadDirection.vert = Vec3.zero
-            setWSADHeight()
-        end
-
-        if wsadDirection.longLat:IsZero() and wsadDirection.vert:IsZero() then
-            local r = rc.ActivateTempRoute().AddCurrentPos()
-            r.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
-            r.Options().Set(PointOptions.MAX_SPEED, constants.flight.standStillSpeed)
-            flightCore.StartFlight()
-        end
-    end
-
     Task.New("WASD", function()
         local t = 0.1
         local sw = Stopwatch.New()
         sw.Start()
+        local wantsToMove = false
 
         while true do
             local curr = Current()
             local body = universe.ClosestBody(curr)
 
-            if (not wsadDirection.longLat:IsZero() or not wsadDirection.vert:IsZero()) and sw.Elapsed() > t then
-                sw.Restart()
+            if (lateral ~= 0 or vertical ~= 0 or strafe ~= 0) then
+                wantsToMove = true
+                if sw.Elapsed() > t then
+                    sw.Restart()
 
-                local target = wsadMovement(body, wsadDirection, t)
-                local throttleSpeed = getThrottleSpeed()
+                    local target = wsadMovement(body, t)
+                    local throttleSpeed = getThrottleSpeed()
 
-                flightCore.GotoTarget(target, false, lockDir, 5, throttleSpeed, throttleSpeed, true)
+                    flightCore.GotoTarget(target, false, pointDir, 5, throttleSpeed, throttleSpeed, true)
+                end
+            elseif wantsToMove then
+                wantsToMove = false
+                local r = rc.ActivateTempRoute().AddCurrentPos()
+                r.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
+                r.Options().Set(PointOptions.MAX_SPEED, constants.flight.standStillSpeed)
+                flightCore.StartFlight()
             end
 
             pub.Publish("ThrottleValue", input.Throttle() * 100)
@@ -167,93 +143,85 @@ function Wsad.New(flightCore, cmd, settings)
         end
     end)
 
+    local function changeVertical(delta)
+        vertical = vertical + delta
+        if vertical == 0 then
+            setWSADHeight()
+        end
+    end
+
     input.Register(keys.forward, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(Forward(), Vec3.zero, Forward())
+        lateral = lateral + 1
     end)
 
     input.Register(keys.forward, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill(true, false)
+        lateral = lateral - 1
     end)
 
     input.Register(keys.backward, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(-Forward(), Vec3.zero, Forward())
+        lateral = lateral - 1
     end)
 
     input.Register(keys.backward, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill(true, false)
+        lateral = lateral + 1
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(-Right(), Vec3.zero, Forward())
+        strafe = strafe - 1
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill(true, false)
+        strafe = strafe + 1
     end)
 
     input.Register(keys.straferight, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(Right(), Vec3.zero, Forward())
+        strafe = strafe + 1
     end)
 
     input.Register(keys.straferight, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill(true, false)
+        strafe = strafe - 1
     end)
 
     input.Register(keys.up, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(Vec3.zero, -VerticalReferenceVector(), Forward())
+        changeVertical(1)
     end)
 
     input.Register(keys.up, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill(false, true)
+        changeVertical(-1)
     end)
 
     input.Register(keys.down, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        activateManualMovement(Vec3.zero, VerticalReferenceVector(), Forward())
+        changeVertical(-1)
     end)
 
     input.Register(keys.down, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        comeToStandStill(false, true)
+        changeVertical(1)
     end)
 
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
-        local dir = flightCore.Turn(turnAngle, Up())
-        if input.IsPressed(keys.backward) then
-            activateManualMovement(-dir, Vec3.zero, dir)
-        elseif input.IsPressed(keys.forward) then
-            activateManualMovement(dir, Vec3.zero, dir)
-        else
-            activateManualMovement(Vec3.zero, Vec3.zero, dir)
-        end
+        pointDir = flightCore.Turn(turnAngle, Up())
     end)
 
     input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
-        local dir = flightCore.Turn(-turnAngle, Up())
-
-        if input.IsPressed(keys.backward) then
-            activateManualMovement(-dir, Vec3.zero, dir)
-        elseif input.IsPressed(keys.forward) then
-            activateManualMovement(dir, Vec3.zero, dir)
-        else
-            activateManualMovement(Vec3.zero, Vec3.zero, dir)
-        end
+        pointDir = flightCore.Turn(-turnAngle, Up())
     end)
 
     -- shift + alt + Option9 to switch modes
-    input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), toggleUSerLock)
+    input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), toggleUserLock)
 
     cmd.Accept("turn-angle",
         ---@param data {commandValue:number}
