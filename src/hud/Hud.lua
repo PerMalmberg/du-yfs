@@ -1,6 +1,7 @@
 local Template = require("Template")
 local Task = require("system/Task")
-local content = library.embedFile("hud.html")
+local standardHud = library.embedFile("hud.html")
+local ecuHud = library.embedFile("ecu.html")
 local log = require("debug/Log")()
 local pub = require("util/PubSub").Instance()
 local MaxSpeed = require("abstraction/Vehicle").New().speed.MaxSpeed
@@ -22,10 +23,19 @@ function Hud.New()
     local s = {}
     local lastData ---@type FlightData
     local throttleValue = 0
+    local unitInfo = system.getItem(unit.getItemId())
+    local isECU = unitInfo.displayNameWithSize:lower():match("emergency")
+    local selectedHud
+    if isECU then
+        selectedHud = ecuHud
+    else
+        selectedHud = standardHud
+    end
+
     system.showScreen(true)
 
-    local t = Task.New("HUD", function()
-        local tpl = Template(content, {}, function(obj, err)
+    Task.New("HUD", function()
+        local tpl = Template(selectedHud, {}, function(obj, err)
             log:Error("Error compiling template: ", err)
         end)
 

@@ -9,6 +9,7 @@ local ScreenController = require("controller/ScreenController")
 local Settings         = require("Settings")
 local Stopwatch        = require("system/Stopwatch")
 local Hud              = require("hud/Hud")
+local InfoCentral      = require("info/InfoCentral")
 local Task             = require("system/Task")
 local Wsad             = require("controller/Wsad")
 local floorDetector    = require("controller/FloorDetector").Instance()
@@ -35,6 +36,10 @@ local function Start()
         settingLink = routeLink
     end
 
+    local unitInfo = system.getItem(unit.getItemId())
+    local isECU = unitInfo.displayNameWithSize:lower():match("emergency")
+
+
     local settingsDb = BufferedDB.New(settingLink)
     local routeDb = BufferedDB.New(routeLink)
     local settings = Settings.New(settingsDb)
@@ -43,6 +48,7 @@ local function Start()
     local commands ---@type ControlCommands
     local screen ---@type ScreenController
     local fuel ---@type Fuel
+    local info ---@type InfoCentral
 
     Task.New("Main", function()
         settingsDb.BeginLoad()
@@ -69,15 +75,19 @@ local function Start()
             fsm.SetState(Idle.New(fsm))
         end
 
-        screen = ScreenController.New(fc, settings)
-        hud = Hud.New()
-        wsad = Wsad.New(fc, commandLine, settings)
-        fuel = Fuel.New(settings)
-
         commands = ControlCommands.New(input, commandLine, fc, settings)
-        commands.RegisterCommonCommands()
+
+        if not isECU then
+            screen = ScreenController.New(fc, settings)
+            wsad = Wsad.New(fc, commandLine, settings)
+            fuel = Fuel.New(settings)
+            commands.RegisterRouteCommands()
+        end
+
+        info = InfoCentral.Instance()
+        hud = Hud.New()
         commands.RegisterMoveCommands()
-        commands.RegisterRouteCommands()
+        commands.RegisterCommonCommands()
 
         pub.Publish("ShowInfoWidgets", settings.Boolean("showWidgetsOnStart", false))
     end).Then(function()

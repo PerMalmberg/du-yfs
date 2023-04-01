@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 * New commands: `route-move-pos-back` and `route-move-pos-forward`
+* Now supports running on an ECU.
 
 ## 0.0.11 - 2023-04-01
 

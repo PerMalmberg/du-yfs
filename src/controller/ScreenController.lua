@@ -1,13 +1,11 @@
 local Stopwatch          = require("system/Stopwatch")
 local Task               = require("system/Task")
 local ValueTree          = require("util/ValueTree")
-local InfoCentral        = require("info/InfoCentral")
 local log                = require("debug/Log")()
 local commandLine        = require("commandline/CommandLine").Instance()
 local pub                = require("util/PubSub").Instance()
 local layout             = require("screen/layout")
 local Stream             = require("Stream")
-local json               = require("dkjson")
 local calc               = require("util/Calc")
 local distanceFormat     = require("util/DistanceFormat")
 local massFormat         = require("util/MassFormat")
@@ -28,7 +26,6 @@ function ScreenController.New(flightCore, settings)
     local s = {}
     local layoutSent = false
 
-    local info = InfoCentral.Instance()
     local rc = flightCore.GetRouteController()
     local dataToScreen = ValueTree.New()
     local routePage = 1
