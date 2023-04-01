@@ -1,51 +1,24 @@
-local Stopwatch      = require("system/Stopwatch")
-local Task           = require("system/Task")
-local ValueTree      = require("util/ValueTree")
-local InfoCentral    = require("info/InfoCentral")
-local log            = require("debug/Log")()
-local commandLine    = require("commandline/CommandLine").Instance()
-local pub            = require("util/PubSub").Instance()
-local layout         = library.embedFile("../screen/layout_min.json")
-local Stream         = require("Stream")
-local json           = require("dkjson")
-local calc           = require("util/Calc")
-local distanceFormat = require("util/DistanceFormat")
-local massFormat     = require("util/MassFormat")
-local TotalMass      = require("abstraction/Vehicle").New().mass.Total
-
----@param t table
----@return string
-local function serialize(t)
-    coroutine.yield()
-    local r = json.encode(t)
-    coroutine.yield()
-    ---@cast r string
-    return r
-end
-
----@param s string
----@return table|nil
-local function deserialize(s)
-    coroutine.yield()
-    local d = json.decode(s)
-    coroutine.yield()
-    ---@cast d table
-    return d
-end
-
-local function dataReceived(data)
-    -- Publish data to system
-    data = deserialize(data)
-    if data == nil then return end
-    local command = data["mouse_click"]
-    if command ~= nil then
-        commandLine.Exec(command)
-    end
-end
+local Stopwatch          = require("system/Stopwatch")
+local Task               = require("system/Task")
+local ValueTree          = require("util/ValueTree")
+local InfoCentral        = require("info/InfoCentral")
+local log                = require("debug/Log")()
+local commandLine        = require("commandline/CommandLine").Instance()
+local pub                = require("util/PubSub").Instance()
+local layout             = require("screen/layout")
+local Stream             = require("Stream")
+local json               = require("dkjson")
+local calc               = require("util/Calc")
+local distanceFormat     = require("util/DistanceFormat")
+local massFormat         = require("util/MassFormat")
+local TotalMass          = require("abstraction/Vehicle").New().mass.Total
+local su                 = require("util/StringUtil")
+local max                = math.max
+local min                = math.min
 
 ---@class ScreenController
 
-local ScreenController = {}
+local ScreenController   = {}
 ScreenController.__index = ScreenController
 
 ---@param flightCore FlightCore
@@ -61,19 +34,138 @@ function ScreenController.New(flightCore, settings)
     local routePage = 1
     local routesPerPage = 5
 
-    ---@param stream Stream
-    local function sendRoutes(stream)
-        local t = { route = {} }
+    local waypointPage = 1
+    local waypointsPerPage = 10
+
+    local stream ---@type Stream -- forward declared
+
+    local routeEditorPrefix = "#re-"
+
+    local editRouteIndex = 1
+    local editRoutePointsPerPage = 10
+
+    local editPointPage = 1
+    pub.RegisterBool("RouteOpenedForEdit", function(_, _)
+        editPointPage = 1
+    end)
+
+    function s.dataReceived(data)
+        -- Publish data to system
+        if data == nil then return end
+        local command = data["mouse_click"]
+        if command ~= nil then
+            if su.StartsWith(command, routeEditorPrefix) then
+                command = su.RemovePrefix(command, routeEditorPrefix)
+                s.runRouteEditorCommand(command)
+            else
+                commandLine.Exec(command)
+            end
+
+            s.updateEditRouteData()
+        end
+    end
+
+    ---@param cmd string
+    function s.runRouteEditorCommand(cmd)
+        if cmd == "previous-route" then
+            editRouteIndex = max(1, editRouteIndex - 1)
+        elseif cmd == "next-route" then
+            editRouteIndex = min(#rc.GetRouteNames(), editRouteIndex + 1)
+        elseif cmd == "prev-point-page" then
+            local r = rc.CurrentEdit()
+            if r then
+                editPointPage = max(1, editPointPage - 1)
+            end
+        elseif cmd == "next-point-page" then
+            local r = rc.CurrentEdit()
+            if r then
+                editPointPage = min(editPointPage + 1, r.GetPageCount(editRoutePointsPerPage))
+            end
+        elseif cmd == "prev-wp-page" then
+            waypointPage = max(1, waypointPage - 1)
+        elseif cmd == "next-wp-page" then
+            waypointPage = min(waypointPage + 1, rc.GetWaypointPages(waypointsPerPage))
+        end
+
+        s.updateEditRouteData()
+    end
+
+    local function sendRoutes()
+        local route = {}
         for i, r in ipairs(rc.GetRoutePage(routePage, routesPerPage)) do
-            t.route[tostring(i)] = { visible = true, name = r }
+            route[tostring(i)] = { visible = true, name = r }
         end
 
         -- Ensure to hide the rest if routes have been removed.
-        for i = TableLen(t.route) + 1, routesPerPage, 1 do
-            t.route[tostring(i)] = { visible = false, name = "" }
+        for i = TableLen(route) + 1, routesPerPage, 1 do
+            route[tostring(i)] = { visible = false, name = "" }
         end
 
-        stream.Write(serialize(t))
+        dataToScreen.Set("route", route)
+    end
+
+    function s.updateEditRouteData()
+        local editRoute = {
+            selectRouteName = "",
+            routeName = "",
+            points = {}
+        }
+
+        local routeNames = rc.GetRouteNames()
+        if #routeNames > 0 then
+            editRoute.selectRouteName = routeNames[editRouteIndex]
+        end
+
+        local editing = rc.CurrentEdit()
+        local pointsShown = 0
+
+        if editing then
+            editRoute.name = rc.CurrentEditName()
+            local points = editing.GetPointPage(editPointPage, editRoutePointsPerPage)
+            pointsShown = #points
+
+            for index, p in ipairs(points) do
+                local pointInfo = {
+                    visible = true,
+                    index = index + (editPointPage - 1) * editRoutePointsPerPage,
+                    position = p.Pos()
+                }
+
+                if p.HasWaypointRef() then
+                    pointInfo.pointName = p.WaypointRef()
+                else
+                    pointInfo.pointName = "Anonymous pos."
+                end
+
+                editRoute.points[tostring(index)] = pointInfo
+            end
+        else
+            editRoute.name = "-"
+        end
+
+        -- Clear old data
+        for i = pointsShown + 1, editRoutePointsPerPage, 1 do
+            editRoute.points[tostring(i)] = { visible = false }
+        end
+
+        dataToScreen.Set("editRoute", editRoute)
+
+        local availableWaypoints = {}
+
+        local waypoints = rc.GetWaypointPage(waypointPage, waypointsPerPage)
+        for index, p in ipairs(waypoints) do
+            availableWaypoints[tostring(index)] = {
+                visible = true,
+                name = p.name,
+                pos = p.point.Pos()
+            }
+        end
+
+        for i = #waypoints + 1, waypointsPerPage, 1 do
+            availableWaypoints[tostring(i)] = { visible = false }
+        end
+
+        dataToScreen.Set("availableWaypoints", availableWaypoints)
     end
 
     ---@param isTimedOut boolean
@@ -82,9 +174,9 @@ function ScreenController.New(flightCore, settings)
         if isTimedOut then
             layoutSent = false
         elseif not layoutSent then
-            stream.Write(serialize({ screen_layout = deserialize(layout) }))
-            stream.Write(serialize({ activate_page = "routeSelection" }))
-            sendRoutes(stream)
+            stream.Write({ screen_layout = layout })
+            stream.Write({ activate_page = "routeSelection" })
+            sendRoutes()
             layoutSent = true
         end
     end
@@ -149,15 +241,16 @@ function ScreenController.New(flightCore, settings)
                 end
             end)
 
-        local stream = Stream.New(screen, dataReceived, 1, onTimeout)
+        stream = Stream.New(screen, s.dataReceived, 1, onTimeout)
 
         while screen do
             coroutine.yield()
             stream.Tick()
 
             if not stream.WaitingToSend() then
-                if not routeTimer.IsRunning() or routeTimer.Elapsed() > 5 then
-                    sendRoutes(stream)
+                if not routeTimer.IsRunning() or routeTimer.Elapsed() > 2 then
+                    sendRoutes()
+                    s.updateEditRouteData()
                     routeTimer.Restart()
                 end
 
@@ -165,11 +258,7 @@ function ScreenController.New(flightCore, settings)
                 local data = dataToScreen.Pick()
                 -- Send data to screen
                 if data then
-                    local ser = json.encode(data)
-                    if ser then
-                        --- @cast ser string
-                        stream.Write(ser)
-                    end
+                    stream.Write(data)
                 else
                     stream.Write('{"keepalive": ""}')
                 end

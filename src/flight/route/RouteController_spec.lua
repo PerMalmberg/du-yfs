@@ -28,7 +28,7 @@ describe("RouteController #flight", function()
     dataBank.getStringValue.on_call_with(RouteController.NAMED_POINTS).returns({})
 
     local db = BufferedDB.New(dataBank)
-    db:BeginLoad()
+    db.BeginLoad()
     local c = RouteController.Instance(db)
 
     while not db:IsLoaded() do

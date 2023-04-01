@@ -2,12 +2,14 @@
     A route holds a series of Point that each contains the data needed to create a Waypoint.
     When loaded, additional points may be inserted to to create a route that is smooth to fly
     and that doesn't pass through a planetary body. Extra points are not persisted.
-]] --
-local vehicle  = require("abstraction/Vehicle"):New()
-local Calc     = require("util/Calc")
-local log      = require("debug/Log")()
-local universe = require("universe/Universe").Instance()
-local Point    = require("flight/route/Point")
+]]
+--
+local vehicle    = require("abstraction/Vehicle"):New()
+local calc       = require("util/Calc")
+local log        = require("debug/Log")()
+local universe   = require("universe/Universe").Instance()
+local Point      = require("flight/route/Point")
+local pagination = require("util/Pagination")
 require("util/Table")
 
 ---@alias RouteRemainingInfo {Legs:integer, TotalDistance:number}
@@ -28,6 +30,8 @@ require("util/Table")
 ---@field RemovePoint fun(ix:number):boolean
 ---@field MovePoint fun(from:number, to:number)
 ---@field GetRemaining fun(fromPos:Vec3):RouteRemainingInfo
+---@field GetPointPage fun(page:integer, perPage:integer):Point[]
+---@field GetPageCount fun(perPage:integer):integer
 
 
 ---@enum RouteOrder
@@ -149,13 +153,9 @@ function Route.New()
     function s.MovePoint(from, to)
         if not checkBounds(from) or not checkBounds(to) or to == from then return false end
 
-        table.insert(points, to, points[from])
+        local v = table.remove(points, from)
+        table.insert(points, to, v)
 
-        if from > to then
-            from = from + 1
-        end
-
-        table.remove(points, from)
         return true
     end
 
@@ -177,11 +177,24 @@ function Route.New()
         end
 
         -- Add distance to next point in route
-        local ix = Calc.Ternary(s.LastPointReached(), -1, 0)
+        local ix = calc.Ternary(s.LastPointReached(), -1, 0)
         local next = universe.ParsePosition(points[nextPointIx + ix].Pos()).Coordinates()
         total = total + (fromPos - next):Len()
 
         return { Legs = #points - nextPointIx, TotalDistance = total }
+    end
+
+    ---@param page integer
+    ---@param perPage integer
+    ---@return Point[]
+    function s.GetPointPage(page, perPage)
+        return pagination.Paginate(s.Points(), page, perPage)
+    end
+
+    ---@param perPage integer
+    ---@return integer
+    function s.GetPageCount(perPage)
+        return pagination.GetPageCount(s.Points(), perPage)
     end
 
     return setmetatable(s, Route)

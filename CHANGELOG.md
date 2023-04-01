@@ -2,10 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.0.12 - 2023-04-01
+## 0.0.12 - 2023-04-02
+
+### NOTE
+* Requires new screen-code when updating to or past this version.
 
 ### Changed
 * Slight improvement to WASD control in terms of holding position.
+* Improved serialization of data to screen for reduced resource usage.
+
+### Added
+* New commands: `route-move-pos-back` and `route-move-pos-forward`
 
 ## 0.0.11 - 2023-04-01
 

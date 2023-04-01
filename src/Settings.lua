@@ -162,10 +162,10 @@ function Settings.New(db)
     end
 
     ---@param key string
-    ---@param default number
+    ---@param default? number
     ---@return number
     function s.Number(key, default)
-        local v = s.Get(key, default)
+        local v = s.Get(key, default or 0)
         ---@cast v number
         return v
     end

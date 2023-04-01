@@ -7,6 +7,7 @@
 * Overload warning based on setting.
 * Changing route in transit, lock dir to new waypoint during return-to-path (if same route?)
 * When returning to beginning of route, lock direction to that of next WP
+* CPU overload for layout - coroutine-json?
 
 
 * More natural manual control
