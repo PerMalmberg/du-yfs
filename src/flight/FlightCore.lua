@@ -196,7 +196,6 @@ function FlightCore.New(routeController, flightFSM)
             opt.Set(PointOptions.LOCK_DIRECTION, { lockDir:Unpack() })
         end
 
-        system.setWaypoint(universe.CreatePos(target).AsPosString(), false)
         s.StartFlight()
     end
 
