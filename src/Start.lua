@@ -1,15 +1,20 @@
 local log              = require("debug/Log")()
+local ControlCommands  = require("controller/ControlCommands")
 local RouteController  = require("flight/route/RouteController")
 local BufferedDB       = require("storage/BufferedDB")
+local Fuel             = require("info/Fuel")
 local FlightFSM        = require("flight/FlightFSM")
 local FlightCore       = require("flight/FlightCore")
-local SystemController = require("controller/SystemController")
+local ScreenController = require("controller/ScreenController")
 local Settings         = require("Settings")
+local Stopwatch        = require("system/Stopwatch")
 local Hud              = require("hud/Hud")
 local Task             = require("system/Task")
 local Wsad             = require("controller/Wsad")
 local floorDetector    = require("controller/FloorDetector").Instance()
 local commandLine      = require("commandline/CommandLine").Instance()
+local pub              = require("util/PubSub").Instance()
+local input            = require("input/Input").Instance()
 
 local function Start()
     log:SetLevel(log.LogLevel.WARNING)
@@ -35,6 +40,9 @@ local function Start()
     local settings = Settings.New(settingsDb)
     local hud ---@type Hud
     local wsad ---@type Wsad
+    local commands ---@type ControlCommands
+    local screen ---@type ScreenController
+    local fuel ---@type Fuel
 
     Task.New("Main", function()
         settingsDb.BeginLoad()
@@ -49,7 +57,6 @@ local function Start()
         local fc = FlightCore.New(rc, fsm)
         fsm.SetFlightCore(fc)
 
-        local cont = SystemController.New(fc, settings)
         settings.Reload()
         fc.ReceiveEvents()
 
@@ -62,12 +69,41 @@ local function Start()
             fsm.SetState(Idle.New(fsm))
         end
 
+        screen = ScreenController.New(fc, settings)
         hud = Hud.New()
         wsad = Wsad.New(fc, commandLine, settings)
+        fuel = Fuel.New(settings)
+
+        commands = ControlCommands.New(input, commandLine, fc, settings)
+        commands.RegisterCommonCommands()
+        commands.RegisterMoveCommands()
+        commands.RegisterRouteCommands()
+
+        pub.Publish("ShowInfoWidgets", settings.Boolean("showWidgetsOnStart", false))
     end).Then(function()
         log:Info("Ready.")
     end).Catch(function(t)
         log:Error(t.Name(), t:Error())
+    end)
+
+    Task.New("FloorMonitor", function()
+        if floorDetector.Present() then
+            log:Info("FloorMonitor started")
+            local sw = Stopwatch.New()
+            sw.Start()
+
+            while true do
+                coroutine.yield()
+                if sw.Elapsed() > 0.3 then
+                    sw.Restart()
+                    pub.Publish("FloorMonitor", floorDetector.Measure())
+                end
+            end
+        end
+    end).Then(function(...)
+        log:Info("Auto shutdown disabled")
+    end).Catch(function(t)
+        log:Error(t.Name(), t.Error())
     end)
 end
 

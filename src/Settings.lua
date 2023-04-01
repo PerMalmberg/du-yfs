@@ -10,7 +10,8 @@ require("util/Table")
 ---@field RegisterCallback fun(key:string, f:fun(any))
 ---@field Reload fun()
 ---@field Get fun(key:string, default:any?):string|number|table|nil
----@field Number fun(key:string, default:any?):number
+---@field Number fun(key:string, default:number?):number
+---@field Boolean fun(key:string, default:boolean?):boolean
 
 local singleton
 local Settings = {}
@@ -138,8 +139,8 @@ function Settings.New(db)
     end
 
     ---@param key string
-    ---@param default? string|number|table|nil
-    ---@return string|number|table|nil
+    ---@param default? string|number|table|boolean|nil
+    ---@return string|number|table|boolean|nil
     function s.Get(key, default)
         local setting = settings[key]
 
@@ -149,6 +150,15 @@ function Settings.New(db)
         end
 
         return db.Get(key, default)
+    end
+
+    ---@param key string
+    ---@param default boolean
+    ---@return boolean
+    function s.Boolean(key, default)
+        local v = s.Get(key, default)
+        ---@cast v boolean
+        return v
     end
 
     ---@param key string
