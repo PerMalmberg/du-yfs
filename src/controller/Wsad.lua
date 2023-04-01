@@ -142,7 +142,7 @@ function Wsad.New(flightCore, cmd, settings)
                 if newMovement then
                     flightCore.GotoTarget(stopPos, false, pointDir, margin / 2, throttleSpeed, throttleSpeed, true)
                 elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - Current()) >= 0 then
-                    flightCore.GotoTarget(Current(), false, pointDir, constants.flight.defaultMargin, throttleSpeed,
+                    flightCore.GotoTarget(Current(), false, pointDir, constants.flight.standStillSpeed, 0,
                         0, false)
                     stopPos = Vec3.zero
                 end
