@@ -23,7 +23,8 @@ local constants = {
             a = 0.99
         },
         standStillSpeed = -1,
-        throttleStep = 10 -- percent
+        throttleStep = 10,  -- percent
+        defaultMargin = 0.1 -- meter
     },
     route = {
         routeStartDistanceLimit = 10,  -- meters

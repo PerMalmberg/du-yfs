@@ -2,6 +2,7 @@ local r = require("CommonRequire")
 local AxisManager = require("flight/AxisManager")
 local universe = r.universe
 local vehicle = r.vehicle
+local constants = require("YFSConstants")
 local pub = require("util/PubSub").Instance()
 local Stopwatch = require("system/Stopwatch")
 local Current = vehicle.position.Current
@@ -36,7 +37,7 @@ FlightCore.__index = FlightCore
 local singleton
 
 local defaultFinalSpeed = 0
-local defaultMargin = 0.1 -- m
+local defaultMargin = constants.flight.defaultMargin
 
 ---Creates a waypoint from a point
 ---@param point Point
@@ -195,6 +196,7 @@ function FlightCore.New(routeController, flightFSM)
             opt.Set(PointOptions.LOCK_DIRECTION, { lockDir:Unpack() })
         end
 
+        system.setWaypoint(universe.CreatePos(target).AsPosString(), false)
         s.StartFlight()
     end
 

@@ -11,6 +11,7 @@ local constants               = require("YFSConstants")
 local Stopwatch               = require("system/Stopwatch")
 local input                   = require("input/Input").Instance()
 local pub                     = require("util/PubSub").Instance()
+local Velocity                = vehicle.velocity.Movement
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local MaxSpeed                = vehicle.speed.MaxSpeed
 local Clamp                   = calc.Clamp
@@ -33,13 +34,13 @@ Wsad.__index                  = Wsad
 function Wsad.New(flightCore, cmd, settings)
     local s = {}
     local turnAngle = 1
-    local wsadDirection = { longLat = Vec3.zero, vert = Vec3.zero }
-    local lockDir = Vec3.zero
     local wasdHeight = 0
     local vertical = 0
+    local longitudal = 0
     local lateral = 0
-    local strafe = 0
     local pointDir = Forward()
+    local newMovement = false
+    local margin = 50
 
     input.SetThrottle(1) -- Start at max speed
     local throttleStep = settings.Get("throttleStep", constants.flight.throttleStep) / 100
@@ -89,9 +90,9 @@ function Wsad.New(flightCore, cmd, settings)
     local function wsadMovement(body, interval)
         local curr = Current()
         -- Put the point 1.5 times the distance we travel per timer interval
-        local dist = max(10, vehicle.velocity.Movement():Len() * interval * 1.5)
+        local dist = max(margin, vehicle.velocity.Movement():Len() * interval * 1.5)
 
-        local dir = (Forward() * lateral + Right() * strafe - VerticalReferenceVector() * vertical):Normalize()
+        local dir = (Forward() * longitudal + Right() * lateral - VerticalReferenceVector() * vertical):Normalize()
 
         local pointInDir = curr + dir * dist
         if body:IsInAtmo(curr) and vertical == 0 then
@@ -114,80 +115,117 @@ function Wsad.New(flightCore, cmd, settings)
         local sw = Stopwatch.New()
         sw.Start()
         local wantsToMove = false
+        local stopPos = Vec3.zero
 
         while true do
             local curr = Current()
             local body = universe.ClosestBody(curr)
 
-            if (lateral ~= 0 or vertical ~= 0 or strafe ~= 0) then
-                wantsToMove = true
-                if sw.Elapsed() > t then
+            local hadNewMovement = newMovement
+
+            wantsToMove = longitudal ~= 0 or vertical ~= 0 or lateral ~= 0
+            if not wantsToMove and newMovement then
+                stopPos = Current()
+            end
+
+            local throttleSpeed = getThrottleSpeed()
+
+            if wantsToMove then
+                if sw.Elapsed() > t or newMovement then
                     sw.Restart()
 
                     local target = wsadMovement(body, t)
-                    local throttleSpeed = getThrottleSpeed()
 
-                    flightCore.GotoTarget(target, false, pointDir, 5, throttleSpeed, throttleSpeed, true)
+                    flightCore.GotoTarget(target, false, pointDir, margin / 2, throttleSpeed, throttleSpeed, true)
                 end
-            elseif wantsToMove then
-                wantsToMove = false
-                local r = rc.ActivateTempRoute().AddCurrentPos()
-                r.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
-                r.Options().Set(PointOptions.MAX_SPEED, constants.flight.standStillSpeed)
-                flightCore.StartFlight()
+            elseif not wantsToMove then
+                if newMovement then
+                    flightCore.GotoTarget(stopPos, false, pointDir, margin / 2, throttleSpeed, throttleSpeed, true)
+                elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - Current()) >= 0 then
+                    flightCore.GotoTarget(Current(), false, pointDir, constants.flight.defaultMargin, throttleSpeed,
+                        0, false)
+                    stopPos = Vec3.zero
+                end
             end
 
             pub.Publish("ThrottleValue", input.Throttle() * 100)
+
+            -- Reset this only if it was active at the start of the loop.
+            if hadNewMovement then
+                newMovement = false
+            end
 
             coroutine.yield()
         end
     end)
 
+    ---@param delta integer
     local function changeVertical(delta)
         vertical = vertical + delta
         if vertical == 0 then
             setWSADHeight()
         end
+        newMovement = true
+    end
+
+    ---@param delta integer
+    local function changeLongitudal(delta)
+        local previous = longitudal
+        longitudal = longitudal + delta
+        if previous == 0 and longitudal ~= 0 then
+            setWSADHeight()
+        end
+        newMovement = true
+    end
+
+    ---@param delta integer
+    local function changeLateral(delta)
+        local previous = lateral
+        lateral = lateral + delta
+        if previous == 0 and lateral ~= 0 then
+            setWSADHeight()
+        end
+        newMovement = true
     end
 
     input.Register(keys.forward, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        lateral = lateral + 1
+        changeLongitudal(1)
     end)
 
     input.Register(keys.forward, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        lateral = lateral - 1
+        changeLongitudal(-1)
     end)
 
     input.Register(keys.backward, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        lateral = lateral - 1
+        changeLongitudal(-1)
     end)
 
     input.Register(keys.backward, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        lateral = lateral + 1
+        changeLongitudal(1)
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        strafe = strafe - 1
+        changeLateral(-1)
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        strafe = strafe + 1
+        changeLateral(1)
     end)
 
     input.Register(keys.straferight, Criteria.New().OnPress(), function()
         if not manualInputEnabled() then return end
-        strafe = strafe + 1
+        changeLateral(1)
     end)
 
     input.Register(keys.straferight, Criteria.New().OnRelease(), function()
         if not manualInputEnabled() then return end
-        strafe = strafe - 1
+        changeLateral(-1)
     end)
 
     input.Register(keys.up, Criteria.New().OnPress(), function()

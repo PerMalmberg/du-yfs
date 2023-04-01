@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.0.10 - 2023-03-31
+## 0.0.10 - 2023-04-01
 
 ### Added
 * Support for setting limits on engine type, size and count. This is to allow selling smaller, purpose built, ships without giving away the entire script for a reduced price.
@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 * Made correction to properly read boolean 'false' from settings.
 * Changes to WSAD controller for more reliable key press captures.
+* Changes to WSAD controller for faster stop.
 
 ## 0.0.9 - 2023-03-26
 
