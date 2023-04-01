@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.11 - 2023-04-01
+
+### Fixed
+* Waypoint no longer set when controlling with WSAD.
+
 ## 0.0.10 - 2023-04-01
 
 ### Added
