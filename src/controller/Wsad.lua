@@ -125,31 +125,33 @@ function Wsad.New(flightCore, cmd, settings)
 
             wantsToMove = longitudal ~= 0 or vertical ~= 0 or lateral ~= 0
             if not wantsToMove and newMovement then
-                -- Create a pos in the backwards direction to make us use engines to brake
-                stopPos = Current() - Velocity():Normalize() * margin
+                stopPos = Current()
             end
 
             local throttleSpeed = getThrottleSpeed()
 
-            if wantsToMove then
-                if sw.Elapsed() > t or newMovement then
-                    sw.Restart()
+            if manualInputEnabled() then
+                if wantsToMove then
+                    if sw.Elapsed() > t or newMovement then
+                        sw.Restart()
 
-                    local target = wsadMovement(body, t)
+                        local target = wsadMovement(body, t)
+                        flightCore.GotoTarget(target, false, pointDir, margin / 2, throttleSpeed, throttleSpeed, true)
+                    end
+                elseif not wantsToMove then
+                    if newMovement then
+                        -- Aim at a position in the direction we came from to make us use engines to brake
+                        flightCore.GotoTarget(stopPos - Velocity():Normalize() * margin, false, pointDir, margin / 2,
+                            construct.getMaxSpeed(),
+                            construct.getMaxSpeed(), true)
+                    elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - Current()) >= 0 then
+                        flightCore.GotoTarget(Current(), true, pointDir, 1, 0, 0, false)
+                        stopPos = Vec3.zero
+                    end
+                end
 
-                    flightCore.GotoTarget(target, false, pointDir, margin / 2, throttleSpeed, throttleSpeed, true)
-                end
-            elseif not wantsToMove then
-                if newMovement then
-                    flightCore.GotoTarget(stopPos, false, pointDir, margin / 2, construct.getMaxSpeed(),
-                        construct.getMaxSpeed(), true)
-                elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - Current()) >= 0 then
-                    flightCore.GotoTarget(Current(), true, pointDir, 1, 0, 0, false)
-                    stopPos = Vec3.zero
-                end
+                pub.Publish("ThrottleValue", input.Throttle() * 100)
             end
-
-            pub.Publish("ThrottleValue", input.Throttle() * 100)
 
             -- Reset this only if it was active at the start of the loop.
             if hadNewMovement then
@@ -190,62 +192,50 @@ function Wsad.New(flightCore, cmd, settings)
     end
 
     input.Register(keys.forward, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
         changeLongitudal(1)
     end)
 
     input.Register(keys.forward, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
         changeLongitudal(-1)
     end)
 
     input.Register(keys.backward, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
         changeLongitudal(-1)
     end)
 
     input.Register(keys.backward, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
         changeLongitudal(1)
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
         changeLateral(-1)
     end)
 
     input.Register(keys.strafeleft, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
         changeLateral(1)
     end)
 
     input.Register(keys.straferight, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
         changeLateral(1)
     end)
 
     input.Register(keys.straferight, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
         changeLateral(-1)
     end)
 
     input.Register(keys.up, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
         changeVertical(1)
     end)
 
     input.Register(keys.up, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
         changeVertical(-1)
     end)
 
     input.Register(keys.down, Criteria.New().OnPress(), function()
-        if not manualInputEnabled() then return end
         changeVertical(-1)
     end)
 
     input.Register(keys.down, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
         changeVertical(1)
     end)
 
