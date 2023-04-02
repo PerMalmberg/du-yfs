@@ -2,7 +2,6 @@ local alignment = require("flight/AlignmentFunctions")
 local r = require("CommonRequire")
 local Ternary = r.calc.Ternary
 local Current = r.vehicle.position.Current
-local standStillSpeed = require("YFSConstants").flight.standStillSpeed
 
 ---@enum WPReachMode
 WPReachMode = {
@@ -85,10 +84,6 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
     ---@param mode WPReachMode
     ---@return boolean
     function s.WithinMargin(mode)
-        if s.MaxSpeed() == standStillSpeed then
-            return true
-        end
-
         local m = s.margin
 
         if mode == WPReachMode.ENTRY then
@@ -103,10 +98,6 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
     ---Gets the distance to the waypoint
     ---@return number
     function s.DistanceTo()
-        if s.MaxSpeed() == standStillSpeed then
-            return 0
-        end
-
         return (s.destination - Current()):Len()
     end
 

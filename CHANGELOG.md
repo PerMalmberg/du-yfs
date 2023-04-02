@@ -5,11 +5,13 @@ All notable changes to this project will be documented in this file.
 ## 0.0.12 - 2023-04-02
 
 ### NOTE
-* Requires new screen-code when updating to or past this version.
+* Requires new screen-code when updating to, or past, this version.
 
 ### Changed
-* Slight improvement to WASD control in terms of holding position.
+* Slight improvement to WASD control in terms of holding position and stopping.
+* Reduced engine flicker while maintaining speed in atmosphere (practically only noticeable on tiny ships)
 * Improved serialization of data to screen for reduced resource usage.
+* ECU now properly shuts down if floor is detected.
 
 ### Added
 * New commands: `route-move-pos-back` and `route-move-pos-forward`

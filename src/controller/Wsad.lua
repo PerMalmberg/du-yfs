@@ -125,7 +125,8 @@ function Wsad.New(flightCore, cmd, settings)
 
             wantsToMove = longitudal ~= 0 or vertical ~= 0 or lateral ~= 0
             if not wantsToMove and newMovement then
-                stopPos = Current()
+                -- Create a pos in the backwards direction to make us use engines to brake
+                stopPos = Current() - Velocity():Normalize() * margin
             end
 
             local throttleSpeed = getThrottleSpeed()
@@ -140,10 +141,10 @@ function Wsad.New(flightCore, cmd, settings)
                 end
             elseif not wantsToMove then
                 if newMovement then
-                    flightCore.GotoTarget(stopPos, false, pointDir, margin / 2, throttleSpeed, throttleSpeed, true)
+                    flightCore.GotoTarget(stopPos, false, pointDir, margin / 2, construct.getMaxSpeed(),
+                        construct.getMaxSpeed(), true)
                 elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - Current()) >= 0 then
-                    flightCore.GotoTarget(Current(), false, pointDir, constants.flight.standStillSpeed, 0,
-                        0, false)
+                    flightCore.GotoTarget(Current(), true, pointDir, 1, 0, 0, false)
                     stopPos = Vec3.zero
                 end
             end

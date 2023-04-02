@@ -38,7 +38,9 @@ local function Start()
 
     local unitInfo = system.getItem(unit.getItemId())
     local isECU = unitInfo.displayNameWithSize:lower():match("emergency")
-
+    if isECU then
+        log:Info("Running as ECU")
+    end
 
     local settingsDb = BufferedDB.New(settingLink)
     local routeDb = BufferedDB.New(routeLink)
@@ -71,6 +73,9 @@ local function Start()
             log:Info("No floor detected with set limit during startup, holding postition.")
             rc.ActivateHoldRoute()
             fc.StartFlight()
+        elseif isECU then
+            log:Info("Floor detected, shutting down")
+            unit.exit()
         else
             fsm.SetState(Idle.New(fsm))
         end

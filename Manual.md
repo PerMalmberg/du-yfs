@@ -88,11 +88,11 @@ When placing the space core/construct, using the snapping mode on the elevator c
 
 Hint: To activate snapping mode, point into empty space, then click middle mouse button, then left click on the elevator to select it as a reference construct and move the new core/construct using normal adjustment keys. If you're doing it alone, the ECU must be holding the elevator in place, you can't actively run the remote controller while deploying a core/construct.
 
-## Shortcuts
+## Key bindings
 
-| Key         | Description      |
-| ----------- | ---------------- |
-| Alt-Shift-9 | (Un)locks player |
+| Key         | Description                                                      |
+| ----------- | ---------------------------------------------------------------- |
+| Alt-Shift-9 | (Un)locks player / enters/exists manual control (WSAD etc.) mode |
 
 
 ## Manual Controls (when user is locked in place)
@@ -215,7 +215,7 @@ Each construct has a max cargo mass it is rated for. If you load the construct w
 | When taking off from planet, it will start, brake, start repeatedly.       | Too little brake force to counter gravity for the current mass, which causes the math to say max speed of 0 km/h.     |
 | When reaching higher atmosphere it may slow down, stop, and start falling. | Engines not being powerful enough, and/or the thin atmosphere causing too much reduction in power, or too heavy load. |
 
-Should you end up in these situations, it is easiest to just disable the controller, and let it fall back down a bit then activate it again. It will then attempt to hold the position it was at when it was started, i.e. brake and activate engines to counter the fall. You can repeat this until you're at an height the engines work again. Having said that, an overloaded ship is still overloaded and bad things are likely to happen.
+Should you end up in these situations, it is easiest to just disable the controller (and the ECU), and let it fall back down a bit then activate it again. It will then attempt to hold the position it was at when it was started, i.e. brake and activate engines to counter the fall. You can repeat this until you're at an height the engines work again. Having said that, an overloaded ship is still overloaded and bad things are likely to happen.
 
 ## Accuracy
 
@@ -237,3 +237,11 @@ While it is possible to make routes that are not gravity aligned work, they may 
 * Strong acceleration
 
   Sideways engines are generally weaker than the main downward pointing engines so when accelerating, the weaker ones may have difficulties to keep the construct on the path.
+
+## Emergency Controller Unit
+
+When running on an ECU, the script only do to things:
+* Attempts to hold the position it has when activated
+* Detect a floor, and if detected it shuts down.
+
+The requirements for linking are the same as for when running on a controller.

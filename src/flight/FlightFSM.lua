@@ -5,6 +5,7 @@ local log = r.log
 local brakes = require("flight/Brakes"):Instance()
 local vehicle = r.vehicle
 local G = vehicle.world.G
+local AirFrictionAcceleration = vehicle.world.AirFrictionAcceleration
 local calc = r.calc
 local CalcBrakeAcceleration = calc.CalcBrakeAcceleration
 local CalcBrakeDistance = calc.CalcBrakeDistance
@@ -32,7 +33,6 @@ local abs                           = math.abs
 local min                           = math.min
 local max                           = math.max
 local MAX_INT                       = math.maxinteger
-local standStillSpeed               = yfsConstants.flight.standStillSpeed
 
 local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
 
@@ -349,7 +349,6 @@ function FlightFSM.New(settings, routeController)
             waypoint.DistanceTo() - (currentSpeed * deltaTime + 0.5 * Acceleration():Len() * deltaTime * deltaTime))
 
         -- Calculate max speed we may have with available brake force to to reach the final speed.
-
         local pos = CurrentPos()
         local firstBody = universe.CurrentGalaxy():BodiesInPath(Ray.New(pos, velocity:Normalize()))[1]
         local inAtmo = false
@@ -365,10 +364,6 @@ function FlightFSM.New(settings, routeController)
         local dzSpeedIncrease = 0
 
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
-
-        if waypoint.MaxSpeed() == standStillSpeed then
-            return evaluateNewLimit(targetSpeed, 0, "Standstill")
-        end
 
         if firstBody then
             willHitAtmo, _, distanceToAtmo = willEnterAtmo(waypoint, firstBody)
@@ -554,8 +549,8 @@ function FlightFSM.New(settings, routeController)
         local t = groups.thrust
         local adj = groups.adjust
 
-        -- Subtracting the air friction induces jitter on small constructs so we no longer do that on the thrust acceleration.
-        local thrustAcc = t.antiG()
+        -- Subtracting (which adds it since it works against us) the air friction acceleration for thrust.
+        local thrustAcc = t.antiG() - AirFrictionAcceleration()
 
         if abs(yaw.OffsetDegrees()) < yawAlignmentThrustLimiter then
             thrustAcc = thrustAcc + acceleration
@@ -736,7 +731,6 @@ function FlightFSM.New(settings, routeController)
 
     settings.RegisterCallback("engineWarmup", function(value)
         s.SetEngineWarmupTime(value)
-        log:Info("Engine warmup:", value)
     end)
 
     settings.RegisterCallback("speedp", function(value)
