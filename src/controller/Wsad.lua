@@ -11,6 +11,7 @@ local constants               = require("YFSConstants")
 local Stopwatch               = require("system/Stopwatch")
 local input                   = require("input/Input").Instance()
 local pub                     = require("util/PubSub").Instance()
+local defaultMargin           = constants.flight.defaultMargin
 local Velocity                = vehicle.velocity.Movement
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local MaxSpeed                = vehicle.speed.MaxSpeed
@@ -136,16 +137,13 @@ function Wsad.New(flightCore, cmd, settings)
                         sw.Restart()
 
                         local target = wsadMovement(body, t)
-                        flightCore.GotoTarget(target, false, pointDir, margin / 2, throttleSpeed, throttleSpeed, true)
+                        flightCore.GotoTarget(target, false, pointDir, defaultMargin, throttleSpeed, throttleSpeed, true)
                     end
                 elseif not wantsToMove then
                     if newMovement then
-                        -- Aim at a position in the direction we came from to make us use engines to brake
-                        flightCore.GotoTarget(stopPos - Velocity():Normalize() * margin, false, pointDir, margin / 2,
-                            construct.getMaxSpeed(),
-                            construct.getMaxSpeed(), true)
-                    elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - Current()) >= 0 then
-                        flightCore.GotoTarget(Current(), true, pointDir, 1, 0, 0, false)
+                        flightCore.GotoTarget(stopPos, false, pointDir, defaultMargin, 0, construct.getMaxSpeed(), true)
+                    elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - curr) >= 0 then
+                        flightCore.GotoTarget(Current(), false, pointDir, defaultMargin, 0, 0, false)
                         stopPos = Vec3.zero
                     end
                 end

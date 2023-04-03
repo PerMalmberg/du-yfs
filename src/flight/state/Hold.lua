@@ -1,6 +1,7 @@
 ---@module "flight/state/Travel"
 ---@module "element/Telemeter"
 local pub = require("util/PubSub").Instance()
+local Stopwatch = require("system/Stopwatch")
 local log = require("debug/Log")()
 
 
@@ -22,14 +23,15 @@ local name = "Hold"
 ---@param fsm FlightFSM
 ---@return FlightState
 function Hold.New(fsm)
-    local s = {
-        isLastWaypoint = false
-    }
+    local s = {}
+    local isLastWaypoint = false
+    local watch = Stopwatch.New()
 
     local settings = fsm.GetSettings()
 
     function s.Enter()
         pub.RegisterTable("FloorMonitor", s.floorMonitor)
+        watch.Start()
     end
 
     function s.Leave()
@@ -42,7 +44,11 @@ function Hold.New(fsm)
     ---@param nearestPointOnPath Vec3
     function s.Flush(deltaTime, next, previous, nearestPointOnPath)
         if next.WithinMargin(WPReachMode.EXIT) then
-            next.SetPrecisionMode(true)
+            -- This delay is to prevent precision mode from activating so
+            -- that the state isn't changed to ReturnToPath
+            if watch.Elapsed() > 1 then
+                next.SetPrecisionMode(true)
+            end
         else
             fsm.SetState(Travel.New(fsm))
         end
@@ -51,8 +57,8 @@ function Hold.New(fsm)
     function s.Update()
     end
 
-    function s.AtWaypoint(isLastWaypoint, next, previous)
-        s.isLastWaypoint = isLastWaypoint
+    function s.AtWaypoint(lastWaypoint, next, previous)
+        isLastWaypoint = lastWaypoint
     end
 
     function s.Name()
@@ -63,7 +69,7 @@ function Hold.New(fsm)
     ---@param hit TelemeterResult
     function s.floorMonitor(topic, hit)
         if player.isFrozen() == 0
-            and s.isLastWaypoint
+            and isLastWaypoint
             and hit.Hit
             and hit.Distance <= settings.Get("autoShutdownFloorDistance") then
             log:Info("Floor detected at last waypoint, shutting down.")
