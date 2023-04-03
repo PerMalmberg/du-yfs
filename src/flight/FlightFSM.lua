@@ -549,7 +549,7 @@ function FlightFSM.New(settings, routeController)
         local t = groups.thrust
         local adj = groups.adjust
 
-        -- Subtracting (which adds it since it works against us) the air friction acceleration for thrust.
+        -- Subtract (which adds it since it works against us) the air friction acceleration for thrust.
         local thrustAcc = t.antiG() - AirFrictionAcceleration()
 
         if abs(yaw.OffsetDegrees()) < yawAlignmentThrustLimiter then
@@ -579,8 +579,7 @@ function FlightFSM.New(settings, routeController)
         local direction = waypoint.DirectionTo()
 
         local velocity = Velocity()
-        local currentSpeed = velocity:Len()
-        local motionDirection = velocity:Normalize()
+        local motionDirection, currentSpeed = velocity:NormalizeLen()
 
         local speedLimit = getSpeedLimit(deltaTime, velocity, direction, waypoint)
 

@@ -48,7 +48,7 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
     local dir = Vec3.New(opt.Get(PointOptions.LOCK_DIRECTION, nullVec))
     local margin = opt.Get(PointOptions.MARGIN, defaultMargin)
     local finalSpeed
-    if opt.Get(PointOptions.IGNORE_IF_LAST_IN_ROUTE) then
+    if opt.Get(PointOptions.FORCE_FINAL_SPEED) then
         finalSpeed = opt.Get(PointOptions.FINAL_SPEED, defaultFinalSpeed)
     else
         finalSpeed = Ternary(lastInRoute, 0, opt.Get(PointOptions.FINAL_SPEED, defaultFinalSpeed))
@@ -60,11 +60,13 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
         alignment.RollTopsideAwayFromVerticalReference,
         alignment.YawPitchKeepOrthogonalToVerticalReference)
 
-    wp.SetPrecisionMode(opt.Get(PointOptions.PRECISION, false))
-
     if dir ~= nullVec then
         wp.LockDirection(dir, true)
     end
+
+    local vertical = abs(wp:DirectionTo():Dot(GravityDirection())) > 0.985
+    local precision = opt.Get(PointOptions.PRECISION, false)
+    wp.SetPrecisionMode(vertical or precision)
 
     return wp
 end
@@ -111,8 +113,6 @@ function FlightCore.New(routeController, flightFSM)
 
         previousWaypoint = currentWaypoint
         currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached())
-
-        currentWaypoint.SetPrecisionMode(abs(currentWaypoint:DirectionTo():Dot(GravityDirection())) > 0.985)
     end
 
     ---Starts the flight
@@ -181,8 +181,8 @@ function FlightCore.New(routeController, flightFSM)
     ---@param margin number
     ---@param maxSpeed number
     ---@param finalSpeed number
-    ---@param ignoreLastInRoute boolean If true, the construct will not slow down to come to a stop if the point is last in the route (used for manual control)
-    function s.GotoTarget(target, precision, lockDir, margin, maxSpeed, finalSpeed, ignoreLastInRoute)
+    ---@param forceFinalSpeed boolean If true, the construct will not slow down to come to a stop if the point is last in the route (used for manual control)
+    function s.GotoTarget(target, precision, lockDir, margin, maxSpeed, finalSpeed, forceFinalSpeed)
         local temp = routeController.ActivateTempRoute()
         local targetPoint = temp.AddCoordinate(target)
         local opt = targetPoint.Options()
@@ -190,7 +190,7 @@ function FlightCore.New(routeController, flightFSM)
         opt.Set(PointOptions.MAX_SPEED, maxSpeed)
         opt.Set(PointOptions.MARGIN, margin)
         opt.Set(PointOptions.FINAL_SPEED, finalSpeed)
-        opt.Set(PointOptions.IGNORE_IF_LAST_IN_ROUTE, ignoreLastInRoute)
+        opt.Set(PointOptions.FORCE_FINAL_SPEED, forceFinalSpeed)
 
         if not lockDir:IsZero() then
             opt.Set(PointOptions.LOCK_DIRECTION, { lockDir:Unpack() })
