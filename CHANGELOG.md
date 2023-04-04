@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.13 - 2023-04-04
+
+### Changed
+* WSAD controller now levels out vertical movement instead of trying to move back to the height at which the up/down command is canceled.
+
 ## 0.0.12 - 2023-04-02
 
 ### NOTE

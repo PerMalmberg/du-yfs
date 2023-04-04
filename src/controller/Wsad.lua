@@ -1,7 +1,7 @@
 local Criteria                = require("input/Criteria")
-local PointOptions            = require("flight/route/PointOptions")
 local Vec3                    = require("math/Vec3")
 local Task                    = require("system/Task")
+local HeightMonitor           = require("controller/HeightMonitor")
 local log                     = require("debug/Log")()
 local vehicle                 = require("abstraction/Vehicle").New()
 local calc                    = require("util/Calc")
@@ -35,13 +35,13 @@ Wsad.__index                  = Wsad
 function Wsad.New(flightCore, cmd, settings)
     local s = {}
     local turnAngle = 1
-    local wasdHeight = 0
+    local desiredAltitude = 0
     local vertical = 0
     local longitudal = 0
     local lateral = 0
     local pointDir = Forward()
     local newMovement = false
-    local margin = 50
+    local heightMon = HeightMonitor.New()
 
     input.SetThrottle(1) -- Start at max speed
     local throttleStep = settings.Get("throttleStep", constants.flight.throttleStep) / 100
@@ -51,8 +51,6 @@ function Wsad.New(flightCore, cmd, settings)
     settings.RegisterCallback("throttleStep", function(step)
         input.SetThrottleStep(step / 100)
     end)
-
-    local rc = flightCore.GetRouteController()
 
     local function checkControlMode()
         if unit.isMouseControlActivated() == 1 or unit.isMouseDirectControlActivated() == 1 or unit.isMouseVirtualJoystickActivated() == 1 then
@@ -85,30 +83,42 @@ function Wsad.New(flightCore, cmd, settings)
         return MaxSpeed() * input.Throttle()
     end
 
+    ---@return number
+    local function getHeight()
+        local curr = Current()
+        local body = universe.ClosestBody(curr)
+        return (curr - body.Geography.Center):Len()
+    end
+
+    local function monitorHeight()
+        desiredAltitude = getHeight()
+        heightMon.Enable()
+        heightMon.Track(getHeight())
+    end
+
     ---@param body Body
     ---@param interval number
     ---@return Vec3
-    local function wsadMovement(body, interval)
+    local function movement(body, interval)
         local curr = Current()
         -- Put the point 1.5 times the distance we travel per timer interval
-        local dist = max(margin, vehicle.velocity.Movement():Len() * interval * 1.5)
+        local dist = max(50, vehicle.velocity.Movement():Len() * interval * 1.5)
 
-        local dir = (Forward() * longitudal + Right() * lateral - VerticalReferenceVector() * vertical):Normalize()
+        local dir = (Forward() * longitudal + Right() * lateral + Up() * vertical):Normalize()
 
-        local pointInDir = curr + dir * dist
         if body:IsInAtmo(curr) and vertical == 0 then
+            local currHeight = getHeight()
+            if heightMon.Track(currHeight) then
+                desiredAltitude = currHeight
+            end
+
             -- Find the direction from body center to forward point and calculate a new point with same
             -- height as the movement started at so that we move along the curvature of the body.
-            return body.Geography.Center + (pointInDir - body.Geography.Center):NormalizeInPlace() * wasdHeight
+            local pointInDir = curr + dir * dist
+            return body.Geography.Center + (pointInDir - body.Geography.Center):NormalizeInPlace() * desiredAltitude
         end
 
         return Current() + dir * dist
-    end
-
-    local function setWSADHeight()
-        local curr = Current()
-        local body = universe.ClosestBody(curr)
-        wasdHeight = (curr - body.Geography.Center):Len()
     end
 
     Task.New("WASD", function()
@@ -129,14 +139,15 @@ function Wsad.New(flightCore, cmd, settings)
                 stopPos = Current()
             end
 
-            local throttleSpeed = getThrottleSpeed()
 
             if manualInputEnabled() then
                 if wantsToMove then
                     if sw.Elapsed() > t or newMovement then
                         sw.Restart()
 
-                        local target = wsadMovement(body, t)
+                        local target = movement(body, t)
+                        local throttleSpeed = getThrottleSpeed()
+                        system.setWaypoint(universe.CreatePos(target).AsPosString(), false)
                         flightCore.GotoTarget(target, false, pointDir, defaultMargin, throttleSpeed, throttleSpeed, true)
                     end
                 elseif not wantsToMove then
@@ -164,7 +175,7 @@ function Wsad.New(flightCore, cmd, settings)
     local function changeVertical(delta)
         vertical = vertical + delta
         if vertical == 0 then
-            setWSADHeight()
+            monitorHeight()
         end
         newMovement = true
     end
@@ -174,7 +185,7 @@ function Wsad.New(flightCore, cmd, settings)
         local previous = longitudal
         longitudal = longitudal + delta
         if previous == 0 and longitudal ~= 0 then
-            setWSADHeight()
+            monitorHeight()
         end
         newMovement = true
     end
@@ -184,7 +195,7 @@ function Wsad.New(flightCore, cmd, settings)
         local previous = lateral
         lateral = lateral + delta
         if previous == 0 and lateral ~= 0 then
-            setWSADHeight()
+            monitorHeight()
         end
         newMovement = true
     end
