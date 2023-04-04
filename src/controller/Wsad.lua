@@ -125,6 +125,7 @@ function Wsad.New(flightCore, cmd, settings)
         local t = 0.1
         local sw = Stopwatch.New()
         sw.Start()
+        local softStartTimer = Stopwatch.New()
         local wantsToMove = false
         local stopPos = Vec3.zero
 
@@ -139,18 +140,25 @@ function Wsad.New(flightCore, cmd, settings)
                 stopPos = Current()
             end
 
-
             if manualInputEnabled() then
                 if wantsToMove then
+                    softStartTimer.Start()
                     if sw.Elapsed() > t or newMovement then
                         sw.Restart()
 
+                        local throttleSpeed
+                        local softMul = softStartTimer.Elapsed()
+                        if softStartTimer.IsRunning() and softMul < 1 then
+                            throttleSpeed = calc.Kph2Mps(100) * softMul
+                        else
+                            throttleSpeed = getThrottleSpeed()
+                        end
+
                         local target = movement(body, t)
-                        local throttleSpeed = getThrottleSpeed()
-                        system.setWaypoint(universe.CreatePos(target).AsPosString(), false)
                         flightCore.GotoTarget(target, false, pointDir, defaultMargin, throttleSpeed, throttleSpeed, true)
                     end
-                elseif not wantsToMove then
+                else
+                    softStartTimer.Reset()
                     if newMovement then
                         flightCore.GotoTarget(stopPos, false, pointDir, defaultMargin, 0, construct.getMaxSpeed(), true)
                     elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - curr) >= 0 then

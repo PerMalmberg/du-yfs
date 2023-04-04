@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 * WSAD controller now levels out vertical movement instead of trying to move back to the height at which the up/down command is canceled.
+* Added a smoothing to the acceleration during the first second for easier adjustments.
 
 ## 0.0.12 - 2023-04-02
 
