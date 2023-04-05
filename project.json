@@ -24,6 +24,11 @@
       "type": "control",
       "slots": {}
     },
+    "Atmo16XS": {
+      "name": "variants/Atmo16XS",
+      "type": "control",
+      "slots": {}
+    },
     "screen/main": {
       "name": "screen/screen",
       "type": "screen",

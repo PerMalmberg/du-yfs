@@ -5,4 +5,4 @@ out/
 src/screen/layout_min.json
 src/screen/offline_min.json
 src/version_out.lua
-
+*.pdf

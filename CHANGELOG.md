@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## 0.0.15 - 2023-04-05
 
 ### Added
+* 16XS atmospheric engine variant.
+
+## 0.0.15 - 2023-04-05
+
+### Added
 * New setting `turnAngle` to set the angle per key press for the WSAD controller.
 
 ### Removed
