@@ -154,7 +154,7 @@ function Settings.New(db)
     end
 
     ---@param key string
-    ---@param default boolean
+    ---@param default? boolean
     ---@return boolean
     function s.Boolean(key, default)
         local v = s.Get(key, default)
@@ -166,7 +166,7 @@ function Settings.New(db)
     ---@param default? number
     ---@return number
     function s.Number(key, default)
-        local v = s.Get(key, default or 0)
+        local v = s.Get(key, default)
         ---@cast v number
         return v
     end
