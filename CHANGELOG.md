@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.14 - 2023-04-05
+
+### Removed
+* Smoothing on start removed, didn't work out quite as desired.
+
+### Changed
+* Reworked height monitor for WSAD controller.
+
 ## 0.0.13 - 2023-04-04
 
 ### Changed

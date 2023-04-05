@@ -1,7 +1,6 @@
 local Criteria                = require("input/Criteria")
 local Vec3                    = require("math/Vec3")
 local Task                    = require("system/Task")
-local HeightMonitor           = require("controller/HeightMonitor")
 local log                     = require("debug/Log")()
 local vehicle                 = require("abstraction/Vehicle").New()
 local calc                    = require("util/Calc")
@@ -41,7 +40,7 @@ function Wsad.New(flightCore, cmd, settings)
     local lateral = 0
     local pointDir = Forward()
     local newMovement = false
-    local heightMon = HeightMonitor.New()
+    local stopVerticalMovement = false
 
     input.SetThrottle(1) -- Start at max speed
     local throttleStep = settings.Get("throttleStep", constants.flight.throttleStep) / 100
@@ -92,8 +91,7 @@ function Wsad.New(flightCore, cmd, settings)
 
     local function monitorHeight()
         desiredAltitude = getHeight()
-        heightMon.Enable()
-        heightMon.Track(getHeight())
+        stopVerticalMovement = true
     end
 
     ---@param body Body
@@ -108,8 +106,10 @@ function Wsad.New(flightCore, cmd, settings)
 
         if body:IsInAtmo(curr) and vertical == 0 then
             local currHeight = getHeight()
-            if heightMon.Track(currHeight) then
+            -- As we meassure only periodically, we can't make the threshold too small. 0.2m/s was too small, we can miss that when moving fast.
+            if stopVerticalMovement and Velocity():ProjectOn(-VerticalReferenceVector()):Len() < 0.5 then
                 desiredAltitude = currHeight
+                stopVerticalMovement = false
             end
 
             -- Find the direction from body center to forward point and calculate a new point with same
@@ -125,7 +125,6 @@ function Wsad.New(flightCore, cmd, settings)
         local t = 0.1
         local sw = Stopwatch.New()
         sw.Start()
-        local softStartTimer = Stopwatch.New()
         local wantsToMove = false
         local stopPos = Vec3.zero
 
@@ -142,23 +141,14 @@ function Wsad.New(flightCore, cmd, settings)
 
             if manualInputEnabled() then
                 if wantsToMove then
-                    softStartTimer.Start()
                     if sw.Elapsed() > t or newMovement then
                         sw.Restart()
 
-                        local throttleSpeed
-                        local softMul = softStartTimer.Elapsed()
-                        if softStartTimer.IsRunning() and softMul < 1 then
-                            throttleSpeed = calc.Kph2Mps(100) * softMul
-                        else
-                            throttleSpeed = getThrottleSpeed()
-                        end
-
+                        local throttleSpeed = getThrottleSpeed()
                         local target = movement(body, t)
                         flightCore.GotoTarget(target, false, pointDir, defaultMargin, throttleSpeed, throttleSpeed, true)
                     end
                 else
-                    softStartTimer.Reset()
                     if newMovement then
                         flightCore.GotoTarget(stopPos, false, pointDir, defaultMargin, 0, construct.getMaxSpeed(), true)
                     elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - curr) >= 0 then
