@@ -62,7 +62,8 @@ function Settings.New(db)
         routeStartDistanceLimit = { default = routeDefaults.routeStartDistanceLimit },
         showWidgetsOnStart = { default = yfsConstants.widgets.showOnStart },
         throttleStep = { default = yfsConstants.flight.throttleStep },
-        manualControlOnStartup = { default = false }
+        manualControlOnStartup = { default = false },
+        turnAngle = { default = yfsConstants.flight.defaultTurnAngle }
     }
 
     for k, v in pairs(containerSettings) do

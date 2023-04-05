@@ -33,7 +33,7 @@ Wsad.__index                  = Wsad
 ---@return Wsad
 function Wsad.New(flightCore, cmd, settings)
     local s = {}
-    local turnAngle = 1
+    local turnAngle = settings.Number("turnAngle")
     local desiredAltitude = 0
     local vertical = 0
     local longitudal = 0
@@ -259,17 +259,16 @@ function Wsad.New(flightCore, cmd, settings)
     -- shift + alt + Option9 to switch modes
     input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), toggleUserLock)
 
-    cmd.Accept("turn-angle",
-        ---@param data {commandValue:number}
-        function(data)
-            turnAngle = Clamp(data.commandValue, 0, 360)
-            log:Info("Turn angle: ", turnAngle, "°")
-        end).AsNumber().Mandatory()
-
     if settings.Get("manualControlOnStartup", false) then
         log:Info("Manual control on startup active.")
         lockUser()
     end
+
+    settings.RegisterCallback("turnAngle",
+        ---@param angle number
+        function(angle)
+            turnAngle = angle
+        end)
 
     return setmetatable(s, Wsad)
 end
