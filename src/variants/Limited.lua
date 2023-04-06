@@ -1,14 +1,8 @@
 local log = require("debug/Log")()
 local Lock = require("element/Lock")
 local Task = require("system/Task")
-local start = require("Start")
 local v = require("version_out")
-
-if not library.getCoreUnit() then
-    log:Error("Please link the Core to the control unit.")
-    unit.exit()
-    return
-end
+local linked, isECU = require("variants/CoreLinkCheck")()
 
 ---@class Limited
 ---@field New fun():Limited
@@ -24,16 +18,23 @@ function Limited.New()
     function s.Start()
         log:Info(v.APP_NAME)
         log:Info(v.APP_VERSION)
-        start()
-        Task.New("Lock", function()
-            if lock.ValidateCo() then
-                log:Info("Engine check passed")
-            else
-                error("Engine check failed")
-            end
-        end).Catch(function(t)
+
+        if linked then
+            local start = require("Start")
+            start(isECU)
+
+            Task.New("Lock", function()
+                if lock.ValidateCo() then
+                    log:Info("Engine check passed")
+                else
+                    error("Engine check failed")
+                end
+            end).Catch(function(t)
+                unit.exit()
+            end)
+        else
             unit.exit()
-        end)
+        end
     end
 
     ---@param engineType EngineType

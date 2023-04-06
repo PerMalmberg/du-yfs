@@ -17,7 +17,9 @@ local commandLine      = require("commandline/CommandLine").Instance()
 local pub              = require("util/PubSub").Instance()
 local input            = require("input/Input").Instance()
 
-local function Start()
+---Main routine that starts the system
+---@param isECU boolean
+local function Start(isECU)
     log:SetLevel(log.LogLevel.WARNING)
 
     local routeDbName = "Routes"
@@ -36,8 +38,6 @@ local function Start()
         settingLink = routeLink
     end
 
-    local unitInfo = system.getItem(unit.getItemId())
-    local isECU = unitInfo.displayNameWithSize:lower():match("emergency")
     if isECU then
         log:Info("Running as ECU")
     end
@@ -70,7 +70,7 @@ local function Start()
 
         local floor = floorDetector.Measure()
         if not floor.Hit or floor.Distance > settings.Get("autoShutdownFloorDistance") then
-            log:Info("No floor detected with set limit during startup, holding postition.")
+            log:Info("No floor detected within set limit during startup, holding postition.")
             rc.ActivateHoldRoute()
             fc.StartFlight()
         elseif isECU then
@@ -95,8 +95,6 @@ local function Start()
         commands.RegisterCommonCommands()
 
         pub.Publish("ShowInfoWidgets", settings.Boolean("showWidgetsOnStart", false))
-    end).Then(function()
-        log:Info("Ready.")
     end).Catch(function(t)
         log:Error(t.Name(), t:Error())
     end)

@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.18 - 2023-04-06
+
+### Fixed
+* Corrected order of link checks at startup to fix a script error when not linked to core.
+
 ## 0.0.17 - 2023-04-05
 
 ### Fixed
