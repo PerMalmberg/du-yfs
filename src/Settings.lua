@@ -63,7 +63,8 @@ function Settings.New(db)
         showWidgetsOnStart = { default = yfsConstants.widgets.showOnStart },
         throttleStep = { default = yfsConstants.flight.throttleStep },
         manualControlOnStartup = { default = false },
-        turnAngle = { default = yfsConstants.flight.defaultTurnAngle }
+        turnAngle = { default = yfsConstants.flight.defaultTurnAngle },
+        manualHoldMarginMassThreshold = { default = 3000 }
     }
 
     for k, v in pairs(containerSettings) do

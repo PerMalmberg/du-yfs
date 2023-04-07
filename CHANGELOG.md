@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.19 - 2023-04-07
+
+### Added
+* Setting `manualHoldMarginMassThreshold` to control the total mass at which the hold margin for manual control is reduced by 75% to reduce oscillations.
+
 ## 0.0.18 - 2023-04-06
 
 ### Fixed
