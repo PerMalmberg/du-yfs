@@ -20,30 +20,58 @@ function alignment.NoAdjust()
     return nil
 end
 
+---@param vertRef Vec3
 ---@return Vec3
-local function pointAtSameHeightAsConstructParallelToVerticalRef()
+local function pointAtSameHeightAsConstructParallelToVerticalRef(vertRef)
     local current = Current()
-    local normal = -universe.VerticalReferenceVector()
 
     local alignmentPoint = current + vehicle.orientation.Forward() * directionMargin
-    alignmentPoint = calc.ProjectPointOnPlane(normal, current, alignmentPoint)
+    alignmentPoint = calc.ProjectPointOnPlane(vertRef, current, alignmentPoint)
 
     return alignmentPoint
 end
 
+---@param vertRef Vec3
 ---@return Vec3
-local function targetDirectionOrthogonalToVerticalReference()
-    local alignmentPoint = pointAtSameHeightAsConstructParallelToVerticalRef()
+local function targetDirectionOrthogonalToVerticalReference(vertRef)
+    local alignmentPoint = pointAtSameHeightAsConstructParallelToVerticalRef(vertRef)
     return (alignmentPoint - Current()):NormalizeInPlace()
+end
+
+---@param waypoint Waypoint
+---@param previousWaypoint Waypoint
+---@return Vec3
+local function getVerticalReference(waypoint, previousWaypoint)
+    -- When next waypoint is nearly above us, use the line between them as the vertical reference instead to make following the path more exact.
+    local vertRef = -universe.VerticalReferenceVector()
+    local pathVector = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
+    local toNext = waypoint.DirectionTo()
+
+    local pathToVerDot = pathVector:Dot(vertRef)
+    if waypoint.DistanceTo() >= 5 and previousWaypoint.DistanceTo() >= 5
+        and abs(pathToVerDot) > 0.9 -- only if we're moving close to the vertical reference
+    then
+        -- Prevent tiping upside down when going above the point
+        if pathToVerDot >= 0 then
+            vertRef = toNext
+        else
+            -- Net waypoint is 'below' so negate the direction
+            vertRef = -toNext
+        end
+    end
+
+    return vertRef
 end
 
 ---@param waypoint Waypoint
 ---@param previousWaypoint Waypoint
 ---@return {yaw:Vec3, pitch:Vec3}
 function alignment.YawPitchKeepLockedWaypointDirectionOrthogonalToVerticalReference(waypoint, previousWaypoint)
+    local normal = getVerticalReference(waypoint, previousWaypoint)
+
     return {
         yaw = Current() + waypoint.YawPitchDirection() * directionMargin,
-        pitch = pointAtSameHeightAsConstructParallelToVerticalRef()
+        pitch = pointAtSameHeightAsConstructParallelToVerticalRef(normal)
     }
 end
 
@@ -52,7 +80,7 @@ end
 ---@return {yaw:Vec3, pitch:Vec3}|nil
 function alignment.YawPitchKeepOrthogonalToVerticalReference(waypoint, previousWaypoint)
     local current = Current()
-    local normal = -universe:VerticalReferenceVector()
+    local normal = getVerticalReference(waypoint, previousWaypoint)
 
     local travelDir = (waypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
 
@@ -63,31 +91,41 @@ function alignment.YawPitchKeepOrthogonalToVerticalReference(waypoint, previousW
 
     -- When the next waypoint is nearly above or below us, switch alignment mode.
     if abs((withMargin - current):Normalize():Dot(normal)) > 0.9 then
-        local dir = targetDirectionOrthogonalToVerticalReference()
+        local dir = targetDirectionOrthogonalToVerticalReference(normal)
 
         waypoint.LockDirection(dir, true)
         res = waypoint.YawAndPitch(previousWaypoint)
     else
         res.yaw = calc.ProjectPointOnPlane(normal, current, withMargin)
-        res.pitch = pointAtSameHeightAsConstructParallelToVerticalRef()
+        res.pitch = pointAtSameHeightAsConstructParallelToVerticalRef(normal)
     end
 
     return res
 end
 
+---@param waypoint Waypoint
+---@param previousWaypoint Waypoint
+---@return Vec3
 function alignment.RollTopsideAwayFromVerticalReference(waypoint, previousWaypoint)
-    return Current() - universe.VerticalReferenceVector() * directionMargin
+    local normal = -universe.VerticalReferenceVector()
+    -- When next waypoint is nearly above us, use the line between them as the vertical reference instead to make following the path more exact
+    local wpNormal = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
+    if not waypoint.WithinMargin(WPReachMode.ENTRY) and normal:Dot(wpNormal) > 0.8 then
+        normal = wpNormal
+    end
+
+    return Current() + normal * directionMargin
 end
 
 ---@param previous Waypoint
 ---@param next Waypoint
 ---@return Vec3 direction The direction from `previous` to `next` projected on the current plane
-function alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(previous, next)
+function alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(next, previous)
     local current = Current()
     local normal = -universe.VerticalReferenceVector()
     local p = calc.ProjectPointOnPlane(normal, current, previous.Destination())
-    local c = calc.ProjectPointOnPlane(normal, current, next.Destination())
-    return (p - c):NormalizeInPlace()
+    local n = calc.ProjectPointOnPlane(normal, current, next.Destination())
+    return (n - p):NormalizeInPlace()
 end
 
 return alignment

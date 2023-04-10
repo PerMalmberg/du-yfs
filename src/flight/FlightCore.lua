@@ -254,8 +254,7 @@ function FlightCore.New(routeController, flightFSM)
 
                         -- Lock direction when WP is reached, but don't override existing locks, such as is in place when strafing.
                         currentWaypoint.LockDirection(
-                            alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(currentWaypoint,
-                                previousWaypoint),
+                            alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(currentWaypoint, previousWaypoint),
                             false)
 
                         -- Switch to next waypoint
