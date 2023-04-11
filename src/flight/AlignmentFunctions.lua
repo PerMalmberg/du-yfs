@@ -45,19 +45,12 @@ local function getVerticalReference(waypoint, previousWaypoint)
     -- When next waypoint is nearly above us, use the line between them as the vertical reference instead to make following the path more exact.
     local vertRef = -universe.VerticalReferenceVector()
     local pathVector = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
-    local toNext = waypoint.DirectionTo()
 
     local pathToVerDot = pathVector:Dot(vertRef)
     if waypoint.DistanceTo() >= 5 and previousWaypoint.DistanceTo() >= 5
         and abs(pathToVerDot) > 0.9 -- only if we're moving close to the vertical reference
     then
-        -- Prevent tiping upside down when going above the point
-        if pathToVerDot >= 0 then
-            vertRef = toNext
-        else
-            -- Net waypoint is 'below' so negate the direction
-            vertRef = -toNext
-        end
+        vertRef = pathVector
     end
 
     return vertRef

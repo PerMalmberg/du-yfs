@@ -12,7 +12,7 @@ AdjustmentTracker.__index = AdjustmentTracker
 ---@return AdjustmentTracker
 function AdjustmentTracker.New()
     local s = {}
-    local pid = PID(0.01, 0.1, 10, 0.99) -- local pid = PID(0, 0.1, 1000, 0.99) QQQ
+    local pid = PID(0.01, 0.1, 5, 0.99) -- local pid = PID(0, 0.1, 1000, 0.99)
     local lastDistance = 0
 
     ---@param new number

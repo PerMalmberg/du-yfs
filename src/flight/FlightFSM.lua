@@ -8,7 +8,6 @@ local vehicle = r.vehicle
 local G = vehicle.world.G
 local AirFrictionAcceleration = vehicle.world.AirFrictionAcceleration
 local calc = r.calc
-local CalcBrakeAcceleration = calc.CalcBrakeAcceleration
 local CalcBrakeDistance = calc.CalcBrakeDistance
 local Ternary = calc.Ternary
 local universe = r.universe
@@ -16,7 +15,6 @@ local Vec3 = r.Vec3
 local nullVec = Vec3.New()
 local engine = r.engine
 local EngineGroup = require("abstraction/EngineGroup")
-local Accumulator = require("util/Accumulator")
 local Stopwatch = require("system/Stopwatch")
 local PID = require("cpml/pid")
 local Ray = require("util/Ray")
@@ -460,7 +458,7 @@ function FlightFSM.New(settings, routeController)
 
         local currSpeed = velocity:Len()
 
-        if distance > 0.01 then
+        if distance > 0.05 then
             if increasing then
                 acc = directionToTarget * mul *
                     engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionToTarget)
@@ -472,12 +470,11 @@ function FlightFSM.New(settings, routeController)
                     acc = -directionToTarget * brakeAcc
                 end
             end
-
-            log:Info(prefix, calc.Round(distance, 2), mul)
         else
             data.ResetPID()
         end
 
+        log:Info(prefix, calc.Round(distance, 2), acc:Len())
         return acc
     end
 
@@ -491,28 +488,9 @@ function FlightFSM.New(settings, routeController)
     ---@param moveDirection Vec3
     ---@return Vec3
     local function adjustForDeviation(targetPoint, currentPos, moveDirection)
-        local pathOnPlane = calc.ProjectPointOnPlane(moveDirection, currentPos, targetPoint)
-        if abs(moveDirection:Dot(Forward())) >= 0.707 then
-            return calcAdjustAcceleration(Up(), pathOnPlane, currentPos, vertAdjData, "vert: ") +
-                calcAdjustAcceleration(Right(), pathOnPlane, currentPos, latAdjData, "lat: ")
-        elseif abs(moveDirection:Dot(Right())) >= 0.707 then
-            return calcAdjustAcceleration(Up(), pathOnPlane, currentPos, vertAdjData, "vert: ") +
-                calcAdjustAcceleration(Forward(), pathOnPlane, currentPos, latAdjData, "lat: ")
-        else
-            return calcAdjustAcceleration(Forward(), pathOnPlane, currentPos, longAdjData, "long: ") +
-                calcAdjustAcceleration(Right(), pathOnPlane, currentPos, latAdjData, "lat: ")
-        end
-
-        --[[
-        if abs(moveDirection:Dot(Up())) > 0.8 then
-            local pathOnPlane = calc.ProjectPointOnPlane(moveDirection, currentPos, targetPoint)
-            local longitudalAcc = calcAdjustAcceleration(Forward(), pathOnPlane, currentPos, longAdjData, "long: ")
-            local lateralAcc = calcAdjustAcceleration(Right(), pathOnPlane, currentPos, latAdjData, "lat: ")
-            return longitudalAcc + lateralAcc
-        else
-            return Vec3.zero
-        end
-]]
+        return calcAdjustAcceleration(Up(), targetPoint, currentPos, vertAdjData, "vert: ") +
+            calcAdjustAcceleration(Right(), targetPoint, currentPos, latAdjData, "lat: ") +
+            calcAdjustAcceleration(Forward(), targetPoint, currentPos, longAdjData, "long: ")
     end
 
     ---Applies the acceleration to the engines
@@ -663,7 +641,7 @@ function FlightFSM.New(settings, routeController)
     function s.CheckPathAlignment(currentPos, nearestPointOnPath, previousWaypoint, nextWaypoint)
         -- Only check if we're moving along a precision path
 
-        if not nextWaypoint.GetPrecisionMode() then ---QQQ
+        if true or not nextWaypoint.GetPrecisionMode() then ---QQQ
             return true
         end
 
