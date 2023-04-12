@@ -1,8 +1,9 @@
 local r = require("CommonRequire")
 local yfsConstants = require("YFSConstants")
+local LightConstructMassThreshold = yfsConstants.flight.lightConstructMassThreshold
+local DefaultMargin = yfsConstants.flight.defaultMargin
 local AxisManager = require("flight/AxisManager")
 local AdjustmentTracker = require("flight/AdjustmentTracker")
-local log = r.log
 local brakes = require("flight/Brakes"):Instance()
 local vehicle = r.vehicle
 local G = vehicle.world.G
@@ -149,11 +150,9 @@ function FlightFSM.New(settings, routeController)
     }
 
     local adjustData = {
-        towards = false,
-        distance = 0,
-        brakeDist = 0,
-        speed = 0,
-        acceleration = 0
+        long = 0,
+        lat = 0,
+        ver = 0
     }
 
     local function getEngines(moveDirection, precision)
@@ -428,7 +427,6 @@ function FlightFSM.New(settings, routeController)
             flightData.brakeMaxSpeed = brakeMaxSpeed
         end
 
-
         flightData.waypointDist = remainingDistance
 
         if waypoint.FinalSpeed() == 0 then
@@ -442,8 +440,9 @@ function FlightFSM.New(settings, routeController)
     ---@param desiredPosOnPlane Vec3
     ---@param currentPos Vec3
     ---@param data AdjustmentTracker
-    ---@return Vec3
-    local function calcAdjustAcceleration(axis, desiredPosOnPlane, currentPos, data, prefix)
+    ---@return Vec3 acceleration
+    ---@return number distance
+    local function calcAdjustAcceleration(axis, desiredPosOnPlane, currentPos, data)
         local diff = desiredPosOnPlane - currentPos
 
         -- Extract parts for the current axis
@@ -458,24 +457,24 @@ function FlightFSM.New(settings, routeController)
 
         local currSpeed = velocity:Len()
 
-        if distance > 0.05 then
-            if increasing then
-                acc = directionToTarget * mul *
-                    engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionToTarget)
-            else
-                data.ResetPID()
-                local brakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-directionToTarget, false)
-                local brakeDistance = CalcBrakeDistance(currSpeed / 2, brakeAcc) + warmupTime * currSpeed / 2
-                if brakeDistance >= distance then
-                    acc = -directionToTarget * brakeAcc
-                end
-            end
+
+        if increasing then
+            acc = directionToTarget * mul *
+                engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionToTarget)
         else
             data.ResetPID()
+            local brakeAcc = engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(-directionToTarget, false)
+            local brakeDistance = CalcBrakeDistance(currSpeed / 2, brakeAcc) + warmupTime * currSpeed / 2
+            if brakeDistance >= distance then
+                acc = -directionToTarget * brakeAcc
+            end
         end
 
-        log:Info(prefix, calc.Round(distance, 2), acc:Len())
-        return acc
+        if distance <= DefaultMargin * 2 and TotalMass() < LightConstructMassThreshold then
+            acc = acc / 5
+        end
+
+        return acc, distance
     end
 
     local longAdjData = AdjustmentTracker.New()
@@ -485,12 +484,17 @@ function FlightFSM.New(settings, routeController)
     ---Adjust for deviation from the desired path
     ---@param targetPoint Vec3
     ---@param currentPos Vec3
-    ---@param moveDirection Vec3
     ---@return Vec3
-    local function adjustForDeviation(targetPoint, currentPos, moveDirection)
-        return calcAdjustAcceleration(Up(), targetPoint, currentPos, vertAdjData, "vert: ") +
-            calcAdjustAcceleration(Right(), targetPoint, currentPos, latAdjData, "lat: ") +
-            calcAdjustAcceleration(Forward(), targetPoint, currentPos, longAdjData, "long: ")
+    local function adjustForDeviation(targetPoint, currentPos)
+        local vertAcc, vertDist = calcAdjustAcceleration(Up(), targetPoint, currentPos, vertAdjData)
+        local latAcc, latDist = calcAdjustAcceleration(Right(), targetPoint, currentPos, latAdjData)
+        local longAcc, longDist = calcAdjustAcceleration(Forward(), targetPoint, currentPos, longAdjData)
+
+        adjustData.lat = latDist
+        adjustData.long = longDist
+        adjustData.ver = vertDist
+
+        return vertAcc + latAcc + longAcc
     end
 
     ---Applies the acceleration to the engines
@@ -516,7 +520,7 @@ function FlightFSM.New(settings, routeController)
             thrustAcc = thrustAcc + acceleration
         end
 
-        local adjustAcc = (adjustmentAcc) + adj.antiG()
+        local adjustAcc = adjustmentAcc + adj.antiG()
 
         if precision then
             -- Apply acceleration independently
@@ -568,8 +572,14 @@ function FlightFSM.New(settings, routeController)
             brakeCounter = nullVec
         end
 
-        local acceleration = direction * pidValue *
-            engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction)
+        local acceleration
+        if waypoint.DistanceTo() <= DefaultMargin then
+            -- At this point we let the adjustment code control
+            acceleration = Vec3.zero
+        else
+            acceleration = direction * pidValue *
+                engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction)
+        end
 
         flightData.controlAcc = acceleration:Len()
         return acceleration + brakeCounter
@@ -599,10 +609,9 @@ function FlightFSM.New(settings, routeController)
             local nearest = calc.NearestOnLineBetweenPoints(previous.Destination(), selectedWP.Destination(), pos)
 
             currentState.Flush(deltaTime, selectedWP, previous, nearest)
-            local moveDirection = selectedWP.DirectionTo()
 
             local acceleration = move(deltaTime, selectedWP)
-            local adjustmentAcc = adjustForDeviation(nearest, pos, moveDirection)
+            local adjustmentAcc = adjustForDeviation(nearest, pos)
 
             applyAcceleration(acceleration, adjustmentAcc, selectedWP.GetPrecisionMode())
         end

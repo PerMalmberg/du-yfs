@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.20 - 2023-04-xx
+### Changed
+* New path follow algorithm and behavior. The construct now tilts along the travel path for increased accuracy.
+* Small constructs now bob less.
+
 ## 0.0.19 - 2023-04-07
 
 ### Added

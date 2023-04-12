@@ -158,22 +158,18 @@ function InfoCentral.Instance()
         if not adjustInfo.panel and adjustInfo.visible then
             local p = sharedPanel:Get("Adjustment")
             adjustInfo.panel = p
-            adjustInfo.wAdjTowards = p:CreateValue("Adj. towards")
-            adjustInfo.wAdjDist = p:CreateValue("Adj. distance", "m")
-            adjustInfo.wAdjAcc = p:CreateValue("Adj. acc", "m/s2")
-            adjustInfo.wAdjBrakeDistance = p:CreateValue("Adj. brake dist.", "m")
-            adjustInfo.wAdjSpeed = p:CreateValue("Adj. speed (limit)", "m/s")
+            adjustInfo.wLong = p:CreateValue("Long", "m")
+            adjustInfo.wLat = p:CreateValue("Lat", "m")
+            adjustInfo.wVert = p:CreateValue("Vert", "m")
         elseif adjustInfo.panel and not adjustInfo.visible then
             sharedPanel:Close("Adjustment")
             adjustInfo.panel = nil
         end
 
         if adjustInfo.panel then
-            adjustInfo.wAdjTowards:Set(value.towards)
-            adjustInfo.wAdjDist:Set(calc.Round(value.distance, 3))
-            adjustInfo.wAdjAcc:Set(calc.Round(value.acceleration, 1))
-            adjustInfo.wAdjBrakeDistance:Set(calc.Round(value.distance, 1))
-            adjustInfo.wAdjSpeed:Set(calc.Round(value.speed, 1))
+            adjustInfo.wLong:Set(calc.Round(value.long, 2))
+            adjustInfo.wLat:Set(calc.Round(value.lat, 2))
+            adjustInfo.wVert:Set(calc.Round(value.ver, 2))
         end
     end)
 
