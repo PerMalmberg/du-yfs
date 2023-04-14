@@ -444,9 +444,9 @@ function FlightFSM.New(settings, routeController)
     ---@return Vec3 acceleration
     ---@return number distance
     local function calcAdjustAcceleration(axis, data, currentPos, nextWaypoint, previousWaypoint)
-        local travelVec = (nextWaypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
         local posInOneSecond = currentPos + Velocity() * 1
-        local target = calc.NearestPointOnLine(previousWaypoint.Destination(), travelVec, posInOneSecond)
+        local target = calc.NearestOnLineBetweenPoints(previousWaypoint.Destination(), nextWaypoint.Destination(),
+            posInOneSecond)
         local toTarget = (target - posInOneSecond):ProjectOn(axis)
         local directionToTarget, distance = toTarget:NormalizeLen()
 
@@ -455,8 +455,9 @@ function FlightFSM.New(settings, routeController)
         local acc = directionToTarget * mul *
             engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionToTarget)
 
-        if distance <= DefaultMargin * 2 and TotalMass() < LightConstructMassThreshold then
-            acc = acc / 5
+        -- This removes jitter on the small light constructs
+        if distance <= DefaultMargin / 2 and TotalMass() < LightConstructMassThreshold then
+            acc = Vec3.zero
         end
 
         return acc, distance
