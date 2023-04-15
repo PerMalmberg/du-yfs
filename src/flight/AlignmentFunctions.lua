@@ -54,7 +54,7 @@ local function getVerticalReference(waypoint, previousWaypoint)
         if waypoint.DistanceTo() >= 5 and previousWaypoint.DistanceTo() >= 5 then
             selectedRef = pathDirection
         end
-    elseif vertUp:Dot(pathDirection) < -threshold and IsInSpace() then
+    elseif vertUp:Dot(pathDirection) < -threshold then
         selectedRef = -pathDirection
     end
 
