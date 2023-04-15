@@ -437,29 +437,53 @@ function FlightFSM.New(settings, routeController)
 
     ---@param axis Vec3
     ---@param currentPos Vec3
+    ---@param nextWaypoint Waypoint
+    ---@param previousWaypoint Waypoint
+    ---@param t number Time interval in seconds
+    ---@return Vec3 direction
+    ---@return number length
+    local function getAdjustmentDataInFuture(axis, currentPos, nextWaypoint, previousWaypoint, t)
+        local posInFuture = currentPos + Velocity() * t + 0.5 * Acceleration() * t * t
+        local targetFuture = calc.NearestOnLineBetweenPoints(previousWaypoint.Destination(), nextWaypoint.Destination(),
+            posInFuture)
+        local toTargetFuture = (targetFuture - posInFuture):ProjectOn(axis)
+        return toTargetFuture:NormalizeLen()
+    end
+
+    ---@param axis Vec3
+    ---@param currentPos Vec3
     ---@param data AdjustmentTracker
     ---@param nextWaypoint Waypoint
     ---@param previousWaypoint Waypoint
     ---@return Vec3 acceleration
     ---@return number distance
     local function calcAdjustAcceleration(axis, data, currentPos, nextWaypoint, previousWaypoint)
-        local posInOneSecond = currentPos + Velocity() * 1
-        local target = calc.NearestOnLineBetweenPoints(previousWaypoint.Destination(), nextWaypoint.Destination(),
-            posInOneSecond)
-        local toTarget = (target - posInOneSecond):ProjectOn(axis)
-        local directionToTarget, distance = toTarget:NormalizeLen()
+        local directionNow, distanceNow = getAdjustmentDataInFuture(axis, currentPos, nextWaypoint, previousWaypoint, 0)
+        local directionFuture, distanceFuture = getAdjustmentDataInFuture(axis, currentPos, nextWaypoint,
+            previousWaypoint, 1)
 
-        local mul = calc.Clamp(data.Feed(distance / 10), 0, 1)
+        local acc = Vec3.zero
 
-        local acc = directionToTarget * mul *
-            engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionToTarget)
-
-        -- This removes jitter on the light constructs
-        if distance <= DefaultMargin / 2 and TotalMass() < LightConstructMassThreshold then
-            acc = Vec3.zero
+        if directionNow:Dot(directionFuture) < 0 then
+            -- Will have passed the path, break if we'll be outside the margin;
+            -- we check this so that we don't prevent ourselves from moving sideways etc.
+            if distanceFuture > DefaultMargin
+                and TotalMass() > LightConstructMassThreshold -- Don't do the braking on light constructs, it causes jitter.
+            then
+                acc = directionFuture * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionFuture)
+            end
+        else
+            local mul = calc.Clamp(data.Feed(distanceNow), 0, 1)
+            acc = directionNow * mul *
+                engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionNow)
         end
 
-        return acc, distance
+        -- This removes jitter on the light constructs
+        if distanceFuture <= DefaultMargin / 2 and TotalMass() < LightConstructMassThreshold then
+            --acc = Vec3.zero
+        end
+
+        return acc, distanceNow
     end
 
     local longAdjData = AdjustmentTracker.New()
