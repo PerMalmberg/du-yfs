@@ -3,6 +3,7 @@ local vehicle = r.vehicle
 local universe = r.universe
 local calc = r.calc
 local Current = vehicle.position.Current
+local IsInSpace = vehicle.world.IsInSpace
 local abs = math.abs
 
 ---@alias AlignmentFunction fun(currentWaypoint:Waypoint, previous:Waypoint):{yaw:Vec3, pitch:Vec3}
@@ -43,17 +44,21 @@ end
 ---@return Vec3
 local function getVerticalReference(waypoint, previousWaypoint)
     -- When next waypoint is nearly above us, use the line between them as the vertical reference instead to make following the path more exact.
-    local vertRef = -universe.VerticalReferenceVector()
-    local pathVector = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
+    local vertUp = -universe.VerticalReferenceVector()
+    local pathDirection = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
 
-    local pathToVerDot = pathVector:Dot(vertRef)
-    if waypoint.DistanceTo() >= 5 and previousWaypoint.DistanceTo() >= 5
-        and abs(pathToVerDot) > 0.9 -- only if we're moving close to the vertical reference
-    then
-        vertRef = pathVector
+    local selectedRef = vertUp
+    local threshold = 0.9
+
+    if vertUp:Dot(pathDirection) > threshold then
+        if waypoint.DistanceTo() >= 5 and previousWaypoint.DistanceTo() >= 5 then
+            selectedRef = pathDirection
+        end
+    elseif vertUp:Dot(pathDirection) < -threshold and IsInSpace() then
+        selectedRef = -pathDirection
     end
 
-    return vertRef
+    return selectedRef
 end
 
 ---@param waypoint Waypoint
