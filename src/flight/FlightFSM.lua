@@ -35,9 +35,6 @@ local MAX_INT                       = math.maxinteger
 
 local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
 
-local longitudinal                  = "longitudinal"
-local vertical                      = "vertical"
-local lateral                       = "lateral"
 local airfoil                       = "airfoil"
 local thrustTag                     = "thrust"
 local Up                            = vehicle.orientation.Up
@@ -74,6 +71,11 @@ function FlightFSM.New(settings, routeController)
     local function noAntiG()
         return nullVec
     end
+
+    local minimumPathCheckOffset = yfsConstants.flight.minimumPathCheckOffset
+    settings.RegisterCallback("minimumPathCheckOffset", function(number)
+        minimumPathCheckOffset = number
+    end)
 
     local normalModeGroup = {
         thrust = {
@@ -607,7 +609,7 @@ function FlightFSM.New(settings, routeController)
         local allowedOffset = startMargin + koeff * travelDist
         local toNearest = (nearestPointOnPath - currentPos):Len()
 
-        return toNearest <= max(0.5, allowedOffset)
+        return toNearest <= max(minimumPathCheckOffset, allowedOffset)
     end
 
     ---Sets a temporary waypoint, or removes the current one

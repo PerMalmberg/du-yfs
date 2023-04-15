@@ -153,10 +153,6 @@ function Wsad.New(flightCore, cmd, settings)
                         flightCore.GotoTarget(stopPos, pointDir, defaultMargin, 0, construct.getMaxSpeed(), true)
                     elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - curr) >= 0 then
                         local holdMargin = defaultMargin
-                        if TotalMass() < settings.Number("manualHoldMarginMassThreshold") then
-                            holdMargin = holdMargin / 4
-                        end
-
                         flightCore.GotoTarget(Current(), pointDir, holdMargin, calc.Kph2Mps(2), 0, false)
                         stopPos = Vec3.zero
                     end

@@ -4,9 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## 0.0.20 - 2023-04-xx
 ### Changed
-* New path follow algorithm and behavior. The construct now tilts along the travel path for increased accuracy.
+* New path follow algorithm and behavior, the construct now tilts along the travel path .
 * Small constructs now bob less.
 * Removed the precision-concept from waypoints.
+
+### Removed
+* Setting `manualHoldMarginMassThreshold` obsolete and removed
 
 ## 0.0.19 - 2023-04-07
 
