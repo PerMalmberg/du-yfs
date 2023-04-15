@@ -9,7 +9,6 @@ local vehicle = r.vehicle
 local G = vehicle.world.G
 local AirFrictionAcceleration = vehicle.world.AirFrictionAcceleration
 local calc = r.calc
-local CalcBrakeDistance = calc.CalcBrakeDistance
 local Ternary = calc.Ternary
 local universe = r.universe
 local Vec3 = r.Vec3
@@ -455,7 +454,7 @@ function FlightFSM.New(settings, routeController)
         local acc = directionToTarget * mul *
             engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionToTarget)
 
-        -- This removes jitter on the small light constructs
+        -- This removes jitter on the light constructs
         if distance <= DefaultMargin / 2 and TotalMass() < LightConstructMassThreshold then
             acc = Vec3.zero
         end
