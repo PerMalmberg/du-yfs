@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 * New path follow algorithm and behavior. The construct now tilts along the travel path for increased accuracy.
 * Small constructs now bob less.
+* Removed the precision-concept from waypoints.
 
 ## 0.0.19 - 2023-04-07
 

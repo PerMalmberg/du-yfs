@@ -69,7 +69,6 @@ function InfoCentral.Instance()
         wMargin = nil,
         wFinalSpeed = nil,
         wMaxSpeed = nil,
-        wPrecision = nil,
         wDirLock = nil
     }
 
@@ -267,7 +266,6 @@ function InfoCentral.Instance()
                 waypointInfo.wMargin = p:CreateValue("Margin", "m")
                 waypointInfo.wFinalSpeed = p:CreateValue("Final speed", "km/h")
                 waypointInfo.wMaxSpeed = p:CreateValue("Max speed", "km/h")
-                waypointInfo.wPrecision = p:CreateValue("Precision")
                 waypointInfo.wDirLock = p:CreateValue("Dir lock")
             elseif waypointInfo.panel and not waypointInfo.visible then
                 sharedPanel:Close("Waypoint")
@@ -279,7 +277,6 @@ function InfoCentral.Instance()
                 waypointInfo.wMargin:Set(calc.Round(waypoint.Margin(), 3))
                 waypointInfo.wFinalSpeed:Set(calc.Round(calc.Kph2Mps(waypoint.FinalSpeed()), 1))
                 waypointInfo.wMaxSpeed:Set(calc.Round(calc.Kph2Mps(waypoint.MaxSpeed()), 1))
-                waypointInfo.wPrecision:Set(waypoint.GetPrecisionMode())
                 waypointInfo.wDirLock:Set(waypoint.DirectionLocked())
             end
         end)

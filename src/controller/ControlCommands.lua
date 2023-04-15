@@ -18,7 +18,7 @@ local Forward                 = vehicle.orientation.Forward
 local Right                   = vehicle.orientation.Right
 local Up                      = vehicle.orientation.Up
 
----@alias PointOptionArguments { commandValue:string, precision:boolean, maxspeed:number, margin:number, lockdir:boolean}
+---@alias PointOptionArguments { commandValue:string, maxspeed:number, margin:number, lockdir:boolean}
 
 ---@class ControlCommands
 ---@field New fun(input:Input, cmd:Command, flightCore:FlightCore)
@@ -48,7 +48,6 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
     ---@param c Command
     local function addPointOptions(c)
-        c.Option("-precision").AsEmptyBoolean().Default(false)
         c.Option("-lockdir").AsEmptyBoolean().Default(false)
         c.Option("-maxspeed").AsNumber().Default(0)
         c.Option("-margin").AsNumber().Default(0.1)
@@ -58,7 +57,6 @@ function ControlCommands.New(input, cmd, flightCore, settings)
     ---@return PointOptions
     local function createOptions(data)
         local opt = PointOptions.New()
-        opt.Set(PointOptions.PRECISION, data.precision)
         opt.Set(PointOptions.MAX_SPEED, calc.Kph2Mps(data.maxspeed))
         opt.Set(PointOptions.MARGIN, data.margin)
 
@@ -511,7 +509,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         end
 
         local gotoCmd = cmd.Accept("goto",
-            ---@param data {commandValue:string, precision:boolean, lockdir:boolean, maxspeed:number, margin:number, offset:number}
+            ---@param data {commandValue:string, lockdir:boolean, maxspeed:number, margin:number, offset:number}
             function(data)
                 local target = getPos(data.commandValue)
 
@@ -530,7 +528,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
                     if data.lockdir then
                         lockToDir = Forward()
                     end
-                    flightCore.GotoTarget(offsetTarget, data.precision, lockToDir, data.margin, data.maxspeed, 0, false)
+                    flightCore.GotoTarget(offsetTarget, lockToDir, data.margin, data.maxspeed, 0, false)
                     log:Info("Moving to ", universe.CreatePos(offsetTarget).AsPosString())
                 end
             end).AsString().Mandatory()

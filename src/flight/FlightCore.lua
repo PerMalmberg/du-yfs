@@ -29,7 +29,7 @@ require("flight/state/Require")
 ---@field StopEvents fun()
 ---@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean):Waypoint
 ---@field GoIdle fun()
----@field GotoTarget fun(target:Vec3, precision:boolean, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean)
+---@field GotoTarget fun(target:Vec3, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean)
 
 
 local FlightCore = {}
@@ -63,10 +63,6 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
     if dir ~= nullVec then
         wp.LockDirection(dir, true)
     end
-
-    local vertical = abs(wp:DirectionTo():Dot(GravityDirection())) > 0.985
-    local precision = opt.Get(PointOptions.PRECISION, false)
-    wp.SetPrecisionMode(vertical or precision)
 
     return wp
 end
@@ -176,17 +172,15 @@ function FlightCore.New(routeController, flightFSM)
 
     ---Starts a movement towards the given coordinate.
     ---@param target Vec3
-    ---@param precision boolean
     ---@param lockDir Vec3 If not zero, direction is locked to this direction
     ---@param margin number
     ---@param maxSpeed number
     ---@param finalSpeed number
     ---@param forceFinalSpeed boolean If true, the construct will not slow down to come to a stop if the point is last in the route (used for manual control)
-    function s.GotoTarget(target, precision, lockDir, margin, maxSpeed, finalSpeed, forceFinalSpeed)
+    function s.GotoTarget(target, lockDir, margin, maxSpeed, finalSpeed, forceFinalSpeed)
         local temp = routeController.ActivateTempRoute()
         local targetPoint = temp.AddCoordinate(target)
         local opt = targetPoint.Options()
-        opt.Set(PointOptions.PRECISION, precision)
         opt.Set(PointOptions.MAX_SPEED, maxSpeed)
         opt.Set(PointOptions.MARGIN, margin)
         opt.Set(PointOptions.FINAL_SPEED, finalSpeed)

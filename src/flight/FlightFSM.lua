@@ -86,45 +86,6 @@ function FlightFSM.New(settings, routeController)
         adjust = { engines = EngineGroup(), prio1Tag = "", prio2Tag = "", prio3Tag = "", antiG = noAntiG }
     }
 
-    local forwardGroup = {
-        thrust = {
-            engines = EngineGroup(longitudinal),
-            prio1Tag = thrustTag,
-            prio2Tag = "",
-            prio3Tag = "",
-            antiG = noAntiG
-        },
-        adjust = {
-            engines = EngineGroup(airfoil, lateral, vertical),
-            prio1Tag = airfoil,
-            prio2Tag = lateral,
-            prio3Tag = vertical,
-            antiG = antiG
-        }
-    }
-
-    local rightGroup = {
-        thrust = { engines = EngineGroup(lateral), prio1Tag = thrustTag, prio2Tag = "", prio3Tag = "", antiG = noAntiG },
-        adjust = {
-            engines = EngineGroup(vertical, longitudinal),
-            prio1Tag = vertical,
-            prio2Tag = longitudinal,
-            prio3Tag = "",
-            antiG = antiG
-        }
-    }
-
-    local upGroup = {
-        thrust = { engines = EngineGroup(vertical), prio1Tag = vertical, prio2Tag = "", prio3Tag = "", antiG = antiG },
-        adjust = {
-            engines = EngineGroup(lateral, longitudinal),
-            prio1Tag = vertical,
-            prio2Tag = longitudinal,
-            prio3Tag = "",
-            antiG = noAntiG
-        }
-    }
-
     local warmupTime = 1
     local yaw = AxisManager.Instance().Yaw()
     local yawAlignmentThrustLimiter = 1
@@ -153,20 +114,6 @@ function FlightFSM.New(settings, routeController)
         lat = 0,
         ver = 0
     }
-
-    local function getEngines(moveDirection, precision)
-        if precision then
-            if abs(moveDirection:Dot(Forward())) >= 0.707 then
-                return forwardGroup
-            elseif abs(moveDirection:Dot(Right())) >= 0.707 then
-                return rightGroup
-            else
-                return upGroup
-            end
-        else
-            return normalModeGroup
-        end
-    end
 
     --- Calculates the max allowed speed we may have while still being able to decelerate to the endSpeed
     --- Remember to pass in a negative acceleration
@@ -478,11 +425,6 @@ function FlightFSM.New(settings, routeController)
                 engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionNow)
         end
 
-        -- This removes jitter on the light constructs
-        if distanceFuture <= DefaultMargin / 2 and TotalMass() < LightConstructMassThreshold then
-            --acc = Vec3.zero
-        end
-
         return acc, distanceNow
     end
 
@@ -511,18 +453,14 @@ function FlightFSM.New(settings, routeController)
     ---Applies the acceleration to the engines
     ---@param acceleration Vec3|nil
     ---@param adjustmentAcc Vec3
-    ---@param precision boolean If true, use precision mode
-    local function applyAcceleration(acceleration, adjustmentAcc, precision)
+    local function applyAcceleration(acceleration, adjustmentAcc)
         if acceleration == nil then
             unit.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
             return
         end
 
-        precision = false --QQQ can't split when using new adjustment
-
-        local groups = getEngines(acceleration, precision)
-        local t = groups.thrust
-        local adj = groups.adjust
+        local t = normalModeGroup.thrust
+        local adj = normalModeGroup.adjust
 
         -- Subtract (which adds it since it works against us) the air friction acceleration for thrust.
         local thrustAcc = t.antiG() - AirFrictionAcceleration()
@@ -533,18 +471,9 @@ function FlightFSM.New(settings, routeController)
 
         local adjustAcc = adjustmentAcc + adj.antiG()
 
-        if precision then
-            -- Apply acceleration independently
-            unit.setEngineCommand(t.engines:Union(), { thrustAcc:Unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
-                t.prio2Tag, t.prio3Tag, 1)
-            unit.setEngineCommand(adj.engines:Union(), { adjustAcc:Unpack() }, { 0, 0, 0 }, true, true,
-                adj.prio1Tag, adj.prio2Tag, adj.prio3Tag, 1)
-        else
-            -- Apply acceleration as a single vector
-            local finalAcc = thrustAcc + adjustAcc
-            unit.setEngineCommand(t.engines:Union(), { finalAcc:Unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag,
-                t.prio2Tag, t.prio3Tag, 1)
-        end
+        local finalAcc = thrustAcc + adjustAcc
+        unit.setEngineCommand(t.engines:Union(), { finalAcc:Unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag, t.prio2Tag,
+            t.prio3Tag, 1)
     end
 
     ---@param deltaTime number The time since last Flush
@@ -611,7 +540,7 @@ function FlightFSM.New(settings, routeController)
         currentWP = next
 
         if currentState.InhibitsThrust() then
-            applyAcceleration(nil, nullVec, false)
+            applyAcceleration(nil, nullVec)
             brakes.Feed(0, Velocity():Len())
         else
             local selectedWP = selectWP()
@@ -624,7 +553,7 @@ function FlightFSM.New(settings, routeController)
             local acceleration = move(deltaTime, selectedWP)
             local adjustmentAcc = adjustForDeviation(pos, selectedWP, previous)
 
-            applyAcceleration(acceleration, adjustmentAcc, selectedWP.GetPrecisionMode())
+            applyAcceleration(acceleration, adjustmentAcc)
         end
     end
 
@@ -659,12 +588,6 @@ function FlightFSM.New(settings, routeController)
     ---@param nextWaypoint Waypoint
     ---@return boolean
     function s.CheckPathAlignment(currentPos, nearestPointOnPath, previousWaypoint, nextWaypoint)
-        -- Only check if we're moving along a precision path
-
-        if true or not nextWaypoint.GetPrecisionMode() then ---QQQ
-            return true
-        end
-
         --[[ As waypoints can have large margins, we need to ensure that we allow for offsets as large as the margins, at each end.
             The outer edges are a straight line between the edges of the start and end point spheres so allowed offset can be calculated linearly.
         ]]
