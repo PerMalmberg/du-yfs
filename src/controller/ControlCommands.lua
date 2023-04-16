@@ -444,7 +444,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         createVertRoute.Option("extraPointMargin").AsNumber().Default(5)
         createVertRoute.Option("x").AsNumber().Mandatory()
         createVertRoute.Option("y").AsNumber().Mandatory()
-        createVertRoute.Option("x").AsNumber().Mandatory()
+        createVertRoute.Option("z").AsNumber().Mandatory()
     end
 
     function s.RegisterMoveCommands()
