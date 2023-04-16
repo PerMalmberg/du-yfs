@@ -34,20 +34,11 @@ Due to Dual Universe's slightly wonky physics, when creating floors for any dyna
 
 ## Installation as an elevator (ground to space)
 
-First, select which type of installation you want:
-
-* Gravity-aligned - this is the standard option where the the construct follows the gravity vector between two points. It is easy to setup but the drawback is that an installations with multiple elevators results in a wider spread of them in space, compared to the ground location due to the gravity vector pointing in a different direction at each location on the ground (Imagine an arrow from the center of the planet through the ground location; when you move so does it.).
-
-* Vertical - this option creates a two-part route with the atmospheric part being gravity aligned and the space part being vertically aligned with the construct the elevator parks on at the ground. This option requires a few extra steps to setup but allows you to easily park multiple elevators close to each other
-both at the ground location as well as in space. The drawback is the stop-and-go at the extra midpoint needed to realign which slightly increases travel time.
-
-No matter which option you chose you can always adjust the routes at a later date. There is also the option to use gravity-aligned in combination with extra waypoints at the end of the route in space to maneuver the elevator into its target destination.
-
 ### Aligning the elevator to your ground construct
 
 To get a near-perfect alignment of the elevator to your ground construct, follow these steps.
 
-1. Place a Programming Board on the construct that will determine what constitutes as "vertically up".
+1. Place a Programming Board on the construct that will contain the dock/cradle/landing pad of the elevator.
 2. Connect a screen to the programming board.
 3. Select the direction you want to align to and paste one of the four code snippets below into `unit -> start`, whichever is appropriate.
 
@@ -92,42 +83,30 @@ To get a near-perfect alignment of the elevator to your ground construct, follow
 7. Once aligned, either hold C or use the `move` command to set it down again.
 8. Turn off the elevator.
 
-### Gravity-aligned setup
+### Creating the route
 
-1. Place the elevator at the ground location you want it at and make sure that it is facing the desired direction. It is recommended that you use a voxel floor instead of the ground.
-2. Activate the remote controller
-3. Ensure that location and direction is still what you want them to be. If not you can do fine adjustments using the available movement commands.
-4. Replacing `<name>` and `<distance>` with the the actual name and distance (in meter), execute the following in Lua chat:
-
-   `create-gravity-route <name> -distance <distance>`
-
-    Example: `create-gravity-route Space -distance 100000`
-
-    This creates a route named "Space" with an endpoint 100km above, along the gravity vector.
+1. Decide on what distance above (_not_ height above sea level) you want the route to stop at.
+2. Decide on a name for the route. You can use spaces in it, but you must surround it with single quotes, like so: `'a name'`. Double quotes do currently not work due to a bug in DU. Keep the name at 14 characters or less so it fits on the screen.
+3. Activate the elevator.
+4. In Lua chat, type:
+   `create-vertical-route 'route name' -distance 12345`, replacing values as appropriate.
+   * If this isn't your first elevator, add the x, y, and z arguments to the `create-vertical-route` command you get using the instructions in the "Travel vector for additional elevators" section.
 
 The screen will now show the name of your route with two buttons, one for the beginning (ground) and end (space). Simply clicking these buttons will make the elevator move to those respective locations.
 
-### Vertical setup
+### Travel vector for additional elevators
 
-1. Ensure that the ground construct you want to use as the vertical reference is where you want it to be.
-2. Place a Programming Board on the construct that will determine what constitutes as "vertically up".
-3. Connect a screen to the programming board.
-4. Paste this code in `unit -> start`
-```lua
-local Vec3 = require("cpml/vec3")
-local v = Vec3(construct.getWorldOrientationUp())
-local s = string.format("create-vertical-route CHANGE -distance CHANGE_THIS_TOO -x %0.14f -y %0.14f -z %0.14f", v.x, v.y, v.z)
-slot1.setCenteredText(s)
-unit.exit()
-```
-1. Start the Programming Board and then copy the command from the screen (CTRL-L to to open editor while pointing to the screen).
-2. Paste the command into Lua-chat and change the route name and distance. Then press enter to execute.
+To ensure that elevators end up at the same relative distances in space as they have on the ground, you need to make them use the same travel direction. To do so, follow these instructions:
 
-   Example: `create-vertical-route test -distance 100000 -x -0.60683256387711 -y 0.2140174806118 -x 0.76547425985336`
+1. Select one elevator as the reference elevator.
+2. Activate the elevator
+3. Type the following command into Lua chat:
+   > `print-vertical-up`
 
-By default this will create a route with an extra path-correction point outside atmosphere where the construct will stop both on the way in and out of atmosphere. If you disable this (using `-followGravInAtmo false`) you should probably increase the margin of the waypoints in the route to something larger, depending on the angle of the path toward the gravity vector.
+   This will print something like this:
+   > `[I] -x 0.123 -y 0.456 -z 0.789`
 
-> Even though a parked construct appears to be sitting perfectly flat onto another, this is seldom actually the case. As such, assuming the up-vector of the elevator is the same as that of the construct on which the elevator is parked on results in different results between different positions as well as different park attempts. With distances of 100km, even a tiny difference results in large differences at the far end.
+4. Copy this from the chat (right click on the Lua chat tab to access menu) and paste it into your favorite text editor and extract everything after the `[I]`, you'll find it at the very end of the text.
 
 ## Space core placement
 
@@ -226,20 +205,19 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 | pos-list                  |                            |         |          | Lists the saved positions                                                                                                                                                                            |
 | pos-delete                |                            |         |          | Deletes a waypoint.                                                                                                                                                                                  |
 |                           | name of waypoint           | string  | N        | The waypoint to delete.                                                                                                                                                                              |
-| create-gravity-route      | name of route              |         |          | Creates a route by the given name from current position to a point above (or below) at the given distance along gravity.                                                                             |
-|                           | -distance                  | number  | N        | The distance of the point above or below (when negative)                                                                                                                                             |
 | create-vertical-route     | name of route              |         |          | Creates a route by the given name from current position to a point above (or below) at the given distance using the given values for the up-vector.                                                  |
 |                           | -distance                  | number  | N        | The distance of the point above or below (when negative)                                                                                                                                             |
-|                           | -followGravInAtmo          | boolean | Y        | If specified (default true), an extra point will be added so that the part of the path that is in atmosphere will follow the gravity vector.                                                         |
+|                           | -followGravInAtmo          |         | Y        | If specified an extra point will be added so that the part of the path that is in atmosphere will follow the gravity vector, regardless of the specified custom vector.                              |
 |                           | -extraPointMargin          | number  | N        | Specifies the margin used for the extra point, default 5 m.                                                                                                                                          |
-|                           | -x                         | number  | N        | Specifies the X-value of the direction vector (see 'Creating vertical routes').                                                                                                                      |
-|                           | -y                         | number  | N        | Specifies the Y-value of the direction vector (see 'Creating vertical routes').                                                                                                                      |
-|                           | -z                         | number  | N        | Specifies the Z-value of the direction vector (see 'Creating vertical routes').                                                                                                                      |
+|                           | -x                         | number  | N        | Specifies the X-value of the direction vector (see 'Travel vector for additional elevators').                                                                                                        |
+|                           | -y                         | number  | N        | Specifies the Y-value of the direction vector (see 'Travel vector for additional elevators').                                                                                                        |
+|                           | -z                         | number  | N        | Specifies the Z-value of the direction vector (see 'Travel vector for additional elevators').                                                                                                        |
+| print-vertical-up         |                            |         |          | Prints the vertical up-vector at the current location. Used to get values for use with `create-vertical-route`.                                                                                      |
 | set                       |                            |         |          | Sets the specified setting to the specified value                                                                                                                                                    |
 |                           | -engineWarmup              | seconds | Y        | Sets the engine warmup time (T50). Set this to that of the engine with longes warmup.                                                                                                                |
 |                           | -containerProficiency      | integer | Y        | Sets the container proficiency talent level, 1-5                                                                                                                                                     |
 |                           | -fuelTankOptimization      | integer | Y        | Sets the fuel tank optimization talent level, 1-5                                                                                                                                                    |
-|                           | -atmoFuelTankHandling      | integer | Y        | Sets the atmo fuel tank handling talent level, 1-5                                                                                                                                                   |
+|                           | -atmoFuelTankHandling      | integer | Y        | Sets the atmospheric fuel tank handling talent level, 1-5                                                                                                                                            |
 |                           | -spaceFuelTankHandling     | integer | Y        | Sets the space fuel tank handling talent level, 1-5                                                                                                                                                  |
 |                           | -rocketFuelTankHandling    | integer | Y        | Sets the rocket fuel tank handling talent level, 1-5                                                                                                                                                 |
 |                           | -autoShutdownFloorDistance | number  | Y        | Sets the distance at which the system shuts down while in Hold-state, as measured by the 'FloorDetector' telemeter                                                                                   |

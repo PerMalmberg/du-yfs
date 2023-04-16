@@ -8,15 +8,18 @@ All notable changes to this project will be documented in this file.
 *
 ### Added
 * New `align-to-vector` command that can be used to align the elevator to a specific direction, such as a static construct. New instructions in the manual.
+* `print-vertical-up` to print the vertical up vector at the current location.
 
 ### Changed
 * New path follow algorithm and behavior, the construct now tilts along the travel path if >5m from the waypoint.
 * Small constructs now bob less.
 * Removed the precision-concept from waypoints.
+* Command `create-vertical-route` no longer creates a mid point by default. See new instructions in manual
 * Parameter name change to command `create-vertical-route`
 
 ### Removed
 * Setting `manualHoldMarginMassThreshold` obsolete and removed.
+* Command `create-gravity-route` removed (create-vertical-route now does the same thing by default).
 
 ## 0.0.19 - 2023-04-07
 

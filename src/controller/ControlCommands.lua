@@ -370,36 +370,41 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         printRelative.Option("f").AsNumber()
         printRelative.Option("r").AsNumber()
 
-        local createGravRoute = cmd.Accept("create-gravity-route",
-            ---@param data {commandValue:string, distance:number}
-            function(data)
-                local route = rc.CreateRoute(data.commandValue)
-                if route then
-                    local startPos = route.AddCurrentPos()
-                    startPos.Options().Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
 
-                    local endPos = route.AddCoordinate(Current() - universe.VerticalReferenceVector() * data.distance)
-                    endPos.Options().Set(PointOptions.LOCK_DIRECTION, vehicle.orientation.Forward())
+        ---@param data {x:number, y:number, z:number}
+        ---@return number
+        local function countProvidedVectorParts(data)
+            local count = 0
 
-                    if rc.SaveRoute() then
-                        log:Info("Created a route by name '", data.commandValue,
-                            "' with start at current position and direction with the endpoint at ", endPos.Pos())
-                    else
-                        log:Error("Could not create the route")
-                    end
-                end
-            end).AsString().Mandatory()
-        createGravRoute.Option("distance").AsNumber().Mandatory()
+            for _, value in ipairs({ "x", "y", "z" }) do
+                if data[value] ~= nil then count = count + 1 end
+            end
+
+            return count
+        end
 
         local createVertRoute = cmd.Accept("create-vertical-route",
             ---@param data {commandValue:string, distance:number, followGravInAtmo:boolean, extraPointMargin:number, x:number, y:number, z:number}
             function(data)
+                log:Info("--> ", data.followGravInAtmo)
+                local partCount = countProvidedVectorParts(data)
+                local dir ---type @Vec3
+
+                if partCount == 0 then
+                    dir = -universe.VerticalReferenceVector()
+                elseif partCount ~= 3 then
+                    log:Error("Either none or all three vector components must be provided")
+                    return
+                else
+                    dir = Vec3.New(data.x, data.y, data.z)
+                end
+
                 local route = rc.CreateRoute(data.commandValue)
                 if route then
                     local startPos = route.AddCurrentPos()
                     startPos.Options().Set(PointOptions.LOCK_DIRECTION, Forward())
 
-                    local targetPos = Current() + Vec3.New(data.x, data.y, data.z) * data.distance
+                    local targetPos = Current() + dir * data.distance
 
                     local startBody = universe.ClosestBody(Current())
                     local startInAtmo = startBody:IsInAtmo(Current())
@@ -440,11 +445,16 @@ function ControlCommands.New(input, cmd, flightCore, settings)
                 end
             end).AsString().Mandatory()
         createVertRoute.Option("distance").AsNumber().Mandatory()
-        createVertRoute.Option("followGravInAtmo").AsBoolean().Default(true)
+        createVertRoute.Option("followGravInAtmo").AsEmptyBoolean()
         createVertRoute.Option("extraPointMargin").AsNumber().Default(5)
-        createVertRoute.Option("x").AsNumber().Mandatory()
-        createVertRoute.Option("y").AsNumber().Mandatory()
-        createVertRoute.Option("z").AsNumber().Mandatory()
+        createVertRoute.Option("x").AsNumber()
+        createVertRoute.Option("y").AsNumber()
+        createVertRoute.Option("z").AsNumber()
+
+        cmd.Accept("print-vertical-up", function(_)
+            local up = -universe.VerticalReferenceVector()
+            log:Info(string.format("-x %0.14f -y %0.14f -z %0.14f", up.x, up.y, up.z))
+        end)
     end
 
     function s.RegisterMoveCommands()
