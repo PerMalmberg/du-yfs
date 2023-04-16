@@ -392,14 +392,14 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         createGravRoute.Option("distance").AsNumber().Mandatory()
 
         local createVertRoute = cmd.Accept("create-vertical-route",
-            ---@param data {commandValue:string, distance:number, followGravInAtmo:boolean, extraPointMargin:number, vertX:number, vertY:number, vertZ:number}
+            ---@param data {commandValue:string, distance:number, followGravInAtmo:boolean, extraPointMargin:number, x:number, y:number, z:number}
             function(data)
                 local route = rc.CreateRoute(data.commandValue)
                 if route then
                     local startPos = route.AddCurrentPos()
                     startPos.Options().Set(PointOptions.LOCK_DIRECTION, Forward())
 
-                    local targetPos = Current() + Vec3.New(data.vertX, data.vertY, data.vertZ) * data.distance
+                    local targetPos = Current() + Vec3.New(data.x, data.y, data.z) * data.distance
 
                     local startBody = universe.ClosestBody(Current())
                     local startInAtmo = startBody:IsInAtmo(Current())
@@ -442,9 +442,9 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         createVertRoute.Option("distance").AsNumber().Mandatory()
         createVertRoute.Option("followGravInAtmo").AsBoolean().Default(true)
         createVertRoute.Option("extraPointMargin").AsNumber().Default(5)
-        createVertRoute.Option("vertX").AsNumber().Mandatory()
-        createVertRoute.Option("vertY").AsNumber().Mandatory()
-        createVertRoute.Option("vertZ").AsNumber().Mandatory()
+        createVertRoute.Option("x").AsNumber().Mandatory()
+        createVertRoute.Option("y").AsNumber().Mandatory()
+        createVertRoute.Option("x").AsNumber().Mandatory()
     end
 
     function s.RegisterMoveCommands()
@@ -535,21 +535,37 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         addPointOptions(gotoCmd)
         gotoCmd.Option("offset").AsNumber().Default(0)
 
+        ---@param pos Position|nil
+        local function alignTo(pos)
+            if pos then
+                local route = rc.ActivateTempRoute()
+                route.AddCurrentPos()
+                flightCore.StartFlight()
+                flightCore.AlignTo(pos.Coordinates())
+                log:Info("Aligning to ", pos.AsPosString())
+            end
+        end
+
         cmd.Accept("align-to",
             ---@param data {commandValue:string}
             function(data)
                 local target = getPos(data.commandValue)
                 if target then
                     local pos = universe.ParsePosition(target.pos)
-                    if pos then
-                        local route = rc.ActivateTempRoute()
-                        route.AddCurrentPos()
-                        flightCore.StartFlight()
-                        flightCore.AlignTo(pos.Coordinates())
-                        log:Info("Aligning to ", pos.AsPosString())
-                    end
+                    alignTo(pos)
                 end
             end).AsString().Mandatory()
+
+        local aligntToVector = cmd.Accept("align-to-vector",
+            ---@param data {x:number, y:number, z:number}
+            function(data)
+                local pos = universe.CreatePos(Current() + Vec3.New(data.x, data.y, data.z))
+                alignTo(pos)
+            end)
+
+        aligntToVector.Option("x").AsNumber().Mandatory()
+        aligntToVector.Option("y").AsNumber().Mandatory()
+        aligntToVector.Option("z").AsNumber().Mandatory()
     end
 
     return setmetatable(s, ControlCommands)

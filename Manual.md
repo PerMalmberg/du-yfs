@@ -6,13 +6,15 @@ Please read the entire manual before attempting to perform an installation, ther
 
 The goal of this project was initially to write a flight system capable of working as what is known as a shaft-less space elevator. i.e. vertical movement around a predefined path. The chosen design does however allow for more than just that and is capable of movement in any direction, within limits of the construct it operates. The original target of only vertical movement along the gravity vector was thus surpassed and it is possible to go in a straight line at an angle from the vertical gravity vector. Further, it also allows you to do up-and-over maneuvers where the construct parks itself on a space platform from whichever direction you desire.
 
-### Required elements
+### Required elements (for Do-It-Yourself kits)
 
 * A data bank named "Routes"
 * A telemeter named "FloorDetector", pointing downwards
 * Optional data bank named "Settings"
 * Screen (optional, but strongly recommended)
+* Atmospheric engines are required in all direction, except in the upward direction as gravity does the job.
 * In space, you need engines in all directions.
+* Aim for 3g for upward lift when fully loaded.
 
 ### Routes
 
@@ -41,6 +43,55 @@ both at the ground location as well as in space. The drawback is the stop-and-go
 
 No matter which option you chose you can always adjust the routes at a later date. There is also the option to use gravity-aligned in combination with extra waypoints at the end of the route in space to maneuver the elevator into its target destination.
 
+### Aligning the elevator to your ground construct
+
+To get a near-perfect alignment of the elevator to your ground construct, follow these steps.
+
+1. Place a Programming Board on the construct that will determine what constitutes as "vertically up".
+2. Connect a screen to the programming board.
+3. Select the direction you want to align to and paste one of the four code snippets below into `unit -> start`, whichever is appropriate.
+
+    * Align to forward vector
+      ```lua
+      local Vec3 = require("cpml/vec3")
+      local v = Vec3(construct.getWorldOrientationForward())
+      local s = string.format("align-to-vector -x %0.14f -y %0.14f -z %0.14f", v.x, v.y, v.z)
+      slot1.setCenteredText(s)
+      unit.exit()
+      ```
+    * Align to backwards vector
+      ```lua
+      local Vec3 = require("cpml/vec3")
+      local v = -Vec3(construct.getWorldOrientationForward())
+      local s = string.format("align-to-vector -x %0.14f -y %0.14f -z %0.14f", v.x, v.y, v.z)
+      slot1.setCenteredText(s)
+      unit.exit()
+      ```
+    * Align to right vector
+      ```lua
+      local Vec3 = require("cpml/vec3")
+      local v = Vec3(construct.getWorldOrientationRight())
+      local s = string.format("align-to-vector -x %0.14f -y %0.14f -z %0.14f", v.x, v.y, v.z)
+      slot1.setCenteredText(s)
+      unit.exit()
+      ```
+    * Align to left vector
+      ```lua
+      local Vec3 = require("cpml/vec3")
+      local v = -Vec3(construct.getWorldOrientationRight())
+      local s = string.format("align-to-vector -x %0.14f -y %0.14f -z %0.14f", v.x, v.y, v.z)
+      slot1.setCenteredText(s)
+      unit.exit()
+      ```
+
+4. Start the Programming Board and copy the command from the screen (CTRL-L to to open editor while pointing to the screen).
+   * The command is the part in the `text = ....` section of the screen code. Do not copy the quotation marks.
+5. Start the elevator, enter manual control mode and raise it up slightly using the `move` command. Manual mode is needed to prevent it to shutdown automatically.
+6. Paste the command into Lua-chat and press enter to perform the alignment.
+   * Showing the widgets (`show-widgets 1`) and looking in the "Rotation" widget, under "Axis/Yaw", at the _offset_ value will tell you when it is aligned.
+7. Once aligned, either hold C or use the `move` command to set it down again.
+8. Turn off the elevator.
+
 ### Gravity-aligned setup
 
 1. Place the elevator at the ground location you want it at and make sure that it is facing the desired direction. It is recommended that you use a voxel floor instead of the ground.
@@ -54,33 +105,29 @@ No matter which option you chose you can always adjust the routes at a later dat
 
     This creates a route named "Space" with an endpoint 100km above, along the gravity vector.
 
-The screen will now show the name of your route with two buttons, one for the beginning (ground) and end (space). simply clicking these buttons will make the elevator move to those respective locations.
+The screen will now show the name of your route with two buttons, one for the beginning (ground) and end (space). Simply clicking these buttons will make the elevator move to those respective locations.
 
 ### Vertical setup
 
 1. Ensure that the ground construct you want to use as the vertical reference is where you want it to be.
 2. Place a Programming Board on the construct that will determine what constitutes as "vertically up".
-3. Paste this code in `unit -> start`
+3. Connect a screen to the programming board.
+4. Paste this code in `unit -> start`
 ```lua
 local Vec3 = require("cpml/vec3")
-local up = Vec3(construct.getWorldOrientationUp())
-system.print("Use these values as the vertical vector: ")
-system.print("X: " .. up.x)
-system.print("Y: " .. up.y)
-system.print("Z: " .. up.z)
+local v = Vec3(construct.getWorldOrientationUp())
+local s = string.format("create-vertical-route CHANGE -distance CHANGE_THIS_TOO -x %0.14f -y %0.14f -z %0.14f", v.x, v.y, v.z)
+slot1.setCenteredText(s)
 unit.exit()
 ```
-4. Start the Programming Board and copy the X, Y and Z values. You can right-click on the chat tab to copy the contents of the chat window in Json-format. Tools like visual Studio can easily format this to make it more readable.
-5. Execute the following command in Lua-chat on the construct you want to create the vertical route for
-`create-vertical-route <name>; -distance <nnn>; -vertX <X>; -vertY <Y>; -vertZ <Z>`, replacing the respective placeholders with the actual values.
+1. Start the Programming Board and then copy the command from the screen (CTRL-L to to open editor while pointing to the screen).
+2. Paste the command into Lua-chat and change the route name and distance. Then press enter to execute.
 
-   Example: `create-vertical-route test -distance 100000 -vertX -0.60683256387711 -vertY 0.2140174806118 -vertZ 0.76547425985336`
+   Example: `create-vertical-route test -distance 100000 -x -0.60683256387711 -y 0.2140174806118 -x 0.76547425985336`
 
-By default this will create a route with an extra path-correction point outside atmosphere where the construct will stop both on the way in and out of atmosphere. If you disable this (using `-followGravInAtmo false`) you should probably increase the margin of the waypoints in the route from the default 0.1m to something larger, depending on the angle of the path toward the gravity vector.
+By default this will create a route with an extra path-correction point outside atmosphere where the construct will stop both on the way in and out of atmosphere. If you disable this (using `-followGravInAtmo false`) you should probably increase the margin of the waypoints in the route to something larger, depending on the angle of the path toward the gravity vector.
 
-#### The reason the up-vector of the construct itself is not used
-
-Even though a parked construct appears to be sitting perfectly flat onto another, this is seldom actually the case. As such, assuming the up-vector of the elevator is the same as that of the construct on which the elevator is parked on results in different results between different positions as well as different park attempts. With distances of 100km, even a tiny difference results in large differences at the far end.
+> Even though a parked construct appears to be sitting perfectly flat onto another, this is seldom actually the case. As such, assuming the up-vector of the elevator is the same as that of the construct on which the elevator is parked on results in different results between different positions as well as different park attempts. With distances of 100km, even a tiny difference results in large differences at the far end.
 
 ## Space core placement
 
@@ -128,7 +175,11 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 |                           | -margin                    | meter   | Y        | See &lt;move&gt;                                                                                                                                                                                     |
 |                           | -offset                    | meter   | Y        | If specified, the distance will be shortened by this amount, i.e. stop before reaching the position. Good for approaching unknown locations.<br/>Negative offsets means the other side of the point. |
 | print-pos                 |                            |         |          | Prints the current position and current alignment point                                                                                                                                              |
-| align-to                  | waypoint or ::pos{} string |         |          | Aligns to the given point                                                                                                                                                                            |
+| align-to                  | waypoint or ::pos{} string |         |          | Aligns to the given point or named waypoint                                                                                                                                                          |
+| align-to-vector           |                            |         |          | Aligns to the given point, as given by a 3D-vector. See section "Aligning the elevator to your ground construct"                                                                                     |
+|                           | -x                         | number  | N        | X-component of the vector                                                                                                                                                                            |
+|                           | -y                         | number  | N        | X-component of the vector                                                                                                                                                                            |
+|                           | -z                         | number  | N        | X-component of the vector                                                                                                                                                                            |
 | hold                      |                            |         |          | Stops and returns to the position at the time of execution, then holds.                                                                                                                              |
 | idle                      |                            |         |          | Puts the system into idle mode, engines are off.                                                                                                                                                     |
 | turn                      | angle                      | degrees | N        | Turns the construct the specified number of degrees around the Z-axis (up)                                                                                                                           |
@@ -181,9 +232,9 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 |                           | -distance                  | number  | N        | The distance of the point above or below (when negative)                                                                                                                                             |
 |                           | -followGravInAtmo          | boolean | Y        | If specified (default true), an extra point will be added so that the part of the path that is in atmosphere will follow the gravity vector.                                                         |
 |                           | -extraPointMargin          | number  | N        | Specifies the margin used for the extra point, default 5 m.                                                                                                                                          |
-|                           | -vertX                     | number  | N        | Specifies the X-value of the direction vector (see 'Creating vertical routes').                                                                                                                      |
-|                           | -vertY                     | number  | N        | Specifies the Y-value of the direction vector (see 'Creating vertical routes').                                                                                                                      |
-|                           | -vertZ                     | number  | N        | Specifies the Z-value of the direction vector (see 'Creating vertical routes').                                                                                                                      |
+|                           | -x                         | number  | N        | Specifies the X-value of the direction vector (see 'Creating vertical routes').                                                                                                                      |
+|                           | -y                         | number  | N        | Specifies the Y-value of the direction vector (see 'Creating vertical routes').                                                                                                                      |
+|                           | -z                         | number  | N        | Specifies the Z-value of the direction vector (see 'Creating vertical routes').                                                                                                                      |
 | set                       |                            |         |          | Sets the specified setting to the specified value                                                                                                                                                    |
 |                           | -engineWarmup              | seconds | Y        | Sets the engine warmup time (T50). Set this to that of the engine with longes warmup.                                                                                                                |
 |                           | -containerProficiency      | integer | Y        | Sets the container proficiency talent level, 1-5                                                                                                                                                     |

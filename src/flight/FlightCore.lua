@@ -138,6 +138,7 @@ function FlightCore.New(routeController, flightFSM)
         forwardPointOnPlane = calc.RotateAroundAxis(forwardPointOnPlane, current, degrees, axis)
         local dir = (forwardPointOnPlane - Current()):NormalizeInPlace()
         currentWaypoint.LockDirection(dir, true)
+        pub.Publish("ForwardDirectionChanged", dir)
         return dir
     end
 
@@ -149,6 +150,7 @@ function FlightCore.New(routeController, flightFSM)
             local pointOnPlane = calc.ProjectPointOnPlane(-universe.VerticalReferenceVector(), current, point)
             local dir = (pointOnPlane - current):NormalizeInPlace()
             currentWaypoint.LockDirection(dir, true)
+            pub.Publish("ForwardDirectionChanged", dir)
         end
     end
 

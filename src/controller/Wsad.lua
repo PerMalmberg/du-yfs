@@ -14,7 +14,6 @@ local defaultMargin           = constants.flight.defaultMargin
 local Velocity                = vehicle.velocity.Movement
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local MaxSpeed                = vehicle.speed.MaxSpeed
-local TotalMass               = vehicle.mass.Total
 local Current                 = vehicle.position.Current
 local Forward                 = vehicle.orientation.Forward
 local Right                   = vehicle.orientation.Right
@@ -264,6 +263,13 @@ function Wsad.New(flightCore, cmd, settings)
         log:Info("Manual control on startup active.")
         lockUser()
     end
+
+    pub.RegisterTable("ForwardDirectionChanged",
+        ---@param _ string
+        ---@param value Vec3
+        function(_, value)
+            pointDir = value
+        end)
 
     settings.RegisterCallback("turnAngle",
         ---@param angle number

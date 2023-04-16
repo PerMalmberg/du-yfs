@@ -3,13 +3,20 @@
 All notable changes to this project will be documented in this file.
 
 ## 0.0.20 - 2023-04-xx
+### NOTE
+* If you path goes through a tunnel, you might want to add new points at each end so that the elevator isn't tilted in the tunnel.
+*
+### Added
+* New `align-to-vector` command that can be used to align the elevator to a specific direction, such as a static construct. New instructions in the manual.
+
 ### Changed
-* New path follow algorithm and behavior, the construct now tilts along the travel path .
+* New path follow algorithm and behavior, the construct now tilts along the travel path if >5m from the waypoint.
 * Small constructs now bob less.
 * Removed the precision-concept from waypoints.
+* Parameter name change to command `create-vertical-route`
 
 ### Removed
-* Setting `manualHoldMarginMassThreshold` obsolete and removed
+* Setting `manualHoldMarginMassThreshold` obsolete and removed.
 
 ## 0.0.19 - 2023-04-07
 
