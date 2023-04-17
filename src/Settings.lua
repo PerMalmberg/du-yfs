@@ -50,6 +50,7 @@ function Settings.New(db)
 
     local pidValues = yfsConstants.flight.speedPid
     local routeDefaults = yfsConstants.route
+    local flightDefaults = yfsConstants.flight
     ---@type {default:string|number|boolean}
     local settings = {
         engineWarmup = { default = 1 },
@@ -64,7 +65,7 @@ function Settings.New(db)
         throttleStep = { default = yfsConstants.flight.throttleStep },
         manualControlOnStartup = { default = false },
         turnAngle = { default = yfsConstants.flight.defaultTurnAngle },
-        manualHoldMarginMassThreshold = { default = 3000 }
+        minimumPathCheckOffset = { default = flightDefaults.minimumPathCheckOffset }
     }
 
     for k, v in pairs(containerSettings) do

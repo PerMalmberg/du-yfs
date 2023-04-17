@@ -3,6 +3,8 @@ local vehicle = r.vehicle
 local TotalMass = vehicle.mass.Total
 local calc = r.calc
 local nullVec = r.Vec3.New()
+local yfsConstants = require("YFSConstants")
+local LightConstructMassThreshold = yfsConstants.flight.lightConstructMassThreshold
 local AngVel = vehicle.velocity.localized.Angular
 local AngAcc = vehicle.acceleration.localized.Angular
 local SignLargestAxis = calc.SignLargestAxis
@@ -14,7 +16,6 @@ local pub = require("util/PubSub").Instance()
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
-local hundredTons = 100 * 100
 
 local control = {}
 control.__index = control
@@ -154,7 +155,7 @@ function AxisControl.New(axis)
             heavyPid:inject(offset)
 
             local v
-            if lastReadMass > hundredTons then
+            if lastReadMass > LightConstructMassThreshold then
                 v = heavyPid:get()
             else
                 v = lightPid:get()

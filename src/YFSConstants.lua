@@ -22,10 +22,11 @@ local constants = {
             d = 100,
             a = 0.99
         },
-        standStillSpeed = -1,
-        throttleStep = 10,   -- percent
-        defaultMargin = 0.1, -- meter
-        defaultTurnAngle = 1        -- degrees
+        throttleStep = 10,                   -- percent
+        defaultMargin = 0.1,                 -- meter
+        defaultTurnAngle = 1,                -- degrees
+        lightConstructMassThreshold = 10000, -- ten tons
+        minimumPathCheckOffset = 1           -- meters
     },
     route = {
         routeStartDistanceLimit = 10,  -- meters

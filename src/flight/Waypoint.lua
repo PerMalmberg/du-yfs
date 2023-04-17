@@ -18,8 +18,6 @@ WPReachMode = {
 ---@field Destination fun():Vec3
 ---@field DistanceTo fun():number
 ---@field DirectionTo fun():Vec3
----@field GetPrecisionMode fun():boolean
----@field SetPrecisionMode fun(v:boolean)
 ---@field LockDirection fun(direction:Vec3, forced:boolean)
 ---@field DirectionLocked fun():boolean
 ---@field Roll fun(previous:Waypoint):Vec3
@@ -46,7 +44,6 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
         rollFunc = rollFunc,
         yawPitchFunc = yawPitchFunc,
         yawPitchDirection = nil, ---@type Vec3 -- Fixed target direction
-        precisionMode = false,
         adjusted = false
     }
 
@@ -105,18 +102,6 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
     ---@return Vec3
     function s.DirectionTo()
         return (s.destination - Current()):NormalizeInPlace()
-    end
-
-    ---Indicates of precision mode is active
-    ---@return boolean
-    function s.GetPrecisionMode()
-        return s.precisionMode
-    end
-
-    ---Sets precision modde
-    ---@param value boolean
-    function s.SetPrecisionMode(value)
-        s.precisionMode = value
     end
 
     ---Locks the direction

@@ -14,7 +14,6 @@ local defaultMargin           = constants.flight.defaultMargin
 local Velocity                = vehicle.velocity.Movement
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local MaxSpeed                = vehicle.speed.MaxSpeed
-local TotalMass               = vehicle.mass.Total
 local Current                 = vehicle.position.Current
 local Forward                 = vehicle.orientation.Forward
 local Right                   = vehicle.orientation.Right
@@ -146,18 +145,14 @@ function Wsad.New(flightCore, cmd, settings)
 
                         local throttleSpeed = getThrottleSpeed()
                         local target = movement(body, t)
-                        flightCore.GotoTarget(target, false, pointDir, defaultMargin, throttleSpeed, throttleSpeed, true)
+                        flightCore.GotoTarget(target, pointDir, defaultMargin, throttleSpeed, throttleSpeed, true)
                     end
                 else
                     if newMovement then
-                        flightCore.GotoTarget(stopPos, false, pointDir, defaultMargin, 0, construct.getMaxSpeed(), true)
+                        flightCore.GotoTarget(stopPos, pointDir, defaultMargin, 0, construct.getMaxSpeed(), true)
                     elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - curr) >= 0 then
                         local holdMargin = defaultMargin
-                        if TotalMass() < settings.Number("manualHoldMarginMassThreshold") then
-                            holdMargin = holdMargin / 4
-                        end
-
-                        flightCore.GotoTarget(Current(), false, pointDir, holdMargin, calc.Kph2Mps(2), 0, false)
+                        flightCore.GotoTarget(Current(), pointDir, holdMargin, calc.Kph2Mps(2), 0, false)
                         stopPos = Vec3.zero
                     end
                 end
@@ -268,6 +263,13 @@ function Wsad.New(flightCore, cmd, settings)
         log:Info("Manual control on startup active.")
         lockUser()
     end
+
+    pub.RegisterTable("ForwardDirectionChanged",
+        ---@param _ string
+        ---@param value Vec3
+        function(_, value)
+            pointDir = value
+        end)
 
     settings.RegisterCallback("turnAngle",
         ---@param angle number

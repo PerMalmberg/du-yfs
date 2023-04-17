@@ -308,7 +308,7 @@ local layout = {
                     style = "info",
                     pos1 = "(640,160)",
                     font = "info",
-                    text = "$num(path{deviation:distance}:init{0}:format{%0.3f}:interval{0.5})"
+                    text = "$str(path{deviation:distance}:init{}:interval{0.5})"
                 },
                 {
                     type = "text",

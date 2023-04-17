@@ -43,13 +43,7 @@ function Hold.New(fsm)
     ---@param previous Waypoint
     ---@param nearestPointOnPath Vec3
     function s.Flush(deltaTime, next, previous, nearestPointOnPath)
-        if next.WithinMargin(WPReachMode.EXIT) then
-            -- This delay is to prevent precision mode from activating so
-            -- that the state isn't changed to ReturnToPath
-            if watch.Elapsed() > 1 then
-                next.SetPrecisionMode(true)
-            end
-        else
+        if not next.WithinMargin(WPReachMode.EXIT) then
             fsm.SetState(Travel.New(fsm))
         end
     end

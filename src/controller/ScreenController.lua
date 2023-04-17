@@ -1,6 +1,7 @@
 local Stopwatch          = require("system/Stopwatch")
 local Task               = require("system/Task")
 local ValueTree          = require("util/ValueTree")
+local Vec3               = require("math/Vec3")
 local log                = require("debug/Log")()
 local commandLine        = require("commandline/CommandLine").Instance()
 local pub                = require("util/PubSub").Instance()
@@ -216,7 +217,8 @@ function ScreenController.New(flightCore, settings)
             ---@param _ string
             ---@param data AdjustmentData
             function(_, data)
-                dataToScreen.Set("deviation/distance", data.distance)
+                dataToScreen.Set("deviation/distance",
+                    string.format("%0.2f", Vec3.New(data.long, data.lat, data.ver):Len()))
             end)
 
         pub.RegisterTable("FloorMonitor",
