@@ -3,7 +3,6 @@ local vehicle = r.vehicle
 local universe = r.universe
 local calc = r.calc
 local Current = vehicle.position.Current
-local IsInSpace = vehicle.world.IsInSpace
 local abs = math.abs
 
 ---@alias AlignmentFunction fun(currentWaypoint:Waypoint, previous:Waypoint):{yaw:Vec3, pitch:Vec3}

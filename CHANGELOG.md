@@ -1,21 +1,30 @@
 # YFS Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 0.0.20 - 2023-04-xx
-### NOTE
-* If you path goes through a tunnel, you might want to add new points at each end so that the elevator isn't tilted in the tunnel.
-*
+## 0.0.20 - 2023-04-17
+
+Significant changes has been made to the setup procedure for what are known as vertical routes. Instead of basing the route on the orientation of the construct on which the elevator is parked, it now uses the gravity vector of a reference elevator and gets rid of the mid point just outside atmosphere. This makes for faster travel and reduces fuel usage.
+
+In testing, existing routes have been working as expected, but as there are so many variables in play you may have to make adjustments to yours. Creating a new route may, depending on how the earlier reference construct was placed, result in a different endpoint to previously created routes. Specifically, if the reference construct was placed using the snapping feature on another one, its up-direction will have a different direction from the gravity vector. This difference increases with each additional core between the first placed core and the reference core.
+
+> Is your elevator passing through, or is parked in a narrow shaft? If so, you probably should add a waypoint such that the travel path in the shaft becomes aligned to gravity; simply place a waypoint below the entrance and add it to the route in the correct order _before upgrading_. If you used the old command `create-gravity-route` to create your route you should not have to make this addition as your path is already aligned to gravity.
+
+The script now also works well on tiny constructs (commonly known as AWP [Articulating Work Platform] in the community) which opens up for a lot of new applications, such as rescue VTOL vehicles and other fun things.
+
 ### Added
-* New `align-to-vector` command that can be used to align the elevator to a specific direction, such as a static construct. New instructions in the manual.
+* New `align-to-vector` command that can be used to align the elevator to a specific direction, such as the side of a static construct. See instructions in the manual.
 * `print-vertical-up` to print the vertical up vector at the current location.
 
 ### Changed
-* New path follow algorithm and behavior, the construct now tilts along the travel path if >5m from the waypoint.
-* Small constructs now bob less.
+* Install procedure changed, there is now only the `create-vertical-route` command.
+* New path follow algorithm and behavior, the construct now tilts along the travel path when >5m from the waypoint.
+* Small constructs now bobs less.
 * Removed the precision-concept from waypoints.
-* Command `create-vertical-route` no longer creates a mid point by default. See new instructions in manual
+* Command `create-vertical-route` no longer creates a mid point by default. See new instructions in manual.
 * Parameter name change to command `create-vertical-route`
+
+> NOTE: If you path goes through a tunnel, you might want to add new points at each end so that the elevator isn't tilted in the tunnel.
 
 ### Removed
 * Setting `manualHoldMarginMassThreshold` obsolete and removed.
