@@ -76,10 +76,10 @@ To get a near-perfect alignment of the elevator to your ground construct, follow
       ```
 
 4. Start the Programming Board and copy the command from the screen (CTRL-L to to open editor while pointing to the screen).
-   * The command is the part in the `text = ....` section of the screen code. Do not copy the quotation marks.
+   * The command is the part in the `text = ....` line of the screen code. Do not copy the quotation marks.
 5. Start the elevator, enter manual control mode and raise it up slightly using the `move` command. Manual mode is needed to prevent it to shutdown automatically.
 6. Paste the command into Lua-chat and press enter to perform the alignment.
-   * Showing the widgets (`show-widgets 1`) and looking in the "Rotation" widget, under "Axis/Yaw", at the _offset_ value will tell you when it is aligned.
+   * Showing the widgets (`show-widgets 1`) and looking in the "Rotation" widget, under "Axis/Yaw", at the _offset_ value will show 0 when it is aligned.
 7. Once aligned, either hold C or use the `move` command to set it down again.
 8. Turn off the elevator.
 
@@ -90,7 +90,7 @@ To get a near-perfect alignment of the elevator to your ground construct, follow
 3. Activate the elevator.
 4. In Lua chat, type:
    `create-vertical-route 'route name' -distance 12345`, replacing values as appropriate.
-   * If this isn't your first elevator, add the x, y, and z arguments to the `create-vertical-route` command you get using the instructions in the "Travel vector for additional elevators" section.
+   * If this isn't your first elevator, add the `-x`, `-y`, and `-z` arguments to the `create-vertical-route` command you get using the instructions in the "Travel vector for additional elevators" section.
 
 The screen will now show the name of your route with two buttons, one for the beginning (ground) and end (space). Simply clicking these buttons will make the elevator move to those respective locations.
 

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. The version
 
 ## 0.0.20 - 2023-04-17
 
-Significant changes has been made to the setup procedure for what are known as vertical routes. Instead of basing the route on the orientation of the construct on which the elevator is parked, it now uses the gravity vector of a reference elevator and gets rid of the mid point just outside atmosphere. This makes for faster travel and reduces fuel usage.
+Significant changes has been made to the how the script follows a path as well as the setup procedure for what are known as vertical routes. Instead of basing the route on the orientation of the construct on which the elevator is parked, the gravity vector of a selected reference elevator is used and the mid point just outside atmosphere is no longer a thing. This makes for faster travel and reduces fuel usage.
 
 In testing, existing routes have been working as expected, but as there are so many variables in play you may have to make adjustments to yours. Creating a new route may, depending on how the earlier reference construct was placed, result in a different endpoint to previously created routes. Specifically, if the reference construct was placed using the snapping feature on another one, its up-direction will have a different direction from the gravity vector. This difference increases with each additional core between the first placed core and the reference core.
 
@@ -20,17 +20,15 @@ The script now also works well on tiny constructs (commonly known as AWP [Articu
 
 ### Changed
 * Install procedure changed, there is now only the `create-vertical-route` command.
-* New path follow algorithm and behavior, the construct now tilts along the travel path when >5m from the waypoint.
+* New path follow algorithm and behavior, the construct now tilts along the travel path when >5m from the waypoint. At the 5m mark, it aligns to gravity.
 * Small constructs now bobs less.
 * Removed the precision-concept from waypoints.
 * Command `create-vertical-route` no longer creates a mid point by default. See new instructions in manual.
 * Parameter name change to command `create-vertical-route`
 
-> NOTE: If you path goes through a tunnel, you might want to add new points at each end so that the elevator isn't tilted in the tunnel.
-
 ### Removed
 * Setting `manualHoldMarginMassThreshold` obsolete and removed.
-* Command `create-gravity-route` removed (create-vertical-route now does the same thing by default).
+* Command `create-gravity-route` removed (`create-vertical-route` now does the same thing unless given a custom direction).
 
 ## 0.0.19 - 2023-04-07
 
