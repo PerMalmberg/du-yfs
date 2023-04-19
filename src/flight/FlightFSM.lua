@@ -369,16 +369,19 @@ function FlightFSM.New(settings, routeController)
         elseif inAtmo and willLeaveAtmo then
             -- No need to further reduce
         else
-            -- Braking in space
             local brakeMaxSpeed = calcMaxAllowedSpeed(availableBrakeDeceleration, remainingDistance,
                 waypoint.FinalSpeed())
             targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brake")
             flightData.brakeMaxSpeed = brakeMaxSpeed
+        end
 
-            -- Space engines take a while to turn off so if we'd reach the end point within that time, adjust speed so we brake earlier
-            if currentSpeed > 0 then
+        if not inAtmo then
+            -- Braking in space
+            -- Space engines take a while to turn off so if we'd reach the end point within that time, adjust speed
+            -- so we brake earlier, but only if we're coming to a stop (finalSpeed == 0)
+            if currentSpeed > 0 and waypoint.FinalSpeed() == 0 then
                 local timeToStarget = remainingDistance / currentSpeed
-                -- This 10 seconds are totally arbitrary, but seems safe enough.
+                -- These 10 seconds are totally arbitrary, but seems safe enough.
                 if timeToStarget <= 10 then
                     targetSpeed = evaluateNewLimit(targetSpeed, targetSpeed * 0.5, "Brake/red")
                 end
