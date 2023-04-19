@@ -2,12 +2,9 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 0.0.21 - 2023-04-19
+## 0.0.20 ... 0.0.2x - 2023-04-xx
 
 ## Fixed
-* Small adjustment to braking in space flight to prevent overshoot in certain situations.
-
-## 0.0.20 - 2023-04-17
 
 Significant changes has been made to how the script follows a path as well as the setup procedure for what are known as vertical routes. Instead of basing the route on the orientation of the construct on which the elevator is parked, the gravity vector of a selected reference elevator is used and the mid point just outside atmosphere is no longer a thing. This makes for faster travel and reduces fuel usage.
 
@@ -34,6 +31,9 @@ The script now also works well on tiny constructs (commonly known as AWP [Articu
 ### Removed
 * Setting `manualHoldMarginMassThreshold` obsolete and removed.
 * Command `create-gravity-route` removed (`create-vertical-route` now does the same thing unless given a custom direction).
+
+### Fixed
+* Small adjustment to braking in space flight to prevent overshoot in certain situations.
 
 ## 0.0.19 - 2023-04-07
 

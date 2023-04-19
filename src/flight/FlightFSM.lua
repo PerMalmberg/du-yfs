@@ -140,6 +140,7 @@ function FlightFSM.New(settings, routeController)
 
     local pidValues = yfsConstants.flight.speedPid
     local speedPid = PID(pidValues.p, pidValues.i, pidValues.d, pidValues.a)
+    local lastReadMass = TotalMass()
 
     local s = {}
 
@@ -230,7 +231,7 @@ function FlightFSM.New(settings, routeController)
         local stopDist
 
         if vehicle.world.IsInAtmo() then
-            if TotalMass() > 50000 then
+            if lastReadMass > LightConstructMassThreshold then
                 startDist = 20
                 stopDist = 0.3
             else
@@ -405,11 +406,17 @@ function FlightFSM.New(settings, routeController)
     ---@return Vec3 direction
     ---@return number length
     local function getAdjustmentDataInFuture(axis, currentPos, nextWaypoint, previousWaypoint, t)
-        local posInFuture = currentPos + Velocity() * t + 0.5 * Acceleration() * t * t
-        local targetFuture = calc.NearestOnLineBetweenPoints(previousWaypoint.Destination(), nextWaypoint.Destination(),
-            posInFuture)
-        local toTargetFuture = (targetFuture - posInFuture):ProjectOn(axis)
-        return toTargetFuture:NormalizeLen()
+        -- Don't make adjustments in the travel direction that messes up speed control, unless we're a light construct.
+        if abs(axis:Dot(nextWaypoint:DirectionTo())) < 0.7 or lastReadMass > LightConstructMassThreshold then
+            local posInFuture = currentPos + Velocity() * t + 0.5 * Acceleration() * t * t
+            local targetFuture = calc.NearestOnLineBetweenPoints(previousWaypoint.Destination(),
+                nextWaypoint.Destination(),
+                posInFuture)
+            local toTargetFuture = (targetFuture - posInFuture):ProjectOn(axis)
+            return toTargetFuture:NormalizeLen()
+        else
+            return Vec3.zero, 0
+        end
     end
 
     ---@param axis Vec3
@@ -430,7 +437,7 @@ function FlightFSM.New(settings, routeController)
             -- Will have passed the path, break if we'll be outside the margin;
             -- we check this so that we don't prevent ourselves from moving sideways etc.
             if distanceFuture > DefaultMargin
-                and TotalMass() > LightConstructMassThreshold -- Don't do the braking on light constructs, it causes jitter.
+                and lastReadMass > LightConstructMassThreshold -- Don't do the braking on light constructs, it causes jitter.
             then
                 acc = directionFuture * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionFuture)
             end
@@ -639,6 +646,7 @@ function FlightFSM.New(settings, routeController)
             pub.Publish("FlightData", flightData)
             pub.Publish("AdjustmentData", adjustData)
         end
+        lastReadMass = TotalMass()
     end
 
     function s.AtWaypoint(isLastWaypoint, next, previous)
