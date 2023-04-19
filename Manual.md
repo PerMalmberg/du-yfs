@@ -2,6 +2,27 @@
 
 Please read the entire manual before attempting to perform an installation, there are important information throughout that will impact the choices you make.
 
+- [Yoarii's Flight system](#yoariis-flight-system)
+  - [Overview](#overview)
+    - [Required elements (for Do-It-Yourself kits)](#required-elements-for-do-it-yourself-kits)
+    - [Routes](#routes)
+    - [Waypoint alignment](#waypoint-alignment)
+    - [Enclosures](#enclosures)
+    - [Floors for parking; ground and space](#floors-for-parking-ground-and-space)
+  - [Installation as an elevator (ground to space)](#installation-as-an-elevator-ground-to-space)
+    - [Aligning the elevator to your ground construct](#aligning-the-elevator-to-your-ground-construct)
+    - [Creating the route](#creating-the-route)
+    - [Travel vector for additional elevators](#travel-vector-for-additional-elevators)
+  - [Space core placement](#space-core-placement)
+  - [Key bindings](#key-bindings)
+  - [Manual Controls (when user is locked in place)](#manual-controls-when-user-is-locked-in-place)
+  - [LUA console commands](#lua-console-commands)
+  - [Mass Overload](#mass-overload)
+  - [Accuracy](#accuracy)
+    - [A note on non gravity-aligned atmospheric accent/decent and angled flight paths](#a-note-on-non-gravity-aligned-atmospheric-accentdecent-and-angled-flight-paths)
+  - [Emergency Controller Unit](#emergency-controller-unit)
+
+
 ## Overview
 
 The goal of this project was initially to write a flight system capable of working as what is known as a shaft-less space elevator. i.e. vertical movement around a predefined path. The chosen design does however allow for more than just that and is capable of movement in any direction, within limits of the construct it operates. The original target of only vertical movement along the gravity vector was thus surpassed and it is possible to go in a straight line at an angle from the vertical gravity vector. Further, it also allows you to do up-and-over maneuvers where the construct parks itself on a space platform from whichever direction you desire.
