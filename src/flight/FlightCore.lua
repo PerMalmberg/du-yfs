@@ -60,6 +60,11 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
         alignment.RollTopsideAwayFromVerticalReference,
         alignment.YawPitchKeepOrthogonalToVerticalReference)
 
+
+    if lastInRoute then
+        wp.SetLastInRoute()
+    end
+
     if dir ~= nullVec then
         wp.LockDirection(dir, true)
     end

@@ -2,6 +2,7 @@ local r = require("CommonRequire")
 local vehicle = r.vehicle
 local universe = r.universe
 local calc = r.calc
+local AngleToDot = calc.AngleToDot
 local Current = vehicle.position.Current
 local abs = math.abs
 
@@ -42,18 +43,16 @@ end
 ---@param previousWaypoint Waypoint
 ---@return Vec3
 local function getVerticalReference(waypoint, previousWaypoint)
-    -- When next waypoint is nearly above us, use the line between them as the vertical reference instead to make following the path more exact.
+    -- When next waypoint is nearly aligned with -gravity, use the line between them as the vertical reference instead to make following the path more exact.
     local vertUp = -universe.VerticalReferenceVector()
     local pathDirection = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
 
     local selectedRef = vertUp
-    local threshold = 0.9
+    local threshold = AngleToDot(2)
 
     if vertUp:Dot(pathDirection) > threshold then
-        if waypoint.DistanceTo() >= 5 and previousWaypoint.DistanceTo() >= 5 then
-            selectedRef = pathDirection
-        end
-    elseif vertUp:Dot(pathDirection) < -threshold then
+        selectedRef = pathDirection
+    elseif vertUp:Dot(pathDirection) < -threshold then -- Don't flip upside down
         selectedRef = -pathDirection
     end
 

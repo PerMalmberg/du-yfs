@@ -2,31 +2,35 @@ local PID = require("cpml/pid")
 local Sign = require("util/Calc").Sign
 
 ---@class AdjustmentTracker
----@field TrackDistance fun(new:number):number
 ---@field Feed fun(distance:number):number
+---@field LastDistance fun():number
 ---@field ResetPID fun()
 
 local AdjustmentTracker = {}
 AdjustmentTracker.__index = AdjustmentTracker
 
+---@param lightConstruct boolean True if the construct is light
 ---@return AdjustmentTracker
-function AdjustmentTracker.New()
+function AdjustmentTracker.New(lightConstruct)
     local s = {}
-    local pid = PID(0.01, 0.1, 5, 0.5)
+    local pid
+    if lightConstruct then
+        pid = PID(0.01, 0.1, 5, 0.5)
+    else
+        pid = PID(1, 0.5, 5, 0.5)
+    end
+
     local lastDistance = 0
 
-    ---@param new number
     ---@return number
-    function s.TrackDistance(new)
-        local sign   = Sign(new - lastDistance)
-        lastDistance = new
-
-        return sign
+    function s.LastDistance()
+        return lastDistance
     end
 
     ---@param distance number
     ---@return number
     function s.Feed(distance)
+        lastDistance = distance
         pid:inject(distance)
         return pid:get()
     end

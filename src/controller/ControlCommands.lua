@@ -386,7 +386,6 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         local createVertRoute = cmd.Accept("create-vertical-route",
             ---@param data {commandValue:string, distance:number, followGravInAtmo:boolean, extraPointMargin:number, x:number, y:number, z:number}
             function(data)
-                log:Info("--> ", data.followGravInAtmo)
                 local partCount = countProvidedVectorParts(data)
                 local dir ---type @Vec3
 

@@ -23,6 +23,8 @@ WPReachMode = {
 ---@field Roll fun(previous:Waypoint):Vec3
 ---@field YawAndPitch fun(previous:Waypoint):{yaw:Vec3, pitch:Vec3}|nil
 ---@field YawPitchDirection fun():Vec3
+---@field LastInRoute fun():boolean
+---@field SetLastInRoute fun()
 
 local Waypoint = {}
 Waypoint.__index = Waypoint
@@ -44,7 +46,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
         rollFunc = rollFunc,
         yawPitchFunc = yawPitchFunc,
         yawPitchDirection = nil, ---@type Vec3 -- Fixed target direction
-        adjusted = false
+        lastPointInRoute = false
     }
 
     ---Gets the destination
@@ -140,6 +142,14 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
         end
 
         return nil
+    end
+
+    function s.LastInRoute()
+        return s.lastPointInRoute
+    end
+
+    function s.SetLastInRoute()
+        s.lastPointInRoute = true
     end
 
     return setmetatable(s, Waypoint)

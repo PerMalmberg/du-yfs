@@ -9,7 +9,9 @@ local vehicle = r.vehicle
 local G = vehicle.world.G
 local AirFrictionAcceleration = vehicle.world.AirFrictionAcceleration
 local calc = r.calc
+local Sign = calc.Sign
 local Ternary = calc.Ternary
+local AngleToDot = calc.AngleToDot
 local universe = r.universe
 local Vec3 = r.Vec3
 local nullVec = Vec3.New()
@@ -89,8 +91,13 @@ function FlightFSM.New(settings, routeController)
     }
 
     local warmupTime = 1
+    local lastReadMass = TotalMass()
     local yaw = AxisManager.Instance().Yaw()
     local yawAlignmentThrustLimiter = 1
+
+    local longAdjData = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
+    local latAdjData = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
+    local vertAdjData = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
 
     ---@type FlightData
     local flightData = {
@@ -140,7 +147,6 @@ function FlightFSM.New(settings, routeController)
 
     local pidValues = yfsConstants.flight.speedPid
     local speedPid = PID(pidValues.p, pidValues.i, pidValues.d, pidValues.a)
-    local lastReadMass = TotalMass()
 
     local s = {}
 
@@ -240,7 +246,7 @@ function FlightFSM.New(settings, routeController)
             end
         else
             startDist = 20
-            stopDist = 0.5
+            stopDist = 0.0 -- This used to be 0.5, but that caused problems holding position.
         end
 
         if remainingDistance > startDist
@@ -251,13 +257,23 @@ function FlightFSM.New(settings, routeController)
         return evaluateNewLimit(currentTargetSpeed, linearSpeed(remainingDistance), "Approaching")
     end
 
+
+    ---@param waypoint Waypoint
+    ---@return boolean
+    local function outsideAdjustmentMargin(waypoint)
+        local margin = waypoint.Margin()
+        return longAdjData.LastDistance() > margin
+            or latAdjData.LastDistance() > margin
+            or vertAdjData.LastDistance() > margin
+    end
+
     ---Gets the maximum speed we may have and still be able to stop
     ---@param deltaTime number Time since last tick, seconds
     ---@param velocity Vec3 Current velocity
-    ---@param direction Vec3 Direction we want to travel
     ---@param waypoint Waypoint Current waypoint
+    ---@param previousWaypoint Waypoint Previous waypoint
     ---@return number
-    local function getSpeedLimit(deltaTime, velocity, direction, waypoint)
+    local function getSpeedLimit(deltaTime, velocity, waypoint, previousWaypoint)
         local currentSpeed = velocity:Len()
         -- Look ahead at how much there is left at the next tick. If we're decelerating, don't allow values less than 0
         -- This is inaccurate if acceleration isn't in the same direction as our movement vector, but it is gives a safe value.
@@ -296,10 +312,10 @@ function FlightFSM.New(settings, routeController)
 
         --- Don't allow us to burn
         if atmoDensity > 0 then
-            targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed() * 0.99, "Burn speed")
+            targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed() * 0.98, "Burn speed")
         end
 
-        if firstBody and isWithinDeadZone(pos, firstBody) and direction:Dot(GravityDirection()) > 0.7 then
+        if firstBody and isWithinDeadZone(pos, firstBody) and waypoint.DirectionTo():Dot(GravityDirection()) > 0.7 then
             remainingDistance = max(remainingDistance, remainingDistance - deadZoneThickness(firstBody))
         end
 
@@ -393,6 +409,14 @@ function FlightFSM.New(settings, routeController)
 
         if waypoint.FinalSpeed() == 0 then
             targetSpeed = linearApproach(targetSpeed, remainingDistance)
+
+            -- When approching the final parking position vertically, move extra slow so that there is enough time to adjust sideways.
+            if waypoint.LastInRoute()
+                and outsideAdjustmentMargin(waypoint)
+                and (waypoint.Destination() - previousWaypoint.Destination()):Normalize():Dot(universe.VerticalReferenceVector()) > AngleToDot(5)
+                and remainingDistance < 400 then
+                targetSpeed = evaluateNewLimit(targetSpeed, targetSpeed * 0.5, "Adj. apr.")
+            end
         end
 
         return targetSpeed
@@ -407,7 +431,7 @@ function FlightFSM.New(settings, routeController)
     ---@return number length
     local function getAdjustmentDataInFuture(axis, currentPos, nextWaypoint, previousWaypoint, t)
         -- Don't make adjustments in the travel direction that messes up speed control, unless we're a light construct.
-        if abs(axis:Dot(nextWaypoint:DirectionTo())) < 0.7 or lastReadMass > LightConstructMassThreshold then
+        if abs(axis:Dot(nextWaypoint:DirectionTo())) < 0.7 or lastReadMass < LightConstructMassThreshold then
             local posInFuture = currentPos + Velocity() * t + 0.5 * Acceleration() * t * t
             local targetFuture = calc.NearestOnLineBetweenPoints(previousWaypoint.Destination(),
                 nextWaypoint.Destination(),
@@ -426,10 +450,11 @@ function FlightFSM.New(settings, routeController)
     ---@param previousWaypoint Waypoint
     ---@return Vec3 acceleration
     ---@return number distance
+    ---@return integer Sign Positive if we need to move in the axis direction
     local function calcAdjustAcceleration(axis, data, currentPos, nextWaypoint, previousWaypoint)
         local directionNow, distanceNow = getAdjustmentDataInFuture(axis, currentPos, nextWaypoint, previousWaypoint, 0)
         local directionFuture, distanceFuture = getAdjustmentDataInFuture(axis, currentPos, nextWaypoint,
-            previousWaypoint, 1)
+            previousWaypoint, Ternary(lastReadMass < LightConstructMassThreshold, 1, 4))
 
         local acc = Vec3.zero
 
@@ -439,7 +464,7 @@ function FlightFSM.New(settings, routeController)
             if distanceFuture > DefaultMargin
                 and lastReadMass > LightConstructMassThreshold -- Don't do the braking on light constructs, it causes jitter.
             then
-                acc = directionFuture * engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionFuture)
+                acc = directionFuture * calc.CalcBrakeAcceleration(Velocity():Dot(axis), distanceNow)
             end
         else
             local mul = calc.Clamp(data.Feed(distanceNow), 0, 1)
@@ -447,12 +472,8 @@ function FlightFSM.New(settings, routeController)
                 engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionNow)
         end
 
-        return acc, distanceNow
+        return acc, distanceNow, Sign(directionNow:Dot(axis))
     end
-
-    local longAdjData = AdjustmentTracker.New()
-    local latAdjData = AdjustmentTracker.New()
-    local vertAdjData = AdjustmentTracker.New()
 
     ---Adjust for deviation from the desired path
     ---@param currentPos Vec3
@@ -460,14 +481,16 @@ function FlightFSM.New(settings, routeController)
     ---@param previousWaypoint Waypoint
     ---@return Vec3
     local function adjustForDeviation(currentPos, nextWaypoint, previousWaypoint)
-        local vertAcc, vertDist = calcAdjustAcceleration(Up(), vertAdjData, currentPos, nextWaypoint, previousWaypoint)
-        local latAcc, latDist = calcAdjustAcceleration(Right(), latAdjData, currentPos, nextWaypoint, previousWaypoint)
-        local longAcc, longDist = calcAdjustAcceleration(Forward(), longAdjData, currentPos, nextWaypoint,
+        local vertAcc, vertDist, vertDistSign = calcAdjustAcceleration(Up(), vertAdjData, currentPos, nextWaypoint,
+            previousWaypoint)
+        local latAcc, latDist, latDistSign = calcAdjustAcceleration(Right(), latAdjData, currentPos, nextWaypoint,
+            previousWaypoint)
+        local longAcc, longDist, longDistSign = calcAdjustAcceleration(Forward(), longAdjData, currentPos, nextWaypoint,
             previousWaypoint)
 
-        adjustData.lat = latDist
-        adjustData.long = longDist
-        adjustData.ver = vertDist
+        adjustData.lat = latDist * latDistSign
+        adjustData.long = longDist * longDistSign
+        adjustData.ver = vertDist * vertDistSign
 
         return vertAcc + latAcc + longAcc
     end
@@ -500,14 +523,15 @@ function FlightFSM.New(settings, routeController)
 
     ---@param deltaTime number The time since last Flush
     ---@param waypoint Waypoint The next waypoint
+    ---@param previousWaypoint Waypoint The next waypoint
     ---@return Vec3 The acceleration
-    local function move(deltaTime, waypoint)
+    local function move(deltaTime, waypoint, previousWaypoint)
         local direction = waypoint.DirectionTo()
 
         local velocity = Velocity()
         local motionDirection, currentSpeed = velocity:NormalizeLen()
 
-        local speedLimit = getSpeedLimit(deltaTime, velocity, direction, waypoint)
+        local speedLimit = getSpeedLimit(deltaTime, velocity, waypoint, previousWaypoint)
 
         local wrongDir = direction:Dot(motionDirection) < 0.7
         local brakeCounter = brakes.Feed(Ternary(wrongDir, 0, speedLimit), currentSpeed)
@@ -572,7 +596,7 @@ function FlightFSM.New(settings, routeController)
 
             currentState.Flush(deltaTime, selectedWP, previous, nearest)
 
-            local acceleration = move(deltaTime, selectedWP)
+            local acceleration = move(deltaTime, selectedWP, previous)
             local adjustmentAcc = adjustForDeviation(pos, selectedWP, previous)
 
             applyAcceleration(acceleration, adjustmentAcc)

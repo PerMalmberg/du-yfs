@@ -69,6 +69,7 @@ function RouteController.Instance(bufferedDB)
     function s.GetRouteNames()
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
         local res = {} ---@type string[]
+        ---@cast routes table
         for name, _ in pairs(routes) do
             if name == editName then
                 name = name .. " (editing)"
@@ -406,11 +407,14 @@ function RouteController.Instance(bufferedDB)
                 table.remove(points, 1)
             end
 
+            local nextOpt = points[1].Options()
             -- Add a new point at the nearest point, with the same lock direction as the next point
             -- so we move with that direction to this point.
             local p = Point.New(universe.CreatePos(nearestOnRoute).AsPosString())
-            local nextOpt = points[1].Options()
-            p.Options().Set(PointOptions.LOCK_DIRECTION, nextOpt.Get(PointOptions.LOCK_DIRECTION))
+            local newOpts = p.Options()
+            newOpts.Set(PointOptions.LOCK_DIRECTION, nextOpt.Get(PointOptions.LOCK_DIRECTION))
+            -- Set a wider margin on this point to avoid most instances of getting stuck on the first point, wanting to move sideways before taking off.
+            newOpts.Set(PointOptions.MARGIN, 0.5)
             table.insert(points, 1, p)
         end
 
