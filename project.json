@@ -19,6 +19,11 @@
       "type": "control",
       "slots": {}
     },
+    "Atmo10XS": {
+      "name": "variants/Atmo10XS",
+      "type": "control",
+      "slots": {}
+    },
     "Atmo12XS": {
       "name": "variants/Atmo12XS",
       "type": "control",
