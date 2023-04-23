@@ -9,16 +9,20 @@ Please read the entire manual before attempting to perform an installation, ther
     - [Waypoint alignment](#waypoint-alignment)
     - [Enclosures](#enclosures)
     - [Floors for parking; ground and space](#floors-for-parking-ground-and-space)
+    - [Cargo mass capacity](#cargo-mass-capacity)
+  - [Automatic shutdown](#automatic-shutdown)
+  - [Fuel gauges](#fuel-gauges)
   - [Installation as an elevator (ground to space)](#installation-as-an-elevator-ground-to-space)
     - [Aligning the elevator to your ground construct](#aligning-the-elevator-to-your-ground-construct)
-    - [Creating the route](#creating-the-route)
-    - [Travel vector for additional elevators](#travel-vector-for-additional-elevators)
+    - [Creating a route](#creating-a-route)
+    - [Custom travel vector for additional elevators](#custom-travel-vector-for-additional-elevators)
   - [Space core placement](#space-core-placement)
   - [Key bindings](#key-bindings)
   - [Manual Controls (when user is locked in place)](#manual-controls-when-user-is-locked-in-place)
-  - [LUA console commands](#lua-console-commands)
+  - [Lua console commands](#lua-console-commands)
   - [Mass Overload](#mass-overload)
   - [Accuracy](#accuracy)
+    - [Custom travel vectors](#custom-travel-vectors)
     - [A note on non gravity-aligned atmospheric accent/decent and angled flight paths](#a-note-on-non-gravity-aligned-atmospheric-accentdecent-and-angled-flight-paths)
   - [Emergency Controller Unit](#emergency-controller-unit)
 
@@ -52,6 +56,18 @@ If you intend to build an enclosure for the construct remember that physics in D
 ### Floors for parking; ground and space
 
 Due to Dual Universe's slightly wonky physics, when creating floors for any dynamic construct, ensure that the floor fully encompasses the dynamic construct and it does NOT cross core boundaries or it might clip through and fall, or worse, explode.
+
+### Cargo mass capacity
+
+The ratings given for constructs are given in _raw mass values_, i.e. _not_ taking mass reduction talents into account. As such, do not blindly look at the mass shown in the inventory interface of DU. Instead, inspect the item/stack and look at the actual mass of the stack.
+
+## Automatic shutdown
+
+When the last point in the route is reached, and the telemeter reports a distance less than the one configured, the script will automatically shutdown.
+
+## Fuel gauges
+
+The screen shows up to four fuel tanks of each of the atmospheric and space types. It chooses the ones to display based on the lowest percentage and as such you can always see how close you are to run out of fuel, regardless of how many fuel tanks you have.
 
 ## Installation as an elevator (ground to space)
 
@@ -104,18 +120,22 @@ To get a near-perfect alignment of the elevator to your ground construct, follow
 7. Once aligned, either hold C or use the `move` command to set it down again.
 8. Turn off the elevator.
 
-### Creating the route
+### Creating a route
 
 1. Decide on what distance above (_not_ height above sea level) you want the route to stop at.
 2. Decide on a name for the route. You can use spaces in it, but you must surround it with single quotes, like so: `'a name'`. Double quotes do currently not work due to a bug in DU. Keep the name at 14 characters or less so it fits on the screen.
 3. Activate the elevator.
 4. In Lua chat, type:
    `create-vertical-route 'route name' -distance 12345`, replacing values as appropriate.
-   * If this isn't your first elevator, add the `-x`, `-y`, and `-z` arguments to the `create-vertical-route` command you get using the instructions in the "Travel vector for additional elevators" section.
+   * If this isn't your first elevator, add the `-x`, `-y`, and `-z` arguments you get using the instructions in the "[Travel vector for additional elevators](#travel-vector-for-additional-elevators)" section.
+
+     Example: `create-vertical-route 'route name' -distance 100000 -x 0.1234 -y 0.5678 -z 0.9012`
 
 The screen will now show the name of your route with two buttons, one for the beginning (ground) and end (space). Simply clicking these buttons will make the elevator move to those respective locations.
 
-### Travel vector for additional elevators
+You can now expand on this route by adding additional points to it (see [Key-bindings](#key-bindings), [Manual Controls](#manual-controls-when-user-is-locked-in-place) and [Lua console commands](#lua-console-commands)), do do up-and-over maneuvers, sideways movements etc., to fit your exact needs. Needless to say, any additional movement increases fuel consumption. This is especially true in atmosphere where gravity generally is higher.
+
+### Custom travel vector for additional elevators
 
 To ensure that elevators end up at the same relative distances in space as they have on the ground, you need to make them use the same travel direction. To do so, follow these instructions:
 
@@ -125,9 +145,11 @@ To ensure that elevators end up at the same relative distances in space as they 
    > `print-vertical-up`
 
    This will print something like this:
-   > `[I] -x 0.123 -y 0.456 -z 0.789`
+   > `[I] -x 0.123456 -y 0.456789 -z 0.789012`
 
-4. Copy this from the chat (right click on the Lua chat tab to access menu) and paste it into your favorite text editor and extract everything after the `[I]`, you'll find it at the very end of the text.
+4. Copy this from the chat (right click on the Lua chat tab to access menu) and paste it into your favorite text editor and extract everything after the `[I]`, you'll find it at the very end of the text. Ensure that you get all the decimals.
+
+See the [accuracy section](#custom-travel-vectors) for additional information.
 
 ## Space core placement
 
@@ -158,7 +180,7 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 
 > Note: Manual control of heavy constructs are much less accurate (especially during vertical movements). Don't expect the same maneuverability as a tiny 1.5t construct.
 
-## LUA console commands
+## Lua console commands
 
 | Command                   | Parameters/options         | Unit    | Optional | Description                                                                                                                                                                                          |
 | ------------------------- | -------------------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -269,9 +291,12 @@ Should you end up in these situations, it is easiest to just disable the control
 
 ## Accuracy
 
-The aim is 0.1m accuracy and this is also the default for the all movements. However, depending on various factors such as engine choice, mass (and thus acceleration), the construct may go off the path slightly. There is a failsafe that triggers if the nearest point on the path is more than 1m (setting `minimumPathCheckOffset`) away (or as defined by the next waypoints), in which case the construct will brake and return to the point at which it went off the path before continuing the route. If you want to override this behavior, you can reactivate the route again which will make the construct move to the closest point on the path from where where it is when you activate the route.
+The aim is 0.1m accuracy and this is also the default for the all movements. However, depending on various factors such as engine choice, mass (and thus acceleration), the construct may go off the path slightly. There is a failsafe that triggers if the nearest point on the path too far off (see setting `minimumPathCheckOffset`, or as defined by the next waypoint), in which case the construct will brake and return to the point at which it went off the path before continuing the route. If you want to override this behavior, you can reactivate the route again which will make the construct move to the closest point on the path from where where it is when you reactivate the route.
 
-You may also increase the margin on specific waypoints to allow a bit more wiggle room during travel, this may be especially useful on waypoints towards which the acceleration/speed is high or the path is diagonal relative to the gravity vector. Alternatively, you can set a maximum speed to reduce acceleration duration and speed.
+You may also increase the margin on specific waypoints to allow more wiggle room during travel, this may be especially useful on waypoints towards which the acceleration/speed is high or the path is diagonal relative to the gravity vector. Alternatively, you can set a maximum speed to reduce acceleration duration and speed.
+
+### Custom travel vectors
+The further the distance between the reference elevator and the additional one, the harder it is to stay exactly on the desired path, especially during strong (de)acceleration. The script will attempt to bring the elevator back to the path in time for the end position, but if this becomes a problem you can add an additional point in the route to force it back to the path prior to reaching the final point.
 
 ### A note on non gravity-aligned atmospheric accent/decent and angled flight paths
 
@@ -290,7 +315,7 @@ While it is possible to make routes that are not gravity aligned work, they may 
 
 ## Emergency Controller Unit
 
-When running on an ECU, the script only do to things:
+When running on an ECU, the script only do two things:
 * Attempts to hold the position it has when activated
 * Detect a floor, and if detected it shuts down.
 
