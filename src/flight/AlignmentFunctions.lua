@@ -2,7 +2,6 @@ local r = require("CommonRequire")
 local vehicle = r.vehicle
 local universe = r.universe
 local calc = r.calc
-local AngleToDot = calc.AngleToDot
 local Current = vehicle.position.Current
 local abs = math.abs
 
@@ -42,28 +41,29 @@ end
 ---@param waypoint Waypoint
 ---@param previousWaypoint Waypoint
 ---@return Vec3
-local function getVerticalReference(waypoint, previousWaypoint)
+local function getVerticalUpReference(waypoint, previousWaypoint, thresholdAngle)
+    --[[
     -- When next waypoint is nearly aligned with -gravity, use the line between them as the vertical reference instead to make following the path more exact.
     local vertUp = -universe.VerticalReferenceVector()
     local pathDirection = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
 
     local selectedRef = vertUp
-    local threshold = AngleToDot(2)
+    local threshold = calc.AngleToDot(2)
 
     if vertUp:Dot(pathDirection) > threshold then
         selectedRef = pathDirection
     elseif vertUp:Dot(pathDirection) < -threshold then -- Don't flip upside down
         selectedRef = -pathDirection
     end
-
-    return selectedRef
+    return selectedRef]]
+    return -universe.VerticalReferenceVector()
 end
 
 ---@param waypoint Waypoint
 ---@param previousWaypoint Waypoint
 ---@return {yaw:Vec3, pitch:Vec3}
 function alignment.YawPitchKeepLockedWaypointDirectionOrthogonalToVerticalReference(waypoint, previousWaypoint)
-    local normal = getVerticalReference(waypoint, previousWaypoint)
+    local normal = getVerticalUpReference(waypoint, previousWaypoint)
 
     return {
         yaw = Current() + waypoint.YawPitchDirection() * directionMargin,
@@ -76,7 +76,7 @@ end
 ---@return {yaw:Vec3, pitch:Vec3}|nil
 function alignment.YawPitchKeepOrthogonalToVerticalReference(waypoint, previousWaypoint)
     local current = Current()
-    local normal = getVerticalReference(waypoint, previousWaypoint)
+    local normal = getVerticalUpReference(waypoint, previousWaypoint)
 
     local travelDir = (waypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
 

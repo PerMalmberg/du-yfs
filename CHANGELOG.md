@@ -2,15 +2,13 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 0.0.20 ... 0.0.2x - 2023-04-xx
+## 0.0.22 - 2023-04-23
 
-## Fixed
-
-Significant changes has been made to how the script follows a path as well as the setup procedure for what are known as vertical routes. Instead of basing the route on the orientation of the construct on which the elevator is parked, the gravity vector of a selected reference elevator is used and the mid point just outside atmosphere is no longer a thing. This makes for faster travel and reduces fuel usage.
+Significant changes has been made to how the script follows a path as well as the setup procedure. Instead of basing the route on the orientation of the construct on which the elevator is parked, the gravity vector of a selected reference elevator is used and the mid point just outside atmosphere is no longer added by default. This makes for faster travel and reduces fuel usage.
 
 In testing, existing routes have been working as expected, but as there are so many variables in play you may have to make adjustments to yours. Creating a new route may, depending on how the earlier reference construct was placed, result in a different endpoint to previously created routes. Specifically, if the reference construct was placed using the snapping feature on another one, its up-direction will have a different direction from the gravity vector. This difference increases with each additional core between the first placed core and the reference core.
 
-> Is your elevator passing through, or is parked in a narrow shaft? If so, you probably should add a waypoint such that the travel path in the shaft becomes aligned to the shaft (and likely the gravity vector too); simply place a waypoint in front of the entrance and add it to the route in the correct order _before upgrading_.
+> Is your elevator passing through, or is parked in a narrow shaft? If so, you probably should add a waypoint such that the travel path in the shaft becomes aligned to the shaft (and likely the gravity vector too), simply place a waypoint in front of the entrance and add it to the route in the correct order _before upgrading_.
 
 > If you used the old command `create-gravity-route` to create your route you should be unaffected by these changes as your path is already aligned to gravity.
 
@@ -22,12 +20,12 @@ The script now also works well on tiny constructs (commonly known as AWP [Articu
 
 ### Changed
 * Install procedure changed, there is now only the `create-vertical-route` command.
-* New path follow algorithm and behavior, the construct now tilts along the travel path when >5m from the waypoint. At the 5m mark, it aligns to gravity.
+* New flight path follow algorithm and behavior.
 * Small constructs now bobs less.
 * Removed the precision-concept from waypoints.
 * Command `create-vertical-route` no longer creates a mid point by default. See new instructions in manual.
-* Parameter name change to command `create-vertical-route`
-* Default `minimumPathCheckOffset` is now 2m to cater for offsets during accelerations.
+* Parameter name changes to command `create-vertical-route`
+* Default `minimumPathCheckOffset` is now 2m to cater for offsets during accelerations on non-gravity aligned flight paths.
 
 ### Removed
 * Setting `manualHoldMarginMassThreshold` obsolete and removed.

@@ -413,7 +413,7 @@ function FlightFSM.New(settings, routeController)
             -- When approching the final parking position vertically, move extra slow so that there is enough time to adjust sideways.
             if waypoint.LastInRoute()
                 and outsideAdjustmentMargin(waypoint)
-                and (waypoint.Destination() - previousWaypoint.Destination()):Normalize():Dot(universe.VerticalReferenceVector()) > AngleToDot(5)
+                and (waypoint.Destination() - previousWaypoint.Destination()):Normalize():Dot(universe.VerticalReferenceVector()) > AngleToDot(5) -- within this angle
                 and remainingDistance < 400 then
                 targetSpeed = evaluateNewLimit(targetSpeed, targetSpeed * 0.5, "Adj. apr.")
             end
