@@ -4,11 +4,11 @@ set -e -o pipefail
 git_info=$(git describe --exact-match --tags 2> /dev/null || git rev-parse --short HEAD)
 date_info=$(date +'%Y%m%d %R')
 
-cp ./src/version.lua ./src/version_out.lua
-
-files=("./src/version_out.lua")
+# Files without .lua extension
+files=("./src/version" "./src/screen/layout")
 for f in ${files[@]}
 do
-    sed -i "s/GITINFO/${git_info}/g" ${f}
-    sed -i "s/DATEINFO/${date_info}/g" ${f}
+    cp "${f}.lua" "${f}_out.lua"
+    sed -i "s/GITINFO/${git_info}/g" "${f}_out.lua"
+    sed -i "s/DATEINFO/${date_info}/g" "${f}_out.lua"
 done

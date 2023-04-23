@@ -2,7 +2,6 @@ libs/
 temp/
 out/
 /luacov-html/
-src/screen/layout_min.json
-src/screen/offline_min.json
 src/version_out.lua
 *.pdf
+src/screen/layout_out.lua
