@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.0.25 - 2023-04-28
+* Added variant for Y-Lift M3 0T XS Beetle v1.0
+
 ## 0.0.24 - 2023-04-23
 
 ### Fixed
