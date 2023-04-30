@@ -45,5 +45,7 @@ PointOptions.FINAL_SPEED = "finalSpeed"
 PointOptions.MAX_SPEED = "maxSpeed"
 -- Boolean. If true, final speed takese precedence over last-point in route check.
 PointOptions.FORCE_FINAL_SPEED = "forcefinalspeed"
+-- Boolean. If true, the point can be skipped while traveling along the route
+PointOptions.SKIPPABLE = "skippable"
 
 return PointOptions

@@ -29,7 +29,7 @@ require("util/Table")
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
 ---@field CurrentEditName fun():string|nil
----@field ActivateRoute fun(name:string, order?:RouteOrder, startMargin?:number):boolean
+---@field ActivateRoute fun(name:string, destinationWayPointIndex?:number, startMargin?:number):boolean
 ---@field ActivateTempRoute fun():Route
 ---@field CreateRoute fun(name:string):Route|nil
 ---@field ReverseRoute fun():boolean
@@ -323,40 +323,55 @@ function RouteController.Instance(bufferedDB)
         return editName
     end
 
-    ---Activate the route by the given name
     ---@param name string
-    ---@param order RouteOrder? The order the route shall be followed, default is FORWARD
-    ---@param startMargin number? If true, the route will be activated if within this distance.
-    ---@return boolean
-    function s.ActivateRoute(name, order, startMargin)
-        order = order or RouteOrder.FORWARD
-        startMargin = startMargin or 0
-
+    ---@param destinationWayPointIndex number
+    ---@return Route|nil
+    function s.doBasicCheckesOnActivation(name, destinationWayPointIndex)
         if not name or string.len(name) == 0 then
             log:Error("No route name provided")
-            return false
+            return nil
         end
 
         if editName ~= nil and name == editName and edit ~= nil then
             log:Info("Cannot activate route currently being edited, please save first.")
-            return false
+            return nil
         end
 
         local route = s.loadRoute(name)
 
         if route == nil then
-            return false
+            return nil
         elseif #route.Points() < 2 then
             log:Error("Less than 2 points in route '", name, "'")
-            return false
+            return nil
         else
             log:Info("Route loaded: ", name)
         end
 
-        if order == RouteOrder.REVERSED then
-            log:Info("Reversing route '", name, "'")
-            route.Reverse()
+        if destinationWayPointIndex < 0 or destinationWayPointIndex > #route.Points() then
+            log:Error("Destination index must be >= 1 and <= ", #route.Points())
+            return nil
         end
+
+        return route
+    end
+
+    ---Activate the route by the given name
+    ---@param name string
+    ---@param destinationWayPointIndex? number The index of the waypoint we wish to move to. 0 means the last one in the route. This always counts in the original order of the route.
+    ---@param startMargin number? If true, the route will be activated if within this distance.
+    ---@return boolean
+    function s.ActivateRoute(name, destinationWayPointIndex, startMargin)
+        startMargin = startMargin or 0
+        local route = s.doBasicCheckesOnActivation(name, destinationWayPointIndex or 0)
+
+        if route == nil then
+            return false
+        end
+
+        destinationWayPointIndex = destinationWayPointIndex or #route.Points()
+        route.AdjustRouteBasedOnTarget(Current(), destinationWayPointIndex)
+
 
         -- Find closest point within the route, or the first point, in the order the route is loaded
         local points = route.Points()
@@ -401,21 +416,26 @@ function RouteController.Instance(bufferedDB)
         end
 
         if nearestOnRoute then
-            log:Info("Found a point in the route that is closer than the first point, adjusting route.")
-            -- The closest point is somewhere on the route so remove points before.
-            for i = 1, closestIx, 1 do
+            -- This might be the same as the end point of the first leg. If so, just remove the first point.
+            if nearestOnRoute == universe.ParsePosition(points[2]:Pos()).Coordinates() then
                 table.remove(points, 1)
-            end
+            else
+                log:Info("Found a point in the route that is closer than the first point, adjusting route.")
+                -- The closest point is somewhere on the route so remove points before.
+                for i = 1, closestIx, 1 do
+                    table.remove(points, 1)
+                end
 
-            local nextOpt = points[1].Options()
-            -- Add a new point at the nearest point, with the same lock direction as the next point
-            -- so we move with that direction to this point.
-            local p = Point.New(universe.CreatePos(nearestOnRoute).AsPosString())
-            local newOpts = p.Options()
-            newOpts.Set(PointOptions.LOCK_DIRECTION, nextOpt.Get(PointOptions.LOCK_DIRECTION))
-            -- Set a wider margin on this point to avoid most instances of getting stuck on the first point, wanting to move sideways before taking off.
-            newOpts.Set(PointOptions.MARGIN, 0.5)
-            table.insert(points, 1, p)
+                local nextOpt = points[1].Options()
+                -- Add a new point at the nearest point, with the same lock direction as the next point
+                -- so we move with that direction to this point.
+                local p = Point.New(universe.CreatePos(nearestOnRoute).AsPosString())
+                local newOpts = p.Options()
+                newOpts.Set(PointOptions.LOCK_DIRECTION, nextOpt.Get(PointOptions.LOCK_DIRECTION))
+                -- Set a wider margin on this point to avoid most instances of getting stuck on the first point, wanting to move sideways before taking off.
+                newOpts.Set(PointOptions.MARGIN, 0.5)
+                table.insert(points, 1, p)
+            end
         end
 
         -- Check we're close enough to the closest point, which is now the first one in the route.

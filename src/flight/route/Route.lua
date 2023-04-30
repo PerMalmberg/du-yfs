@@ -26,6 +26,8 @@ require("util/Table")
 ---@field Next fun():Point|nil
 ---@field Peek fun():Point|nil
 ---@field LastPointReached fun():boolean
+---@field AdjustRouteBasedOnTarget fun(startPos:Vec3, targetIndex:number)
+---@field FindClosestLeg fun(coordinate:Vec3):number,number
 ---@field Reverse fun()
 ---@field RemovePoint fun(ix:number):boolean
 ---@field MovePoint fun(from:number, to:number)
@@ -33,12 +35,6 @@ require("util/Table")
 ---@field GetPointPage fun(page:integer, perPage:integer):Point[]
 ---@field GetPageCount fun(perPage:integer):integer
 
-
----@enum RouteOrder
-RouteOrder = {
-    FORWARD = 1,
-    REVERSED = 2
-}
 
 local Route = {}
 Route.__index = Route
@@ -132,6 +128,88 @@ function Route.New()
 
     function s.Reverse()
         ReverseInplace(points)
+    end
+
+    ---@param coordinate Vec3
+    ---@return number # Start index
+    ---@return number # End index
+    function s.FindClosestLeg(coordinate)
+        local startIx = 1
+        local endIx = 2
+
+        local closest = math.maxinteger
+        local prev = universe.ParsePosition(points[1]:Pos())
+
+        for i = 2, #points, 1 do
+            local next = universe.ParsePosition(points[i]:Pos())
+
+            if not prev or not next then
+                return 1, 2
+            end
+
+            local dist = (coordinate - calc.NearestOnLineBetweenPoints(prev.Coordinates(),
+                next.Coordinates(), coordinate)):Len()
+
+            -- Find the first closest leg. Any later ones are ignored.
+            if dist < closest then
+                closest = dist
+                startIx = i - 1
+                endIx = i
+            end
+
+            prev = next
+        end
+
+        return startIx, endIx
+    end
+
+    ---@param startIx number
+    ---@param endIx number
+    local function keep(startIx, endIx)
+        local toKeep = {}
+
+        for i = 1, #points, 1 do
+            if i >= startIx and i <= endIx then
+                toKeep[#toKeep + 1] = points[i]
+            end
+        end
+
+        points = toKeep
+    end
+
+    ---Adjust the route so that it will be traveled in the correct direction.
+    ---@param startPos Vec3
+    ---@param targetIndex number
+    function s.AdjustRouteBasedOnTarget(startPos, targetIndex)
+        if targetIndex == 0 then
+            targetIndex = #points
+        end
+
+        -- First find the closest leg indexes
+        local startLegStart, startLegEnd = s.FindClosestLeg(startPos)
+        local target = universe.ParsePosition(points[targetIndex]:Pos()).Coordinates()
+        local targetLegStart, targetLegEnd = s.FindClosestLeg(target)
+
+        print("Start:  " .. startLegStart .. " " .. startLegEnd)
+        print("Target: " .. targetLegStart .. " " .. targetLegEnd)
+
+        if startLegStart <= targetLegStart then
+            -- Overlapping or target is later in route
+            keep(startLegStart, targetLegEnd)
+        else
+            -- Current pos is later in route than the target.
+
+            -- Check if the target position actually is on the start leg, this happens when the start pos is exactly on the end point of a leg
+            local a = universe.ParsePosition(points[startLegStart]:Pos()):Coordinates()
+            local b = universe.ParsePosition(points[startLegEnd]:Pos()):Coordinates()
+            if targetLegEnd == startLegStart and startPos == calc.NearestOnLineBetweenPoints(a, b, startPos) then
+                targetLegStart = startLegStart
+                targetLegEnd = startLegEnd
+            end
+
+            keep(targetLegStart, startLegEnd)
+            s.Reverse()
+        end
     end
 
     local function checkBounds(ix)

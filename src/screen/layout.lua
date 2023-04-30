@@ -534,7 +534,7 @@ local layout = {
                         x_step = 160
                     }
                 },
-                --[[{
+                {
                     type = "text",
                     layer = 1,
                     pos1 = "(930,585)",
@@ -546,7 +546,7 @@ local layout = {
                             command = "activatepage{routeEdit}"
                         }
                     }
-                },]] --
+                },
                 {
                     type = "text",
                     layer = 1,

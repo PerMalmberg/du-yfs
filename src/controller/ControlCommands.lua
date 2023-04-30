@@ -149,23 +149,16 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         end)
 
         cmd.Accept("route-activate",
-            ---@param data {commandValue:string, reverse:boolean}
+            ---@param data {commandValue:string, waypointIndex:number}
             function(data)
-                local reverse = calc.Ternary(data.reverse or false, RouteOrder.REVERSED, RouteOrder.FORWARD) ---@type RouteOrder
                 local startMargin = settings.Number("routeStartDistanceLimit")
 
-                if rc.ActivateRoute(data.commandValue, reverse, startMargin) then
+                if rc.ActivateRoute(data.commandValue, data.waypointIndex, startMargin) then
                     flightCore.StartFlight()
                     log:Info("Flight started")
                 end
             end).AsString().Mandatory()
-            .Option("reverse").AsEmptyBoolean()
-
-        cmd.Accept("route-reverse", function(data)
-            if rc.ReverseRoute() then
-                log:Info("Route reveresed")
-            end
-        end)
+            .Option("waypointIndex").AsNumber().Default(0)
 
         local addCurrentToRoute = cmd.Accept("route-add-current-pos",
             ---@param data PointOptionArguments
