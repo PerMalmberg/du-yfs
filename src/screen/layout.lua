@@ -472,7 +472,7 @@ local layout = {
                             set_style = "routeButtonHover"
                         },
                         click = {
-                            command = "$str(path{route/[#]:name}:init{}:format{route-activate '%s' -reverse})"
+                            command = "$str(path{route/[#]:name}:init{}:format{route-activate '%s' -index 1})"
                         }
                     },
                     replicate = {
