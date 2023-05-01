@@ -195,19 +195,10 @@ function Route.New()
 
         if startLegStart <= targetLegStart then
             -- Overlapping or target is later in route
-            keep(startLegStart, targetLegEnd)
+            keep(startLegStart, targetIndex)
         else
             -- Current pos is later in route than the target.
-
-            -- Check if the target position actually is on the start leg, this happens when the start pos is exactly on the end point of a leg
-            local a = universe.ParsePosition(points[startLegStart]:Pos()):Coordinates()
-            local b = universe.ParsePosition(points[startLegEnd]:Pos()):Coordinates()
-            if targetLegEnd == startLegStart and startPos == calc.NearestOnLineBetweenPoints(a, b, startPos) then
-                targetLegStart = startLegStart
-                targetLegEnd = startLegEnd
-            end
-
-            keep(targetLegStart, startLegEnd)
+            keep(targetIndex, startLegEnd)
             s.Reverse()
         end
     end

@@ -149,16 +149,16 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         end)
 
         cmd.Accept("route-activate",
-            ---@param data {commandValue:string, waypointIndex:number}
+            ---@param data {commandValue:string, index:number}
             function(data)
                 local startMargin = settings.Number("routeStartDistanceLimit")
 
-                if rc.ActivateRoute(data.commandValue, data.waypointIndex, startMargin) then
+                if rc.ActivateRoute(data.commandValue, data.index, startMargin) then
                     flightCore.StartFlight()
                     log:Info("Flight started")
                 end
             end).AsString().Mandatory()
-            .Option("waypointIndex").AsNumber().Default(0)
+            .Option("index").AsNumber().Default(0)
 
         local addCurrentToRoute = cmd.Accept("route-add-current-pos",
             ---@param data PointOptionArguments
