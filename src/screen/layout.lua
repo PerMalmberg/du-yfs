@@ -42,18 +42,14 @@ local layout = {
         }
     },
     styles = {
-        hidden = {
-            fill = "#00000000"
-        },
         bkgDark = {
-            fill = "#2F3637ff"
+            fill = "#000000ff"
         },
         bkgLight = {
-            fill = "#aaaaaaff",
-            stroke = {
-                distance = 1,
-                color = "#aaaaaaff"
-            }
+            fill = "#111111ff",
+        },
+        icon = {
+            fill = "#ffffffff",
         },
         headerText = {
             fill = "#ffffffff",
@@ -68,7 +64,7 @@ local layout = {
             align = "h2,v1"
         },
         fuelBack = {
-            fill = "#000000ff"
+            fill = "#111111ff"
         },
         fuelAtmo = {
             fill = "#2f6fd0ff"
@@ -81,10 +77,17 @@ local layout = {
             align = "h1,v2"
         },
         routeButton = {
-            fill = "#546263ff"
+            fill = "#546263ff",
         },
         routeButtonHover = {
             fill = "#2f6fd0ff"
+        },
+        routeCover = {
+            fill = "#111111ff",
+            stroke = {
+                color = "#111111ff",
+                distance = 1
+            }
         },
         routeEndpointText = {
             fill = "#ffffffff",
@@ -138,7 +141,7 @@ local layout = {
                     comment = "current-icon-outer",
                     type = "box",
                     layer = 1,
-                    style = "bkgLight",
+                    style = "icon",
                     pos1 = "(40,20)",
                     pos2 = "(60,40)",
                     replicate = {
@@ -152,7 +155,7 @@ local layout = {
                     comment = "current-icon-center",
                     type = "box",
                     layer = 1,
-                    style = "bkgLight",
+                    style = "icon",
                     pos1 = "(60,40)",
                     pos2 = "(80,60)"
                 },
@@ -224,7 +227,7 @@ local layout = {
                     comment = "target-icon-vert",
                     type = "box",
                     layer = 1,
-                    style = "bkgLight",
+                    style = "icon",
                     pos1 = "(60,140)",
                     pos2 = "(80,160)",
                     replicate = {
@@ -237,7 +240,7 @@ local layout = {
                     comment = "target-icon-hor",
                     type = "box",
                     layer = 1,
-                    style = "bkgLight",
+                    style = "icon",
                     pos1 = "(40,160)",
                     pos2 = "(60,180)",
                     replicate = {
@@ -426,7 +429,7 @@ local layout = {
                     visible = "$bool(path{route/[#]:visible}:init{false})",
                     pos1 = "(40,300)",
                     pos2 = "(60,320)",
-                    style = "bkgLight",
+                    style = "routeCover",
                     replicate = {
                         x_count = 5,
                         x_step = 160
@@ -439,7 +442,7 @@ local layout = {
                     visible = "$bool(path{route/[#]:visible}:init{false})",
                     pos1 = "(140,300)",
                     pos2 = "(160,320)",
-                    style = "bkgLight",
+                    style = "routeCover",
                     replicate = {
                         x_count = 5,
                         x_step = 160
@@ -501,7 +504,7 @@ local layout = {
                     visible = "$bool(path{route/[#]:visible}:init{false})",
                     pos1 = "(40,380)",
                     pos2 = "(60,400)",
-                    style = "bkgLight",
+                    style = "routeCover",
                     replicate = {
                         x_count = 5,
                         x_step = 160
@@ -514,7 +517,7 @@ local layout = {
                     visible = "$bool(path{route/[#]:visible}:init{false})",
                     pos1 = "(140,380)",
                     pos2 = "(160,400)",
-                    style = "bkgLight",
+                    style = "routeCover",
                     replicate = {
                         x_count = 5,
                         x_step = 160
