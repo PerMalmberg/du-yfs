@@ -96,11 +96,11 @@ local layout = {
         },
         routeEditTableData = {
             fill = "#ffffffff",
-            align = "h0, v1"
+            align = "h0, v4"
         },
         routeEditTableDataCentered = {
             fill = "#ffffffff",
-            align = "h1, v1"
+            align = "h1, v4"
         },
         routeEditHover = {
             fill = "#2f6fd0ff"
@@ -110,7 +110,7 @@ local layout = {
         },
         editRouteRouteName = {
             fill = "#ffffffff",
-            align = "h1,v1"
+            align = "h0,v1"
         },
         split = {
             stroke = {
@@ -580,7 +580,7 @@ local layout = {
                     type = "text",
                     layer = 1,
                     style = "headerText",
-                    font = "routeEditMainHeader",
+                    font = "play36",
                     pos1 = "(30,50)",
                     text = "Waypoints"
                 },
@@ -742,93 +742,121 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "editRouteRouteName",
-                    pos1 = "(600,50)",
+                    pos1 = "(530,50)",
                     text = "$str(path{editRoute:selectRouteName}:init{})"
                 },
 
-                --[[
                 {
                     type = "text",
                     layer = 1,
-                    style = "editRouteNext",
-                    font = "editRouteNext",
+                    style = "routeEditTableData",
+                    font = "play24",
                     text = "<",
-                    pos1 = "(10,10)",
+                    pos1 = "(530,80)",
                     mouse = {
                         click = {
                             command = "#re-previous-route"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
                         }
                     }
                 },
                 {
                     type = "text",
                     layer = 1,
-                    style = "editRouteNext",
-                    font = "editRouteNext",
+                    style = "routeEditTableData",
+                    font = "play24",
                     text = ">",
-                    pos1 = "(50,10)",
+                    pos1 = "(570,80)",
                     mouse = {
                         click = {
                             command = "#re-next-route"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
                         }
                     }
                 },
                 {
                     type = "text",
                     layer = 1,
-                    font = "editRouteNext",
-                    style = "editRouteNext",
-                    pos1 = "(80,10)",
-                    text = "$str(path{editRoute:selectRouteName}:init{})"
-                },
-                {
-                    type = "text",
-                    layer = 1,
-                    font = "editRouteNext",
-                    style = "editRouteNext",
-                    pos1 = "(500,10)",
-                    text = "[Edit]",
+                    font = "play24",
+                    style = "routeEditTableData",
+                    pos1 = "(600,80)",
+                    text = "Edit",
                     mouse = {
                         click = {
                             command = "$str(path{editRoute:selectRouteName}:format{route-edit '%s'}:init{})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
                         }
                     }
                 },
                 {
                     type = "text",
                     layer = 1,
-                    font = "editRouteNext",
-                    style = "editRouteNext",
-                    pos1 = "(570,10)",
-                    text = "[Save]",
+                    font = "play24",
+                    style = "routeEditTableData",
+                    pos1 = "(670,80)",
+                    text = "Delete",
+                    mouse = {
+                        click = {
+                            command = "$str(path{editRoute:selectRouteName}:format{route-delete '%s'}:init{})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableData",
+                    pos1 = "(530,110)",
+                    text = "$str(path{editRoute:name}:init{-}:format{Editing: %s})"
+                },
+
+
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableData",
+                    pos1 = "(650,563)",
+                    text = "Discard",
+                    mouse = {
+                        click = {
+                            command = "route-discard"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableData",
+                    pos1 = "(700,563)",
+                    text = "Save",
                     mouse = {
                         click = {
                             command = "route-save"
                         }
                     }
                 },
-                {
-                    type = "text",
-                    layer = 1,
-                    font = "editRouteNext",
-                    style = "editRouteNext",
-                    pos1 = "(650,10)",
-                    text = "[Discard]",
-                    mouse = {
-                        click = {
-                            command = "route-discard"
-                        }
-                    }
-                },
 
-                {
-                    type = "text",
-                    layer = 1,
-                    font = "editRouteNext",
-                    style = "editRouteNext",
-                    pos1 = "(10,60)",
-                    text = "$str(path{editRoute:name}:init{-}:format{Editing: %s})"
-                },
+                --[[
+
+
+
+
+
                 {
                     comment = "Point index",
                     type = "text",
