@@ -568,6 +568,13 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         aligntToVector.Option("x").AsNumber().Mandatory()
         aligntToVector.Option("y").AsNumber().Mandatory()
         aligntToVector.Option("z").AsNumber().Mandatory()
+
+        cmd.Accept("set-waypoint",
+            ---@param data {commandValue:string, notify:boolean}
+            function(data)
+                system.setWaypoint(data.commandValue, data.notify)
+            end).AsString()
+            .Option("notify").AsEmptyBoolean()
     end
 
     return setmetatable(s, ControlCommands)

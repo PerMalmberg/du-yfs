@@ -148,11 +148,14 @@ function ScreenController.New(flightCore, settings)
 
         dataToScreen.Set("editRoute", editRoute)
 
-        local availableWaypoints = {}
+        local availableWaypoints = {
+            currentPage = waypointPage,
+            wayPoints = {}
+        }
 
         local waypoints = rc.GetWaypointPage(waypointPage, waypointsPerPage)
         for index, p in ipairs(waypoints) do
-            availableWaypoints[tostring(index)] = {
+            availableWaypoints.wayPoints[tostring(index)] = {
                 visible = true,
                 name = p.name,
                 pos = p.point.Pos()
@@ -160,7 +163,7 @@ function ScreenController.New(flightCore, settings)
         end
 
         for i = #waypoints + 1, waypointsPerPage, 1 do
-            availableWaypoints[tostring(i)] = { visible = false }
+            availableWaypoints.wayPoints[tostring(i)] = { visible = false }
         end
 
         dataToScreen.Set("availableWaypoints", availableWaypoints)
