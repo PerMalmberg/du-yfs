@@ -1,49 +1,25 @@
 local layout = {
     fonts = {
-        routeInfoHeader = {
-            font = "Play",
-            size = 18
-        },
-        info = {
-            font = "Play",
-            size = 36
-        },
-        units = {
+        play14 = {
             font = "Play",
             size = 14
         },
-        fuelPercent = {
-            font = "Play",
-            size = 14
-        },
-        routeEndpointText = {
-            font = "Play",
-            size = 14
-        },
-        routeName = {
-            font = "Play",
-            size = 24
-        },
-        dataFont = {
-            font = "Play",
-            size = 18
-        },
-        changePage = {
-            font = "Play",
-            size = 14
-        },
-        routeEditMainHeader = {
-            font = "Play",
-            size = 36
-        },
-        routeEditTableHeader = {
+        play16 = {
             font = "Play",
             size = 16
         },
-        routeEditTableData = {
+        play18 = {
             font = "Play",
-            size = 25
-        }
+            size = 18
+        },
+        play24 = {
+            font = "Play",
+            size = 24
+        },
+        play36 = {
+            font = "Play",
+            size = 36
+        },
     },
     styles = {
         bkgDark = {
@@ -116,10 +92,15 @@ local layout = {
         ---- Route editor -----
         routeEditTableHeader = {
             fill = "#181818ff",
-            align = "h0, v1"
+            align = "h0, v4"
         },
         routeEditTableData = {
-            fill = "#ffffffff"
+            fill = "#ffffffff",
+            align = "h0, v1"
+        },
+        routeEditTableDataCentered = {
+            fill = "#ffffffff",
+            align = "h1, v1"
         },
         routeEditHover = {
             fill = "#2f6fd0ff"
@@ -127,10 +108,14 @@ local layout = {
         routeEditHoverRed = {
             fill = "#ff0000ff"
         },
-        horSplit = {
+        editRouteRouteName = {
+            fill = "#ffffffff",
+            align = "h1,v1"
+        },
+        split = {
             stroke = {
                 distance = 2,
-                color = "#000000FF"
+                color = "#181818FF"
             }
         }
     },
@@ -181,14 +166,14 @@ local layout = {
                     style = "headerText",
                     pos1 = "(120,20)",
                     text = "Total mass",
-                    font = "routeInfoHeader"
+                    font = "play18"
                 },
                 {
                     type = "text",
                     layer = 1,
                     style = "info",
                     pos1 = "(280,40)",
-                    font = "info",
+                    font = "play36",
                     text = "$num(path{mass:total}:init{0}:format{%0.2f}:interval{0.5})"
                 },
                 {
@@ -196,7 +181,7 @@ local layout = {
                     layer = 1,
                     style = "units",
                     pos1 = "(260,70)",
-                    font = "units",
+                    font = "play14",
                     text = "$str(path{mass:totalUnit}:init{kg}:interval{0.5})"
                 },
                 {
@@ -205,14 +190,14 @@ local layout = {
                     style = "headerText",
                     pos1 = "(300,20)",
                     text = "Current speed",
-                    font = "routeInfoHeader"
+                    font = "play18"
                 },
                 {
                     type = "text",
                     layer = 1,
                     style = "info",
                     pos1 = "(460,40)",
-                    font = "info",
+                    font = "play36",
                     text = "$num(path{flightData:absSpeed}:init{0}:format{%0.2f}:interval{0.5})"
                 },
                 {
@@ -220,7 +205,7 @@ local layout = {
                     layer = 1,
                     style = "units",
                     pos1 = "(440,70)",
-                    font = "units",
+                    font = "play14",
                     text = "$str(path{flightData:speedUnit}:init{km/h}:interval{0.5})"
                 },
                 {
@@ -229,14 +214,14 @@ local layout = {
                     style = "headerText",
                     pos1 = "(480,20)",
                     text = "Current route",
-                    font = "routeInfoHeader"
+                    font = "play18"
                 },
                 {
                     type = "text",
                     layer = 1,
                     style = "info",
                     pos1 = "(640,40)",
-                    font = "info",
+                    font = "play36",
                     text = "$str(path{route/current:name}:init{-}:interval{0.5})"
                 },
                 {
@@ -271,14 +256,14 @@ local layout = {
                     style = "headerText",
                     pos1 = "(120,140)",
                     text = "Remaining distance",
-                    font = "routeInfoHeader"
+                    font = "play18"
                 },
                 {
                     type = "text",
                     layer = 1,
                     style = "info",
                     pos1 = "(280,160)",
-                    font = "info",
+                    font = "play36",
                     text = "$num(path{finalWp:distance}:init{0}:format{%0.2f}:interval{0.5})"
                 },
                 {
@@ -286,7 +271,7 @@ local layout = {
                     layer = 1,
                     style = "units",
                     pos1 = "(260,190)",
-                    font = "units",
+                    font = "play14",
                     text = "$str(path{finalWp:distanceUnit}:init{km}:interval{0.5})"
                 },
                 {
@@ -295,14 +280,14 @@ local layout = {
                     style = "headerText",
                     pos1 = "(300,140)",
                     text = "Next WP distance",
-                    font = "routeInfoHeader"
+                    font = "play18"
                 },
                 {
                     type = "text",
                     layer = 1,
                     style = "info",
                     pos1 = "(460,160)",
-                    font = "info",
+                    font = "play36",
                     text = "$num(path{nextWp:distance}:init{0}:format{%0.2f}:interval{0.5})"
                 },
                 {
@@ -310,7 +295,7 @@ local layout = {
                     layer = 1,
                     style = "units",
                     pos1 = "(440,190)",
-                    font = "units",
+                    font = "play14",
                     text = "$str(path{nextWp:distanceUnit}:init{km}:interval{0.5})"
                 },
                 {
@@ -319,14 +304,14 @@ local layout = {
                     style = "headerText",
                     pos1 = "(480,140)",
                     text = "Deviation",
-                    font = "routeInfoHeader"
+                    font = "play18"
                 },
                 {
                     type = "text",
                     layer = 1,
                     style = "info",
                     pos1 = "(640,160)",
-                    font = "info",
+                    font = "play36",
                     text = "$str(path{deviation:distance}:init{}:interval{0.5})"
                 },
                 {
@@ -334,7 +319,7 @@ local layout = {
                     layer = 1,
                     style = "units",
                     pos1 = "(620,190)",
-                    font = "units",
+                    font = "play14",
                     text = "m"
                 },
                 {
@@ -370,7 +355,7 @@ local layout = {
                     visible = "$bool(path{fuel/atmo/[#]:visible}:init{false})",
                     text = "$num(path{fuel/atmo/[#]:percent}:init{0}:format{%0.0f})",
                     pos1 = "(700,40)",
-                    font = "fuelPercent",
+                    font = "play14",
                     style = "fuelPercent",
                     replicate = {
                         x_count = 4,
@@ -410,7 +395,7 @@ local layout = {
                     visible = "$bool(path{fuel/space/[#]:visible}:init{false})",
                     text = "$num(path{fuel/space/[#]:percent}:init{0}:format{%0.0f})",
                     pos1 = "(870,40)",
-                    font = "fuelPercent",
+                    font = "play14",
                     style = "fuelPercent",
                     replicate = {
                         x_count = 4,
@@ -471,7 +456,7 @@ local layout = {
                     pos1 = "(100,300)",
                     text = "End",
                     style = "routeEndpointText",
-                    font = "routeEndpointText",
+                    font = "play14",
                     hitable = false,
                     replicate = {
                         x_count = 5,
@@ -506,7 +491,7 @@ local layout = {
                     pos1 = "(100, 350)",
                     visible = "$bool(path{route/[#]:visible}:init{false})",
                     style = "routeName",
-                    font = "routeName",
+                    font = "play24",
                     text = "$str(path{route/[#]:name}:init{route name})",
                     replicate = {
                         x_count = 5,
@@ -546,7 +531,7 @@ local layout = {
                     pos1 = "(100,400)",
                     text = "Beginning",
                     style = "routeEndpointText",
-                    font = "routeEndpointText",
+                    font = "play14",
                     hitable = false,
                     replicate = {
                         x_count = 5,
@@ -559,7 +544,7 @@ local layout = {
                     pos1 = "(930,585)",
                     text = "Edit |",
                     style = "changePage",
-                    font = "changePage",
+                    font = "play14",
                     mouse = {
                         click = {
                             command = "activatepage{routeEdit}"
@@ -572,7 +557,7 @@ local layout = {
                     pos1 = "(970,585)",
                     text = "Details",
                     style = "changePage",
-                    font = "changePage",
+                    font = "play14",
                     mouse = {
                         click = {
                             command = "activatepage{details}"
@@ -596,22 +581,22 @@ local layout = {
                     layer = 1,
                     style = "headerText",
                     font = "routeEditMainHeader",
-                    pos1 = "(10,30)",
+                    pos1 = "(30,50)",
                     text = "Waypoints"
                 },
                 {
                     type = "text",
                     layer = 1,
                     style = "routeEditTableHeader",
-                    font = "routeEditTableHeader",
-                    pos1 = "(10,100)",
+                    font = "play14",
+                    pos1 = "(30,100)",
                     text = "Waypoint name"
                 },
                 {
                     type = "text",
                     layer = 1,
                     style = "routeEditTableHeader",
-                    font = "routeEditTableHeader",
+                    font = "play14",
                     pos1 = "(300,100)",
                     text = "Delete"
                 },
@@ -619,8 +604,8 @@ local layout = {
                     type = "text",
                     layer = 1,
                     style = "routeEditTableHeader",
-                    font = "routeEditTableHeader",
-                    pos1 = "(350,100)",
+                    font = "play14",
+                    pos1 = "(370,100)",
                     text = "Insert"
                 },
                 {
@@ -628,8 +613,8 @@ local layout = {
                     type = "text",
                     layer = 1,
                     style = "routeEditTableData",
-                    font = "routeEditTableData",
-                    pos1 = "(10, 120)",
+                    font = "play24",
+                    pos1 = "(30, 120)",
                     text = "$str(path{availableWaypoints/wayPoints/[#]:name}:init{})",
                     visible = "$bool(path{availableWaypoints/wayPoints/[#]:visible}:init{false})",
                     mouse = {
@@ -651,7 +636,7 @@ local layout = {
                     type = "text",
                     layer = 1,
                     style = "routeEditTableData",
-                    font = "routeEditTableData",
+                    font = "play24",
                     pos1 = "(300, 120)",
                     text = "X",
                     visible = "$bool(path{availableWaypoints/wayPoints/[#]:visible}:init{false})",
@@ -673,8 +658,8 @@ local layout = {
                     type = "text",
                     layer = 1,
                     style = "routeEditTableData",
-                    font = "routeEditTableData",
-                    pos1 = "(350, 120)",
+                    font = "play24",
+                    pos1 = "(370, 120)",
                     text = ">",
                     visible = "$bool(path{availableWaypoints/wayPoints/[#]:visible}:init{false})",
                     mouse = {
@@ -696,9 +681,9 @@ local layout = {
                 {
                     type = "text",
                     layer = 1,
-                    font = "routeEditTableData",
+                    font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(20,590)",
+                    pos1 = "(20,560)",
                     text = "<",
                     mouse = {
                         click = {
@@ -712,17 +697,17 @@ local layout = {
                 {
                     type = "text",
                     layer = 1,
-                    font = "routeEditTableData",
-                    style = "routeEditTableData",
-                    pos1 = "(30,590)",
+                    font = "play24",
+                    style = "routeEditTableDataCentered",
+                    pos1 = "(40,560)",
                     text = "$num(path{availableWaypoints:currentPage}:init{1}:format{%0.0f})",
                 },
                 {
                     type = "text",
                     layer = 1,
-                    font = "routeEditTableData",
+                    font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(55,590)",
+                    pos1 = "(60,560)",
                     text = ">",
                     mouse = {
                         click = {
@@ -734,16 +719,33 @@ local layout = {
                     }
                 },
 
+                {
+                    type = "line",
+                    layer = 1,
+                    pos1 = "(512,50)",
+                    pos2 = "(512,563)",
+                    style = "split"
+                },
 
                 ------- Routes -------
                 {
                     type = "text",
                     layer = 1,
                     style = "headerTextRight",
-                    font = "routeEditMainHeader",
-                    pos1 = "(1009,30)",
+                    font = "play36",
+                    pos1 = "(994,50)",
                     text = "Routes"
                 },
+
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "editRouteRouteName",
+                    pos1 = "(600,50)",
+                    text = "$str(path{editRoute:selectRouteName}:init{})"
+                },
+
                 --[[
                 {
                     type = "text",
@@ -920,38 +922,11 @@ local layout = {
                 {
                     type = "line",
                     layer = 1,
-                    style = "horSplit",
+                    style = "split",
                     visible = true,
                     pos1 = "(512,45)",
                     pos2 = "(512,613)"
                 },
-                {
-                    type = "text",
-                    layer = 1,
-                    font = "editRouteNext",
-                    style = "editRouteNext",
-                    pos1 = "(800,50)",
-                    text = "{Pg.U}",
-                    mouse = {
-                        click = {
-                            command = "#re-prev-wp-page"
-                        }
-                    }
-                },
-                {
-                    type = "text",
-                    layer = 1,
-                    font = "editRouteNext",
-                    style = "editRouteNext",
-                    pos1 = "(800,75)",
-                    text = "{Pg.D}",
-                    mouse = {
-                        click = {
-                            command = "#re-next-wp-page"
-                        }
-                    }
-                },
-
 
                 {
                     comment = "Add current pos with lock",
@@ -973,8 +948,8 @@ local layout = {
                     layer = 1,
                     pos1 = "(960,585)",
                     text = "Routes",
-                    style = "changePage",
-                    font = "changePage",
+                    style = "play14",
+                    font = "play14",
                     mouse = {
                         click = {
                             command = "activatepage{routeSelection}"
@@ -999,14 +974,14 @@ local layout = {
                     pos1 = "(10, 10)",
                     text = "Version: GITINFO / DATEINFO",
                     layer = 1,
-                    font = "dataFont",
+                    font = "play18",
                     style = "dataText"
                 },
                 {
                     type = "text",
                     layer = 1,
                     style = "dataText",
-                    font = "dataFont",
+                    font = "play18",
                     text = "$str(path{:floor}:format{Floor detection: %s}:init{0})",
                     pos1 = "(10,30)"
                 },
@@ -1015,8 +990,8 @@ local layout = {
                     layer = 1,
                     pos1 = "(960,590)",
                     text = "Routes",
-                    style = "changePage",
-                    font = "changePage",
+                    style = "play14",
+                    font = "play14",
                     mouse = {
                         click = {
                             command = "activatepage{routeSelection}"
