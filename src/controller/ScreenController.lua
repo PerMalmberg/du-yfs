@@ -104,6 +104,7 @@ function ScreenController.New(flightCore, settings)
 
     function s.updateEditRouteData()
         local editRoute = {
+            currentPage = editPointPage,
             selectRouteName = "",
             routeName = "",
             points = {}

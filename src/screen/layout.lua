@@ -102,6 +102,10 @@ local layout = {
             fill = "#ffffffff",
             align = "h1, v4"
         },
+        routeEditTableDataRight = {
+            fill = "#ffffffff",
+            align = "h2, v4"
+        },
         routeEditHover = {
             fill = "#2f6fd0ff"
         },
@@ -821,6 +825,195 @@ local layout = {
                 },
 
 
+                ----- Waypoints in route -----
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableHeader",
+                    font = "play14",
+                    pos1 = "(530,140)",
+                    text = "Waypoint name"
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableHeader",
+                    font = "play14",
+                    pos1 = "(800,140)",
+                    text = "Up"
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableHeader",
+                    font = "play14",
+                    pos1 = "(850,140)",
+                    text = "Down"
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableHeader",
+                    font = "play14",
+                    pos1 = "(900,140)",
+                    text = "Remove"
+                },
+                {
+                    comment = "Point index",
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableDataRight",
+                    font = "play24",
+                    pos1 = "(540, 160)",
+                    text = "$num(path{editRoute/points/[#]:index}:init{0}:format{%0.f})",
+                    visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableData",
+                    font = "play24",
+                    pos1 = "(570, 160)",
+                    text = "$str(path{editRoute/points/[#]:pointName}:init{})",
+                    visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
+                    mouse = {
+                        click = {
+                            command =
+                            "$str(path{editRoute/points/[#]:position}:init{}:format{set-waypoint -notify '%s'})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    },
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableData",
+                    font = "play24",
+                    pos1 = "(800, 160)",
+                    text = "U",
+                    visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
+                    mouse = {
+                        click = {
+                            command = "$num(path{editRoute/points/[#]:index}:init{0}:format{route-move-pos-back %0.f})"
+                        }
+                    },
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableData",
+                    font = "play24",
+                    pos1 = "(850, 160)",
+                    text = "D",
+                    visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
+                    mouse = {
+                        click = {
+                            command =
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-move-pos-forward %0.f})"
+                        }
+                    },
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+
+                {
+                    comment = "Remove position from route",
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableData",
+                    font = "play24",
+                    pos1 = "(900, 160)",
+                    text = "R",
+                    visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
+                    mouse = {
+                        click = {
+                            command = "$num(path{editRoute/points/[#]:index}:init{0}:format{route-delete-pos %0.f})"
+                        }
+                    },
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableData",
+                    font = "play24",
+                    text = "<",
+                    pos1 = "(530,563)",
+                    mouse = {
+                        click = {
+                            command = "#re-prev-point-page"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableData",
+                    font = "play24",
+                    text = "<",
+                    pos1 = "(530,563)",
+                    mouse = {
+                        click = {
+                            command = "#re-prev-point-page"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableDataCentered",
+                    pos1 = "(550,563)",
+                    text = "$num(path{editRoute:currentPage}:init{1}:format{%0.0f})",
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableData",
+                    font = "play24",
+                    text = ">",
+                    pos1 = "(570,563)",
+                    mouse = {
+                        click = {
+                            command = "#re-next-point-page"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+
+
                 {
                     type = "text",
                     layer = 1,
@@ -842,7 +1035,7 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(700,563)",
+                    pos1 = "(730,563)",
                     text = "Save",
                     mouse = {
                         click = {
@@ -851,110 +1044,21 @@ local layout = {
                     }
                 },
 
+
+
+
+
+
+
+
                 --[[
 
 
 
 
 
-                {
-                    comment = "Point index",
-                    type = "text",
-                    layer = 1,
-                    style = "editRouteTableRow",
-                    font = "editRouteTableRow",
-                    pos1 = "(10, 95)",
-                    text = "$num(path{editRoute/points/[#]:index}:init{0}:format{%0.f})",
-                    visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
-                    replicate = {
-                        y_count = 10,
-                        y_step = 16
-                    }
-                },
-                {
-                    comment = "Remove position from route",
-                    type = "text",
-                    layer = 1,
-                    style = "editRouteTableRow",
-                    font = "editRouteTableRow",
-                    pos1 = "(30, 95)",
-                    text = "{X}",
-                    visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
-                    mouse = {
-                        click = {
-                            command = "$num(path{editRoute/points/[#]:index}:init{0}:format{route-delete-pos %0.f})"
-                        }
-                    },
-                    replicate = {
-                        y_count = 10,
-                        y_step = 16
-                    }
-                },
-                {
-                    type = "text",
-                    layer = 1,
-                    style = "editRouteTableRow",
-                    font = "editRouteTableRow",
-                    pos1 = "(50, 95)",
-                    text = "{U}",
-                    visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
-                    mouse = {
-                        click = {
-                            command = "$num(path{editRoute/points/[#]:index}:init{0}:format{route-move-pos-back %0.f})"
-                        }
-                    },
-                    replicate = {
-                        y_count = 10,
-                        y_step = 16
-                    }
-                },
-                {
-                    type = "text",
-                    layer = 1,
-                    style = "editRouteTableRow",
-                    font = "editRouteTableRow",
-                    pos1 = "(70, 95)",
-                    text = "{D}",
-                    visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
-                    mouse = {
-                        click = {
-                            command =
-                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-move-pos-forward %0.f})"
-                        }
-                    },
-                    replicate = {
-                        y_count = 10,
-                        y_step = 16
-                    }
-                },
-                {
-                    comment = "Point position string or waypoint name",
-                    type = "text",
-                    layer = 1,
-                    style = "editRouteTableRow",
-                    font = "editRouteTableRow",
-                    pos1 = "(100, 95)",
-                    text = "$str(path{editRoute/points/[#]:pointName}:init{})",
-                    visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
-                    mouse = {
-                        click = {
-                            command =
-                            "$str(path{editRoute/points/[#]:position}:init{}:format{set-waypoint -notify '%s'})"
-                        }
-                    },
-                    replicate = {
-                        y_count = 10,
-                        y_step = 16
-                    }
-                },
-                {
-                    type = "line",
-                    layer = 1,
-                    style = "split",
-                    visible = true,
-                    pos1 = "(512,45)",
-                    pos2 = "(512,613)"
-                },
+
+
 
                 {
                     comment = "Add current pos with lock",
