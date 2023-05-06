@@ -25,6 +25,7 @@ Please read the entire manual before attempting to perform an installation, ther
     - [Custom travel vectors](#custom-travel-vectors)
     - [A note on non gravity-aligned atmospheric accent/decent and angled flight paths](#a-note-on-non-gravity-aligned-atmospheric-accentdecent-and-angled-flight-paths)
   - [Emergency Controller Unit](#emergency-controller-unit)
+  - [Thanks](#thanks)
 
 
 ## Overview
@@ -326,3 +327,11 @@ When running on an ECU, the script only do two things:
 * Detect a floor, and if detected it shuts down.
 
 The requirements for linking are the same as for when running on a controller.
+
+## Thanks
+
+Special thanks goes out to these players:
+* Vargen - for our endless discussions and a fountain of ideas.
+* Zcrewball - for doing the industry supplying an endless number of sacrificial elements.
+* De Overheid - Visual Design
+* Emma Roid - for feedback

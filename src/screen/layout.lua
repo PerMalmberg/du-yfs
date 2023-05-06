@@ -92,25 +92,31 @@ local layout = {
         ---- Route editor -----
         routeEditTableHeader = {
             fill = "#181818ff",
-            align = "h0, v4"
+            align = "h0, v3"
         },
         routeEditTableData = {
             fill = "#ffffffff",
-            align = "h0, v4"
+            align = "h0,v3"
         },
         routeEditTableDataCentered = {
             fill = "#ffffffff",
-            align = "h1, v4"
+            align = "h1,v3"
         },
         routeEditTableDataRight = {
             fill = "#ffffffff",
-            align = "h2, v4"
+            align = "h2,v3"
         },
         routeEditHover = {
-            fill = "#2f6fd0ff"
+            fill = "#2f6fd0ff",
+            align = "h0,v3"
+        },
+        routeEditHoverRight = {
+            fill = "#2f6fd0ff",
+            align = "h2,v3"
         },
         routeEditHoverRed = {
-            fill = "#ff0000ff"
+            fill = "#ff0000ff",
+            align = "h0,v3"
         },
         editRouteRouteName = {
             fill = "#ffffffff",
@@ -127,7 +133,6 @@ local layout = {
         routeSelection = {
             components = {
                 {
-                    comment = "background",
                     type = "box",
                     layer = 1,
                     style = "bkgDark",
@@ -135,7 +140,6 @@ local layout = {
                     pos2 = "(1024,240)"
                 },
                 {
-                    comment = "background",
                     type = "box",
                     layer = 1,
                     style = "bkgLight",
@@ -143,7 +147,6 @@ local layout = {
                     pos2 = "(1024,613)"
                 },
                 {
-                    comment = "current-icon-outer",
                     type = "box",
                     layer = 1,
                     style = "icon",
@@ -157,7 +160,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "current-icon-center",
                     type = "box",
                     layer = 1,
                     style = "icon",
@@ -229,7 +231,6 @@ local layout = {
                     text = "$str(path{route/current:name}:init{-}:interval{0.5})"
                 },
                 {
-                    comment = "target-icon-vert",
                     type = "box",
                     layer = 1,
                     style = "icon",
@@ -242,7 +243,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "target-icon-hor",
                     type = "box",
                     layer = 1,
                     style = "icon",
@@ -327,7 +327,6 @@ local layout = {
                     text = "m"
                 },
                 {
-                    comment = "atmo-fuelBack",
                     type = "box",
                     layer = 1,
                     style = "fuelBack",
@@ -340,7 +339,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "atmo-fuel-bar",
                     type = "box",
                     layer = 1,
                     style = "fuelAtmo",
@@ -353,7 +351,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "atmo-percent",
                     type = "text",
                     layer = 1,
                     visible = "$bool(path{fuel/atmo/[#]:visible}:init{false})",
@@ -367,7 +364,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "space-fuelBack",
                     type = "box",
                     layer = 1,
                     style = "fuelBack",
@@ -380,7 +376,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "space-fuel-bar",
                     type = "box",
                     layer = 1,
                     style = "fuelSpace",
@@ -393,7 +388,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "space-percent",
                     type = "text",
                     layer = 1,
                     visible = "$bool(path{fuel/space/[#]:visible}:init{false})",
@@ -407,7 +401,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "route upper",
                     type = "box",
                     layer = 1,
                     visible = "$bool(path{route/[#]:visible}:init{false})",
@@ -428,7 +421,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "route upper cover left",
                     type = "box",
                     layer = 1,
                     visible = "$bool(path{route/[#]:visible}:init{false})",
@@ -441,7 +433,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "route upper cover right",
                     type = "box",
                     layer = 1,
                     visible = "$bool(path{route/[#]:visible}:init{false})",
@@ -468,7 +459,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "route lower",
                     type = "box",
                     layer = 1,
                     visible = "$bool(path{route/[#]:visible}:init{false})",
@@ -489,7 +479,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "route name",
                     type = "text",
                     layer = 1,
                     pos1 = "(100, 350)",
@@ -503,7 +492,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "route lower cover left",
                     type = "box",
                     layer = 1,
                     visible = "$bool(path{route/[#]:visible}:init{false})",
@@ -516,7 +504,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "route lower cover right",
                     type = "box",
                     layer = 1,
                     visible = "$bool(path{route/[#]:visible}:init{false})",
@@ -573,7 +560,6 @@ local layout = {
         routeEdit = {
             components = {
                 {
-                    comment = "background",
                     type = "box",
                     layer = 1,
                     style = "bkgDark",
@@ -593,7 +579,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(30,100)",
+                    pos1 = "(30,90)",
                     text = "Waypoint name"
                 },
                 {
@@ -601,7 +587,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(300,100)",
+                    pos1 = "(300,90)",
                     text = "Delete"
                 },
                 {
@@ -609,11 +595,10 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(370,100)",
+                    pos1 = "(370,90)",
                     text = "Insert"
                 },
                 {
-                    comment = "Waypoints",
                     type = "text",
                     layer = 1,
                     style = "routeEditTableData",
@@ -636,7 +621,6 @@ local layout = {
                     }
                 },
                 {
-                    comment = "Delete waypoint",
                     type = "text",
                     layer = 1,
                     style = "routeEditTableData",
@@ -658,13 +642,12 @@ local layout = {
                     }
                 },
                 {
-                    comment = "Add waypoint",
                     type = "text",
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
                     pos1 = "(370, 120)",
-                    text = ">",
+                    text = ">>",
                     visible = "$bool(path{availableWaypoints/wayPoints/[#]:visible}:init{false})",
                     mouse = {
                         click = {
@@ -703,22 +686,22 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableDataCentered",
-                    pos1 = "(40,560)",
+                    pos1 = "(50,560)",
                     text = "$num(path{availableWaypoints:currentPage}:init{1}:format{%0.0f})",
                 },
                 {
                     type = "text",
                     layer = 1,
                     font = "play24",
-                    style = "routeEditTableData",
-                    pos1 = "(60,560)",
+                    style = "routeEditTableDataRight",
+                    pos1 = "(80,560)",
                     text = ">",
                     mouse = {
                         click = {
                             command = "#re-next-wp-page"
                         },
                         inside = {
-                            set_style = "routeEditHover"
+                            set_style = "routeEditHoverRight"
                         }
                     }
                 },
@@ -756,7 +739,7 @@ local layout = {
                     style = "routeEditTableData",
                     font = "play24",
                     text = "<",
-                    pos1 = "(530,80)",
+                    pos1 = "(530,100)",
                     mouse = {
                         click = {
                             command = "#re-previous-route"
@@ -772,7 +755,7 @@ local layout = {
                     style = "routeEditTableData",
                     font = "play24",
                     text = ">",
-                    pos1 = "(570,80)",
+                    pos1 = "(570,100)",
                     mouse = {
                         click = {
                             command = "#re-next-route"
@@ -787,7 +770,7 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(600,80)",
+                    pos1 = "(600,100)",
                     text = "Edit",
                     mouse = {
                         click = {
@@ -803,7 +786,7 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(670,80)",
+                    pos1 = "(670,100)",
                     text = "Delete",
                     mouse = {
                         click = {
@@ -820,7 +803,7 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(530,110)",
+                    pos1 = "(530,130)",
                     text = "$str(path{editRoute:name}:init{-}:format{Editing: %s})"
                 },
 
@@ -831,7 +814,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(530,140)",
+                    pos1 = "(530,170)",
                     text = "Waypoint name"
                 },
                 {
@@ -839,7 +822,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(800,140)",
+                    pos1 = "(800,170)",
                     text = "Up"
                 },
                 {
@@ -847,7 +830,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(850,140)",
+                    pos1 = "(850,170)",
                     text = "Down"
                 },
                 {
@@ -855,16 +838,15 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(900,140)",
+                    pos1 = "(900,170)",
                     text = "Remove"
                 },
                 {
-                    comment = "Point index",
                     type = "text",
                     layer = 1,
                     style = "routeEditTableDataRight",
                     font = "play24",
-                    pos1 = "(540, 160)",
+                    pos1 = "(545, 200)",
                     text = "$num(path{editRoute/points/[#]:index}:init{0}:format{%0.f})",
                     visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
                     replicate = {
@@ -878,7 +860,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(570, 160)",
+                    pos1 = "(570, 200)",
                     text = "$str(path{editRoute/points/[#]:pointName}:init{})",
                     visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
                     mouse = {
@@ -901,12 +883,15 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(800, 160)",
+                    pos1 = "(800, 200)",
                     text = "U",
                     visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
                     mouse = {
                         click = {
                             command = "$num(path{editRoute/points/[#]:index}:init{0}:format{route-move-pos-back %0.f})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
                         }
                     },
                     replicate = {
@@ -919,13 +904,16 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(850, 160)",
+                    pos1 = "(850, 200)",
                     text = "D",
                     visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
                     mouse = {
                         click = {
                             command =
                             "$num(path{editRoute/points/[#]:index}:init{0}:format{route-move-pos-forward %0.f})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
                         }
                     },
                     replicate = {
@@ -935,39 +923,24 @@ local layout = {
                 },
 
                 {
-                    comment = "Remove position from route",
                     type = "text",
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(900, 160)",
+                    pos1 = "(900, 200)",
                     text = "R",
                     visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
                     mouse = {
                         click = {
                             command = "$num(path{editRoute/points/[#]:index}:init{0}:format{route-delete-pos %0.f})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
                         }
                     },
                     replicate = {
                         y_count = 10,
                         y_step = 30
-                    }
-                },
-
-                {
-                    type = "text",
-                    layer = 1,
-                    style = "routeEditTableData",
-                    font = "play24",
-                    text = "<",
-                    pos1 = "(530,563)",
-                    mouse = {
-                        click = {
-                            command = "#re-prev-point-page"
-                        },
-                        inside = {
-                            set_style = "routeEditHover"
-                        }
                     }
                 },
 
@@ -993,27 +966,59 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableDataCentered",
-                    pos1 = "(550,563)",
+                    pos1 = "(560,563)",
                     text = "$num(path{editRoute:currentPage}:init{1}:format{%0.0f})",
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableDataRight",
+                    font = "play24",
+                    text = ">",
+                    pos1 = "(590,563)",
+                    mouse = {
+                        click = {
+                            command = "#re-next-point-page"
+                        },
+                        inside = {
+                            set_style = "routeEditHoverRight"
+                        }
+                    }
                 },
                 {
                     type = "text",
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    text = ">",
-                    pos1 = "(570,563)",
+                    pos1 = "(590, 540)",
+                    text = "Add current",
+                    visible = true,
                     mouse = {
                         click = {
-                            command = "#re-next-point-page"
+                            command = "route-add-current-pos"
                         },
                         inside = {
                             set_style = "routeEditHover"
                         }
                     }
                 },
-
-
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableData",
+                    font = "play24",
+                    pos1 = "(750, 540)",
+                    text = "Add + facing",
+                    visible = true,
+                    mouse = {
+                        click = {
+                            command = "route-add-current-pos -lockdir"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
                 {
                     type = "text",
                     layer = 1,
@@ -1035,66 +1040,38 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(730,563)",
+                    pos1 = "(760,563)",
                     text = "Save",
                     mouse = {
                         click = {
                             command = "route-save"
-                        }
-                    }
-                },
-
-
-
-
-
-
-
-
-                --[[
-
-
-
-
-
-
-
-
-                {
-                    comment = "Add current pos with lock",
-                    type = "text",
-                    layer = 1,
-                    style = "editRouteTableRow",
-                    font = "editRouteTableRow",
-                    pos1 = "(522, 590)",
-                    text = "{Add curr with lock}",
-                    visible = true,
-                    mouse = {
-                        click = {
-                            command = "route-add-current-pos -lockdir"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
                         }
                     }
                 },
                 {
                     type = "text",
                     layer = 1,
-                    pos1 = "(960,585)",
-                    text = "Routes",
-                    style = "play14",
-                    font = "play14",
+                    font = "play24",
+                    style = "routeEditTableDataRight",
+                    pos1 = "(960,563)",
+                    text = "Exit",
                     mouse = {
                         click = {
                             command = "activatepage{routeSelection}"
+                        },
+                        inside = {
+                            set_style = "routeEditHoverRight"
                         }
                     }
                 }
-                ]]
             }
         },
         details = {
             components = {
                 {
-                    comment = "background",
                     type = "box",
                     layer = 1,
                     style = "bkgDark",

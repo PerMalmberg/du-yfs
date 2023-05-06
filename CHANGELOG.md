@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.0.26 - 2013-05-xx
+
+### Added
+* New on-screen editor for routes, making it much easier to add/remove/reorder points in a route.
+
+### Change
+* Change to a black/white/blue color scheme for the screen for increased readablilty.
+
 ## 0.0.25 - 2023-04-28
 * Added variant for Y-Lift M3 0T XS Beetle v1.0
 
