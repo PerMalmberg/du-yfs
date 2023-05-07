@@ -36,6 +36,7 @@ local max                           = math.max
 local MAX_INT                       = math.maxinteger
 
 local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
+local brakeDegradeSpeed             = calc.Kph2Mps(360)
 
 local airfoil                       = "airfoil"
 local thrustTag                     = "thrust"
@@ -349,7 +350,6 @@ function FlightFSM.New(settings, routeController)
         end
 
         -- Ensure that we have a speed at which we can come to a stop with 10% of the brake force when we hit 360km/h, which is the speed at which brakes start to degrade down to 10% at 36km/h.
-        local brakeDegradeSpeed = calc.Kph2Mps(360)
         if inAtmo and not willLeaveAtmo and waypoint.FinalSpeed() <= brakeDegradeSpeed then
             local tenPercent = brakes.MaxSeenGravityInfluencedAvailableAtmoDeceleration() * 0.1
             if tenPercent > 0 then
@@ -409,11 +409,14 @@ function FlightFSM.New(settings, routeController)
 
         if waypoint.FinalSpeed() == 0 then
             targetSpeed = linearApproach(targetSpeed, remainingDistance)
+            local alignment = (waypoint.Destination() - previousWaypoint.Destination()):Normalize():Dot(universe
+                .VerticalReferenceVector())
+            local approachingVertically = abs(alignment) > AngleToDot(5) -- Both up up and down
 
             -- When approching the final parking position vertically, move extra slow so that there is enough time to adjust sideways.
             if waypoint.LastInRoute()
                 and outsideAdjustmentMargin(waypoint)
-                and (waypoint.Destination() - previousWaypoint.Destination()):Normalize():Dot(universe.VerticalReferenceVector()) > AngleToDot(5) -- within this angle
+                and approachingVertically -- within this angle
                 and remainingDistance < 400 then
                 targetSpeed = evaluateNewLimit(targetSpeed, targetSpeed * 0.5, "Adj. apr.")
             end
