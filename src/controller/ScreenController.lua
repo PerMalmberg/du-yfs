@@ -30,7 +30,7 @@ function ScreenController.New(flightCore, settings)
     local rc = flightCore.GetRouteController()
     local dataToScreen = ValueTree.New()
     local routePage = 1
-    local routesPerPage = 5
+    local routesPerPage = 6
 
     local waypointPage = 1
     local waypointsPerPage = 10
@@ -38,6 +38,7 @@ function ScreenController.New(flightCore, settings)
     local stream ---@type Stream -- forward declared
 
     local routeEditorPrefix = "#re-"
+    local routeSelectionPrefix = "#rsel-"
 
     local editRouteIndex = 1
     local editRoutePointsPerPage = 10
@@ -55,6 +56,9 @@ function ScreenController.New(flightCore, settings)
             if su.StartsWith(command, routeEditorPrefix) then
                 command = su.RemovePrefix(command, routeEditorPrefix)
                 s.runRouteEditorCommand(command)
+            elseif su.StartsWith(command, routeSelectionPrefix) then
+                command = su.RemovePrefix(command, routeSelectionPrefix)
+                s.runRouteSelectionCommand(command)
             else
                 commandLine.Exec(command)
             end
@@ -88,18 +92,30 @@ function ScreenController.New(flightCore, settings)
         s.updateEditRouteData()
     end
 
-    local function sendRoutes()
-        local route = {}
+    function s.runRouteSelectionCommand(cmd)
+        if cmd == "next-route-page" then
+            routePage = min(routePage + 1, rc.GetPageCount(routesPerPage))
+        elseif cmd == "prev-route-page" then
+            routePage = max(1, routePage - 1)
+        end
+        s.sendRoutes()
+    end
+
+    function s.sendRoutes()
+        local routeSelection = {
+            routePage = routePage,
+            routes = {}
+        }
         for i, r in ipairs(rc.GetRoutePage(routePage, routesPerPage)) do
-            route[tostring(i)] = { visible = true, name = r }
+            routeSelection.routes[tostring(i)] = { visible = true, name = r }
         end
 
         -- Ensure to hide the rest if routes have been removed.
-        for i = TableLen(route) + 1, routesPerPage, 1 do
-            route[tostring(i)] = { visible = false, name = "" }
+        for i = TableLen(routeSelection.routes) + 1, routesPerPage, 1 do
+            routeSelection.routes[tostring(i)] = { visible = false, name = "" }
         end
 
-        dataToScreen.Set("route", route)
+        dataToScreen.Set("routeSelection", routeSelection)
     end
 
     function s.updateEditRouteData()
@@ -178,7 +194,7 @@ function ScreenController.New(flightCore, settings)
         elseif not layoutSent then
             stream.Write({ screen_layout = layout })
             stream.Write({ activate_page = "routeSelection" })
-            sendRoutes()
+            s.sendRoutes()
             layoutSent = true
         end
     end
@@ -188,7 +204,6 @@ function ScreenController.New(flightCore, settings)
 
         if not screen then return end
         log:Info("Screen found")
-        screen.activate()
 
         local routeTimer = Stopwatch.New()
         routeTimer.Start()
@@ -247,12 +262,13 @@ function ScreenController.New(flightCore, settings)
         stream = Stream.New(screen, s.dataReceived, 1, onTimeout)
 
         while screen do
+            screen.activate()
             coroutine.yield()
             stream.Tick()
 
             if not stream.WaitingToSend() then
                 if not routeTimer.IsRunning() or routeTimer.Elapsed() > 2 then
-                    sendRoutes()
+                    s.sendRoutes()
                     s.updateEditRouteData()
                     routeTimer.Restart()
                 end

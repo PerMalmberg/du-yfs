@@ -6,9 +6,12 @@ All notable changes to this project will be documented in this file. The version
 
 ### Added
 * New on-screen editor for routes, making it much easier to add/remove/reorder points in a route.
+* Pagination on route selection page
+* Up to six routes now shown on route selection page.
 
 ### Change
 * Change to a black/white/blue color scheme for the screen for increased readablilty.
+* Route-buttons now show "Start/End" instead of "Beginning/End"
 
 ## 0.0.25 - 2023-04-28
 * Added variant for Y-Lift M3 0T XS Beetle v1.0

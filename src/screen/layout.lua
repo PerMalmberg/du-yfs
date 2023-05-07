@@ -74,12 +74,12 @@ local layout = {
             }
         },
         routeEndpointText = {
-            fill = "#ffffffff",
-            align = "h1,v2"
+            fill = "#000000ff",
+            align = "h1,v3"
         },
         routeName = {
             fill = "#ffffffff",
-            align = "h1,v2"
+            align = "h1,v3"
         },
         dataText = {
             fill = "#ffffffff",
@@ -403,7 +403,7 @@ local layout = {
                 {
                     type = "box",
                     layer = 1,
-                    visible = "$bool(path{route/[#]:visible}:init{false})",
+                    visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
                     pos1 = "(40,280)",
                     pos2 = "(160,320)",
                     style = "routeButton",
@@ -412,56 +412,56 @@ local layout = {
                             set_style = "routeButtonHover"
                         },
                         click = {
-                            command = "$str(path{route/[#]:name}:init{}:format{route-activate '%s'})"
+                            command = "$str(path{routeSelection/routes/[#]:name}:init{}:format{route-activate '%s'})"
                         }
                     },
                     replicate = {
-                        x_count = 5,
+                        x_count = 6,
                         x_step = 160
                     }
                 },
                 {
                     type = "box",
                     layer = 1,
-                    visible = "$bool(path{route/[#]:visible}:init{false})",
+                    visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
                     pos1 = "(40,300)",
                     pos2 = "(60,320)",
                     style = "routeCover",
                     replicate = {
-                        x_count = 5,
+                        x_count = 6,
                         x_step = 160
                     }
                 },
                 {
                     type = "box",
                     layer = 1,
-                    visible = "$bool(path{route/[#]:visible}:init{false})",
+                    visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
                     pos1 = "(140,300)",
                     pos2 = "(160,320)",
                     style = "routeCover",
                     replicate = {
-                        x_count = 5,
+                        x_count = 6,
                         x_step = 160
                     }
                 },
                 {
                     type = "text",
                     layer = 1,
-                    visible = "$bool(path{route/[#]:visible}:init{false})",
+                    visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
                     pos1 = "(100,300)",
                     text = "End",
                     style = "routeEndpointText",
                     font = "play14",
                     hitable = false,
                     replicate = {
-                        x_count = 5,
+                        x_count = 6,
                         x_step = 160
                     }
                 },
                 {
                     type = "box",
                     layer = 1,
-                    visible = "$bool(path{route/[#]:visible}:init{false})",
+                    visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
                     pos1 = "(40,380)",
                     pos2 = "(160,420)",
                     style = "routeButton",
@@ -470,11 +470,12 @@ local layout = {
                             set_style = "routeButtonHover"
                         },
                         click = {
-                            command = "$str(path{route/[#]:name}:init{}:format{route-activate '%s' -index 1})"
+                            command =
+                            "$str(path{routeSelection/routes/[#]:name}:init{}:format{route-activate '%s' -index 1})"
                         }
                     },
                     replicate = {
-                        x_count = 5,
+                        x_count = 6,
                         x_step = 160
                     }
                 },
@@ -482,50 +483,50 @@ local layout = {
                     type = "text",
                     layer = 1,
                     pos1 = "(100, 350)",
-                    visible = "$bool(path{route/[#]:visible}:init{false})",
+                    visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
                     style = "routeName",
                     font = "play24",
-                    text = "$str(path{route/[#]:name}:init{route name})",
+                    text = "$str(path{routeSelection/routes/[#]:name}:init{route name})",
                     replicate = {
-                        x_count = 5,
+                        x_count = 6,
                         x_step = 160
                     }
                 },
                 {
                     type = "box",
                     layer = 1,
-                    visible = "$bool(path{route/[#]:visible}:init{false})",
+                    visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
                     pos1 = "(40,380)",
                     pos2 = "(60,400)",
                     style = "routeCover",
                     replicate = {
-                        x_count = 5,
+                        x_count = 6,
                         x_step = 160
                     }
                 },
                 {
                     type = "box",
                     layer = 1,
-                    visible = "$bool(path{route/[#]:visible}:init{false})",
+                    visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
                     pos1 = "(140,380)",
                     pos2 = "(160,400)",
                     style = "routeCover",
                     replicate = {
-                        x_count = 5,
+                        x_count = 6,
                         x_step = 160
                     }
                 },
                 {
                     type = "text",
                     layer = 1,
-                    visible = "$bool(path{route/[#]:visible}:init{false})",
+                    visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
                     pos1 = "(100,400)",
-                    text = "Beginning",
+                    text = "Start",
                     style = "routeEndpointText",
                     font = "play14",
                     hitable = false,
                     replicate = {
-                        x_count = 5,
+                        x_count = 6,
                         x_step = 160
                     }
                 },
@@ -542,6 +543,49 @@ local layout = {
                         }
                     }
                 },
+
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableData",
+                    pos1 = "(20,560)",
+                    text = "<",
+                    mouse = {
+                        click = {
+                            command = "#rsel-prev-route-page"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableDataCentered",
+                    pos1 = "(50,560)",
+                    text = "$num(path{route:routePage}:init{1}:format{%0.0f})",
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableDataRight",
+                    pos1 = "(80,560)",
+                    text = ">",
+                    mouse = {
+                        click = {
+                            command = "#rsel-next-route-page"
+                        },
+                        inside = {
+                            set_style = "routeEditHoverRight"
+                        }
+                    }
+                },
+
+
                 {
                     type = "text",
                     layer = 1,
