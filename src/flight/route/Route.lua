@@ -5,6 +5,7 @@
 ]]
 --
 local vehicle    = require("abstraction/Vehicle"):New()
+local Current    = vehicle.position.Current
 local calc       = require("util/Calc")
 local log        = require("debug/Log")()
 local universe   = require("universe/Universe").Instance()
@@ -47,6 +48,11 @@ function Route.New()
     local points = {} ---@type Point[]
     local nextPointIx = 1
 
+    ---@param ix number
+    ---@return Vec3
+    local function coordsFromPoint(ix)
+        return universe.ParsePosition(points[ix]:Pos()):Coordinates()
+    end
     ---Returns all the points in the route
     ---@return Point[]
     function s.Points()
@@ -138,19 +144,18 @@ function Route.New()
         local endIx = 2
 
         local closest = math.maxinteger
-        local prev = universe.ParsePosition(points[1]:Pos())
+        local prev = coordsFromPoint(1)
 
         for i = 2, #points, 1 do
-            local next = universe.ParsePosition(points[i]:Pos())
+            local next = coordsFromPoint(i)
 
             if not prev or not next then
                 return 1, 2
             end
 
-            local dist = (coordinate - calc.NearestOnLineBetweenPoints(prev.Coordinates(),
-                next.Coordinates(), coordinate)):Len()
+            local dist = (coordinate - calc.NearestOnLineBetweenPoints(prev, next, coordinate)):Len()
 
-            -- Find the first closest leg. Any later ones are ignored.
+            -- Find the first closest leg. If a leg at the same distance is found, it will be ignored.
             if dist < closest then
                 closest = dist
                 startIx = i - 1
@@ -181,24 +186,44 @@ function Route.New()
     ---@param startPos Vec3
     ---@param targetIndex number
     function s.AdjustRouteBasedOnTarget(startPos, targetIndex)
-        if targetIndex == 0 then
-            targetIndex = #points
-        end
+        -- Determine if we are before or after the target point
+        local closestLeft, closestRight = s.FindClosestLeg(startPos)
+        local leftPos = coordsFromPoint(closestLeft)
+        local rightPos = coordsFromPoint(closestRight)
+        local midPoint = calc.NearestOnLineBetweenPoints(leftPos, rightPos, startPos)
 
-        -- First find the closest leg indexes
-        local startLegStart, startLegEnd = s.FindClosestLeg(startPos)
-        local target = universe.ParsePosition(points[targetIndex]:Pos()).Coordinates()
-        local targetLegStart, targetLegEnd = s.FindClosestLeg(target)
-
-        print("Start:  " .. startLegStart .. " " .. startLegEnd)
-        print("Target: " .. targetLegStart .. " " .. targetLegEnd)
-
-        if startLegStart <= targetLegStart then
-            -- Overlapping or target is later in route
-            keep(startLegStart, targetIndex)
+        if closestRight < targetIndex then
+            -- Before
+            keep(closestLeft, targetIndex)
+            -- Adjust first pos
+            if (midPoint - startPos):Len() < (leftPos - startPos):Len() then
+                points[1] = Point.New(universe.CreatePos(midPoint):AsPosString())
+            end
+        elseif closestRight == targetIndex then
+            -- Same leg, before
+            keep(closestLeft, targetIndex)
+            -- Just replace first with midPoint, unless it is the same as the final one
+            if midPoint == rightPos then
+                table.remove(points, 1)
+            else
+                points[1] = Point.New(universe.CreatePos(midPoint):AsPosString())
+            end
+        elseif closestLeft == targetIndex then
+            -- Same leg, after
+            keep(targetIndex, closestRight)
+            -- Just replace last with midPoint, unless it is the same as the final one
+            if midPoint == leftPos then
+                table.remove(points, #points)
+            else
+                points[#points] = Point.New(universe.CreatePos(midPoint):AsPosString())
+            end
+            s.Reverse()
         else
-            -- Current pos is later in route than the target.
-            keep(targetIndex, startLegEnd)
+            -- After
+            keep(targetIndex, closestRight)
+            if (midPoint - startPos):Len() < (rightPos - startPos):Len() then
+                points[#points] = Point.New(universe.CreatePos(midPoint):AsPosString())
+            end
             s.Reverse()
         end
     end
@@ -247,7 +272,7 @@ function Route.New()
 
         -- Add distance to next point in route
         local ix = calc.Ternary(s.LastPointReached(), -1, 0)
-        local next = universe.ParsePosition(points[nextPointIx + ix].Pos()).Coordinates()
+        local next = coordsFromPoint(nextPointIx + ix)
         total = total + (fromPos - next):Len()
 
         return { Legs = #points - nextPointIx, TotalDistance = total }

@@ -158,7 +158,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
                     log:Info("Flight started")
                 end
             end).AsString().Mandatory()
-            .Option("index").AsNumber().Default(0)
+            .Option("index").AsNumber()
 
         local addCurrentToRoute = cmd.Accept("route-add-current-pos",
             ---@param data PointOptionArguments

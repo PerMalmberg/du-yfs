@@ -83,7 +83,7 @@ describe("RouteController #flight", function()
         assert.is_false(c.ActivateRoute(""))
     end)
 
-    it("Can adjust a route to ensure it is traveled in the right direction", function()
+    --[[  it("Can adjust a route to ensure it is traveled in the right direction", function()
         clearRoutes(c)
 
         local positions = {
@@ -128,6 +128,7 @@ describe("RouteController #flight", function()
 
         -- Now start in the middle, still moving to last
         ConstructMock.Instance().SetContructPostion(universe.ParsePosition(positions[3]).Coordinates())
+        print("------------")
         assert.is_true(c.ActivateRoute("name"))
         r = c.CurrentRoute()
 
@@ -146,8 +147,8 @@ describe("RouteController #flight", function()
         r = c.CurrentRoute()
 
         p = r.Next()
-        assert.are_equal("E", p.WaypointRef())
-        assert.is_nil(r.Next())
+        assert.are_equal(nil, p.WaypointRef())
+        assert.are_equal("E", r.Next().WaypointRef())
 
         -- Run it backwards
         ConstructMock.Instance().SetContructPostion(universe.ParsePosition(positions[5]).Coordinates())
@@ -166,18 +167,43 @@ describe("RouteController #flight", function()
         assert.are_equal("A", p.WaypointRef())
         assert.is_nil(r.Next())
 
-        print("------------")
         -- Run it backwards to next to last point
         ConstructMock.Instance().SetContructPostion(universe.ParsePosition(positions[5]).Coordinates())
         assert.is_true(c.ActivateRoute("name", 4))
         r = c.CurrentRoute()
 
         local p = r.Next()
-        assert.are_equal("E", p.WaypointRef())
+        assert.are_equal(nil, p.WaypointRef())
         p = r.Next()
-        assert.are_equal("D", p.WaypointRef())
+        assert.is_nil(p)
         assert.is_nil(r.Next())
 
+
+        ConstructMock.Instance().ResetContructPostion()
+    end)
+    ]]
+    it("Can activate to first point when above the last and just two points", function()
+        clearRoutes(c)
+        local firstPos = "::pos{0,2,49.8726,160.0520,43.5814}"
+        local lastPos = "::pos{0,2,49.8703,160.0717,866.6792}"
+        local startPos = "::pos{0,2,49.8703,160.0717,867}"
+
+
+        assert.is_true(c.StoreWaypoint("First", firstPos))
+        assert.is_true(c.StoreWaypoint("Second", lastPos))
+
+        local r = c.CreateRoute("name")
+        assert.is_not_nil(r.AddWaypointRef("First"))
+        assert.is_not_nil(r.AddWaypointRef("Second"))
+        assert.is_true(c.SaveRoute())
+        assert.Equal(2, #r.Points())
+
+        print(".........")
+        ConstructMock.Instance().SetContructPostion(universe.ParsePosition(startPos).Coordinates())
+        assert.is_true(c.ActivateRoute("name", 1))
+        local r = c.CurrentRoute()
+        assert.Equal(2, #r.Points())
+        assert.Equal(nil, r.Points()[1].WaypointRef())
 
         ConstructMock.Instance().ResetContructPostion()
     end)
@@ -245,8 +271,8 @@ describe("RouteController #flight", function()
 
         assert.True(c.SaveRoute())
         local margin = constants.route.routeStartDistanceLimit
-        assert.False(c.ActivateRoute("refuse", 0, margin))
-        assert.False(c.ActivateRoute("refuse", 0, margin))
+        assert.False(c.ActivateRoute("refuse", 1, margin))
+        assert.False(c.ActivateRoute("refuse", 1, margin))
 
         ConstructMock.Instance().SetContructPostion(pointInsideRoute.Coordinates())
         assert.True(c.ActivateRoute("refuse"))

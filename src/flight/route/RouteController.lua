@@ -348,8 +348,8 @@ function RouteController.Instance(bufferedDB)
             log:Info("Route loaded: ", name)
         end
 
-        if destinationWayPointIndex < 0 or destinationWayPointIndex > #route.Points() then
-            log:Error("Destination index must be >= 1 and <= ", #route.Points())
+        if destinationWayPointIndex < 1 or destinationWayPointIndex > #route.Points() then
+            log:Error("Destination index must be >= 1 and <= ", #route.Points(), " it was: ", destinationWayPointIndex)
             return nil
         end
 
@@ -363,7 +363,7 @@ function RouteController.Instance(bufferedDB)
     ---@return boolean
     function s.ActivateRoute(name, destinationWayPointIndex, startMargin)
         startMargin = startMargin or 0
-        local route = s.doBasicCheckesOnActivation(name, destinationWayPointIndex or 0)
+        local route = s.doBasicCheckesOnActivation(name, destinationWayPointIndex or 1)
 
         if route == nil then
             return false
@@ -372,77 +372,20 @@ function RouteController.Instance(bufferedDB)
         destinationWayPointIndex = destinationWayPointIndex or #route.Points()
         route.AdjustRouteBasedOnTarget(Current(), destinationWayPointIndex)
 
-
         -- Find closest point within the route, or the first point, in the order the route is loaded
         local points = route.Points()
         local currentPos = Current()
 
-        local firstIx = 1
-        local nextIx = firstIx + 1
-
-        -- Start with the distance to the first point
-        local f = universe.ParsePosition(points[firstIx].Pos())
-
-        if not f then
+        -- Check we're close enough to the closest point, which is now the first one in the route.
+        local firstPos = universe.ParsePosition(points[1].Pos())
+        if not firstPos then
             log:Error("Route contains an invalid position string")
             return false
         end
 
-        local distance = (f.Coordinates() - currentPos):Len()
-
-        local closestIx = 0
-        local nearestOnRoute ---@type Vec3|nil
-
-        while nextIx <= #points do
-            f = universe.ParsePosition(points[firstIx].Pos())
-            local n = universe.ParsePosition(points[nextIx].Pos())
-
-            if not (f and n) then
-                log:Error("Route contains an invalid position string")
-                return false
-            end
-
-            local onRoute = calc.NearestOnLineBetweenPoints(f.Coordinates(), n.Coordinates(), currentPos)
-            local distanceToPoint = (onRoute - currentPos):Len()
-
-            if distanceToPoint < distance then
-                closestIx = firstIx
-                distance = distanceToPoint
-                nearestOnRoute = onRoute
-            end
-
-            firstIx = nextIx
-            nextIx = nextIx + 1
-        end
-
-        if nearestOnRoute then
-            -- This might be the same as the end point of the first leg. If so, just remove the first point.
-            if nearestOnRoute == universe.ParsePosition(points[2]:Pos()).Coordinates() then
-                table.remove(points, 1)
-            else
-                log:Info("Found a point in the route that is closer than the first point, adjusting route.")
-                -- The closest point is somewhere on the route so remove points before.
-                for i = 1, closestIx, 1 do
-                    table.remove(points, 1)
-                end
-
-                local nextOpt = points[1].Options()
-                -- Add a new point at the nearest point, with the same lock direction as the next point
-                -- so we move with that direction to this point.
-                local p = Point.New(universe.CreatePos(nearestOnRoute).AsPosString())
-                local newOpts = p.Options()
-                newOpts.Set(PointOptions.LOCK_DIRECTION, nextOpt.Get(PointOptions.LOCK_DIRECTION))
-                -- Set a wider margin on this point to avoid most instances of getting stuck on the first point, wanting to move sideways before taking off.
-                newOpts.Set(PointOptions.MARGIN, 0.5)
-                table.insert(points, 1, p)
-            end
-        end
-
-        -- Check we're close enough to the closest point, which is now the first one in the route.
-        local firstPos = universe.ParsePosition(points[1].Pos())
         if not firstPos then return false end
 
-        distance = (firstPos.Coordinates() - currentPos):Len()
+        local distance = (firstPos.Coordinates() - currentPos):Len()
         if startMargin > 0 and distance > startMargin then
             log:Error(string.format(
                 "Currently %0.2fm from closest point in route. Please move within %0.2fm of %s and try again."
