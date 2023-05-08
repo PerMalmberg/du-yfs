@@ -31,12 +31,15 @@ local layout = {
         icon = {
             fill = "#ffffffff",
         },
-        headerText = {
+        iconImage = {
             fill = "#ffffffff",
+        },
+        headerText = {
+            fill = "#080808ff",
             align = "h0,v3"
         },
         headerTextRight = {
-            fill = "#ffffffff",
+            fill = "#080808ff",
             align = "h2,v3"
         },
         info = {
@@ -120,7 +123,7 @@ local layout = {
         },
         editRouteRouteName = {
             fill = "#ffffffff",
-            align = "h0,v1"
+            align = "h0,v3"
         },
         split = {
             stroke = {
@@ -810,12 +813,12 @@ local layout = {
                     }
                 },
                 {
-                    type = "text",
-                    layer = 1,
-                    font = "play24",
-                    style = "routeEditTableData",
-                    pos1 = "(600,100)",
-                    text = "Edit",
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(600,80)",
+                    dimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/e1ed3d54-c586-40cd-8635-d9dce928b3ea.png",
                     mouse = {
                         click = {
                             command = "$str(path{editRoute:selectRouteName}:format{route-edit '%s'}:init{})"
@@ -830,14 +833,46 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(670,100)",
+                    pos1 = "(630,100)",
+                    text = "Edit",
+                    mouse = {
+                        click = {
+                            command = "$str(path{editRoute:selectRouteName}:format{route-edit '%s'}:init{})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(720,80)",
+                    dimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/516e884b-8dba-4052-a3d2-c37e468b8819.png",
+                    mouse = {
+                        click = {
+                            command = "$str(path{editRoute:selectRouteName}:format{route-delete '%s'}:init{})"
+                        },
+                        inside = {
+                            set_style = "routeEditHoverRed"
+                        }
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableData",
+                    pos1 = "(750,100)",
                     text = "Delete",
                     mouse = {
                         click = {
                             command = "$str(path{editRoute:selectRouteName}:format{route-delete '%s'}:init{})"
                         },
                         inside = {
-                            set_style = "routeEditHover"
+                            set_style = "routeEditHoverRed"
                         }
                     }
                 },
