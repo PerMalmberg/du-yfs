@@ -35,11 +35,11 @@ local layout = {
             fill = "#ffffffff",
         },
         headerText = {
-            fill = "#080808ff",
+            fill = "#555555ff",
             align = "h0,v3"
         },
         headerTextRight = {
-            fill = "#080808ff",
+            fill = "#555555ff",
             align = "h2,v3"
         },
         info = {
@@ -94,7 +94,7 @@ local layout = {
         },
         ---- Route editor -----
         routeEditTableHeader = {
-            fill = "#181818ff",
+            fill = "#888888ff",
             align = "h0, v3"
         },
         routeEditTableData = {
@@ -815,10 +815,12 @@ local layout = {
                 {
                     type = "image",
                     layer = 2,
-                    pos1 = "(600,80)",
+                    pos1 = "(600,84)",
                     dimensions = "(20,20)",
+                    sub = "(0,21)",
+                    subDimensions = "(20,20)",
                     style = "iconImage",
-                    url = "assets.prod.novaquark.com/94617/e1ed3d54-c586-40cd-8635-d9dce928b3ea.png",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
                     mouse = {
                         click = {
                             command = "$str(path{editRoute:selectRouteName}:format{route-edit '%s'}:init{})"
@@ -833,7 +835,7 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(630,100)",
+                    pos1 = "(625,100)",
                     text = "Edit",
                     mouse = {
                         click = {
@@ -847,10 +849,12 @@ local layout = {
                 {
                     type = "image",
                     layer = 2,
-                    pos1 = "(720,80)",
+                    pos1 = "(725,84)",
                     dimensions = "(20,20)",
+                    sub = "(0,161)",
+                    subDimensions = "(20,20)",
                     style = "iconImage",
-                    url = "assets.prod.novaquark.com/94617/516e884b-8dba-4052-a3d2-c37e468b8819.png",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
                     mouse = {
                         click = {
                             command = "$str(path{editRoute:selectRouteName}:format{route-delete '%s'}:init{})"
@@ -1061,6 +1065,24 @@ local layout = {
                         },
                         inside = {
                             set_style = "routeEditHoverRight"
+                        }
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(565,524)",
+                    dimensions = "(20,20)",
+                    sub = "(0,1060)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    mouse = {
+                        click = {
+                            command = "route-add-current-pos"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
                         }
                     }
                 },
