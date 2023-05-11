@@ -20,7 +20,7 @@ require("util/Table")
 ---@field Points fun():Point[]
 ---@field AddPos fun(positionString:string):Point
 ---@field AddCoordinate fun(coord:Vec3):Point
----@field AddWaypointRef fun(namedWaypoint:string):Point|nil
+---@field AddWaypointRef fun(namedWaypoint:string, pos?:string):Point|nil
 ---@field AddCurrentPos fun():Point
 ---@field AddPoint fun(sp:Point)
 ---@field Clear fun()
@@ -82,12 +82,13 @@ function Route.New()
 
     ---Adds a named waypoint to the route
     ---@param name string
+    ---@param pos? string The ::pos{} string. This parameter is mainly used when editing routes to make the position available for the UI.
     ---@return Point|nil
-    function s.AddWaypointRef(name)
+    function s.AddWaypointRef(name, pos)
         if name == nil or #name == 0 then
             return nil
         end
-        return s.AddPoint(Point.New("", name))
+        return s.AddPoint(Point.New(pos or "", name))
     end
 
     ---Adds the current postion to the route

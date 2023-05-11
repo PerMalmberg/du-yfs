@@ -187,7 +187,7 @@ function ControlCommands.New(input, cmd, flightCore, settings)
                     if route == nil then
                         log:Error("No route open for edit")
                     else
-                        local p = route.AddWaypointRef(data.commandValue)
+                        local p = route.AddWaypointRef(data.commandValue, ref.Pos())
                         if p then
                             p.SetOptions(createOptions(data))
                             log:Info("Added position to route")
