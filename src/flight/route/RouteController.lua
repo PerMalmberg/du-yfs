@@ -171,6 +171,11 @@ function RouteController.Instance(bufferedDB)
     ---@param name string The name of the route to load
     ---@return Route|nil
     function s.EditRoute(name)
+        if edit ~= nil then
+            log:Error("A route is already being edited.")
+            return nil
+        end
+
         edit = s.loadRoute(name)
 
         if edit == nil then return end

@@ -576,7 +576,7 @@ local layout = {
                     url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
                     mouse = {
                         click = {
-                            command = "activatepage{routeSelection}"
+                            command = "activatepage{routeEdit}"
                         },
                         inside = {
                             set_style = "routeEditHover"
