@@ -657,7 +657,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(30,90)",
+                    pos1 = "(30,110)",
                     text = "Waypoint name"
                 },
                 {
@@ -665,7 +665,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(300,90)",
+                    pos1 = "(300,110)",
                     text = "Delete"
                 },
                 {
@@ -673,7 +673,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(370,90)",
+                    pos1 = "(370,110)",
                     text = "Insert"
                 },
                 {
@@ -681,7 +681,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(30, 120)",
+                    pos1 = "(30, 140)",
                     text = "$str(path{availableWaypoints/wayPoints/[#]:name}:init{})",
                     visible = "$bool(path{availableWaypoints/wayPoints/[#]:visible}:init{false})",
                     mouse = {
@@ -703,7 +703,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(300, 120)",
+                    pos1 = "(300, 140)",
                     text = "X",
                     visible = "$bool(path{availableWaypoints/wayPoints/[#]:visible}:init{false})",
                     mouse = {
@@ -724,7 +724,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(370, 120)",
+                    pos1 = "(370, 140)",
                     text = ">>",
                     visible = "$bool(path{availableWaypoints/wayPoints/[#]:visible}:init{false})",
                     mouse = {
@@ -741,8 +741,6 @@ local layout = {
                         y_step = 30
                     }
                 },
-
-
                 {
                     type = "text",
                     layer = 1,
@@ -846,7 +844,7 @@ local layout = {
                 {
                     type = "image",
                     layer = 2,
-                    pos1 = "(600,84)",
+                    pos1 = "(815,84)",
                     dimensions = "(20,20)",
                     sub = "(0,20)",
                     subDimensions = "(20,20)",
@@ -866,7 +864,7 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(625,100)",
+                    pos1 = "(840,100)",
                     text = "Edit",
                     mouse = {
                         click = {
@@ -880,7 +878,7 @@ local layout = {
                 {
                     type = "image",
                     layer = 2,
-                    pos1 = "(725,84)",
+                    pos1 = "(895,84)",
                     dimensions = "(20,20)",
                     sub = "(0,120)",
                     subDimensions = "(20,20)",
@@ -900,7 +898,7 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(750,100)",
+                    pos1 = "(920,100)",
                     text = "Delete",
                     mouse = {
                         click = {
@@ -911,16 +909,6 @@ local layout = {
                         }
                     }
                 },
-
-                {
-                    type = "text",
-                    layer = 1,
-                    font = "play24",
-                    style = "routeEditTableData",
-                    pos1 = "(530,130)",
-                    text = "$str(path{editRoute:name}:init{-}:format{Editing: %s})"
-                },
-
 
                 ----- Waypoints in route -----
                 {
