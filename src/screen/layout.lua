@@ -44,11 +44,11 @@ local layout = {
         },
         info = {
             fill = "#ffffffff",
-            align = "h2,v1"
+            align = "h2,v3"
         },
         units = {
             fill = "#ffffffff",
-            align = "h2,v1"
+            align = "h2,v3"
         },
         fuelBack = {
             fill = "#111111ff"
@@ -83,14 +83,6 @@ local layout = {
         routeName = {
             fill = "#ffffffff",
             align = "h1,v3"
-        },
-        dataText = {
-            fill = "#ffffffff",
-            align = "h0,v1"
-        },
-        changePage = {
-            fill = "#ffffffff",
-            align = "h0,v1"
         },
         ---- Route editor -----
         routeEditTableHeader = {
@@ -181,7 +173,7 @@ local layout = {
                     type = "text",
                     layer = 1,
                     style = "info",
-                    pos1 = "(280,40)",
+                    pos1 = "(280,50)",
                     font = "play36",
                     text = "$num(path{mass:total}:init{0}:format{%0.2f}:interval{0.5})"
                 },
@@ -205,7 +197,7 @@ local layout = {
                     type = "text",
                     layer = 1,
                     style = "info",
-                    pos1 = "(460,40)",
+                    pos1 = "(460,50)",
                     font = "play36",
                     text = "$num(path{flightData:absSpeed}:init{0}:format{%0.2f}:interval{0.5})"
                 },
@@ -229,7 +221,7 @@ local layout = {
                     type = "text",
                     layer = 1,
                     style = "info",
-                    pos1 = "(640,40)",
+                    pos1 = "(640,50)",
                     font = "play36",
                     text = "$str(path{route/current:name}:init{-}:interval{0.5})"
                 },
@@ -269,7 +261,7 @@ local layout = {
                     type = "text",
                     layer = 1,
                     style = "info",
-                    pos1 = "(280,160)",
+                    pos1 = "(280,170)",
                     font = "play36",
                     text = "$num(path{finalWp:distance}:init{0}:format{%0.2f}:interval{0.5})"
                 },
@@ -293,7 +285,7 @@ local layout = {
                     type = "text",
                     layer = 1,
                     style = "info",
-                    pos1 = "(460,160)",
+                    pos1 = "(460,170)",
                     font = "play36",
                     text = "$num(path{nextWp:distance}:init{0}:format{%0.2f}:interval{0.5})"
                 },
@@ -317,7 +309,7 @@ local layout = {
                     type = "text",
                     layer = 1,
                     style = "info",
-                    pos1 = "(640,160)",
+                    pos1 = "(640,170)",
                     font = "play36",
                     text = "$str(path{deviation:distance}:init{}:interval{0.5})"
                 },
@@ -536,23 +528,9 @@ local layout = {
                 {
                     type = "text",
                     layer = 1,
-                    pos1 = "(930,585)",
-                    text = "Edit |",
-                    style = "changePage",
-                    font = "play14",
-                    mouse = {
-                        click = {
-                            command = "activatepage{routeEdit}"
-                        }
-                    }
-                },
-
-                {
-                    type = "text",
-                    layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(20,560)",
+                    pos1 = "(20,600)",
                     text = "<",
                     mouse = {
                         click = {
@@ -568,7 +546,7 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableDataCentered",
-                    pos1 = "(50,560)",
+                    pos1 = "(50,600)",
                     text = "$num(path{route:routePage}:init{1}:format{%0.0f})",
                 },
                 {
@@ -576,7 +554,7 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableDataRight",
-                    pos1 = "(80,560)",
+                    pos1 = "(80,600)",
                     text = ">",
                     mouse = {
                         click = {
@@ -587,18 +565,71 @@ local layout = {
                         }
                     }
                 },
-
-
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(800,580)",
+                    dimensions = "(20,20)",
+                    sub = "(0,460)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    mouse = {
+                        click = {
+                            command = "activatepage{routeSelection}"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
                 {
                     type = "text",
                     layer = 1,
-                    pos1 = "(970,585)",
-                    text = "Details",
-                    style = "changePage",
-                    font = "play14",
+                    pos1 = "(825,600)",
+                    text = "Edit",
+                    style = "routeEditTableData",
+                    font = "play24",
+                    mouse = {
+                        click = {
+                            command = "activatepage{routeEdit}"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(880,580)",
+                    dimensions = "(20,20)",
+                    sub = "(0,0)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
                     mouse = {
                         click = {
                             command = "activatepage{details}"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    pos1 = "(905,600)",
+                    text = "Details",
+                    style = "routeEditTableData",
+                    font = "play24",
+                    mouse = {
+                        click = {
+                            command = "activatepage{details}"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
                         }
                     }
                 }
@@ -817,7 +848,7 @@ local layout = {
                     layer = 2,
                     pos1 = "(600,84)",
                     dimensions = "(20,20)",
-                    sub = "(0,21)",
+                    sub = "(0,20)",
                     subDimensions = "(20,20)",
                     style = "iconImage",
                     url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
@@ -851,7 +882,7 @@ local layout = {
                     layer = 2,
                     pos1 = "(725,84)",
                     dimensions = "(20,20)",
-                    sub = "(0,161)",
+                    sub = "(0,120)",
                     subDimensions = "(20,20)",
                     style = "iconImage",
                     url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
@@ -960,14 +991,15 @@ local layout = {
                         y_step = 30
                     }
                 },
-
                 {
-                    type = "text",
-                    layer = 1,
-                    style = "routeEditTableData",
-                    font = "play24",
-                    pos1 = "(800, 200)",
-                    text = "U",
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(800,180)",
+                    dimensions = "(20,20)",
+                    sub = "(0,320)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
                     visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
                     mouse = {
                         click = {
@@ -983,12 +1015,14 @@ local layout = {
                     }
                 },
                 {
-                    type = "text",
-                    layer = 1,
-                    style = "routeEditTableData",
-                    font = "play24",
-                    pos1 = "(850, 200)",
-                    text = "D",
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(850,180)",
+                    dimensions = "(20,20)",
+                    sub = "(0,300)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
                     visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
                     mouse = {
                         click = {
@@ -1004,21 +1038,20 @@ local layout = {
                         y_step = 30
                     }
                 },
-
                 {
                     type = "text",
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
                     pos1 = "(900, 200)",
-                    text = "R",
+                    text = "<<",
                     visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
                     mouse = {
                         click = {
                             command = "$num(path{editRoute/points/[#]:index}:init{0}:format{route-delete-pos %0.f})"
                         },
                         inside = {
-                            set_style = "routeEditHover"
+                            set_style = "routeEditHoverRed"
                         }
                     },
                     replicate = {
@@ -1033,7 +1066,7 @@ local layout = {
                     style = "routeEditTableData",
                     font = "play24",
                     text = "<",
-                    pos1 = "(530,563)",
+                    pos1 = "(530,560)",
                     mouse = {
                         click = {
                             command = "#re-prev-point-page"
@@ -1049,7 +1082,7 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableDataCentered",
-                    pos1 = "(560,563)",
+                    pos1 = "(560,560)",
                     text = "$num(path{editRoute:currentPage}:init{1}:format{%0.0f})",
                 },
                 {
@@ -1058,7 +1091,7 @@ local layout = {
                     style = "routeEditTableDataRight",
                     font = "play24",
                     text = ">",
-                    pos1 = "(590,563)",
+                    pos1 = "(590,560)",
                     mouse = {
                         click = {
                             command = "#re-next-point-page"
@@ -1071,9 +1104,9 @@ local layout = {
                 {
                     type = "image",
                     layer = 2,
-                    pos1 = "(565,524)",
+                    pos1 = "(605,540)",
                     dimensions = "(20,20)",
-                    sub = "(0,1060)",
+                    sub = "(0,1040)",
                     subDimensions = "(20,20)",
                     style = "iconImage",
                     url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
@@ -1091,7 +1124,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(590, 540)",
+                    pos1 = "(630, 560)",
                     text = "Add current",
                     visible = true,
                     mouse = {
@@ -1104,11 +1137,29 @@ local layout = {
                     }
                 },
                 {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(765,540)",
+                    dimensions = "(20,20)",
+                    sub = "(0,1060)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    mouse = {
+                        click = {
+                            command = "route-add-current-pos -lockdir"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
                     type = "text",
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(750, 540)",
+                    pos1 = "(790, 560)",
                     text = "Add + facing",
                     visible = true,
                     mouse = {
@@ -1125,24 +1176,26 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(650,563)",
-                    text = "Discard",
+                    pos1 = "(630,600)",
+                    text = "X Discard",
                     mouse = {
                         click = {
                             command = "route-discard"
                         },
                         inside = {
-                            set_style = "routeEditHover"
+                            set_style = "routeEditHoverRed"
                         }
                     }
                 },
                 {
-                    type = "text",
-                    layer = 1,
-                    font = "play24",
-                    style = "routeEditTableData",
-                    pos1 = "(760,563)",
-                    text = "Save",
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(755,580)",
+                    dimensions = "(20,20)",
+                    sub = "(0,100)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
                     mouse = {
                         click = {
                             command = "route-save"
@@ -1156,15 +1209,49 @@ local layout = {
                     type = "text",
                     layer = 1,
                     font = "play24",
-                    style = "routeEditTableDataRight",
-                    pos1 = "(960,563)",
+                    style = "routeEditTableData",
+                    pos1 = "(780,600)",
+                    text = "Save",
+                    mouse = {
+                        click = {
+                            command = "route-save"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(935,580)",
+                    dimensions = "(20,20)",
+                    sub = "(0,480)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    mouse = {
+                        click = {
+                            command = "activatepage{routeSelection}"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableData",
+                    pos1 = "(960,600)",
                     text = "Exit",
                     mouse = {
                         click = {
                             command = "activatepage{routeSelection}"
                         },
                         inside = {
-                            set_style = "routeEditHoverRight"
+                            set_style = "routeEditHover"
                         }
                     }
                 }
@@ -1181,30 +1268,51 @@ local layout = {
                 },
                 {
                     type = "text",
-                    pos1 = "(10, 10)",
+                    pos1 = "(10, 25)",
                     text = "Version: GITINFO / DATEINFO",
                     layer = 1,
-                    font = "play18",
-                    style = "dataText"
+                    font = "play24",
+                    style = "routeEditTableData"
                 },
                 {
                     type = "text",
                     layer = 1,
-                    style = "dataText",
-                    font = "play18",
+                    style = "routeEditTableData",
+                    font = "play24",
                     text = "$str(path{:floor}:format{Floor detection: %s}:init{0})",
-                    pos1 = "(10,30)"
+                    pos1 = "(10,50)"
                 },
                 {
-                    type = "text",
-                    layer = 1,
-                    pos1 = "(960,590)",
-                    text = "Routes",
-                    style = "play14",
-                    font = "play14",
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(935,580)",
+                    dimensions = "(20,20)",
+                    sub = "(0,480)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
                     mouse = {
                         click = {
                             command = "activatepage{routeSelection}"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableData",
+                    pos1 = "(960,600)",
+                    text = "Exit",
+                    mouse = {
+                        click = {
+                            command = "activatepage{routeSelection}"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
                         }
                     }
                 }
