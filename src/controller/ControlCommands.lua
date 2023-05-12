@@ -93,6 +93,17 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             end).AsBoolean().Mandatory()
     end
 
+    ---Get the route being edited
+    ---@return Route|nil
+    local function getEditRoute()
+        local route = rc.CurrentEdit()
+        if route == nil then
+            log:Error("No route being edited")
+        end
+
+        return route
+    end
+
     function s.RegisterRouteCommands()
         cmd.Accept("route-list", function(data)
             local routes = rc.GetRouteNames()
@@ -132,9 +143,8 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             end).AsString().Mandatory()
 
         cmd.Accept("route-print", function(data)
-            local route = rc.CurrentEdit()
+            local route = getEditRoute()
             if route == nil then
-                log:Error("No route being edited")
                 return
             end
 
@@ -163,10 +173,8 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         local addCurrentToRoute = cmd.Accept("route-add-current-pos",
             ---@param data PointOptionArguments
             function(data)
-                local route = rc.CurrentEdit()
-
-                if not route then
-                    log:Error("No route open for edit")
+                local route = getEditRoute()
+                if route == nil then
                     return
                 end
 
@@ -183,17 +191,16 @@ function ControlCommands.New(input, cmd, flightCore, settings)
                 local ref = rc.LoadWaypoint(data.commandValue)
 
                 if ref then
-                    local route = rc.CurrentEdit()
+                    local route = getEditRoute()
                     if route == nil then
-                        log:Error("No route open for edit")
+                        return
+                    end
+                    local p = route.AddWaypointRef(data.commandValue, ref.Pos())
+                    if p then
+                        p.SetOptions(createOptions(data))
+                        log:Info("Added position to route")
                     else
-                        local p = route.AddWaypointRef(data.commandValue, ref.Pos())
-                        if p then
-                            p.SetOptions(createOptions(data))
-                            log:Info("Added position to route")
-                        else
-                            log:Error("Could not add postion")
-                        end
+                        log:Error("Could not add postion")
                     end
                 end
             end).AsString()
@@ -202,30 +209,28 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         cmd.Accept("route-delete-pos",
             ---@param data {commandValue:number}
             function(data)
-                local route = rc.CurrentEdit()
+                local route = getEditRoute()
                 if route == nil then
-                    log:Error("No route open for edit")
+                    return
+                end
+                if route.RemovePoint(data.commandValue) then
+                    log:Info("Point removed")
                 else
-                    if route.RemovePoint(data.commandValue) then
-                        log:Info("Point removed")
-                    else
-                        log:Error("Could not remove point")
-                    end
+                    log:Error("Could not remove point")
                 end
             end).AsNumber().Mandatory()
 
         ---@param from integer
         ---@param to integer
         local function movePoint(from, to)
-            local route = rc.CurrentEdit()
+            local route = getEditRoute()
             if route == nil then
-                log:Error("No route open for edit")
+                return
+            end
+            if route.MovePoint(from, to) then
+                log:Info("Point moved:", from, " -> ", to)
             else
-                if route.MovePoint(from, to) then
-                    log:Info("Point moved:", from, " -> ", to)
-                else
-                    log:Error("Could not move point")
-                end
+                log:Error("Could not move point")
             end
         end
 
@@ -254,31 +259,48 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         cmd.Accept("route-set-all-margins",
             ---@param data {commandValue:number}
             function(data)
-                local route = rc.CurrentEdit()
+                local route = getEditRoute()
                 if route == nil then
-                    log:Error("No route open for edit")
-                else
-                    for _, value in ipairs(route.Points()) do
-                        value.Options().Set(PointOptions.MARGIN, data.commandValue)
-                    end
-                    log:Info("Margins on all points in route set to ", data.commandValue)
+                    return
                 end
+                for _, value in ipairs(route.Points()) do
+                    value.Options().Set(PointOptions.MARGIN, data.commandValue)
+                end
+                log:Info("Margins on all points in route set to ", data.commandValue)
             end).AsNumber().Mandatory()
 
         cmd.Accept("route-set-all-max-speeds",
             ---@param data {commandValue:number}
             function(data)
-                local route = rc.CurrentEdit()
+                local route = getEditRoute()
                 if route == nil then
-                    log:Error("No route open for edit")
-                else
-                    local newSpeed = calc.Kph2Mps(data.commandValue)
-                    for _, value in ipairs(route.Points()) do
-                        value.Options().Set(PointOptions.MAX_SPEED, newSpeed)
-                    end
-                    log:Info("Max speeds on all points in route set to ", data.commandValue, "km/h")
+                    return
                 end
+                local newSpeed = calc.Kph2Mps(data.commandValue)
+                for _, value in ipairs(route.Points()) do
+                    value.Options().Set(PointOptions.MAX_SPEED, newSpeed)
+                end
+                log:Info("Max speeds on all points in route set to ", data.commandValue, "km/h")
             end).AsNumber().Mandatory()
+
+        local cmdPosSkippable = cmd.Accept("route-set-pos-option",
+            ---@param data {commandValue:number, skippable:boolean|nil, selectable:boolean|nil}
+            function(data)
+                local route = getEditRoute()
+                if route == nil then
+                    return
+                end
+
+                if data.commandValue ~= nil then
+                    route.SetPointOption(data.commandValue, PointOptions.SKIPPABLE, data.skippable)
+                end
+
+                if data.selectable ~= nil then
+                    route.SetPointOption(data.commandValue, PointOptions.SELECTABLE, data.selectable)
+                end
+            end).AsNumber()
+        cmdPosSkippable.Option("skippable").AsBoolean()
+        cmdPosSkippable.Option("selectable").AsBoolean()
 
         cmd.Accept("pos-save-current-as",
             ---@param data {commandValue:string}

@@ -5,7 +5,6 @@
 ]]
 --
 local vehicle    = require("abstraction/Vehicle"):New()
-local Current    = vehicle.position.Current
 local calc       = require("util/Calc")
 local log        = require("debug/Log")()
 local universe   = require("universe/Universe").Instance()
@@ -23,6 +22,7 @@ require("util/Table")
 ---@field AddWaypointRef fun(namedWaypoint:string, pos?:string):Point|nil
 ---@field AddCurrentPos fun():Point
 ---@field AddPoint fun(sp:Point)
+---@field SetPointOption fun(pointIndex:number, optionName:string, value:string|boolean|number)
 ---@field Clear fun()
 ---@field Next fun():Point|nil
 ---@field Peek fun():Point|nil
@@ -47,6 +47,12 @@ function Route.New()
 
     local points = {} ---@type Point[]
     local nextPointIx = 1
+
+    ---@param ix integer
+    ---@return boolean
+    local function checkBounds(ix)
+        return ix > 0 and ix <= #points
+    end
 
     ---@param ix number
     ---@return Vec3
@@ -103,6 +109,17 @@ function Route.New()
     function s.AddPoint(point)
         table.insert(points, point)
         return point
+    end
+
+    ---@param pointIndex integer
+    ---@param optionName string
+    ---@param value string|boolean|number
+    function s.SetPointOption(pointIndex, optionName, value)
+        if checkBounds(pointIndex) then
+            points[pointIndex].Options().Set(optionName, value)
+        else
+            log:Error("Point index outside bounds")
+        end
     end
 
     ---Clears the route
@@ -227,10 +244,6 @@ function Route.New()
             end
             s.Reverse()
         end
-    end
-
-    local function checkBounds(ix)
-        return ix > 0 and ix <= #points
     end
 
     ---Remove the point at index ix

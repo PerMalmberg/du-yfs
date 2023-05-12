@@ -47,5 +47,7 @@ PointOptions.MAX_SPEED = "maxSpeed"
 PointOptions.FORCE_FINAL_SPEED = "forcefinalspeed"
 -- Boolean. If true, the point can be skipped while traveling along the route
 PointOptions.SKIPPABLE = "skippable"
+-- Boolean. If true, the point is not shown on the waypoint page
+PointOptions.SELECTABLE = "selectable"
 
 return PointOptions
