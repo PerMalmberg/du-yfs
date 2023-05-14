@@ -34,8 +34,9 @@ ControlCommands.__index       = ControlCommands
 ---@param cmd CommandLine
 ---@param flightCore FlightCore
 ---@param settings Settings
+---@param screenCtrl ScreenController
 ---@return ControlCommands
-function ControlCommands.New(input, cmd, flightCore, settings)
+function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
     local s = {}
 
     local rc = flightCore.GetRouteController()
@@ -293,10 +294,12 @@ function ControlCommands.New(input, cmd, flightCore, settings)
 
                 if data.commandValue ~= nil then
                     route.SetPointOption(data.commandValue, PointOptions.SKIPPABLE, data.skippable)
+                    log:Info("Set skippable option", data.skippable)
                 end
 
                 if data.selectable ~= nil then
                     route.SetPointOption(data.commandValue, PointOptions.SELECTABLE, data.selectable)
+                    log:Info("Set selectable option", data.selectable)
                 end
             end).AsNumber()
         cmdPosSkippable.Option("skippable").AsBoolean()
@@ -469,6 +472,12 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             local up = -universe.VerticalReferenceVector()
             log:Info(string.format("-x %0.14f -y %0.14f -z %0.14f", up.x, up.y, up.z))
         end)
+
+        cmd.Accept("floor",
+            ---@param data {commandValue:string}
+            function(data)
+                screenCtrl.ActivateFloorMode(data.commandValue)
+            end).AsString().Mandatory()
     end
 
     function s.RegisterMoveCommands()

@@ -125,7 +125,7 @@ local layout = {
         }
     },
     pages = {
-        routeSelection = {
+        status = {
             components = {
                 {
                     type = "box",
@@ -133,13 +133,6 @@ local layout = {
                     style = "bkgDark",
                     pos1 = "(0,0)",
                     pos2 = "(1024,240)"
-                },
-                {
-                    type = "box",
-                    layer = 1,
-                    style = "bkgLight",
-                    pos1 = "(0,241)",
-                    pos2 = "(1024,613)"
                 },
                 {
                     type = "box",
@@ -394,6 +387,132 @@ local layout = {
                         x_count = 4,
                         x_step = 40
                     }
+                },
+            }
+        },
+        floor = {
+            components = {
+                {
+                    type = "box",
+                    layer = 1,
+                    style = "bkgLight",
+                    pos1 = "(0,241)",
+                    pos2 = "(1024,613)"
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "headerText",
+                    font = "play36",
+                    pos1 = "(10,300)",
+                    text = "$str(path{floorSelection:routeName}:init{})"
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableData",
+                    font = "play24",
+                    pos1 = "(10, 320)",
+                    text = "$str(path{floorSelection/points/[#]:name}:init{})",
+                    visible = true, --"$bool(path{floorSelection/points/[#]:visible}:init{false})",
+                    mouse = {
+                        click = {
+                            command =
+                            "$str(path{floorSelection:routeName}:init{}:format{route-activate %s})||$str(path{floorSelection/points/[#]:index}:init{}:format{ -index %s})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    },
+                    replicate = {
+                        y_count = 5,
+                        y_step = 30
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableData",
+                    pos1 = "(20,600)",
+                    text = "<",
+                    mouse = {
+                        click = {
+                            command = "#fl-prev-floor-page"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableDataCentered",
+                    pos1 = "(50,600)",
+                    text = "$num(path{floorSelection:currentPage}:init{1}:format{%0.0f})",
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableDataRight",
+                    pos1 = "(80,600)",
+                    text = ">",
+                    mouse = {
+                        click = {
+                            command = "#fl-next-floor-page"
+                        },
+                        inside = {
+                            set_style = "routeEditHoverRight"
+                        }
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(935,580)",
+                    dimensions = "(20,20)",
+                    sub = "(0,480)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    mouse = {
+                        click = {
+                            command = "activatepage{status,routeSelection}"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    font = "play24",
+                    style = "routeEditTableData",
+                    pos1 = "(960,600)",
+                    text = "Exit",
+                    mouse = {
+                        click = {
+                            command = "activatepage{status,routeSelection}"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                }
+            }
+        },
+        routeSelection = {
+            components = {
+                {
+                    type = "box",
+                    layer = 1,
+                    style = "bkgLight",
+                    pos1 = "(0,241)",
+                    pos2 = "(1024,613)"
                 },
                 {
                     type = "box",
@@ -1220,7 +1339,7 @@ local layout = {
                     url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
                     mouse = {
                         click = {
-                            command = "activatepage{routeSelection}"
+                            command = "activatepage{status,routeSelection}"
                         },
                         inside = {
                             set_style = "routeEditHover"
@@ -1236,7 +1355,7 @@ local layout = {
                     text = "Exit",
                     mouse = {
                         click = {
-                            command = "activatepage{routeSelection}"
+                            command = "activatepage{status,routeSelection}"
                         },
                         inside = {
                             set_style = "routeEditHover"
@@ -1281,7 +1400,7 @@ local layout = {
                     url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
                     mouse = {
                         click = {
-                            command = "activatepage{routeSelection}"
+                            command = "activatepage{status,routeSelection}"
                         },
                         inside = {
                             set_style = "routeEditHover"
@@ -1297,7 +1416,7 @@ local layout = {
                     text = "Exit",
                     mouse = {
                         click = {
-                            command = "activatepage{routeSelection}"
+                            command = "activatepage{status,routeSelection}"
                         },
                         inside = {
                             set_style = "routeEditHover"

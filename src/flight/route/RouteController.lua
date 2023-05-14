@@ -13,13 +13,14 @@ require("util/Table")
 ---@alias NamedWaypoint {name:string, point:Point}
 ---@alias WaypointMap table<string,Point>
 ---@alias RouteData {points:PointPOD[]}
+---@alias SelectablePoint {index:number, visible:boolean, name:string}
 ---@module "storage/BufferedDB"
 
 ---@class RouteController
 ---@field GetRouteNames fun():string[]
 ---@field GetPageCount fun(perPage:integer):integer
 ---@field GetRoutePage fun(page:integer, perPage:integer):string[]
----@field EditRoute fun(name:string):Route|nil
+---@field LoadFloorRoute fun(name:string):Route
 ---@field DeleteRoute fun(name:string)
 ---@field StoreRoute fun(name:string, route:Route):boolean
 ---@field StoreWaypoint fun(name:string, pos:string):boolean
@@ -40,6 +41,10 @@ require("util/Table")
 ---@field ActivateHoldRoute fun(pos:Vec3?, holdDirection:Vec3?)
 ---@field GetWaypointPage fun(page:integer, perPage:integer):NamedWaypoint[]
 ---@field GetWaypointPages fun(perPage:integer):integer
+---@field FloorRoute fun():Route
+---@field FloorRouteName fun():string|nil
+---@field EditRoute fun(name:string):Route|nil
+---@field SelectableFloorPoints fun():SelectablePoint[]
 
 local RouteController = {}
 RouteController.__index = RouteController
@@ -63,6 +68,8 @@ function RouteController.Instance(bufferedDB)
     local edit ---@type Route|nil
     local editName ---@type string|nil
     local activeRouteName ---@type string|nil
+    local floorRoute ---@type Route|nil
+    local floorRouteName ---@type string|nil
 
     ---Returns the the name of all routes, with "(editing)" appended to the one currently being edited.
     ---@return string[]
@@ -165,6 +172,50 @@ function RouteController.Instance(bufferedDB)
         log:Info("Route '", name, "' loaded")
 
         return route
+    end
+
+    ---@return Route|nil
+    function s.LoadFloorRoute(name)
+        floorRoute = s.loadRoute(name)
+        if s then
+            floorRouteName = name
+        else
+            floorRouteName = nil
+        end
+
+        return floorRoute
+    end
+
+    ---@return Route|nil
+    function s.FloorRoute()
+        return floorRoute
+    end
+
+    ---@return string|nil
+    function s.FloorRouteName()
+        return floorRouteName
+    end
+
+    ---@return SelectablePoint[]
+    function s.SelectableFloorPoints()
+        local selectable = {}
+
+        if floorRoute then
+            for i, p in ipairs(floorRoute.Points()) do
+                if p.Options().Get(PointOptions.SELECTABLE, true) then
+                    selectable[#selectable + 1] = {
+                        index = i,
+                        visible = true,
+                        name = (function()
+                            if p.HasWaypointRef() then return p.WaypointRef() end
+                            return "Anonymous pos."
+                        end)()
+                    }
+                end
+            end
+        end
+
+        return selectable
     end
 
     ---Loads a named route and makes it available for editing
@@ -349,8 +400,6 @@ function RouteController.Instance(bufferedDB)
         elseif #route.Points() < 2 then
             log:Error("Less than 2 points in route '", name, "'")
             return nil
-        else
-            log:Info("Route loaded: ", name)
         end
 
         if destinationWayPointIndex < 1 or destinationWayPointIndex > #route.Points() then
@@ -400,6 +449,8 @@ function RouteController.Instance(bufferedDB)
 
         current = route
         activeRouteName = name
+
+        log:Info("Route '", name, "' activated at index " .. destinationWayPointIndex)
 
         return true
     end
