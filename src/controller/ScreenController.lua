@@ -40,7 +40,6 @@ function ScreenController.New(flightCore, settings)
 
     local floorPage = 1
     local floorPointsPerPage = 6
-    local floorRoute = "Test"
 
     local stream ---@type Stream -- forward declared
 
@@ -221,8 +220,10 @@ function ScreenController.New(flightCore, settings)
 
         -- Clear any removed points
         for i = #selectable + 1, floorPointsPerPage, 1 do
-            floorSelection.points[tostring(i)] = { visible = false, name = "", index = 0 }
+            floorSelection.points[tostring(i)] = { visible = false, name = "", index = "0" }
         end
+
+        log:Info(floorSelection)
 
         dataToScreen.Set("floorSelection", floorSelection)
     end

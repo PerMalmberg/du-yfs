@@ -13,7 +13,7 @@ require("util/Table")
 ---@alias NamedWaypoint {name:string, point:Point}
 ---@alias WaypointMap table<string,Point>
 ---@alias RouteData {points:PointPOD[]}
----@alias SelectablePoint {index:number, visible:boolean, name:string}
+---@alias SelectablePoint {index:string, visible:boolean, name:string}
 ---@module "storage/BufferedDB"
 
 ---@class RouteController
@@ -204,7 +204,7 @@ function RouteController.Instance(bufferedDB)
             for i, p in ipairs(floorRoute.Points()) do
                 if p.Options().Get(PointOptions.SELECTABLE, true) then
                     selectable[#selectable + 1] = {
-                        index = i,
+                        index = tostring(i), -- As a string so we can concatenate the final command.
                         visible = true,
                         name = (function()
                             if p.HasWaypointRef() then return p.WaypointRef() end

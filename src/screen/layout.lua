@@ -404,7 +404,7 @@ local layout = {
                     layer = 1,
                     style = "headerText",
                     font = "play36",
-                    pos1 = "(10,300)",
+                    pos1 = "(20,280)",
                     text = "$str(path{floorSelection:routeName}:init{})"
                 },
                 {
@@ -412,9 +412,9 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(10, 320)",
+                    pos1 = "(40, 320)",
                     text = "$str(path{floorSelection/points/[#]:name}:init{})",
-                    visible = true, --"$bool(path{floorSelection/points/[#]:visible}:init{false})",
+                    visible = "$bool(path{floorSelection/points/[#]:visible}:init{false})",
                     mouse = {
                         click = {
                             command =
@@ -425,7 +425,7 @@ local layout = {
                         }
                     },
                     replicate = {
-                        y_count = 5,
+                        y_count = 6,
                         y_step = 30
                     }
                 },
