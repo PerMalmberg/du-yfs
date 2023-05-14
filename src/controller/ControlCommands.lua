@@ -165,6 +165,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
 
                 if rc.ActivateRoute(data.commandValue, data.index, startMargin) then
                     flightCore.StartFlight()
+                    pub.Publish("RouteActivated", true)
                     log:Info("Flight started")
                 end
             end).AsString().Mandatory()

@@ -127,6 +127,11 @@ function Wsad.New(flightCore, cmd, settings)
         local wantsToMove = false
         local stopPos = Vec3.zero
 
+        pub.RegisterBool("RouteActivated", function(_, _)
+            stopPos = Vec3.zero
+            wantsToMove = false
+        end)
+
         while true do
             local curr = Current()
             local body = universe.ClosestBody(curr)

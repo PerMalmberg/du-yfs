@@ -22,6 +22,9 @@ All notable changes to this project will be documented in this file. The version
 * Change to darker color scheme for the screen for increased readability.
 * Route-buttons now show "Start/End" instead of "Beginning/End"
 
+### Fixed
+* Activating a route while still in movement as the result of manual control input no longer results in the route being aborted once the first point is reached.
+
 ## 0.0.25 - 2023-04-28
 * Added variant for Y-Lift M3 0T XS Beetle v1.0
 
