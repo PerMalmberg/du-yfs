@@ -2,7 +2,7 @@ local Point        = require("flight/route/Point")
 local Route        = require("flight/route/Route")
 local log          = require("debug/Log")()
 local universe     = require("universe/Universe").Instance()
-local calc         = require("util/Calc")
+local pub          = require("util/PubSub").Instance()
 local PointOptions = require("flight/route/PointOptions")
 local vehicle      = require("abstraction/Vehicle").New()
 local pagination   = require("util/Pagination")
@@ -231,6 +231,8 @@ function RouteController.Instance(bufferedDB)
 
         if edit == nil then return end
         editName = name
+
+        pub.Publish("RouteOpenedForEdit", true)
 
         return edit
     end
@@ -467,6 +469,11 @@ function RouteController.Instance(bufferedDB)
     ---@param name string
     ---@return Route|nil
     function s.CreateRoute(name)
+        if edit ~= nil then
+            log:Error("A route is being edited, can't create a new one.")
+            return nil
+        end
+
         if name == nil or #name == 0 then
             log:Error("No name provided for route")
             return nil
@@ -479,8 +486,10 @@ function RouteController.Instance(bufferedDB)
 
         edit = Route.New()
         editName = name
+        s.SaveRoute()
 
-        log:Info("Route '", name, "' created (but not yet saved)")
+        log:Info("Route '", name, "' created")
+        edit = s.EditRoute(name)
         return edit
     end
 
@@ -492,7 +501,7 @@ function RouteController.Instance(bufferedDB)
             res = s.StoreRoute(editName, edit)
             editName = nil
             edit = nil
-            log:Info("Closed for editing.")
+            log:Info("Route saved")
         else
             log:Error("No route currently opened for edit.")
         end

@@ -15,6 +15,7 @@ end
 
 ---@param controller RouteController
 local function clearRoutes(controller)
+    controller.Discard()
     for _, name in ipairs(controller.GetRouteNames()) do
         controller.DeleteRoute(name)
     end
@@ -72,6 +73,7 @@ describe("RouteController #flight", function()
     end)
 
     it("Can handle missing waypoints", function()
+        clearRoutes(c)
         local r = c.CreateRoute("a route2")
         assert.is_not_nil(r.AddWaypointRef("a non exsting point"))
         c.SaveRoute()
@@ -83,111 +85,11 @@ describe("RouteController #flight", function()
         assert.is_false(c.ActivateRoute(""))
     end)
 
-    --[[  it("Can adjust a route to ensure it is traveled in the right direction", function()
-        clearRoutes(c)
-
-        local positions = {
-            "::pos{0,2,49.9340,160.4566,0}",
-            "::pos{0,2,49.9340,160.4566,10}",
-            "::pos{0,2,49.9340,160.4566,20}",
-            "::pos{0,2,49.9340,160.4566,30}",
-            "::pos{0,2,49.9340,160.4566,40}",
-        }
-
-
-        assert.is_true(c.StoreWaypoint("A", positions[1]))
-        assert.is_true(c.StoreWaypoint("B", positions[2]))
-        assert.is_true(c.StoreWaypoint("C", positions[3]))
-        assert.is_true(c.StoreWaypoint("D", positions[4]))
-        assert.is_true(c.StoreWaypoint("E", positions[5]))
-
-        local r = c.CreateRoute("name")
-        assert.is_not_nil(r.AddWaypointRef("A"))
-        assert.is_not_nil(r.AddWaypointRef("B"))
-        assert.is_not_nil(r.AddWaypointRef("C"))
-        assert.is_not_nil(r.AddWaypointRef("D"))
-        assert.is_not_nil(r.AddWaypointRef("E"))
-        assert.is_true(c.SaveRoute())
-
-        -- Run it from start to end
-        ConstructMock.Instance().SetContructPostion(universe.ParsePosition(positions[1]).Coordinates())
-        assert.is_true(c.ActivateRoute("name"))
-        r = c.CurrentRoute()
-
-        local p = r.Next()
-        assert.are_equal("A", p.WaypointRef())
-        p = r.Next()
-        assert.are_equal("B", p.WaypointRef())
-        p = r.Next()
-        assert.are_equal("C", p.WaypointRef())
-        p = r.Next()
-        assert.are_equal("D", p.WaypointRef())
-        p = r.Next()
-        assert.are_equal("E", p.WaypointRef())
-        assert.is_nil(r.Next())
-
-        -- Now start in the middle, still moving to last
-        ConstructMock.Instance().SetContructPostion(universe.ParsePosition(positions[3]).Coordinates())
-        print("------------")
-        assert.is_true(c.ActivateRoute("name"))
-        r = c.CurrentRoute()
-
-        -- First point is the end of the first leg
-        p = r.Next()
-        assert.are_equal("C", p.WaypointRef())
-        p = r.Next()
-        assert.are_equal("D", p.WaypointRef())
-        p = r.Next()
-        assert.are_equal("E", p.WaypointRef())
-        assert.is_nil(r.Next())
-
-        -- Run it from last point
-        ConstructMock.Instance().SetContructPostion(universe.ParsePosition(positions[5]).Coordinates())
-        assert.is_true(c.ActivateRoute("name"))
-        r = c.CurrentRoute()
-
-        p = r.Next()
-        assert.are_equal(nil, p.WaypointRef())
-        assert.are_equal("E", r.Next().WaypointRef())
-
-        -- Run it backwards
-        ConstructMock.Instance().SetContructPostion(universe.ParsePosition(positions[5]).Coordinates())
-        assert.is_true(c.ActivateRoute("name", 1))
-        r = c.CurrentRoute()
-
-        local p = r.Next()
-        assert.are_equal("E", p.WaypointRef())
-        p = r.Next()
-        assert.are_equal("D", p.WaypointRef())
-        p = r.Next()
-        assert.are_equal("C", p.WaypointRef())
-        p = r.Next()
-        assert.are_equal("B", p.WaypointRef())
-        p = r.Next()
-        assert.are_equal("A", p.WaypointRef())
-        assert.is_nil(r.Next())
-
-        -- Run it backwards to next to last point
-        ConstructMock.Instance().SetContructPostion(universe.ParsePosition(positions[5]).Coordinates())
-        assert.is_true(c.ActivateRoute("name", 4))
-        r = c.CurrentRoute()
-
-        local p = r.Next()
-        assert.are_equal(nil, p.WaypointRef())
-        p = r.Next()
-        assert.is_nil(p)
-        assert.is_nil(r.Next())
-
-
-        ConstructMock.Instance().ResetContructPostion()
-    end)
-    ]]
     it("Can activate to first point when above the last and just two points", function()
         clearRoutes(c)
         local firstPos = "::pos{0,2,49.8726,160.0520,43.5814}"
         local lastPos = "::pos{0,2,49.8703,160.0717,866.6792}"
         local startPos = "::pos{0,2,49.8703,160.0717,867}"
-
 
         assert.is_true(c.StoreWaypoint("First", firstPos))
         assert.is_true(c.StoreWaypoint("Second", lastPos))
@@ -198,7 +100,6 @@ describe("RouteController #flight", function()
         assert.is_true(c.SaveRoute())
         assert.Equal(2, #r.Points())
 
-        print(".........")
         ConstructMock.Instance().SetContructPostion(universe.ParsePosition(startPos).Coordinates())
         assert.is_true(c.ActivateRoute("name", 1))
         local r = c.CurrentRoute()

@@ -24,7 +24,11 @@ function PointOptions.New(optionData)
     ---@param default string|number The default value if the option doesn't exist
     ---@return string|number # The option value, or the default value
     function s.Get(opt, default)
-        return options[opt] or default
+        local curr = options[opt]
+        if curr ~= nil then
+            return curr
+        end
+        return default
     end
 
     ---@return table<string, any> # The options as a table

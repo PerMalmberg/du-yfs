@@ -118,7 +118,6 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             ---@param data {commandValue:string}
             function(data)
                 if rc.EditRoute(data.commandValue) then
-                    pub.Publish("RouteOpenedForEdit", true)
                     log:Info("Route open for edit")
                 end
             end).AsString()
@@ -285,25 +284,27 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             end).AsNumber().Mandatory()
 
         local cmdPosSkippable = cmd.Accept("route-set-pos-option",
-            ---@param data {commandValue:number, skippable:boolean|nil, selectable:boolean|nil}
+            ---@param data {commandValue:number, toggleSkippable:boolean, toggleSelectable:boolean}
             function(data)
                 local route = getEditRoute()
                 if route == nil then
                     return
                 end
 
-                if data.commandValue ~= nil then
-                    route.SetPointOption(data.commandValue, PointOptions.SKIPPABLE, data.skippable)
-                    log:Info("Set skippable option", data.skippable)
+                if data.toggleSkippable then
+                    local newValue = not route.GetPointOption(data.commandValue, PointOptions.SKIPPABLE, false)
+                    route.SetPointOption(data.commandValue, PointOptions.SKIPPABLE, newValue)
+                    log:Info("Set skippable option to ", newValue)
                 end
 
-                if data.selectable ~= nil then
-                    route.SetPointOption(data.commandValue, PointOptions.SELECTABLE, data.selectable)
-                    log:Info("Set selectable option", data.selectable)
+                if data.toggleSelectable then
+                    local newValue = not route.GetPointOption(data.commandValue, PointOptions.SELECTABLE, true)
+                    route.SetPointOption(data.commandValue, PointOptions.SELECTABLE, newValue)
+                    log:Info("Set selectable option to", newValue)
                 end
             end).AsNumber()
-        cmdPosSkippable.Option("skippable").AsBoolean()
-        cmdPosSkippable.Option("selectable").AsBoolean()
+        cmdPosSkippable.Option("toggleSkippable").AsEmptyBoolean()
+        cmdPosSkippable.Option("toggleSelectable").AsEmptyBoolean()
 
         cmd.Accept("pos-save-current-as",
             ---@param data {commandValue:string}

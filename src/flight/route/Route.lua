@@ -4,12 +4,13 @@
     and that doesn't pass through a planetary body. Extra points are not persisted.
 ]]
 --
-local vehicle    = require("abstraction/Vehicle"):New()
-local calc       = require("util/Calc")
-local log        = require("debug/Log")()
-local universe   = require("universe/Universe").Instance()
-local Point      = require("flight/route/Point")
-local pagination = require("util/Pagination")
+local PointOptions = require("flight/route/PointOptions")
+local vehicle      = require("abstraction/Vehicle"):New()
+local calc         = require("util/Calc")
+local log          = require("debug/Log")()
+local universe     = require("universe/Universe").Instance()
+local Point        = require("flight/route/Point")
+local pagination   = require("util/Pagination")
 require("util/Table")
 
 ---@alias RouteRemainingInfo {Legs:integer, TotalDistance:number}
@@ -23,6 +24,7 @@ require("util/Table")
 ---@field AddCurrentPos fun():Point
 ---@field AddPoint fun(sp:Point)
 ---@field SetPointOption fun(pointIndex:number, optionName:string, value:string|boolean|number)
+---@field GetPointOption fun(pointIndex:number, optionName:string, default:string|boolean):string|number|boolean
 ---@field Clear fun()
 ---@field Next fun():Point|nil
 ---@field Peek fun():Point|nil
@@ -122,6 +124,21 @@ function Route.New()
         end
     end
 
+    ---@param pointIndex number
+    ---@param optionName string
+    ---@param default string|number|boolean
+    ---@return string|number|boolean
+    function s.GetPointOption(pointIndex, optionName, default)
+        if checkBounds(pointIndex) then
+            local opt = points[pointIndex].Options()
+            return opt.Get(optionName, default)
+        else
+            log:Error("Point index outside bounds")
+        end
+
+        return default
+    end
+
     ---Clears the route
     function s.Clear()
         points = {}
@@ -200,6 +217,19 @@ function Route.New()
         points = toKeep
     end
 
+    local function removeSkippablePoints()
+        local toKeep = {}
+
+        for i = 1, #points, 1 do
+            local p = points[i]
+            if i == 1 or i == #points or not p.Options().Get(PointOptions.SKIPPABLE, false) then
+                toKeep[#toKeep + 1] = p
+            end
+        end
+
+        points = toKeep
+    end
+
     ---Adjust the route so that it will be traveled in the correct direction.
     ---@param startPos Vec3
     ---@param targetIndex number
@@ -244,6 +274,8 @@ function Route.New()
             end
             s.Reverse()
         end
+
+        removeSkippablePoints()
     end
 
     ---Remove the point at index ix

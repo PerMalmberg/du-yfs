@@ -54,10 +54,10 @@ local layout = {
             fill = "#111111ff"
         },
         fuelAtmo = {
-            fill = "#2f6fd0ff"
+            fill = "#022966ff"
         },
         fuelSpace = {
-            fill = "#d0d02fff"
+            fill = "#616102ff"
         },
         fuelPercent = {
             fill = "#ffffffff",
@@ -596,7 +596,7 @@ local layout = {
                 {
                     type = "text",
                     layer = 1,
-                    pos1 = "(100, 350)",
+                    pos1 = "(100, 360)",
                     visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
                     style = "routeName",
                     font = "play24",
@@ -639,6 +639,29 @@ local layout = {
                     style = "routeEndpointText",
                     font = "play14",
                     hitable = false,
+                    replicate = {
+                        x_count = 6,
+                        x_step = 160
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
+                    pos1 = "(90,430)",
+                    dimensions = "(20,20)",
+                    sub = "(0,460)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    mouse = {
+                        click = {
+                            command = "$str(path{routeSelection/routes/[#]:name}:init{}:format{floor '%s'})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    },
                     replicate = {
                         x_count = 6,
                         x_step = 160
@@ -798,6 +821,14 @@ local layout = {
                 {
                     type = "text",
                     layer = 1,
+                    style = "routeEditTableHeader",
+                    font = "play14",
+                    pos1 = "(430,110)",
+                    text = "Ins + facing"
+                },
+                {
+                    type = "text",
+                    layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
                     pos1 = "(30, 140)",
@@ -850,6 +881,28 @@ local layout = {
                         click = {
                             command =
                             "$str(path{availableWaypoints/wayPoints/[#]:name}:init{}:format{route-add-named-pos '%s'})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    },
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableData",
+                    font = "play24",
+                    pos1 = "(430, 140)",
+                    text = ">>",
+                    visible = "$bool(path{availableWaypoints/wayPoints/[#]:visible}:init{false})",
+                    mouse = {
+                        click = {
+                            command =
+                            "$str(path{availableWaypoints/wayPoints/[#]:name}:init{}:format{route-add-named-pos '%s' -lockdir})"
                         },
                         inside = {
                             set_style = "routeEditHover"
@@ -1043,7 +1096,23 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(800,170)",
+                    pos1 = "(770,170)",
+                    text = "Skip"
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableHeader",
+                    font = "play14",
+                    pos1 = "(820,170)",
+                    text = "Sel"
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableHeader",
+                    font = "play14",
+                    pos1 = "(870,170)",
                     text = "Up"
                 },
                 {
@@ -1051,7 +1120,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(850,170)",
+                    pos1 = "(900,170)",
                     text = "Down"
                 },
                 {
@@ -1059,7 +1128,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "play14",
-                    pos1 = "(900,170)",
+                    pos1 = "(950,170)",
                     text = "Remove"
                 },
                 {
@@ -1075,7 +1144,6 @@ local layout = {
                         y_step = 30
                     }
                 },
-
                 {
                     type = "text",
                     layer = 1,
@@ -1101,9 +1169,105 @@ local layout = {
                 {
                     type = "image",
                     layer = 2,
-                    pos1 = "(800,180)",
+                    pos1 = "(770,180)",
                     dimensions = "(20,20)",
-                    sub = "(0,320)",
+                    sub = "(0,180)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    visible = "$bool(path{editRoute/points/[#]:skippable}:init{false})",
+                    mouse = {
+                        click = {
+                            command =
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option %d -toggleSkippable})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    },
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(770,180)",
+                    dimensions = "(20,20)",
+                    sub = "(0,160)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    visible = "$bool(path{editRoute/points/[#]:notSkippable}:init{false})",
+                    mouse = {
+                        click = {
+                            command =
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option %d -toggleSkippable})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    },
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(820,180)",
+                    dimensions = "(20,20)",
+                    sub = "(0,180)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    visible = "$bool(path{editRoute/points/[#]:selectable}:init{false})",
+                    mouse = {
+                        click = {
+                            command =
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option %d -toggleSelectable})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    },
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(820,180)",
+                    dimensions = "(20,20)",
+                    sub = "(0,160)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    visible = "$bool(path{editRoute/points/[#]:notSelectable}:init{false})",
+                    mouse = {
+                        click = {
+                            command =
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option %d -toggleSelectable})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    },
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(870,180)",
+                    dimensions = "(20,20)",
+                    sub = "(0,320)", -- Up
                     subDimensions = "(20,20)",
                     style = "iconImage",
                     url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
@@ -1124,9 +1288,9 @@ local layout = {
                 {
                     type = "image",
                     layer = 2,
-                    pos1 = "(850,180)",
+                    pos1 = "(900,180)",
                     dimensions = "(20,20)",
-                    sub = "(0,300)",
+                    sub = "(0,300)", -- Down
                     subDimensions = "(20,20)",
                     style = "iconImage",
                     url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
@@ -1150,7 +1314,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(900, 200)",
+                    pos1 = "(950, 200)",
                     text = "<<",
                     visible = "$bool(path{editRoute/points/[#]:visible}:init{false})",
                     mouse = {

@@ -68,6 +68,9 @@ function ScreenController.New(flightCore, settings)
                 s.runFloorSelectionCommand(su.RemovePrefix(command, floorSelectionPrefix))
             else
                 commandLine.Exec(command)
+                s.updateFloorData()
+                s.updateEditRouteData()
+                s.sendRoutes()
             end
         end
     end
@@ -156,10 +159,18 @@ function ScreenController.New(flightCore, settings)
             pointsShown = #points
 
             for index, p in ipairs(points) do
+                local opt = p.Options()
+                local skippable = opt.Get(PointOptions.SKIPPABLE, false)
+                local selectable = opt.Get(PointOptions.SELECTABLE, true)
+
                 local pointInfo = {
                     visible = true,
                     index = index + (editPointPage - 1) * editRoutePointsPerPage,
-                    position = p.Pos()
+                    position = p.Pos(),
+                    skippable = skippable,
+                    notSkippable = not skippable,
+                    selectable = selectable,
+                    notSelectable = not selectable
                 }
 
                 if p.HasWaypointRef() then
@@ -176,7 +187,13 @@ function ScreenController.New(flightCore, settings)
 
         -- Clear old data
         for i = pointsShown + 1, editRoutePointsPerPage, 1 do
-            editRoute.points[tostring(i)] = { visible = false }
+            editRoute.points[tostring(i)] = {
+                visible = false,
+                skippable = false,
+                notSkippable = false,
+                selectable = false,
+                notSelectable = false
+            }
         end
 
         dataToScreen.Set("editRoute", editRoute)
@@ -223,8 +240,6 @@ function ScreenController.New(flightCore, settings)
             floorSelection.points[tostring(i)] = { visible = false, name = "", index = "0" }
         end
 
-        log:Info(floorSelection)
-
         dataToScreen.Set("floorSelection", floorSelection)
     end
 
@@ -243,7 +258,14 @@ function ScreenController.New(flightCore, settings)
             layoutSent = false
         elseif not layoutSent then
             stream.Write({ screen_layout = layout })
-            stream.Write({ activate_page = "status,routeSelection" })
+
+            local floorRoute = settings.String("showFloor")
+            if floorRoute ~= "-" then
+                s.ActivateFloorMode(floorRoute)
+            else
+                stream.Write({ activate_page = "status,routeSelection" })
+            end
+
             s.sendRoutes()
             layoutSent = true
         end
