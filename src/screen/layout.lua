@@ -413,6 +413,22 @@ local layout = {
                     style = "routeEditTableData",
                     font = "play24",
                     pos1 = "(40, 320)",
+                    text = "[#]",
+                    visible = "$bool(path{floorSelection/points/[#]:visible}:init{false})",
+                    replicate = {
+                        y_count = 8,
+                        y_step = 30,
+                        x_count = 3,
+                        x_step = 260,
+                        column_mode = true
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableData",
+                    font = "play24",
+                    pos1 = "(75, 320)",
                     text = "$str(path{floorSelection/points/[#]:name}:init{})",
                     visible = "$bool(path{floorSelection/points/[#]:visible}:init{false})",
                     mouse = {
@@ -425,8 +441,11 @@ local layout = {
                         }
                     },
                     replicate = {
-                        y_count = 6,
-                        y_step = 30
+                        y_count = 8,
+                        y_step = 30,
+                        x_count = 3,
+                        x_step = 260,
+                        column_mode = true
                     }
                 },
                 {
@@ -673,7 +692,7 @@ local layout = {
                     font = "play24",
                     style = "routeEditTableData",
                     pos1 = "(20,600)",
-                    text = "<",
+                    text = "$num(path{routeSelection:routePage}:init{1}:format{< %0.0f})",
                     mouse = {
                         click = {
                             command = "#rsel-prev-route-page"
@@ -687,17 +706,9 @@ local layout = {
                     type = "text",
                     layer = 1,
                     font = "play24",
-                    style = "routeEditTableDataCentered",
-                    pos1 = "(50,600)",
-                    text = "$num(path{route:routePage}:init{1}:format{%0.0f})",
-                },
-                {
-                    type = "text",
-                    layer = 1,
-                    font = "play24",
                     style = "routeEditTableDataRight",
-                    pos1 = "(80,600)",
-                    text = ">",
+                    pos1 = "(120,600)",
+                    text = "$num(path{routeSelection:pageCount}:init{1}:format{ / %0.0f >})",
                     mouse = {
                         click = {
                             command = "#rsel-next-route-page"
@@ -919,7 +930,7 @@ local layout = {
                     font = "play24",
                     style = "routeEditTableData",
                     pos1 = "(20,560)",
-                    text = "<",
+                    text = "$num(path{availableWaypoints:currentPage}:init{1}:format{< %0.0f})",
                     mouse = {
                         click = {
                             command = "#re-prev-wp-page"
@@ -933,17 +944,9 @@ local layout = {
                     type = "text",
                     layer = 1,
                     font = "play24",
-                    style = "routeEditTableDataCentered",
-                    pos1 = "(50,560)",
-                    text = "$num(path{availableWaypoints:currentPage}:init{1}:format{%0.0f})",
-                },
-                {
-                    type = "text",
-                    layer = 1,
-                    font = "play24",
                     style = "routeEditTableDataRight",
-                    pos1 = "(80,560)",
-                    text = ">",
+                    pos1 = "(120,560)",
+                    text = "$num(path{availableWaypoints:pageCount}:init{1}:format{/ %0.0f >})",
                     mouse = {
                         click = {
                             command = "#re-next-wp-page"
@@ -986,7 +989,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    text = "<",
+                    text = "$num(path{editRoute:ix}:init{1}:format{< %0.0f})",
                     pos1 = "(530,100)",
                     mouse = {
                         click = {
@@ -1000,16 +1003,16 @@ local layout = {
                 {
                     type = "text",
                     layer = 1,
-                    style = "routeEditTableData",
+                    style = "routeEditTableDataRight",
                     font = "play24",
-                    text = ">",
-                    pos1 = "(570,100)",
+                    text = "$num(path{editRoute:count}:init{1}:format{/ %0.0f >})",
+                    pos1 = "(630,100)",
                     mouse = {
                         click = {
                             command = "#re-next-route"
                         },
                         inside = {
-                            set_style = "routeEditHover"
+                            set_style = "routeEditHoverRight"
                         }
                     }
                 },
@@ -1336,8 +1339,8 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    text = "<",
-                    pos1 = "(530,560)",
+                    text = "$num(path{editRoute:currentPage}:init{1}:format{< %0.0f})",
+                    pos1 = "(530,520)",
                     mouse = {
                         click = {
                             command = "#re-prev-point-page"
@@ -1347,22 +1350,13 @@ local layout = {
                         }
                     }
                 },
-
-                {
-                    type = "text",
-                    layer = 1,
-                    font = "play24",
-                    style = "routeEditTableDataCentered",
-                    pos1 = "(560,560)",
-                    text = "$num(path{editRoute:currentPage}:init{1}:format{%0.0f})",
-                },
                 {
                     type = "text",
                     layer = 1,
                     style = "routeEditTableDataRight",
                     font = "play24",
-                    text = ">",
-                    pos1 = "(590,560)",
+                    text = "$num(path{editRoute:pageCount}:init{1}:format{/ %0.0f >})",
+                    pos1 = "(630,520)",
                     mouse = {
                         click = {
                             command = "#re-next-point-page"

@@ -39,7 +39,7 @@ function ScreenController.New(flightCore, settings)
     local waypointsPerPage = 10
 
     local floorPage = 1
-    local floorPointsPerPage = 6
+    local floorPointsPerPage = 24
 
     local stream ---@type Stream -- forward declared
 
@@ -123,6 +123,7 @@ function ScreenController.New(flightCore, settings)
     function s.sendRoutes()
         local routeSelection = {
             routePage = routePage,
+            pageCount = rc.GetPageCount(routesPerPage),
             routes = {}
         }
         for i, r in ipairs(rc.GetRoutePage(routePage, routesPerPage)) do
@@ -138,14 +139,17 @@ function ScreenController.New(flightCore, settings)
     end
 
     function s.updateEditRouteData()
+        local routeNames = rc.GetRouteNames()
         local editRoute = {
+            ix = editRouteIndex,
+            count = #routeNames,
             currentPage = editPointPage,
+            pageCount = editPointPage,
             selectRouteName = "",
             routeName = "",
             points = {}
         }
 
-        local routeNames = rc.GetRouteNames()
         if #routeNames > 0 then
             editRoute.selectRouteName = routeNames[editRouteIndex]
         end
@@ -155,6 +159,7 @@ function ScreenController.New(flightCore, settings)
 
         if editing then
             editRoute.name = rc.CurrentEditName()
+            editRoute.pageCount = editing.GetPageCount(editRoutePointsPerPage)
             local points = editing.GetPointPage(editPointPage, editRoutePointsPerPage)
             pointsShown = #points
 
@@ -200,6 +205,7 @@ function ScreenController.New(flightCore, settings)
 
         local availableWaypoints = {
             currentPage = waypointPage,
+            pageCount = rc.GetWaypointPages(waypointsPerPage),
             wayPoints = {}
         }
 
