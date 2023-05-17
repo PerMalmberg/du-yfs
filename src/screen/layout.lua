@@ -418,7 +418,7 @@ local layout = {
                     mouse = {
                         click = {
                             command =
-                            "$str(path{floorSelection:routeName}:init{}:format{route-activate %s})||$str(path{floorSelection/points/[#]:index}:init{}:format{ -index %s})"
+                            "$str(path{floorSelection/points/[#]:activate}:init{}:format{%s})"
                         },
                         inside = {
                             set_style = "routeEditHover"

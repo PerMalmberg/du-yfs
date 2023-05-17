@@ -13,7 +13,7 @@ require("util/Table")
 ---@alias NamedWaypoint {name:string, point:Point}
 ---@alias WaypointMap table<string,Point>
 ---@alias RouteData {points:PointPOD[]}
----@alias SelectablePoint {index:string, visible:boolean, name:string}
+---@alias SelectablePoint {visible:boolean, name:string, activate:string}
 ---@module "storage/BufferedDB"
 
 ---@class RouteController
@@ -198,18 +198,21 @@ function RouteController.Instance(bufferedDB)
 
     ---@return SelectablePoint[]
     function s.SelectableFloorPoints()
-        local selectable = {}
+        local selectable = {} ---@type SelectablePoint[]
 
         if floorRoute then
             for i, p in ipairs(floorRoute.Points()) do
                 if p.Options().Get(PointOptions.SELECTABLE, true) then
                     selectable[#selectable + 1] = {
-                        index = tostring(i), -- As a string so we can concatenate the final command.
                         visible = true,
                         name = (function()
-                            if p.HasWaypointRef() then return p.WaypointRef() end
+                            if p.HasWaypointRef() then
+                                -- Silence warning of string vs. nil, we've already checked if it has a waypoint reference
+                                return p.WaypointRef() or ""
+                            end
                             return "Anonymous pos."
-                        end)()
+                        end)(),
+                        activate = string.format("route-activate %s -index %d", floorRouteName, i)
                     }
                 end
             end
