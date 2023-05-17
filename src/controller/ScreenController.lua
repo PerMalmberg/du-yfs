@@ -231,7 +231,8 @@ function ScreenController.New(flightCore, settings)
         local floorSelection = {
             routeName = rc.FloorRouteName(),
             points = {},
-            currentPage = floorPage
+            currentPage = floorPage,
+            pageCount = pagination.GetPageCount(points, floorPointsPerPage)
         }
 
         local selectable = pagination.Paginate(points, floorPage, floorPointsPerPage)
