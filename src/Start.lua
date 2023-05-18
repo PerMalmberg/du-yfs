@@ -80,19 +80,22 @@ local function Start(isECU)
             fsm.SetState(Idle.New(fsm))
         end
 
-        commands = ControlCommands.New(input, commandLine, fc, settings)
 
         if not isECU then
             screen = ScreenController.New(fc, settings)
             wsad = Wsad.New(fc, commandLine, settings)
             fuel = Fuel.New(settings)
-            commands.RegisterRouteCommands()
         end
+
+        commands = ControlCommands.New(input, commandLine, fc, settings, screen)
 
         info = InfoCentral.Instance()
         hud = Hud.New()
         commands.RegisterMoveCommands()
         commands.RegisterCommonCommands()
+        if not isECU then
+            commands.RegisterRouteCommands()
+        end
 
         pub.Publish("ShowInfoWidgets", settings.Boolean("showWidgetsOnStart", false))
     end).Catch(function(t)

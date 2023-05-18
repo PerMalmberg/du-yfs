@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.0.26 - 2013-05-xx
+
+### Added
+
+### Major additions
+* New on-screen editor for routes, making it much easier to add/remove/reorder points in a route.
+* "Floor"-concept, allowing you to travel not only to the first and last points, but also to any intermediate point in the route. The script will behave the same for the intermediary point as it did with the first/last previously, i.e. if on a ground/floor it will perform the automatic shutdown. A typical use case for this feature is an in-door elevator or a route around your mining units.
+  * Each waypoint can be set to be skippable, meaning that it won't be included in the route when determining the path to travel.
+  * Each waypoint can be set to be unselectable, meaning that it isn't displayed on the floor-selection screen. As such you can have many points in your route, but only a few are valid as destinations.
+
+## Minor additions
+* Pagination on route selection page
+* Up to six routes now shown on route selection page.
+* Beneath each route, there is now an icon to show it in floor-mode.
+* New setting `-showFloor`
+* New command `pos-rename` to rename a waypoint.
+
+### Change
+* Change to darker color scheme for the screen for increased readability.
+* Route-buttons now show "Start/End" instead of "Beginning/End"
+* `pos-save-current-as` now takes two parameters instead of a single name.
+
+### Fixed
+* Activating a route while still in movement as the result of manual control input no longer results in the route being aborted once the first point is reached.
+* Activating manual control after running a route no longer causes the construct to turn to the last direction used in manual mode before route activation.
+
 ## 0.0.25 - 2023-04-28
 * Added variant for Y-Lift M3 0T XS Beetle v1.0
 

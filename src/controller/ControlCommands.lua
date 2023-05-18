@@ -34,8 +34,9 @@ ControlCommands.__index       = ControlCommands
 ---@param cmd CommandLine
 ---@param flightCore FlightCore
 ---@param settings Settings
+---@param screenCtrl ScreenController
 ---@return ControlCommands
-function ControlCommands.New(input, cmd, flightCore, settings)
+function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
     local s = {}
 
     local rc = flightCore.GetRouteController()
@@ -93,6 +94,17 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             end).AsBoolean().Mandatory()
     end
 
+    ---Get the route being edited
+    ---@return Route|nil
+    local function getEditRoute()
+        local route = rc.CurrentEdit()
+        if route == nil then
+            log:Error("No route being edited")
+        end
+
+        return route
+    end
+
     function s.RegisterRouteCommands()
         cmd.Accept("route-list", function(data)
             local routes = rc.GetRouteNames()
@@ -106,7 +118,6 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             ---@param data {commandValue:string}
             function(data)
                 if rc.EditRoute(data.commandValue) then
-                    pub.Publish("RouteOpenedForEdit", true)
                     log:Info("Route open for edit")
                 end
             end).AsString()
@@ -132,9 +143,8 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             end).AsString().Mandatory()
 
         cmd.Accept("route-print", function(data)
-            local route = rc.CurrentEdit()
+            local route = getEditRoute()
             if route == nil then
-                log:Error("No route being edited")
                 return
             end
 
@@ -149,31 +159,23 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         end)
 
         cmd.Accept("route-activate",
-            ---@param data {commandValue:string, reverse:boolean}
+            ---@param data {commandValue:string, index:number}
             function(data)
-                local reverse = calc.Ternary(data.reverse or false, RouteOrder.REVERSED, RouteOrder.FORWARD) ---@type RouteOrder
                 local startMargin = settings.Number("routeStartDistanceLimit")
 
-                if rc.ActivateRoute(data.commandValue, reverse, startMargin) then
+                if rc.ActivateRoute(data.commandValue, data.index, startMargin) then
                     flightCore.StartFlight()
+                    pub.Publish("RouteActivated", true)
                     log:Info("Flight started")
                 end
             end).AsString().Mandatory()
-            .Option("reverse").AsEmptyBoolean()
-
-        cmd.Accept("route-reverse", function(data)
-            if rc.ReverseRoute() then
-                log:Info("Route reveresed")
-            end
-        end)
+            .Option("index").AsNumber()
 
         local addCurrentToRoute = cmd.Accept("route-add-current-pos",
             ---@param data PointOptionArguments
             function(data)
-                local route = rc.CurrentEdit()
-
-                if not route then
-                    log:Error("No route open for edit")
+                local route = getEditRoute()
+                if route == nil then
                     return
                 end
 
@@ -190,17 +192,16 @@ function ControlCommands.New(input, cmd, flightCore, settings)
                 local ref = rc.LoadWaypoint(data.commandValue)
 
                 if ref then
-                    local route = rc.CurrentEdit()
+                    local route = getEditRoute()
                     if route == nil then
-                        log:Error("No route open for edit")
+                        return
+                    end
+                    local p = route.AddWaypointRef(data.commandValue, ref.Pos())
+                    if p then
+                        p.SetOptions(createOptions(data))
+                        log:Info("Added position to route")
                     else
-                        local p = route.AddWaypointRef(data.commandValue)
-                        if p then
-                            p.SetOptions(createOptions(data))
-                            log:Info("Added position to route")
-                        else
-                            log:Error("Could not add postion")
-                        end
+                        log:Error("Could not add postion")
                     end
                 end
             end).AsString()
@@ -209,30 +210,28 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         cmd.Accept("route-delete-pos",
             ---@param data {commandValue:number}
             function(data)
-                local route = rc.CurrentEdit()
+                local route = getEditRoute()
                 if route == nil then
-                    log:Error("No route open for edit")
+                    return
+                end
+                if route.RemovePoint(data.commandValue) then
+                    log:Info("Point removed")
                 else
-                    if route.RemovePoint(data.commandValue) then
-                        log:Info("Point removed")
-                    else
-                        log:Error("Could not remove point")
-                    end
+                    log:Error("Could not remove point")
                 end
             end).AsNumber().Mandatory()
 
         ---@param from integer
         ---@param to integer
         local function movePoint(from, to)
-            local route = rc.CurrentEdit()
+            local route = getEditRoute()
             if route == nil then
-                log:Error("No route open for edit")
+                return
+            end
+            if route.MovePoint(from, to) then
+                log:Info("Point moved:", from, " -> ", to)
             else
-                if route.MovePoint(from, to) then
-                    log:Info("Point moved:", from, " -> ", to)
-                else
-                    log:Error("Could not move point")
-                end
+                log:Error("Could not move point")
             end
         end
 
@@ -261,40 +260,73 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         cmd.Accept("route-set-all-margins",
             ---@param data {commandValue:number}
             function(data)
-                local route = rc.CurrentEdit()
+                local route = getEditRoute()
                 if route == nil then
-                    log:Error("No route open for edit")
-                else
-                    for _, value in ipairs(route.Points()) do
-                        value.Options().Set(PointOptions.MARGIN, data.commandValue)
-                    end
-                    log:Info("Margins on all points in route set to ", data.commandValue)
+                    return
                 end
+                for _, value in ipairs(route.Points()) do
+                    value.Options().Set(PointOptions.MARGIN, data.commandValue)
+                end
+                log:Info("Margins on all points in route set to ", data.commandValue)
             end).AsNumber().Mandatory()
 
         cmd.Accept("route-set-all-max-speeds",
             ---@param data {commandValue:number}
             function(data)
-                local route = rc.CurrentEdit()
+                local route = getEditRoute()
                 if route == nil then
-                    log:Error("No route open for edit")
-                else
-                    local newSpeed = calc.Kph2Mps(data.commandValue)
-                    for _, value in ipairs(route.Points()) do
-                        value.Options().Set(PointOptions.MAX_SPEED, newSpeed)
-                    end
-                    log:Info("Max speeds on all points in route set to ", data.commandValue, "km/h")
+                    return
                 end
+                local newSpeed = calc.Kph2Mps(data.commandValue)
+                for _, value in ipairs(route.Points()) do
+                    value.Options().Set(PointOptions.MAX_SPEED, newSpeed)
+                end
+                log:Info("Max speeds on all points in route set to ", data.commandValue, "km/h")
             end).AsNumber().Mandatory()
 
-        cmd.Accept("pos-save-current-as",
-            ---@param data {commandValue:string}
+        local cmdPosSkippable = cmd.Accept("route-set-pos-option",
+            ---@param data {commandValue:number, toggleSkippable:boolean, toggleSelectable:boolean}
             function(data)
-                local pos = universe.CreatePos(Current()).AsPosString()
-                if rc.StoreWaypoint(data.commandValue, pos) then
-                    log:Info("Current position saved as ", data.commandValue)
+                local route = getEditRoute()
+                if route == nil then
+                    return
                 end
-            end).AsString().Mandatory()
+
+                if data.toggleSkippable then
+                    local newValue = not route.GetPointOption(data.commandValue, PointOptions.SKIPPABLE, false)
+                    route.SetPointOption(data.commandValue, PointOptions.SKIPPABLE, newValue)
+                    log:Info("Set skippable option to ", newValue)
+                end
+
+                if data.toggleSelectable then
+                    local newValue = not route.GetPointOption(data.commandValue, PointOptions.SELECTABLE, true)
+                    route.SetPointOption(data.commandValue, PointOptions.SELECTABLE, newValue)
+                    log:Info("Set selectable option to", newValue)
+                end
+            end).AsNumber()
+        cmdPosSkippable.Option("toggleSkippable").AsEmptyBoolean()
+        cmdPosSkippable.Option("toggleSelectable").AsEmptyBoolean()
+
+        local saveCurrAs = cmd.Accept("pos-save-current-as",
+            ---@param data {name:string, auto:boolean}
+            function(data)
+                if data.auto then
+                    local new = rc.FirstFreeWPName()
+                    if not new then
+                        log:Error("Could not find a free waypoint name")
+                        return
+                    end
+
+                    data.name = new
+                elseif not data.name then
+                    log:Error("No name provided")
+                end
+
+                local pos = universe.CreatePos(Current()).AsPosString()
+                rc.StoreWaypoint(data.name, pos)
+            end).AsEmpty()
+        saveCurrAs.Option("name").AsString()
+        saveCurrAs.Option("auto").AsEmptyBoolean()
 
         cmd.Accept("pos-save-as",
             ---@param data {commandValue:string, pos:string}
@@ -312,6 +344,14 @@ function ControlCommands.New(input, cmd, flightCore, settings)
                 log:Info(data.name, ": ", data.point:Pos())
             end
         end)
+
+        local rename = cmd.Accept("pos-rename",
+            ---@param data {old:string, new:string}
+            function(data)
+                rc.RenameWaypoint(data.old, data.new)
+            end)
+        rename.Option("old").Mandatory().AsString()
+        rename.Option("new").Mandatory().AsString()
 
         cmd.Accept("pos-delete",
             ---@param data {commandValue:string}
@@ -454,6 +494,12 @@ function ControlCommands.New(input, cmd, flightCore, settings)
             local up = -universe.VerticalReferenceVector()
             log:Info(string.format("-x %0.14f -y %0.14f -z %0.14f", up.x, up.y, up.z))
         end)
+
+        cmd.Accept("floor",
+            ---@param data {commandValue:string}
+            function(data)
+                screenCtrl.ActivateFloorMode(data.commandValue)
+            end).AsString().Mandatory()
     end
 
     function s.RegisterMoveCommands()
@@ -575,6 +621,13 @@ function ControlCommands.New(input, cmd, flightCore, settings)
         aligntToVector.Option("x").AsNumber().Mandatory()
         aligntToVector.Option("y").AsNumber().Mandatory()
         aligntToVector.Option("z").AsNumber().Mandatory()
+
+        cmd.Accept("set-waypoint",
+            ---@param data {commandValue:string, notify:boolean}
+            function(data)
+                system.setWaypoint(data.commandValue, data.notify)
+            end).AsString()
+            .Option("notify").AsEmptyBoolean()
     end
 
     return setmetatable(s, ControlCommands)

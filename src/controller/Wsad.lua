@@ -37,7 +37,7 @@ function Wsad.New(flightCore, cmd, settings)
     local vertical = 0
     local longitudal = 0
     local lateral = 0
-    local pointDir = Forward()
+    local pointDir = Vec3.zero
     local newMovement = false
     local stopVerticalMovement = false
 
@@ -127,6 +127,12 @@ function Wsad.New(flightCore, cmd, settings)
         local wantsToMove = false
         local stopPos = Vec3.zero
 
+        pub.RegisterBool("RouteActivated", function(_, _)
+            stopPos = Vec3.zero
+            wantsToMove = false
+            pointDir = Vec3.zero
+        end)
+
         while true do
             local curr = Current()
             local body = universe.ClosestBody(curr)
@@ -140,6 +146,11 @@ function Wsad.New(flightCore, cmd, settings)
 
             if manualInputEnabled() then
                 if wantsToMove then
+                    if pointDir:IsZero() then
+                        -- Recovery after running a route
+                        pointDir = Forward()
+                    end
+
                     if sw.Elapsed() > t or newMovement then
                         sw.Restart()
 

@@ -2,12 +2,14 @@ local Stopwatch          = require("system/Stopwatch")
 local Task               = require("system/Task")
 local ValueTree          = require("util/ValueTree")
 local Vec3               = require("math/Vec3")
+local PointOptions       = require("flight/route/PointOptions")
 local log                = require("debug/Log")()
 local commandLine        = require("commandline/CommandLine").Instance()
 local pub                = require("util/PubSub").Instance()
 local layout             = require("screen/layout_out")
 local Stream             = require("Stream")
 local calc               = require("util/Calc")
+local pagination         = require("util/Pagination")
 local distanceFormat     = require("util/DistanceFormat")
 local massFormat         = require("util/MassFormat")
 local TotalMass          = require("abstraction/Vehicle").New().mass.Total
@@ -16,6 +18,7 @@ local max                = math.max
 local min                = math.min
 
 ---@class ScreenController
+---@field ActivateFloorMode fun(string)
 
 local ScreenController   = {}
 ScreenController.__index = ScreenController
@@ -30,14 +33,19 @@ function ScreenController.New(flightCore, settings)
     local rc = flightCore.GetRouteController()
     local dataToScreen = ValueTree.New()
     local routePage = 1
-    local routesPerPage = 5
+    local routesPerPage = 6
 
     local waypointPage = 1
     local waypointsPerPage = 10
 
+    local floorPage = 1
+    local floorPointsPerPage = 24
+
     local stream ---@type Stream -- forward declared
 
     local routeEditorPrefix = "#re-"
+    local routeSelectionPrefix = "#rsel-"
+    local floorSelectionPrefix = "#fl-"
 
     local editRouteIndex = 1
     local editRoutePointsPerPage = 10
@@ -53,13 +61,17 @@ function ScreenController.New(flightCore, settings)
         local command = data["mouse_click"]
         if command ~= nil then
             if su.StartsWith(command, routeEditorPrefix) then
-                command = su.RemovePrefix(command, routeEditorPrefix)
-                s.runRouteEditorCommand(command)
+                s.runRouteEditorCommand(su.RemovePrefix(command, routeEditorPrefix))
+            elseif su.StartsWith(command, routeSelectionPrefix) then
+                s.runRouteSelectionCommand(su.RemovePrefix(command, routeSelectionPrefix))
+            elseif su.StartsWith(command, floorSelectionPrefix) then
+                s.runFloorSelectionCommand(su.RemovePrefix(command, floorSelectionPrefix))
             else
                 commandLine.Exec(command)
+                s.updateFloorData()
+                s.updateEditRouteData()
+                s.sendRoutes()
             end
-
-            s.updateEditRouteData()
         end
     end
 
@@ -88,28 +100,56 @@ function ScreenController.New(flightCore, settings)
         s.updateEditRouteData()
     end
 
-    local function sendRoutes()
-        local route = {}
+    ---@param cmd string
+    function s.runRouteSelectionCommand(cmd)
+        if cmd == "next-route-page" then
+            routePage = min(routePage + 1, rc.GetPageCount(routesPerPage))
+        elseif cmd == "prev-route-page" then
+            routePage = max(1, routePage - 1)
+        end
+        s.sendRoutes()
+    end
+
+    ---@param cmd string
+    function s.runFloorSelectionCommand(cmd)
+        if cmd == "next-floor-page" then
+            floorPage = min(floorPage + 1, pagination.GetPageCount(rc.SelectableFloorPoints(), floorPointsPerPage))
+        elseif cmd == "prev-floor-page" then
+            floorPage = max(1, floorPage - 1)
+        end
+        s.updateFloorData()
+    end
+
+    function s.sendRoutes()
+        local routeSelection = {
+            routePage = routePage,
+            pageCount = rc.GetPageCount(routesPerPage),
+            routes = {}
+        }
         for i, r in ipairs(rc.GetRoutePage(routePage, routesPerPage)) do
-            route[tostring(i)] = { visible = true, name = r }
+            routeSelection.routes[tostring(i)] = { visible = true, name = r }
         end
 
         -- Ensure to hide the rest if routes have been removed.
-        for i = TableLen(route) + 1, routesPerPage, 1 do
-            route[tostring(i)] = { visible = false, name = "" }
+        for i = TableLen(routeSelection.routes) + 1, routesPerPage, 1 do
+            routeSelection.routes[tostring(i)] = { visible = false, name = "" }
         end
 
-        dataToScreen.Set("route", route)
+        dataToScreen.Set("routeSelection", routeSelection)
     end
 
     function s.updateEditRouteData()
+        local routeNames = rc.GetRouteNames()
         local editRoute = {
+            ix = editRouteIndex,
+            count = #routeNames,
+            currentPage = editPointPage,
+            pageCount = editPointPage,
             selectRouteName = "",
             routeName = "",
             points = {}
         }
 
-        local routeNames = rc.GetRouteNames()
         if #routeNames > 0 then
             editRoute.selectRouteName = routeNames[editRouteIndex]
         end
@@ -119,20 +159,31 @@ function ScreenController.New(flightCore, settings)
 
         if editing then
             editRoute.name = rc.CurrentEditName()
+            editRoute.pageCount = editing.GetPageCount(editRoutePointsPerPage)
             local points = editing.GetPointPage(editPointPage, editRoutePointsPerPage)
             pointsShown = #points
+            local distances = rc.CalculateDistances(points)
 
             for index, p in ipairs(points) do
+                local opt = p.Options()
+                local skippable = opt.Get(PointOptions.SKIPPABLE, false)
+                local selectable = opt.Get(PointOptions.SELECTABLE, true)
+
                 local pointInfo = {
                     visible = true,
                     index = index + (editPointPage - 1) * editRoutePointsPerPage,
-                    position = p.Pos()
+                    position = p.Pos(),
+                    skippable = skippable,
+                    notSkippable = not skippable,
+                    selectable = selectable,
+                    notSelectable = not selectable
                 }
 
                 if p.HasWaypointRef() then
                     pointInfo.pointName = p.WaypointRef()
                 else
-                    pointInfo.pointName = "Anonymous pos."
+                    local d = distanceFormat(distances[index])
+                    pointInfo.pointName = string.format("%0.1f%s", d.value, d.unit)
                 end
 
                 editRoute.points[tostring(index)] = pointInfo
@@ -143,16 +194,26 @@ function ScreenController.New(flightCore, settings)
 
         -- Clear old data
         for i = pointsShown + 1, editRoutePointsPerPage, 1 do
-            editRoute.points[tostring(i)] = { visible = false }
+            editRoute.points[tostring(i)] = {
+                visible = false,
+                skippable = false,
+                notSkippable = false,
+                selectable = false,
+                notSelectable = false
+            }
         end
 
         dataToScreen.Set("editRoute", editRoute)
 
-        local availableWaypoints = {}
+        local availableWaypoints = {
+            currentPage = waypointPage,
+            pageCount = rc.GetWaypointPages(waypointsPerPage),
+            wayPoints = {}
+        }
 
         local waypoints = rc.GetWaypointPage(waypointPage, waypointsPerPage)
         for index, p in ipairs(waypoints) do
-            availableWaypoints[tostring(index)] = {
+            availableWaypoints.wayPoints[tostring(index)] = {
                 visible = true,
                 name = p.name,
                 pos = p.point.Pos()
@@ -160,10 +221,44 @@ function ScreenController.New(flightCore, settings)
         end
 
         for i = #waypoints + 1, waypointsPerPage, 1 do
-            availableWaypoints[tostring(i)] = { visible = false }
+            availableWaypoints.wayPoints[tostring(i)] = { visible = false }
         end
 
         dataToScreen.Set("availableWaypoints", availableWaypoints)
+    end
+
+    function s.updateFloorData()
+        local points = rc.SelectableFloorPoints()
+
+        local floorSelection = {
+            routeName = rc.FloorRouteName(),
+            points = {},
+            currentPage = floorPage,
+            pageCount = pagination.GetPageCount(points, floorPointsPerPage)
+        }
+
+        local selectable = pagination.Paginate(points, floorPage, floorPointsPerPage)
+
+        floorSelection.currentPage = floorPage
+        for i, p in ipairs(selectable) do
+            floorSelection.points[tostring(i)] = p
+        end
+
+        -- Clear any removed points
+        for i = #selectable + 1, floorPointsPerPage, 1 do
+            floorSelection.points[tostring(i)] = { visible = false, name = "", index = "0" }
+        end
+
+        dataToScreen.Set("floorSelection", floorSelection)
+    end
+
+    ---@param routeName string
+    function s.ActivateFloorMode(routeName)
+        if rc.LoadFloorRoute(routeName) then
+            floorPage = 1
+            s.updateFloorData()
+            stream.Write({ activate_page = "status,floor" })
+        end
     end
 
     ---@param isTimedOut boolean
@@ -173,8 +268,15 @@ function ScreenController.New(flightCore, settings)
             layoutSent = false
         elseif not layoutSent then
             stream.Write({ screen_layout = layout })
-            stream.Write({ activate_page = "routeSelection" })
-            sendRoutes()
+
+            local floorRoute = settings.String("showFloor")
+            if floorRoute ~= "-" then
+                s.ActivateFloorMode(floorRoute)
+            else
+                stream.Write({ activate_page = "status,routeSelection" })
+            end
+
+            s.sendRoutes()
             layoutSent = true
         end
     end
@@ -184,7 +286,6 @@ function ScreenController.New(flightCore, settings)
 
         if not screen then return end
         log:Info("Screen found")
-        screen.activate()
 
         local routeTimer = Stopwatch.New()
         routeTimer.Start()
@@ -243,12 +344,13 @@ function ScreenController.New(flightCore, settings)
         stream = Stream.New(screen, s.dataReceived, 1, onTimeout)
 
         while screen do
+            screen.activate()
             coroutine.yield()
             stream.Tick()
 
             if not stream.WaitingToSend() then
                 if not routeTimer.IsRunning() or routeTimer.Elapsed() > 2 then
-                    sendRoutes()
+                    s.sendRoutes()
                     s.updateEditRouteData()
                     routeTimer.Restart()
                 end

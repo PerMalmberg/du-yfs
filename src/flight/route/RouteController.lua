@@ -1,25 +1,28 @@
-local Point        = require("flight/route/Point")
-local Route        = require("flight/route/Route")
-local log          = require("debug/Log")()
-local universe     = require("universe/Universe").Instance()
-local calc         = require("util/Calc")
-local PointOptions = require("flight/route/PointOptions")
-local vehicle      = require("abstraction/Vehicle").New()
-local pagination   = require("util/Pagination")
-local Current      = vehicle.position.Current
-local Forward      = vehicle.orientation.Forward
+local Point          = require("flight/route/Point")
+local Route          = require("flight/route/Route")
+local Task           = require("system/Task")
+local log            = require("debug/Log")()
+local universe       = require("universe/Universe").Instance()
+local pub            = require("util/PubSub").Instance()
+local PointOptions   = require("flight/route/PointOptions")
+local vehicle        = require("abstraction/Vehicle").New()
+local pagination     = require("util/Pagination")
+local distanceFormat = require("util/DistanceFormat")
+local Current        = vehicle.position.Current
+local Forward        = vehicle.orientation.Forward
 require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}
 ---@alias WaypointMap table<string,Point>
 ---@alias RouteData {points:PointPOD[]}
+---@alias SelectablePoint {visible:boolean, name:string, activate:string, index:number}
 ---@module "storage/BufferedDB"
 
 ---@class RouteController
 ---@field GetRouteNames fun():string[]
 ---@field GetPageCount fun(perPage:integer):integer
 ---@field GetRoutePage fun(page:integer, perPage:integer):string[]
----@field EditRoute fun(name:string):Route|nil
+---@field LoadFloorRoute fun(name:string):Route
 ---@field DeleteRoute fun(name:string)
 ---@field StoreRoute fun(name:string, route:Route):boolean
 ---@field StoreWaypoint fun(name:string, pos:string):boolean
@@ -29,7 +32,7 @@ require("util/Table")
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
 ---@field CurrentEditName fun():string|nil
----@field ActivateRoute fun(name:string, order?:RouteOrder, startMargin?:number):boolean
+---@field ActivateRoute fun(name:string, destinationWayPointIndex?:number, startMargin?:number):boolean
 ---@field ActivateTempRoute fun():Route
 ---@field CreateRoute fun(name:string):Route|nil
 ---@field ReverseRoute fun():boolean
@@ -40,6 +43,13 @@ require("util/Table")
 ---@field ActivateHoldRoute fun(pos:Vec3?, holdDirection:Vec3?)
 ---@field GetWaypointPage fun(page:integer, perPage:integer):NamedWaypoint[]
 ---@field GetWaypointPages fun(perPage:integer):integer
+---@field FloorRoute fun():Route
+---@field FloorRouteName fun():string|nil
+---@field EditRoute fun(name:string):Route|nil
+---@field SelectableFloorPoints fun():SelectablePoint[]
+---@field CalculateDistances fun(points:Point[]):number[]
+---@field FirstFreeWPName fun():string|nil
+---@field RenameWaypoint fun(old:string, new:string):boolean
 
 local RouteController = {}
 RouteController.__index = RouteController
@@ -63,6 +73,8 @@ function RouteController.Instance(bufferedDB)
     local edit ---@type Route|nil
     local editName ---@type string|nil
     local activeRouteName ---@type string|nil
+    local floorRoute ---@type Route|nil
+    local floorRouteName ---@type string|nil
 
     ---Returns the the name of all routes, with "(editing)" appended to the one currently being edited.
     ---@return string[]
@@ -106,6 +118,77 @@ function RouteController.Instance(bufferedDB)
     ---@return integer
     function s.GetWaypointPages(perPage)
         return pagination.GetPageCount(s.GetWaypoints(), perPage)
+    end
+
+    ---@return table<string, NamedWaypoint>
+    local function makeWPLookup()
+        -- Make a table for quick lookup
+        local wps = {}
+        for _, p in ipairs(s.GetWaypoints()) do
+            wps[p.name] = p
+        end
+
+        return wps
+    end
+
+    ---@return string|nil
+    function s.FirstFreeWPName()
+        local wps = makeWPLookup()
+
+        for i = 1, 999 do
+            local new = string.format("WP%0.3d", i)
+            if wps[new] == nil then
+                return new
+            end
+        end
+
+        return nil
+    end
+
+    ---@param old string
+    ---@param new string
+    function s.RenameWaypoint(old, new)
+        local wps = makeWPLookup()
+        local oldFound = wps[old]
+        local newFound = wps[new]
+
+        if not oldFound then
+            log:Info("No waypoint by that name found")
+            return
+        elseif newFound then
+            log:Info("A waypoint by that name already exists")
+        end
+
+        Task.New("RenameWaypoint", function()
+            if edit ~= nil then
+                log:Error("Can't rename a waypoint when a route is open")
+                return
+            end
+
+            s.StoreWaypoint(new, oldFound.point:Pos())
+
+            for _, name in pairs(s.GetRouteNames()) do
+                local r = s.loadRoute(name)
+                if r then
+                    local switched = false
+                    for _, p in ipairs(r.Points()) do
+                        if p.HasWaypointRef() and p.WaypointRef() == old then
+                            switched = true
+                            p.SetWaypointRef(new)
+                            log:Info("Waypoint ref. updated in route '", name, "': '", old, "' -> '", new, "'")
+                        end
+                    end
+
+                    if switched then
+                        s.StoreRoute(name, r)
+                    end
+                end
+                coroutine.yield()
+            end
+
+            -- Delete last so that routes using it can be loaded.
+            s.DeleteWaypoint(old)
+        end)
     end
 
     ---Returns the number of routes
@@ -167,14 +250,72 @@ function RouteController.Instance(bufferedDB)
         return route
     end
 
+    ---@return Route|nil
+    function s.LoadFloorRoute(name)
+        floorRoute = s.loadRoute(name)
+        if s then
+            floorRouteName = name
+        else
+            floorRouteName = nil
+        end
+
+        return floorRoute
+    end
+
+    ---@return Route|nil
+    function s.FloorRoute()
+        return floorRoute
+    end
+
+    ---@return string|nil
+    function s.FloorRouteName()
+        return floorRouteName
+    end
+
+    ---@return SelectablePoint[]
+    function s.SelectableFloorPoints()
+        local selectable = {} ---@type SelectablePoint[]
+
+        if floorRoute then
+            local points = floorRoute.Points()
+            local distances = s.CalculateDistances(points)
+            for i, p in ipairs(points) do
+                if p.Options().Get(PointOptions.SELECTABLE, true) then
+                    selectable[#selectable + 1] = {
+                        visible = true,
+                        name = (function()
+                            if p.HasWaypointRef() then
+                                -- Silence warning of string vs. nil, we've already checked if it has a waypoint reference
+                                return p.WaypointRef() or ""
+                            end
+                            local d = distanceFormat(distances[i])
+                            return string.format("%0.1f%s", d.value, d.unit)
+                        end)(),
+                        activate = string.format("route-activate %s -index %d", floorRouteName, i),
+                        index = i
+                    }
+                end
+            end
+        end
+
+        return selectable
+    end
+
     ---Loads a named route and makes it available for editing
     ---@param name string The name of the route to load
     ---@return Route|nil
     function s.EditRoute(name)
+        if edit ~= nil then
+            log:Error("A route is already being edited.")
+            return nil
+        end
+
         edit = s.loadRoute(name)
 
         if edit == nil then return end
         editName = name
+
+        pub.Publish("RouteOpenedForEdit", true)
 
         return edit
     end
@@ -206,11 +347,6 @@ function RouteController.Instance(bufferedDB)
     ---@param route Route The route to store
     ---@return boolean
     function s.StoreRoute(name, route)
-        if not edit then
-            log:Error("Cannot save, no route currently being edited")
-            return false
-        end
-
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
         local data = { points = {} } ---@type RouteData
 
@@ -323,106 +459,67 @@ function RouteController.Instance(bufferedDB)
         return editName
     end
 
-    ---Activate the route by the given name
     ---@param name string
-    ---@param order RouteOrder? The order the route shall be followed, default is FORWARD
-    ---@param startMargin number? If true, the route will be activated if within this distance.
-    ---@return boolean
-    function s.ActivateRoute(name, order, startMargin)
-        order = order or RouteOrder.FORWARD
-        startMargin = startMargin or 0
-
+    ---@param destinationWayPointIndex number
+    ---@return Route|nil
+    function s.doBasicCheckesOnActivation(name, destinationWayPointIndex)
         if not name or string.len(name) == 0 then
             log:Error("No route name provided")
-            return false
+            return nil
         end
 
         if editName ~= nil and name == editName and edit ~= nil then
             log:Info("Cannot activate route currently being edited, please save first.")
-            return false
+            return nil
         end
 
         local route = s.loadRoute(name)
 
         if route == nil then
-            return false
+            return nil
         elseif #route.Points() < 2 then
             log:Error("Less than 2 points in route '", name, "'")
-            return false
-        else
-            log:Info("Route loaded: ", name)
+            return nil
         end
 
-        if order == RouteOrder.REVERSED then
-            log:Info("Reversing route '", name, "'")
-            route.Reverse()
+        if destinationWayPointIndex < 1 or destinationWayPointIndex > #route.Points() then
+            log:Error("Destination index must be >= 1 and <= ", #route.Points(), " it was: ", destinationWayPointIndex)
+            return nil
         end
+
+        return route
+    end
+
+    ---Activate the route by the given name
+    ---@param name string
+    ---@param destinationWayPointIndex? number The index of the waypoint we wish to move to. 0 means the last one in the route. This always counts in the original order of the route.
+    ---@param startMargin number? If true, the route will be activated if within this distance.
+    ---@return boolean
+    function s.ActivateRoute(name, destinationWayPointIndex, startMargin)
+        startMargin = startMargin or 0
+        local route = s.doBasicCheckesOnActivation(name, destinationWayPointIndex or 1)
+
+        if route == nil then
+            return false
+        end
+
+        destinationWayPointIndex = destinationWayPointIndex or #route.Points()
+        route.AdjustRouteBasedOnTarget(Current(), destinationWayPointIndex)
 
         -- Find closest point within the route, or the first point, in the order the route is loaded
         local points = route.Points()
         local currentPos = Current()
 
-        local firstIx = 1
-        local nextIx = firstIx + 1
-
-        -- Start with the distance to the first point
-        local f = universe.ParsePosition(points[firstIx].Pos())
-
-        if not f then
+        -- Check we're close enough to the closest point, which is now the first one in the route.
+        local firstPos = universe.ParsePosition(points[1].Pos())
+        if not firstPos then
             log:Error("Route contains an invalid position string")
             return false
         end
 
-        local distance = (f.Coordinates() - currentPos):Len()
-
-        local closestIx = 0
-        local nearestOnRoute ---@type Vec3|nil
-
-        while nextIx <= #points do
-            f = universe.ParsePosition(points[firstIx].Pos())
-            local n = universe.ParsePosition(points[nextIx].Pos())
-
-            if not (f and n) then
-                log:Error("Route contains an invalid position string")
-                return false
-            end
-
-            local onRoute = calc.NearestOnLineBetweenPoints(f.Coordinates(), n.Coordinates(), currentPos)
-            local distanceToPoint = (onRoute - currentPos):Len()
-
-            if distanceToPoint < distance then
-                closestIx = firstIx
-                distance = distanceToPoint
-                nearestOnRoute = onRoute
-            end
-
-            firstIx = nextIx
-            nextIx = nextIx + 1
-        end
-
-        if nearestOnRoute then
-            log:Info("Found a point in the route that is closer than the first point, adjusting route.")
-            -- The closest point is somewhere on the route so remove points before.
-            for i = 1, closestIx, 1 do
-                table.remove(points, 1)
-            end
-
-            local nextOpt = points[1].Options()
-            -- Add a new point at the nearest point, with the same lock direction as the next point
-            -- so we move with that direction to this point.
-            local p = Point.New(universe.CreatePos(nearestOnRoute).AsPosString())
-            local newOpts = p.Options()
-            newOpts.Set(PointOptions.LOCK_DIRECTION, nextOpt.Get(PointOptions.LOCK_DIRECTION))
-            -- Set a wider margin on this point to avoid most instances of getting stuck on the first point, wanting to move sideways before taking off.
-            newOpts.Set(PointOptions.MARGIN, 0.5)
-            table.insert(points, 1, p)
-        end
-
-        -- Check we're close enough to the closest point, which is now the first one in the route.
-        local firstPos = universe.ParsePosition(points[1].Pos())
         if not firstPos then return false end
 
-        distance = (firstPos.Coordinates() - currentPos):Len()
+        local distance = (firstPos.Coordinates() - currentPos):Len()
         if startMargin > 0 and distance > startMargin then
             log:Error(string.format(
                 "Currently %0.2fm from closest point in route. Please move within %0.2fm of %s and try again."
@@ -432,6 +529,8 @@ function RouteController.Instance(bufferedDB)
 
         current = route
         activeRouteName = name
+
+        log:Info("Route '", name, "' activated at index " .. destinationWayPointIndex)
 
         return true
     end
@@ -448,6 +547,11 @@ function RouteController.Instance(bufferedDB)
     ---@param name string
     ---@return Route|nil
     function s.CreateRoute(name)
+        if edit ~= nil then
+            log:Error("A route is being edited, can't create a new one.")
+            return nil
+        end
+
         if name == nil or #name == 0 then
             log:Error("No name provided for route")
             return nil
@@ -460,8 +564,10 @@ function RouteController.Instance(bufferedDB)
 
         edit = Route.New()
         editName = name
+        s.SaveRoute()
 
-        log:Info("Route '", name, "' created (but not yet saved)")
+        log:Info("Route '", name, "' created")
+        edit = s.EditRoute(name)
         return edit
     end
 
@@ -473,7 +579,7 @@ function RouteController.Instance(bufferedDB)
             res = s.StoreRoute(editName, edit)
             editName = nil
             edit = nil
-            log:Info("Closed for editing.")
+            log:Info("Route saved")
         else
             log:Error("No route currently opened for edit.")
         end
@@ -526,6 +632,25 @@ function RouteController.Instance(bufferedDB)
             p = route.AddCurrentPos()
             p.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
         end
+    end
+
+    ---Returns a list of point distances
+    ---@param points Point[]
+    function s.CalculateDistances(points)
+        local d = {}
+
+        if #points > 0 then
+            local prev = universe.ParsePosition(points[1].Pos()):Coordinates()
+            d[#d + 1] = 0
+            for i = 2, #points do
+                local curr = universe.ParsePosition(points[i].Pos()):Coordinates()
+                local diff = (curr - prev):Len()
+                d[#d + 1] = d[#d] + diff
+                prev = curr
+            end
+        end
+
+        return d
     end
 
     singleton = setmetatable(s, RouteController)

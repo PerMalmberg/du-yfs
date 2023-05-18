@@ -24,7 +24,11 @@ function PointOptions.New(optionData)
     ---@param default string|number The default value if the option doesn't exist
     ---@return string|number # The option value, or the default value
     function s.Get(opt, default)
-        return options[opt] or default
+        local curr = options[opt]
+        if curr ~= nil then
+            return curr
+        end
+        return default
     end
 
     ---@return table<string, any> # The options as a table
@@ -45,5 +49,9 @@ PointOptions.FINAL_SPEED = "finalSpeed"
 PointOptions.MAX_SPEED = "maxSpeed"
 -- Boolean. If true, final speed takese precedence over last-point in route check.
 PointOptions.FORCE_FINAL_SPEED = "forcefinalspeed"
+-- Boolean. If true, the point can be skipped while traveling along the route
+PointOptions.SKIPPABLE = "skippable"
+-- Boolean. If true, the point is not shown on the waypoint page
+PointOptions.SELECTABLE = "selectable"
 
 return PointOptions

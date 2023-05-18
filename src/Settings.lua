@@ -9,9 +9,10 @@ require("util/Table")
 ---@field New fun(db:BufferedDB)
 ---@field RegisterCallback fun(key:string, f:fun(any))
 ---@field Reload fun()
----@field Get fun(key:string, default:any?):string|number|table|nil
----@field Number fun(key:string, default:number?):number
----@field Boolean fun(key:string, default:boolean?):boolean
+---@field Get fun(key:string, default?:any):string|number|table|nil
+---@field Number fun(key:string, default?:number):number
+---@field Boolean fun(key:string, default?:boolean):boolean
+---@field String fun(key:string, default?:string):string
 
 local singleton
 local Settings = {}
@@ -65,7 +66,8 @@ function Settings.New(db)
         throttleStep = { default = yfsConstants.flight.throttleStep },
         manualControlOnStartup = { default = false },
         turnAngle = { default = yfsConstants.flight.defaultTurnAngle },
-        minimumPathCheckOffset = { default = flightDefaults.minimumPathCheckOffset }
+        minimumPathCheckOffset = { default = flightDefaults.minimumPathCheckOffset },
+        showFloor = { default = "-" }
     }
 
     for k, v in pairs(containerSettings) do
@@ -170,6 +172,15 @@ function Settings.New(db)
     function s.Number(key, default)
         local v = s.Get(key, default)
         ---@cast v number
+        return v
+    end
+
+    ---@param key string
+    ---@param default? string
+    ---@return string
+    function s.String(key, default)
+        local v = s.Get(key, default)
+        ---@cast v string
         return v
     end
 

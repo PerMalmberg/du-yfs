@@ -4,12 +4,13 @@
     and that doesn't pass through a planetary body. Extra points are not persisted.
 ]]
 --
-local vehicle    = require("abstraction/Vehicle"):New()
-local calc       = require("util/Calc")
-local log        = require("debug/Log")()
-local universe   = require("universe/Universe").Instance()
-local Point      = require("flight/route/Point")
-local pagination = require("util/Pagination")
+local PointOptions = require("flight/route/PointOptions")
+local vehicle      = require("abstraction/Vehicle"):New()
+local calc         = require("util/Calc")
+local log          = require("debug/Log")()
+local universe     = require("universe/Universe").Instance()
+local Point        = require("flight/route/Point")
+local pagination   = require("util/Pagination")
 require("util/Table")
 
 ---@alias RouteRemainingInfo {Legs:integer, TotalDistance:number}
@@ -19,13 +20,17 @@ require("util/Table")
 ---@field Points fun():Point[]
 ---@field AddPos fun(positionString:string):Point
 ---@field AddCoordinate fun(coord:Vec3):Point
----@field AddWaypointRef fun(namedWaypoint:string):Point|nil
+---@field AddWaypointRef fun(namedWaypoint:string, pos?:string):Point|nil
 ---@field AddCurrentPos fun():Point
 ---@field AddPoint fun(sp:Point)
+---@field SetPointOption fun(pointIndex:number, optionName:string, value:string|boolean|number)
+---@field GetPointOption fun(pointIndex:number, optionName:string, default:string|boolean):string|number|boolean
 ---@field Clear fun()
 ---@field Next fun():Point|nil
 ---@field Peek fun():Point|nil
 ---@field LastPointReached fun():boolean
+---@field AdjustRouteBasedOnTarget fun(startPos:Vec3, targetIndex:number)
+---@field FindClosestLeg fun(coordinate:Vec3):number,number
 ---@field Reverse fun()
 ---@field RemovePoint fun(ix:number):boolean
 ---@field MovePoint fun(from:number, to:number)
@@ -33,12 +38,6 @@ require("util/Table")
 ---@field GetPointPage fun(page:integer, perPage:integer):Point[]
 ---@field GetPageCount fun(perPage:integer):integer
 
-
----@enum RouteOrder
-RouteOrder = {
-    FORWARD = 1,
-    REVERSED = 2
-}
 
 local Route = {}
 Route.__index = Route
@@ -51,6 +50,17 @@ function Route.New()
     local points = {} ---@type Point[]
     local nextPointIx = 1
 
+    ---@param ix integer
+    ---@return boolean
+    local function checkBounds(ix)
+        return ix > 0 and ix <= #points
+    end
+
+    ---@param ix number
+    ---@return Vec3
+    local function coordsFromPoint(ix)
+        return universe.ParsePosition(points[ix]:Pos()):Coordinates()
+    end
     ---Returns all the points in the route
     ---@return Point[]
     function s.Points()
@@ -80,12 +90,13 @@ function Route.New()
 
     ---Adds a named waypoint to the route
     ---@param name string
+    ---@param pos? string The ::pos{} string. This parameter is mainly used when editing routes to make the position available for the UI.
     ---@return Point|nil
-    function s.AddWaypointRef(name)
+    function s.AddWaypointRef(name, pos)
         if name == nil or #name == 0 then
             return nil
         end
-        return s.AddPoint(Point.New("", name))
+        return s.AddPoint(Point.New(pos or "", name))
     end
 
     ---Adds the current postion to the route
@@ -100,6 +111,32 @@ function Route.New()
     function s.AddPoint(point)
         table.insert(points, point)
         return point
+    end
+
+    ---@param pointIndex integer
+    ---@param optionName string
+    ---@param value string|boolean|number
+    function s.SetPointOption(pointIndex, optionName, value)
+        if checkBounds(pointIndex) then
+            points[pointIndex].Options().Set(optionName, value)
+        else
+            log:Error("Point index outside bounds")
+        end
+    end
+
+    ---@param pointIndex number
+    ---@param optionName string
+    ---@param default string|number|boolean
+    ---@return string|number|boolean
+    function s.GetPointOption(pointIndex, optionName, default)
+        if checkBounds(pointIndex) then
+            local opt = points[pointIndex].Options()
+            return opt.Get(optionName, default)
+        else
+            log:Error("Point index outside bounds")
+        end
+
+        return default
     end
 
     ---Clears the route
@@ -134,8 +171,111 @@ function Route.New()
         ReverseInplace(points)
     end
 
-    local function checkBounds(ix)
-        return ix > 0 and ix <= #points
+    ---@param coordinate Vec3
+    ---@return number # Start index
+    ---@return number # End index
+    function s.FindClosestLeg(coordinate)
+        local startIx = 1
+        local endIx = 2
+
+        local closest = math.maxinteger
+        local prev = coordsFromPoint(1)
+
+        for i = 2, #points, 1 do
+            local next = coordsFromPoint(i)
+
+            if not prev or not next then
+                return 1, 2
+            end
+
+            local dist = (coordinate - calc.NearestOnLineBetweenPoints(prev, next, coordinate)):Len()
+
+            -- Find the first closest leg. If a leg at the same distance is found, it will be ignored.
+            if dist < closest then
+                closest = dist
+                startIx = i - 1
+                endIx = i
+            end
+
+            prev = next
+        end
+
+        return startIx, endIx
+    end
+
+    ---@param startIx number
+    ---@param endIx number
+    local function keep(startIx, endIx)
+        local toKeep = {}
+
+        for i = 1, #points, 1 do
+            if i >= startIx and i <= endIx then
+                toKeep[#toKeep + 1] = points[i]
+            end
+        end
+
+        points = toKeep
+    end
+
+    local function removeSkippablePoints()
+        local toKeep = {}
+
+        for i = 1, #points, 1 do
+            local p = points[i]
+            if i == 1 or i == #points or not p.Options().Get(PointOptions.SKIPPABLE, false) then
+                toKeep[#toKeep + 1] = p
+            end
+        end
+
+        points = toKeep
+    end
+
+    ---Adjust the route so that it will be traveled in the correct direction.
+    ---@param startPos Vec3
+    ---@param targetIndex number
+    function s.AdjustRouteBasedOnTarget(startPos, targetIndex)
+        -- Determine if we are before or after the target point
+        local closestLeft, closestRight = s.FindClosestLeg(startPos)
+        local leftPos = coordsFromPoint(closestLeft)
+        local rightPos = coordsFromPoint(closestRight)
+        local midPoint = calc.NearestOnLineBetweenPoints(leftPos, rightPos, startPos)
+
+        if closestRight < targetIndex then
+            -- Before
+            keep(closestLeft, targetIndex)
+            -- Adjust first pos
+            if (midPoint - startPos):Len() < (leftPos - startPos):Len() then
+                points[1] = Point.New(universe.CreatePos(midPoint):AsPosString())
+            end
+        elseif closestRight == targetIndex then
+            -- Same leg, before
+            keep(closestLeft, targetIndex)
+            -- Just replace first with midPoint, unless it is the same as the final one
+            if midPoint == rightPos then
+                table.remove(points, 1)
+            else
+                points[1] = Point.New(universe.CreatePos(midPoint):AsPosString())
+            end
+        elseif closestLeft == targetIndex then
+            -- Same leg, after
+            keep(targetIndex, closestRight)
+            -- Just replace last with midPoint, unless it is the same as the final one
+            if midPoint == leftPos then
+                table.remove(points, #points)
+            else
+                points[#points] = Point.New(universe.CreatePos(midPoint):AsPosString())
+            end
+            s.Reverse()
+        else
+            -- After
+            keep(targetIndex, closestRight)
+            if (midPoint - startPos):Len() < (rightPos - startPos):Len() then
+                points[#points] = Point.New(universe.CreatePos(midPoint):AsPosString())
+            end
+            s.Reverse()
+        end
+
+        removeSkippablePoints()
     end
 
     ---Remove the point at index ix
@@ -178,7 +318,7 @@ function Route.New()
 
         -- Add distance to next point in route
         local ix = calc.Ternary(s.LastPointReached(), -1, 0)
-        local next = universe.ParsePosition(points[nextPointIx + ix].Pos()).Coordinates()
+        local next = coordsFromPoint(nextPointIx + ix)
         total = total + (fromPos - next):Len()
 
         return { Legs = #points - nextPointIx, TotalDistance = total }
