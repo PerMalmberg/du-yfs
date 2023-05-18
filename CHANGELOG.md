@@ -6,13 +6,13 @@ All notable changes to this project will be documented in this file. The version
 
 ### Added
 
-### Major additions
+#### Major additions
 * New on-screen editor for routes, making it much easier to add/remove/reorder points in a route.
 * "Floor"-concept, allowing you to travel not only to the first and last points, but also to any intermediate point in the route. The script will behave the same for the intermediary point as it did with the first/last previously, i.e. if on a ground/floor it will perform the automatic shutdown. A typical use case for this feature is an in-door elevator or a route around your mining units.
   * Each waypoint can be set to be skippable, meaning that it won't be included in the route when determining the path to travel.
   * Each waypoint can be set to be unselectable, meaning that it isn't displayed on the floor-selection screen. As such you can have many points in your route, but only a few are valid as destinations.
 
-## Minor additions
+#### Minor additions
 * Pagination on route selection page
 * Up to six routes now shown on route selection page.
 * Beneath each route, there is now an icon to show it in floor-mode.
