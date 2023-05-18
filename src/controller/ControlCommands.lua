@@ -323,9 +323,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 end
 
                 local pos = universe.CreatePos(Current()).AsPosString()
-                if rc.StoreWaypoint(data.name, pos) then
-                    log:Info("Current position saved as ", data.name)
-                end
+                rc.StoreWaypoint(data.name, pos)
             end).AsEmpty()
         saveCurrAs.Option("name").AsString()
         saveCurrAs.Option("auto").AsEmptyBoolean()
