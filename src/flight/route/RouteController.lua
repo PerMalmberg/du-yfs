@@ -1,13 +1,14 @@
-local Point        = require("flight/route/Point")
-local Route        = require("flight/route/Route")
-local log          = require("debug/Log")()
-local universe     = require("universe/Universe").Instance()
-local pub          = require("util/PubSub").Instance()
-local PointOptions = require("flight/route/PointOptions")
-local vehicle      = require("abstraction/Vehicle").New()
-local pagination   = require("util/Pagination")
-local Current      = vehicle.position.Current
-local Forward      = vehicle.orientation.Forward
+local Point          = require("flight/route/Point")
+local Route          = require("flight/route/Route")
+local log            = require("debug/Log")()
+local universe       = require("universe/Universe").Instance()
+local pub            = require("util/PubSub").Instance()
+local PointOptions   = require("flight/route/PointOptions")
+local vehicle        = require("abstraction/Vehicle").New()
+local pagination     = require("util/Pagination")
+local distanceFormat = require("util/DistanceFormat")
+local Current        = vehicle.position.Current
+local Forward        = vehicle.orientation.Forward
 require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}
@@ -45,6 +46,7 @@ require("util/Table")
 ---@field FloorRouteName fun():string|nil
 ---@field EditRoute fun(name:string):Route|nil
 ---@field SelectableFloorPoints fun():SelectablePoint[]
+---@field CalculateDistances fun(points:Point[]):number[]
 
 local RouteController = {}
 RouteController.__index = RouteController
@@ -201,7 +203,9 @@ function RouteController.Instance(bufferedDB)
         local selectable = {} ---@type SelectablePoint[]
 
         if floorRoute then
-            for i, p in ipairs(floorRoute.Points()) do
+            local points = floorRoute.Points()
+            local distances = s.CalculateDistances(points)
+            for i, p in ipairs(points) do
                 if p.Options().Get(PointOptions.SELECTABLE, true) then
                     selectable[#selectable + 1] = {
                         visible = true,
@@ -210,7 +214,8 @@ function RouteController.Instance(bufferedDB)
                                 -- Silence warning of string vs. nil, we've already checked if it has a waypoint reference
                                 return p.WaypointRef() or ""
                             end
-                            return "Anonymous pos."
+                            local d = distanceFormat(distances[i])
+                            return string.format("%0.1f%s", d.value, d.unit)
                         end)(),
                         activate = string.format("route-activate %s -index %d", floorRouteName, i),
                         index = i
@@ -558,6 +563,25 @@ function RouteController.Instance(bufferedDB)
             p = route.AddCurrentPos()
             p.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
         end
+    end
+
+    ---Returns a list of point distances
+    ---@param points Point[]
+    function s.CalculateDistances(points)
+        local d = {}
+
+        if #points > 0 then
+            local prev = universe.ParsePosition(points[1].Pos()):Coordinates()
+            d[#d + 1] = 0
+            for i = 2, #points do
+                local curr = universe.ParsePosition(points[i].Pos()):Coordinates()
+                local diff = (curr - prev):Len()
+                d[#d + 1] = d[#d] + diff
+                prev = curr
+            end
+        end
+
+        return d
     end
 
     singleton = setmetatable(s, RouteController)

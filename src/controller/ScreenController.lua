@@ -162,6 +162,7 @@ function ScreenController.New(flightCore, settings)
             editRoute.pageCount = editing.GetPageCount(editRoutePointsPerPage)
             local points = editing.GetPointPage(editPointPage, editRoutePointsPerPage)
             pointsShown = #points
+            local distances = rc.CalculateDistances(points)
 
             for index, p in ipairs(points) do
                 local opt = p.Options()
@@ -181,7 +182,8 @@ function ScreenController.New(flightCore, settings)
                 if p.HasWaypointRef() then
                     pointInfo.pointName = p.WaypointRef()
                 else
-                    pointInfo.pointName = "Anonymous pos."
+                    local d = distanceFormat(distances[index])
+                    pointInfo.pointName = string.format("%0.1f%s", d.value, d.unit)
                 end
 
                 editRoute.points[tostring(index)] = pointInfo

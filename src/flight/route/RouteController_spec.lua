@@ -1,5 +1,6 @@
 local env    = require("environment")
 local assert = require("luassert")
+local Point  = require("flight/route/Point")
 env.Prepare()
 local universe = require("universe/Universe").Instance()
 local stub = require("luassert.stub")
@@ -181,39 +182,17 @@ describe("RouteController #flight", function()
         ConstructMock.Instance().ResetContructPostion()
     end)
 
-    --[[it("Can skip skippable points", function()
-        clearRoutes(c)
-        assert.are_equal(0, c.Count())
+    it("Can calculate point distances", function()
+        local points = {
+            Point.New("::pos{0,2,49.9348,160,50.0}"),
+            Point.New("::pos{0,2,49.9348,160,60.0}"),
+            Point.New("::pos{0,2,49.9348,160,70}")
+        }
 
-        ---@param pos string
-        ---@param skippable boolean
-        ---@return Point
-        local function newPoint(pos, skippable)
-            local opt = PointOptions.New()
-            opt.Set(PointOptions.SKIPPABLE, skippable)
-            local p = Point.New(pos, nil, opt)
-            return p
-        end
-
-        local name = "route_with_skippable_points"
-        local r = c.CreateRoute(name)
-        r.AddPoint(newPoint("::pos{0,1,1,1}", false))
-        r.AddPoint(newPoint("::pos{0,1,1,2}", true))
-        r.AddPoint(newPoint("::pos{0,1,1,3}", true))
-        r.AddPoint(newPoint("::pos{0,1,1,4}", false))
-        r.AddPoint(newPoint("::pos{0,1,1,5}", true))
-        r.AddPoint(newPoint("::pos{0,1,1,6}", false))
-        c.SaveRoute()
-
-        -- Activate the route to the fifth point, which is also skippable.
-        assert.True(c.ActivateRouteToWaypoint(name, 5))
-        r = c.CurrentRoute()
-        -- We expect a total of three points in the route and the last one to be the same as the one we added at the fifth position.
-        assert.is_not_nil(r.Next())
-        assert.is_not_nil(r.Next())
-        local last = r.Next()
-        assert.is_not_nil(last)
-        assert.Equal("::pos{0,1,1,5}", last.Pos())
-        assert.is_nil(r.Next())
-    end]]
+        local distances = c.CalculateDistances(points)
+        assert.Equal(3, #points)
+        assert.Equal(0, distances[1])
+        assert.near(10, distances[2], 0.01)
+        assert.near(20, distances[3], 0.01)
+    end)
 end)
