@@ -1,5 +1,6 @@
 local Point          = require("flight/route/Point")
 local Route          = require("flight/route/Route")
+local Task           = require("system/Task")
 local log            = require("debug/Log")()
 local universe       = require("universe/Universe").Instance()
 local pub            = require("util/PubSub").Instance()
@@ -48,6 +49,7 @@ require("util/Table")
 ---@field SelectableFloorPoints fun():SelectablePoint[]
 ---@field CalculateDistances fun(points:Point[]):number[]
 ---@field FirstFreeWPName fun():string|nil
+---@field RenameWaypoint fun(old:string, new:string):boolean
 
 local RouteController = {}
 RouteController.__index = RouteController
@@ -118,13 +120,21 @@ function RouteController.Instance(bufferedDB)
         return pagination.GetPageCount(s.GetWaypoints(), perPage)
     end
 
-    ---@return string|nil
-    function s.FirstFreeWPName()
+    ---@return table<string, NamedWaypoint>
+    local function makeWPLookup()
         -- Make a table for quick lookup
         local wps = {}
         for _, p in ipairs(s.GetWaypoints()) do
-            wps[p.name] = 0
+            wps[p.name] = p
         end
+
+        return wps
+    end
+
+    ---@return string|nil
+    function s.FirstFreeWPName()
+        local wps = makeWPLookup()
+
         for i = 1, 999 do
             local new = string.format("WP%0.3d", i)
             if wps[new] == nil then
@@ -133,6 +143,52 @@ function RouteController.Instance(bufferedDB)
         end
 
         return nil
+    end
+
+    ---@param old string
+    ---@param new string
+    function s.RenameWaypoint(old, new)
+        local wps = makeWPLookup()
+        local oldFound = wps[old]
+        local newFound = wps[new]
+
+        if not oldFound then
+            log:Info("No waypoint by that name found")
+            return
+        elseif newFound then
+            log:Info("A waypoint by that name already exists")
+        end
+
+        Task.New("RenameWaypoint", function()
+            if edit ~= nil then
+                log:Error("Can't rename a waypoint when a route is open")
+                return
+            end
+
+            s.StoreWaypoint(new, oldFound.point:Pos())
+
+            for _, name in pairs(s.GetRouteNames()) do
+                local r = s.loadRoute(name)
+                if r then
+                    local switched = false
+                    for _, p in ipairs(r.Points()) do
+                        if p.HasWaypointRef() and p.WaypointRef() == old then
+                            switched = true
+                            p.SetWaypointRef(new)
+                            log:Info("Waypoint ref. updated in route '", name, "': '", old, "' -> '", new, "'")
+                        end
+                    end
+
+                    if switched then
+                        s.StoreRoute(name, r)
+                    end
+                end
+                coroutine.yield()
+            end
+
+            -- Delete last so that routes using it can be loaded.
+            s.DeleteWaypoint(old)
+        end)
     end
 
     ---Returns the number of routes
@@ -291,11 +347,6 @@ function RouteController.Instance(bufferedDB)
     ---@param route Route The route to store
     ---@return boolean
     function s.StoreRoute(name, route)
-        if not edit then
-            log:Error("Cannot save, no route currently being edited")
-            return false
-        end
-
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
         local data = { points = {} } ---@type RouteData
 

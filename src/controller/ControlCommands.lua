@@ -345,6 +345,14 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             end
         end)
 
+        local rename = cmd.Accept("pos-rename",
+            ---@param data {old:string, new:string}
+            function(data)
+                rc.RenameWaypoint(data.old, data.new)
+            end)
+        rename.Option("old").Mandatory().AsString()
+        rename.Option("new").Mandatory().AsString()
+
         cmd.Accept("pos-delete",
             ---@param data {commandValue:string}
             function(data)

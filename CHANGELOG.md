@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file. The version
 * Up to six routes now shown on route selection page.
 * Beneath each route, there is now an icon to show it in floor-mode.
 * New setting `-showFloor`
+* New command `pos-rename` to rename a waypoint.
 
 ### Change
 * Change to darker color scheme for the screen for increased readability.
