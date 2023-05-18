@@ -253,6 +253,7 @@ function ScreenController.New(flightCore, settings)
     ---@param routeName string
     function s.ActivateFloorMode(routeName)
         if rc.LoadFloorRoute(routeName) then
+            floorPage = 1
             s.updateFloorData()
             stream.Write({ activate_page = "status,floor" })
         end
