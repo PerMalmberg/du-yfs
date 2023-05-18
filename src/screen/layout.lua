@@ -64,6 +64,7 @@ local layout = {
             align = "h1,v2"
         },
         routeButton = {
+            align = "h1,v2",
             fill = "#546263ff",
         },
         routeButtonHover = {
@@ -78,7 +79,7 @@ local layout = {
         },
         routeEndpointText = {
             fill = "#000000ff",
-            align = "h1,v3"
+            align = "h1,v2"
         },
         routeName = {
             fill = "#ffffffff",
@@ -400,20 +401,114 @@ local layout = {
                     pos2 = "(1024,613)"
                 },
                 {
+                    type = "box",
+                    layer = 1,
+                    visible = true,
+                    pos1 = "(40,280)",
+                    pos2 = "(160,320)",
+                    style = "routeButton",
+                    mouse = {
+                        inside = {
+                            set_style = "routeButtonHover"
+                        },
+                        click = {
+                            command = "$str(path{floorSelection:routeName}:init{}:format{route-activate '%s'})"
+                        }
+                    }
+                },
+                {
+                    type = "box",
+                    layer = 1,
+                    visible = true,
+                    pos1 = "(40,300)",
+                    pos2 = "(60,320)",
+                    style = "routeCover",
+                    replicate = {
+                        x_count = 2,
+                        x_step = 160
+                    }
+                },
+                {
+                    type = "box",
+                    layer = 1,
+                    visible = true,
+                    pos1 = "(140,300)",
+                    pos2 = "(160,320)",
+                    style = "routeCover",
+                    replicate = {
+                        x_count = 2,
+                        x_step = 160
+                    }
+                },
+                {
                     type = "text",
                     layer = 1,
-                    style = "headerText",
-                    font = "play36",
-                    pos1 = "(20,280)",
+                    visible = true,
+                    pos1 = "(100,300)",
+                    text = "End",
+                    style = "routeEndpointText",
+                    font = "play14",
+                    hitable = false
+                },
+                {
+                    type = "box",
+                    layer = 1,
+                    visible = true,
+                    pos1 = "(40,380)",
+                    pos2 = "(160,420)",
+                    style = "routeButton",
+                    mouse = {
+                        inside = {
+                            set_style = "routeButtonHover"
+                        },
+                        click = {
+                            command =
+                            "$str(path{floorSelection:routeName}:init{}:format{route-activate '%s' -index 1})"
+                        }
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    pos1 = "(100, 360)",
+                    visible = true,
+                    style = "routeName",
+                    font = "play24",
                     text = "$str(path{floorSelection:routeName}:init{})"
+                },
+                {
+                    type = "box",
+                    layer = 1,
+                    visible = true,
+                    pos1 = "(40,380)",
+                    pos2 = "(60,400)",
+                    style = "routeCover"
+                },
+                {
+                    type = "box",
+                    layer = 1,
+                    visible = true,
+                    pos1 = "(140,380)",
+                    pos2 = "(160,400)",
+                    style = "routeCover"
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    visible = true,
+                    pos1 = "(100,400)",
+                    text = "Start",
+                    style = "routeEndpointText",
+                    font = "play14",
+                    hitable = false
                 },
                 {
                     type = "text",
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(40, 320)",
-                    text = "[#]",
+                    pos1 = "(180, 300)",
+                    text = "$num(path{floorSelection/points/[#]:index}:init{0})",
                     visible = "$bool(path{floorSelection/points/[#]:visible}:init{false})",
                     replicate = {
                         y_count = 8,
@@ -428,7 +523,7 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableData",
                     font = "play24",
-                    pos1 = "(75, 320)",
+                    pos1 = "(220, 300)",
                     text = "$str(path{floorSelection/points/[#]:name}:init{})",
                     visible = "$bool(path{floorSelection/points/[#]:visible}:init{false})",
                     mouse = {
@@ -611,7 +706,7 @@ local layout = {
                     visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
                     style = "routeName",
                     font = "play24",
-                    text = "$str(path{routeSelection/routes/[#]:name}:init{route name})",
+                    text = "$str(path{routeSelection/routes/[#]:name}:init{})",
                     replicate = {
                         x_count = 6,
                         x_step = 160
@@ -656,23 +751,35 @@ local layout = {
                     }
                 },
                 {
-                    type = "image",
-                    layer = 2,
+                    type = "box",
+                    layer = 1,
                     visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
-                    pos1 = "(90,430)",
-                    dimensions = "(20,20)",
-                    sub = "(0,460)",
-                    subDimensions = "(20,20)",
-                    style = "iconImage",
-                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    pos1 = "(40,440)",
+                    pos2 = "(160,460)",
+                    style = "routeButton",
                     mouse = {
-                        click = {
-                            command = "$str(path{routeSelection/routes/[#]:name}:init{}:format{floor '%s'})"
-                        },
                         inside = {
-                            set_style = "routeEditHover"
+                            set_style = "routeButtonHover"
+                        },
+                        click = {
+                            command =
+                            "$str(path{routeSelection/routes/[#]:name}:init{}:format{floor '%s'})"
                         }
                     },
+                    replicate = {
+                        x_count = 6,
+                        x_step = 160
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    visible = "$bool(path{routeSelection/routes/[#]:visible}:init{false})",
+                    pos1 = "(100,450)",
+                    text = "Waypoints",
+                    style = "routeEndpointText",
+                    font = "play14",
+                    hitable = false,
                     replicate = {
                         x_count = 6,
                         x_step = 160

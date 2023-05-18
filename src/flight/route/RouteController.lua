@@ -13,7 +13,7 @@ require("util/Table")
 ---@alias NamedWaypoint {name:string, point:Point}
 ---@alias WaypointMap table<string,Point>
 ---@alias RouteData {points:PointPOD[]}
----@alias SelectablePoint {visible:boolean, name:string, activate:string}
+---@alias SelectablePoint {visible:boolean, name:string, activate:string, index:number}
 ---@module "storage/BufferedDB"
 
 ---@class RouteController
@@ -212,7 +212,8 @@ function RouteController.Instance(bufferedDB)
                             end
                             return "Anonymous pos."
                         end)(),
-                        activate = string.format("route-activate %s -index %d", floorRouteName, i)
+                        activate = string.format("route-activate %s -index %d", floorRouteName, i),
+                        index = i
                     }
                 end
             end
