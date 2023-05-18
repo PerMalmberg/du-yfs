@@ -66,7 +66,7 @@ Due to Dual Universe's slightly wonky physics, when creating floors for any dyna
 
 ### Cargo mass capacity
 
-The cargo mass ratings given for constructs are given in _raw mass values_, i.e. _not_ taking mass reduction talents into account. As such, do not blindly look at the mass shown in the inventory interface of DU. Instead, inspect the item/stack and look at the actual mass of the stack - the DU interface show only 75% of the actual mass.
+The cargo mass ratings given for constructs are given in _raw mass values_, i.e. _not_ taking mass reduction talents into account. As such, do not blindly look at the mass shown in the inventory interface of DU. Instead, inspect the item/stack and look at the actual mass of the stack - the DU interface show only 75% of the actual mass when the construct is fully boosted.
 
 The rating is based on these prerequisites:
 * Take off from near water level at 100% atmosphere.
@@ -74,6 +74,8 @@ The rating is based on these prerequisites:
 * Atmosphere thickness of Alioth.
 * Zero personal talents.
 * Construct full boosted with lvl 5 flight/container/tank skills.
+
+From the above it should be understood that taking off from lower atmosphere (such as from a higher point, or a low-atmosphere planet) makes a big difference in capacity. Likewise, coming into atmosphere and stopping at higher up/in low atmosphere is also subject to the same altered performance.
 
 ## Automatic shutdown
 
