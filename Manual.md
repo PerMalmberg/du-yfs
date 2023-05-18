@@ -277,7 +277,9 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 |                           | -f                         | meter         | Y        | Forward distance; negate to move backwards.                                                                                                                                                          |
 |                           | -u                         | meter         | Y        | Upward distance; negate to move downwards.                                                                                                                                                           |
 |                           | -r                         | meter         | Y        | Rightward distance; negate to move leftwards.                                                                                                                                                        |
-| pos-save-current-as       | name of waypoint           |               | N        | Save the current position as a named waypoint for later use in a route                                                                                                                               |
+| pos-save-current-as       |                            |               |          | Save the current position as a named waypoint for later use in a route                                                                                                                               |
+|                           | -name                      | string        | Y        | If given, this is the name to save as.                                                                                                                                                               |
+|                           | -auto                      |               | Y        | If specified automatically created a waypoint by name WPnnn, such as WP001. Takes precedence over `-auto`                                                                                            |
 | pos-save-as               | name of waypoint           |               | N        | Saves the provided position as a named waypoint for later use in a route                                                                                                                             |
 |                           | -pos                       | ::pos{}       | N        | The position string to save as the given name                                                                                                                                                        |
 | pos-list                  |                            |               |          | Lists the saved positions                                                                                                                                                                            |
@@ -313,6 +315,8 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 | set-full-container-boosts |                            |               |          | Sets all related talents for containers, atmospheric, space and rocket fuel tanks to level 5                                                                                                         |
 | show-widgets              |                            | boolean       | Y        | Show/hides widgets with diagnostic info                                                                                                                                                              |
 
+
+Please note that deleting named waypoints do not update routes that reference them. You can create a new one with the same name as the one deleted, but until you do, any route that referenced it will not be usable.
 
 ## Mass Overload
 

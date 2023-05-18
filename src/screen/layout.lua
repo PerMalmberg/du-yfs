@@ -114,6 +114,10 @@ local layout = {
             fill = "#ff0000ff",
             align = "h0,v3"
         },
+        routeEditTableDataCenteredHover = {
+            fill = "#2f6fd0ff",
+            align = "h1,v3"
+        },
         editRouteRouteName = {
             fill = "#ffffffff",
             align = "h0,v3"
@@ -1024,11 +1028,46 @@ local layout = {
                     }
                 },
                 {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(165,540)",
+                    dimensions = "(20,20)",
+                    sub = "(0,1040)",
+                    subDimensions = "(20,20)",
+                    style = "iconImage",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    mouse = {
+                        click = {
+                            command = "pos-save-current-as -auto"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    }
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableDataCentered",
+                    font = "play24",
+                    pos1 = "(256, 560)",
+                    text = "Add Current",
+                    visible = true,
+                    mouse = {
+                        click = {
+                            command = "pos-save-current-as -auto"
+                        },
+                        inside = {
+                            set_style = "routeEditTableDataCenteredHover"
+                        }
+                    }
+                },
+                {
                     type = "text",
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableData",
-                    pos1 = "(20,560)",
+                    pos1 = "(20,520)",
                     text = "$num(path{availableWaypoints:currentPage}:init{1}:format{< %0.0f})",
                     mouse = {
                         click = {
@@ -1044,7 +1083,7 @@ local layout = {
                     layer = 1,
                     font = "play24",
                     style = "routeEditTableDataRight",
-                    pos1 = "(120,560)",
+                    pos1 = "(120,520)",
                     text = "$num(path{availableWaypoints:pageCount}:init{1}:format{/ %0.0f >})",
                     mouse = {
                         click = {

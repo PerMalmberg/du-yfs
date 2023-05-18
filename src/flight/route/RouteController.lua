@@ -47,6 +47,7 @@ require("util/Table")
 ---@field EditRoute fun(name:string):Route|nil
 ---@field SelectableFloorPoints fun():SelectablePoint[]
 ---@field CalculateDistances fun(points:Point[]):number[]
+---@field FirstFreeWPName fun():string|nil
 
 local RouteController = {}
 RouteController.__index = RouteController
@@ -115,6 +116,23 @@ function RouteController.Instance(bufferedDB)
     ---@return integer
     function s.GetWaypointPages(perPage)
         return pagination.GetPageCount(s.GetWaypoints(), perPage)
+    end
+
+    ---@return string|nil
+    function s.FirstFreeWPName()
+        -- Make a table for quick lookup
+        local wps = {}
+        for _, p in ipairs(s.GetWaypoints()) do
+            wps[p.name] = 0
+        end
+        for i = 1, 999 do
+            local new = string.format("WP%0.3d", i)
+            if wps[new] == nil then
+                return new
+            end
+        end
+
+        return nil
     end
 
     ---Returns the number of routes

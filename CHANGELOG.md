@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file. The version
 ### Change
 * Change to darker color scheme for the screen for increased readability.
 * Route-buttons now show "Start/End" instead of "Beginning/End"
+* `pos-save-current-as` now takes two parameters instead of a single name.
 
 ### Fixed
 * Activating a route while still in movement as the result of manual control input no longer results in the route being aborted once the first point is reached.

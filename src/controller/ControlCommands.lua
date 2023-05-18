@@ -307,14 +307,28 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         cmdPosSkippable.Option("toggleSkippable").AsEmptyBoolean()
         cmdPosSkippable.Option("toggleSelectable").AsEmptyBoolean()
 
-        cmd.Accept("pos-save-current-as",
-            ---@param data {commandValue:string}
+        local saveCurrAs = cmd.Accept("pos-save-current-as",
+            ---@param data {name:string, auto:boolean}
             function(data)
-                local pos = universe.CreatePos(Current()).AsPosString()
-                if rc.StoreWaypoint(data.commandValue, pos) then
-                    log:Info("Current position saved as ", data.commandValue)
+                if data.auto then
+                    local new = rc.FirstFreeWPName()
+                    if not new then
+                        log:Error("Could not find a free waypoint name")
+                        return
+                    end
+
+                    data.name = new
+                elseif not data.name then
+                    log:Error("No name provided")
                 end
-            end).AsString().Mandatory()
+
+                local pos = universe.CreatePos(Current()).AsPosString()
+                if rc.StoreWaypoint(data.name, pos) then
+                    log:Info("Current position saved as ", data.name)
+                end
+            end).AsEmpty()
+        saveCurrAs.Option("name").AsString()
+        saveCurrAs.Option("auto").AsEmptyBoolean()
 
         cmd.Accept("pos-save-as",
             ---@param data {commandValue:string, pos:string}
