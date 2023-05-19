@@ -2,7 +2,12 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 0.1.0 - 2013-05-18
+## 0.1.0 - 2023-05-xx
+
+### Fixed
+* Changing direction mid-route no longer causes overshoots while traveling back to the new start point. This was especially noticeable in vertical movement at high speeds.
+
+## 0.1.0 - 2023-05-18
 
 ### Added
 

@@ -44,6 +44,7 @@ local Up                            = vehicle.orientation.Up
 local Forward                       = vehicle.orientation.Forward
 local Right                         = vehicle.orientation.Right
 local deadZoneFactor                = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
+local adjustAngleThreshold          = calc.AngleToDot(45)
 
 ---@class FlightFSM
 ---@field New fun(settings:Settings):FlightFSM
@@ -433,8 +434,8 @@ function FlightFSM.New(settings, routeController)
     ---@return Vec3 direction
     ---@return number length
     local function getAdjustmentDataInFuture(axis, currentPos, nextWaypoint, previousWaypoint, t)
-        -- Don't make adjustments in the travel direction that messes up speed control, unless we're a light construct.
-        if abs(axis:Dot(nextWaypoint:DirectionTo())) < 0.7 or lastReadMass < LightConstructMassThreshold then
+        -- Don't make adjustments in the travel direction.
+        if abs(axis:Dot(nextWaypoint:DirectionTo())) < adjustAngleThreshold then
             local posInFuture = currentPos + Velocity() * t + 0.5 * Acceleration() * t * t
             local targetFuture = calc.NearestOnLineBetweenPoints(previousWaypoint.Destination(),
                 nextWaypoint.Destination(),
