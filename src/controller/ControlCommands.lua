@@ -611,16 +611,16 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 end
             end).AsString().Mandatory()
 
-        local aligntToVector = cmd.Accept("align-to-vector",
+        local alignToVector = cmd.Accept("align-to-vector",
             ---@param data {x:number, y:number, z:number}
             function(data)
                 local pos = universe.CreatePos(Current() + Vec3.New(data.x, data.y, data.z))
                 alignTo(pos)
             end)
 
-        aligntToVector.Option("x").AsNumber().Mandatory()
-        aligntToVector.Option("y").AsNumber().Mandatory()
-        aligntToVector.Option("z").AsNumber().Mandatory()
+        alignToVector.Option("x").AsNumber().Mandatory()
+        alignToVector.Option("y").AsNumber().Mandatory()
+        alignToVector.Option("z").AsNumber().Mandatory()
 
         cmd.Accept("set-waypoint",
             ---@param data {commandValue:string, notify:boolean}
