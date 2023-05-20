@@ -462,7 +462,7 @@ function FlightFSM.New(settings, routeController)
     local function calcAdjustAcceleration(axis, data, currentPos, nextWaypoint, previousWaypoint)
         local directionNow, distanceNow = getAdjustmentDataInFuture(axis, currentPos, nextWaypoint, previousWaypoint, 0)
         local directionFuture, distanceFuture = getAdjustmentDataInFuture(axis, currentPos, nextWaypoint,
-            previousWaypoint, 0.5)
+            previousWaypoint, 4)
 
         local acc = Vec3.zero
 
