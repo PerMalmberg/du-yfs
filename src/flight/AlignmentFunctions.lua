@@ -4,17 +4,34 @@ local universe = r.universe
 local calc = r.calc
 local Current = vehicle.position.Current
 local abs = math.abs
+local max = math.max
 
 ---@alias AlignmentFunction fun(currentWaypoint:Waypoint, previous:Waypoint):{yaw:Vec3, pitch:Vec3}
 
 -- Reminder: Don't return a point based on the constructs' current position, it will cause spin if it overshoots etc.
-local alignment = {}
+
+---@class Alignment
+---@field SetAlignmentAngleLimit fun(angle:number)
+---@field SetAlignmentDistanceLimit fun(distance:number)
+
+local alignment = {} ---@type Alignment
+local pathAlignmentAngleLimit = 40
+local pathAlignmentDistanceLimit = 50
+
+---@param angle number
+function alignment.SetAlignmentAngleLimit(angle)
+    pathAlignmentAngleLimit = max(0, angle)
+end
+
+---@param distance number
+function alignment.SetAlignmentDistanceLimit(distance)
+    pathAlignmentDistanceLimit = max(0, distance)
+end
 
 -- Return a direction target point this far from the waypoint so that in case we overshoot
 -- we don't get the point behind us and start turning around and also reduces oscilliating yaw.
 local directionMargin = 1000
 alignment.DirectionMargin = directionMargin
-
 
 function alignment.NoAdjust()
     return nil
@@ -41,22 +58,25 @@ end
 ---@param waypoint Waypoint
 ---@param previousWaypoint Waypoint
 ---@return Vec3
-local function getVerticalUpReference(waypoint, previousWaypoint, thresholdAngle)
-    --[[
+local function getVerticalUpReference(waypoint, previousWaypoint)
     -- When next waypoint is nearly aligned with -gravity, use the line between them as the vertical reference instead to make following the path more exact.
     local vertUp = -universe.VerticalReferenceVector()
     local pathDirection = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
 
     local selectedRef = vertUp
-    local threshold = calc.AngleToDot(2)
 
-    if vertUp:Dot(pathDirection) > threshold then
-        selectedRef = pathDirection
-    elseif vertUp:Dot(pathDirection) < -threshold then -- Don't flip upside down
-        selectedRef = -pathDirection
+    if pathAlignmentAngleLimit > 0 -- if zero, it means the alignment is disabled
+        and waypoint.DistanceTo() > pathAlignmentDistanceLimit and previousWaypoint.DistanceTo() > pathAlignmentDistanceLimit then
+        local threshold = calc.AngleToDot(pathAlignmentAngleLimit)
+
+        -- If we're more aligned to the path than the threshold, then alogn to the path
+        if vertUp:Dot(pathDirection) > threshold then
+            selectedRef = pathDirection
+        elseif vertUp:Dot(pathDirection) < -threshold then -- Don't flip upside down
+            selectedRef = -pathDirection
+        end
     end
-    return selectedRef]]
-    return -universe.VerticalReferenceVector()
+    return selectedRef
 end
 
 ---@param waypoint Waypoint
@@ -105,11 +125,10 @@ end
 function alignment.RollTopsideAwayFromVerticalReference(waypoint, previousWaypoint)
     local normal = -universe.VerticalReferenceVector()
     -- When next waypoint is nearly above us, use the line between them as the vertical reference instead to make following the path more exact
-    local wpNormal = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
+    --[[local wpNormal = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
     if not waypoint.WithinMargin(WPReachMode.ENTRY) and normal:Dot(wpNormal) > 0.8 then
         normal = wpNormal
-    end
-
+    end]]
     return Current() + normal * directionMargin
 end
 

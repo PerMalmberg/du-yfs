@@ -67,7 +67,9 @@ function Settings.New(db)
         manualControlOnStartup = { default = false },
         turnAngle = { default = yfsConstants.flight.defaultTurnAngle },
         minimumPathCheckOffset = { default = flightDefaults.minimumPathCheckOffset },
-        showFloor = { default = "-" }
+        showFloor = { default = "-" },
+        pathAlignmentAngleLimit = { default = flightDefaults.pathAlignmentAngleLimit },
+        pathAlignmentDistanceLimit = { default = flightDefaults.pathAlignmentDistanceLimit }
     }
 
     for k, v in pairs(containerSettings) do

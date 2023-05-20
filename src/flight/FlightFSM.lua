@@ -5,6 +5,7 @@ local DefaultMargin = yfsConstants.flight.defaultMargin
 local AxisManager = require("flight/AxisManager")
 local AdjustmentTracker = require("flight/AdjustmentTracker")
 local brakes = require("flight/Brakes"):Instance()
+local alignment = require("flight/AlignmentFunctions")
 local vehicle = r.vehicle
 local G = vehicle.world.G
 local AirFrictionAcceleration = vehicle.world.AirFrictionAcceleration
@@ -80,6 +81,9 @@ function FlightFSM.New(settings, routeController)
     settings.RegisterCallback("minimumPathCheckOffset", function(number)
         minimumPathCheckOffset = number
     end)
+
+    settings.RegisterCallback("pathAlignmentAngleLimit", alignment.SetAlignmentAngleLimit)
+    settings.RegisterCallback("pathAlignmentDistanceLimit", alignment.SetAlignmentDistanceLimit)
 
     local normalModeGroup = {
         thrust = {
@@ -458,7 +462,7 @@ function FlightFSM.New(settings, routeController)
     local function calcAdjustAcceleration(axis, data, currentPos, nextWaypoint, previousWaypoint)
         local directionNow, distanceNow = getAdjustmentDataInFuture(axis, currentPos, nextWaypoint, previousWaypoint, 0)
         local directionFuture, distanceFuture = getAdjustmentDataInFuture(axis, currentPos, nextWaypoint,
-            previousWaypoint, Ternary(lastReadMass < LightConstructMassThreshold, 1, 4))
+            previousWaypoint, 0.5)
 
         local acc = Vec3.zero
 
