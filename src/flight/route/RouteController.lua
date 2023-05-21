@@ -497,37 +497,30 @@ function RouteController.Instance(bufferedDB)
     ---@return boolean
     function s.ActivateRoute(name, destinationWayPointIndex, startMargin)
         startMargin = startMargin or 0
-        local route = s.doBasicCheckesOnActivation(name, destinationWayPointIndex or 1)
+        local candidate = s.doBasicCheckesOnActivation(name, destinationWayPointIndex or 1)
 
-        if route == nil then
+        if candidate == nil then
             return false
         end
 
-        destinationWayPointIndex = destinationWayPointIndex or #route.Points()
-        route.AdjustRouteBasedOnTarget(Current(), destinationWayPointIndex)
+        destinationWayPointIndex = destinationWayPointIndex or #candidate.Points()
+        candidate.AdjustRouteBasedOnTarget(Current(), destinationWayPointIndex)
 
         -- Find closest point within the route, or the first point, in the order the route is loaded
-        local points = route.Points()
         local currentPos = Current()
 
         -- Check we're close enough to the closest point, which is now the first one in the route.
-        local firstPos = universe.ParsePosition(points[1].Pos())
-        if not firstPos then
-            log:Error("Route contains an invalid position string")
-            return false
-        end
+        local closestPosInRoute = candidate.FindClosestPositionAlongRoute(currentPos)
 
-        if not firstPos then return false end
-
-        local distance = (firstPos.Coordinates() - currentPos):Len()
+        local distance = (closestPosInRoute - currentPos):Len()
         if startMargin > 0 and distance > startMargin then
             log:Error(string.format(
                 "Currently %0.2fm from closest point in route. Please move within %0.2fm of %s and try again."
-                , distance, startMargin, firstPos.AsPosString()))
+                , distance, startMargin, universe.CreatePos(closestPosInRoute):AsPosString()))
             return false
         end
 
-        current = route
+        current = candidate
         activeRouteName = name
 
         log:Info("Route '", name, "' activated at index " .. destinationWayPointIndex)

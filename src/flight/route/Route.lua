@@ -7,6 +7,7 @@
 local PointOptions = require("flight/route/PointOptions")
 local vehicle      = require("abstraction/Vehicle"):New()
 local calc         = require("util/Calc")
+local Current      = vehicle.position.Current
 local log          = require("debug/Log")()
 local universe     = require("universe/Universe").Instance()
 local Point        = require("flight/route/Point")
@@ -31,6 +32,7 @@ require("util/Table")
 ---@field LastPointReached fun():boolean
 ---@field AdjustRouteBasedOnTarget fun(startPos:Vec3, targetIndex:number)
 ---@field FindClosestLeg fun(coordinate:Vec3):number,number
+---@field FindClosestPositionAlongRoute fun(coord:Vec3)
 ---@field Reverse fun()
 ---@field RemovePoint fun(ix:number):boolean
 ---@field MovePoint fun(from:number, to:number)
@@ -168,6 +170,13 @@ function Route.New()
     end
 
     function s.Reverse()
+        -- To ensure that we hold the same direction going backwards as we did when going forward,
+        -- we must shift the directions one step left before reversing.
+        -- Note that this is a destructive operation as we loose the direction on the first point.
+        for i = 1, #points - 1 do
+            points[i].SetOptions(points[i + 1].Options())
+        end
+
         ReverseInplace(points)
     end
 
@@ -203,6 +212,13 @@ function Route.New()
         return startIx, endIx
     end
 
+    ---@param coord Vec3
+    ---@return Vec3
+    function s.FindClosestPositionAlongRoute(coord)
+        local startIx, endIx = s.FindClosestLeg(coord)
+        return calc.NearestOnLineBetweenPoints(coordsFromPoint(startIx), coordsFromPoint(endIx), coord)
+    end
+
     ---@param startIx number
     ---@param endIx number
     local function keep(startIx, endIx)
@@ -230,6 +246,16 @@ function Route.New()
         points = toKeep
     end
 
+    ---Replaces a point in the route, keping only direction option
+    ---@param ix number
+    ---@param newPos Vec3
+    ---@param point Point Optional point to take direction from. If left out, it is taken from the point being replaced.
+    local function replacePointWithDir(ix, newPos, point)
+        local dir = point.Options().Get(PointOptions.LOCK_DIRECTION)
+        points[ix] = Point.New(universe.CreatePos(newPos):AsPosString())
+        points[ix].Options().Set(PointOptions.LOCK_DIRECTION, dir)
+    end
+
     ---Adjust the route so that it will be traveled in the correct direction.
     ---@param startPos Vec3
     ---@param targetIndex number
@@ -238,41 +264,27 @@ function Route.New()
         local closestLeft, closestRight = s.FindClosestLeg(startPos)
         local leftPos = coordsFromPoint(closestLeft)
         local rightPos = coordsFromPoint(closestRight)
-        local midPoint = calc.NearestOnLineBetweenPoints(leftPos, rightPos, startPos)
+        local nearestOnLeg = calc.NearestOnLineBetweenPoints(leftPos, rightPos, startPos)
+        local curr = Current()
 
         if closestRight < targetIndex then
-            -- Before
+            -- Our current pos is earlier in the route than the target index
             keep(closestLeft, targetIndex)
-            -- Adjust first pos
-            if (midPoint - startPos):Len() < (leftPos - startPos):Len() then
-                points[1] = Point.New(universe.CreatePos(midPoint):AsPosString())
-            end
+            replacePointWithDir(1, nearestOnLeg, points[2])
         elseif closestRight == targetIndex then
-            -- Same leg, before
+            -- We're currently on the leg that the target index ends.
             keep(closestLeft, targetIndex)
-            -- Just replace first with midPoint, unless it is the same as the final one
-            if midPoint == rightPos then
-                table.remove(points, 1)
-            else
-                points[1] = Point.New(universe.CreatePos(midPoint):AsPosString())
-            end
+            replacePointWithDir(1, nearestOnLeg, points[2])
         elseif closestLeft == targetIndex then
-            -- Same leg, after
+            -- We're currently on the leg that targetIndex starts
             keep(targetIndex, closestRight)
-            -- Just replace last with midPoint, unless it is the same as the final one
-            if midPoint == leftPos then
-                table.remove(points, #points)
-            else
-                points[#points] = Point.New(universe.CreatePos(midPoint):AsPosString())
-            end
             s.Reverse()
+            replacePointWithDir(1, nearestOnLeg, points[1])
         else
-            -- After
+            -- We're currently on a leg after the target index
             keep(targetIndex, closestRight)
-            if (midPoint - startPos):Len() < (rightPos - startPos):Len() then
-                points[#points] = Point.New(universe.CreatePos(midPoint):AsPosString())
-            end
             s.Reverse()
+            replacePointWithDir(1, nearestOnLeg, points[1])
         end
 
         removeSkippablePoints()
