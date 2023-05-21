@@ -7,7 +7,6 @@
 local PointOptions = require("flight/route/PointOptions")
 local vehicle      = require("abstraction/Vehicle"):New()
 local calc         = require("util/Calc")
-local Current      = vehicle.position.Current
 local log          = require("debug/Log")()
 local universe     = require("universe/Universe").Instance()
 local Point        = require("flight/route/Point")
@@ -32,8 +31,7 @@ require("util/Table")
 ---@field LastPointReached fun():boolean
 ---@field AdjustRouteBasedOnTarget fun(startPos:Vec3, targetIndex:number)
 ---@field FindClosestLeg fun(coordinate:Vec3):number,number
----@field FindClosestPositionAlongRoute fun(coord:Vec3)
----@field Reverse fun()
+---@field FindClosestPositionAlongRoute fun(coord:Vec3):Vec3
 ---@field RemovePoint fun(ix:number):boolean
 ---@field MovePoint fun(from:number, to:number)
 ---@field GetRemaining fun(fromPos:Vec3):RouteRemainingInfo
@@ -169,7 +167,7 @@ function Route.New()
         return nextPointIx > #points
     end
 
-    function s.Reverse()
+    local function reverse()
         -- To ensure that we hold the same direction going backwards as we did when going forward,
         -- we must shift the directions one step left before reversing.
         -- Note that this is a destructive operation as we loose the direction on the first point.
@@ -189,7 +187,7 @@ function Route.New()
 
         local closest = math.maxinteger
         local prev = coordsFromPoint(1)
-
+        system.print("#points " .. #points)
         for i = 2, #points, 1 do
             local next = coordsFromPoint(i)
 
@@ -224,22 +222,10 @@ function Route.New()
     local function keep(startIx, endIx)
         local toKeep = {}
 
-        for i = 1, #points, 1 do
-            if i >= startIx and i <= endIx then
+        for i = startIx, endIx do
+            local skippable = points[i].Options().Get(PointOptions.SKIPPABLE, false)
+            if i == startIx or i == endIx or not skippable then
                 toKeep[#toKeep + 1] = points[i]
-            end
-        end
-
-        points = toKeep
-    end
-
-    local function removeSkippablePoints()
-        local toKeep = {}
-
-        for i = 1, #points, 1 do
-            local p = points[i]
-            if i == 1 or i == #points or not p.Options().Get(PointOptions.SKIPPABLE, false) then
-                toKeep[#toKeep + 1] = p
             end
         end
 
@@ -265,29 +251,39 @@ function Route.New()
         local leftPos = coordsFromPoint(closestLeft)
         local rightPos = coordsFromPoint(closestRight)
         local nearestOnLeg = calc.NearestOnLineBetweenPoints(leftPos, rightPos, startPos)
-        local curr = Current()
+
+        local adjChar
+        local orgCount = #points
 
         if closestRight < targetIndex then
             -- Our current pos is earlier in the route than the target index
             keep(closestLeft, targetIndex)
+            nearestOnLeg = s.FindClosestPositionAlongRoute(startPos)
             replacePointWithDir(1, nearestOnLeg, points[2])
+            adjChar = "A"
         elseif closestRight == targetIndex then
             -- We're currently on the leg that the target index ends.
             keep(closestLeft, targetIndex)
+            nearestOnLeg = s.FindClosestPositionAlongRoute(startPos)
             replacePointWithDir(1, nearestOnLeg, points[2])
+            adjChar = "B"
         elseif closestLeft == targetIndex then
             -- We're currently on the leg that targetIndex starts
             keep(targetIndex, closestRight)
-            s.Reverse()
+            reverse()
+            nearestOnLeg = s.FindClosestPositionAlongRoute(startPos)
             replacePointWithDir(1, nearestOnLeg, points[1])
+            adjChar = "C"
         else
             -- We're currently on a leg after the target index
             keep(targetIndex, closestRight)
-            s.Reverse()
+            reverse()
+            nearestOnLeg = s.FindClosestPositionAlongRoute(startPos)
             replacePointWithDir(1, nearestOnLeg, points[1])
+            adjChar = "D"
         end
 
-        removeSkippablePoints()
+        log:Info("Route adjusted (", adjChar, ": ", orgCount, " -> ", #points, ")")
     end
 
     ---Remove the point at index ix

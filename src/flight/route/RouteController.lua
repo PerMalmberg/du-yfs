@@ -35,7 +35,6 @@ require("util/Table")
 ---@field ActivateRoute fun(name:string, destinationWayPointIndex?:number, startMargin?:number):boolean
 ---@field ActivateTempRoute fun():Route
 ---@field CreateRoute fun(name:string):Route|nil
----@field ReverseRoute fun():boolean
 ---@field SaveRoute fun():boolean
 ---@field Discard fun()
 ---@field Count fun():integer
@@ -503,16 +502,16 @@ function RouteController.Instance(bufferedDB)
             return false
         end
 
+        local currentPos = Current()
         destinationWayPointIndex = destinationWayPointIndex or #candidate.Points()
-        candidate.AdjustRouteBasedOnTarget(Current(), destinationWayPointIndex)
+        candidate.AdjustRouteBasedOnTarget(currentPos, destinationWayPointIndex)
 
         -- Find closest point within the route, or the first point, in the order the route is loaded
-        local currentPos = Current()
 
-        -- Check we're close enough to the closest point, which is now the first one in the route.
+        -- Check we're close enough to the closest point
         local closestPosInRoute = candidate.FindClosestPositionAlongRoute(currentPos)
 
-        local distance = (closestPosInRoute - currentPos):Len()
+        local distance = closestPosInRoute:Dist(currentPos)
         if startMargin > 0 and distance > startMargin then
             log:Error(string.format(
                 "Currently %0.2fm from closest point in route. Please move within %0.2fm of %s and try again."
@@ -589,21 +588,6 @@ function RouteController.Instance(bufferedDB)
         else
             log:Error("No route currently opened for edit, nothing to discard.")
         end
-    end
-
-    ---Reverses the route currently being edited
-    ---@return boolean
-    function s.ReverseRoute()
-        local res = false
-
-        if edit and editName ~= nil then
-            edit.Reverse()
-            res = true
-        else
-            log:Error("No route currently open for edit.")
-        end
-
-        return res
     end
 
     ---Returns the current name

@@ -43,7 +43,7 @@ describe("Route #flight", function()
     end)
 
     it("Can remove a point", function()
-        --[[ local r = Route.New()
+        local r = Route.New()
         r.AddCurrentPos()
         r.AddCurrentPos()
         assert.are_equal(2, TableLen(r.Points()))
@@ -55,7 +55,7 @@ describe("Route #flight", function()
         r.AddCurrentPos()
         assert.False(r.RemovePoint(0))
         assert.False(r.RemovePoint(2))
-        assert.True(r.RemovePoint(1)) ]]
+        assert.True(r.RemovePoint(1))
     end)
 
     it("Can iterate through the points", function()
