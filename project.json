@@ -34,8 +34,13 @@
       "type": "control",
       "slots": {}
     },
-    "Y-Lift M3 0T XS Beetle v1.0": {
-      "name": "variants/Y-Lift M3 0T XS Beetle v1.0",
+    "Y-Lift M4 0T XS Beetle v1.0": {
+      "name": "variants/Y-Lift M4 0T XS Beetle v1.0",
+      "type": "control",
+      "slots": {}
+    },
+    "Y-Lift M3 0T XS The Bug v1.0": {
+      "name": "variants/Y-Lift M3 0T XS The Bug v1.0",
       "type": "control",
       "slots": {}
     },
