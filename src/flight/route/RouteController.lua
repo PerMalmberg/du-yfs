@@ -506,8 +506,6 @@ function RouteController.Instance(bufferedDB)
         destinationWayPointIndex = destinationWayPointIndex or #candidate.Points()
         candidate.AdjustRouteBasedOnTarget(currentPos, destinationWayPointIndex)
 
-        -- Find closest point within the route, or the first point, in the order the route is loaded
-
         -- Check we're close enough to the closest point
         local closestPosInRoute = candidate.FindClosestPositionAlongRoute(currentPos)
 

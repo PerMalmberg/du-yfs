@@ -187,7 +187,7 @@ function Route.New()
 
         local closest = math.maxinteger
         local prev = coordsFromPoint(1)
-        system.print("#points " .. #points)
+
         for i = 2, #points, 1 do
             local next = coordsFromPoint(i)
 
