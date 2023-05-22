@@ -5,9 +5,10 @@ Please read the entire manual before attempting to perform an installation, ther
 - [Yoarii's Flight system](#yoariis-flight-system)
   - [Overview](#overview)
     - [Required elements (for Do-It-Yourself kits)](#required-elements-for-do-it-yourself-kits)
-    - [Routes](#routes)
+    - [Routes and Waypoints](#routes-and-waypoints)
       - [Route vs Floor mode](#route-vs-floor-mode)
-    - [Waypoint alignment](#waypoint-alignment)
+      - [Waypoint alignment](#waypoint-alignment)
+    - [Skippable waypoints](#skippable-waypoints)
     - [Enclosures](#enclosures)
     - [Floors for parking; ground and space](#floors-for-parking-ground-and-space)
     - [Cargo mass capacity](#cargo-mass-capacity)
@@ -44,17 +45,21 @@ The goal of this project was initially to write a flight system capable of worki
 * In space, you need engines in all directions.
 * Aim for 3g for upward lift when fully loaded.
 
-### Routes
+### Routes and Waypoints
 
 Routes is an important concept for this flight system as they are what guides the construct between positions. A route consists of two or more waypoints, a start, an end, and any number of waypoints in-between. A waypoint specifies a position in the world. When added to a route a waypoint is associated with other attributes, such as alignment direction and maximum speed. A route can also contain anonymous waypoints; these exists only in one route and can't be reused. Routes are run beginning to end, unless started in reverse.
 
 #### Route vs Floor mode
 
-By default, the screen will show two buttons for the start and end of each available route. Pressing either will active the route. If you would rather have a specific route shown as a list of waypoints to select from at startup, i.e. floor-mode, use the command `set -showFloor 'nameOfYourRoute'`. To revert to the default behavior, type `set -showFloor '-'`.
+By default, the screen will show two buttons for the start and end of each available route. Pressing either will active the route. Below the two buttons, there's a button named "Waypoints" that shows the individual waypoints in the route. If you would rather have a specific route shown as a list of waypoints to select from at startup, i.e. floor-mode, use the command `set -showFloor 'nameOfYourRoute'`. To revert to the default behavior, type `set -showFloor '-'`. Only waypoints that have not been marked as unselectable via the route editor are shown.
 
-### Waypoint alignment
+#### Waypoint alignment
 
 The construct will align towards the next point in the route (see setting `yawAlignmentThrustLimiter`), unless that point has a locked alignment direction, in which case the construct will keep that direction while approaching the waypoint. The construct will also automatically lock and hold the direction if the next target point is nearly straight up or down from its current position, also when issued a `move` command.
+
+### Skippable waypoints
+
+You can mark a waypoint in the route as skippable. Doing so makes the system ignore that point when calculating the path to travel to the selected waypoint. However, even if a waypoint is marked as such, it is still used to find the closest point on the complete path when a route is activated. In other words, a skippable point is only considered as such while traveling, not when determining what point to first move to to get back onto the path. This may result in that when activating a route while you're currently traveling between two points, the system may tell you you are too far from the route. A shorter description of this behavior is that _paths resulting from skipped points are not used for evaluating distance to the route on activation_.
 
 ### Enclosures
 
