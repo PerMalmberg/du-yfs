@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file. The version
 * Reduced default value of `pathAlignmentAngleLimit` from 40 to 10 degrees.
 * Increased default value if `pathAlignmentDistanceLimit` from 100 to 200 meters.
 
+## Fixed
+* The issue found in v0.2.0 where it wanted to turn during adjustment before taking off has been fixed.
+
 ## 0.2.0 - 2023-05-22
 
 ### Changed
