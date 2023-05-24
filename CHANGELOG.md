@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 0.2.0 - 2023-05-xx
+## 0.2.1 - 2023-05-24
+
+## Changed
+* Reduced default value of `pathAlignmentAngleLimit` from 40 to 10 degrees.
+* Increased default value if `pathAlignmentDistanceLimit` from 100 to 200 meters.
+
+## 0.2.0 - 2023-05-22
 
 ### Changed
 
@@ -11,6 +17,7 @@ All notable changes to this project will be documented in this file. The version
 
 ### Fixed
 * Changing direction mid-route no longer causes overshoots while traveling back to the new start point. This was especially noticeable in vertical movement at high speeds.
+* Skippable points were not properly handled during route-activation, causing route activation to fail.
 
 ## 0.1.0 - 2023-05-18
 

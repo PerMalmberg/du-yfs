@@ -69,7 +69,7 @@ local function getVerticalUpReference(waypoint, previousWaypoint)
         and waypoint.DistanceTo() > pathAlignmentDistanceLimit and previousWaypoint.DistanceTo() > pathAlignmentDistanceLimit then
         local threshold = calc.AngleToDot(pathAlignmentAngleLimit)
 
-        -- If we're more aligned to the path than the threshold, then alogn to the path
+        -- If we're more aligned to the path than the threshold, then align to the path
         if vertUp:Dot(pathDirection) > threshold then
             selectedRef = pathDirection
         elseif vertUp:Dot(pathDirection) < -threshold then -- Don't flip upside down

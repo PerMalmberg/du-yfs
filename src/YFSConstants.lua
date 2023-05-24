@@ -27,8 +27,8 @@ local constants = {
         defaultTurnAngle = 1,                -- degrees
         lightConstructMassThreshold = 10000, -- ten tons
         minimumPathCheckOffset = 2,          -- meters
-        pathAlignmentAngleLimit = 40,        -- degrees
-        pathAlignmentDistanceLimit = 100     -- meters
+        pathAlignmentAngleLimit = 10,        -- degrees
+        pathAlignmentDistanceLimit = 200     -- meters
 
     },
     route = {
