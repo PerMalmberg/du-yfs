@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.2.2 - 2023-05-27
+
+### Added
+
+* Variant for the Planck
+
 ## 0.2.1 - 2023-05-24
 
 ## Changed

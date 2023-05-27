@@ -44,6 +44,11 @@
       "type": "control",
       "slots": {}
     },
+    "Y-Lift M5 0T XS Planck v1.0": {
+      "name": "variants/Y-Lift M5 0T XS Planck v1.0",
+      "type": "control",
+      "slots": {}
+    },
     "screen/main": {
       "name": "screen/screen",
       "type": "screen",
