@@ -490,10 +490,40 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         createVertRoute.Option("y").AsNumber()
         createVertRoute.Option("z").AsNumber()
 
+        ---@param v Vec3
+        local function formatVecParts(v)
+            return string.format("-x %0.14f -y %0.14f -z %0.14f", v.x, v.y, v.z)
+        end
+
         cmd.Accept("print-vertical-up", function(_)
-            local up = -universe.VerticalReferenceVector()
-            log:Info(string.format("-x %0.14f -y %0.14f -z %0.14f", up.x, up.y, up.z))
+            log:Info(formatVecParts(-universe.VerticalReferenceVector()))
         end)
+
+        local sub = cmd.Accept("sub-pos",
+            ---@param data  {commandValue:string, sub:string|nil}
+            function(data)
+                local sub
+                if data.sub then
+                    local subPos = universe.ParsePosition(data.sub)
+                    if not subPos then
+                        return
+                    end
+
+                    sub = subPos.Coordinates()
+                else
+                    log:Info("No subtrahend specified, using current position")
+                    sub = Current()
+                end
+
+                local pos = universe.ParsePosition(data.commandValue)
+                if pos then
+                    local diff = pos.Coordinates() - sub
+                    local dir, dist = diff:NormalizeLen()
+                    log:Info("-distance ", dist, " ", formatVecParts(dir))
+                end
+            end).AsString().Mandatory()
+        sub.Option("-sub").AsString()
+
 
         cmd.Accept("floor",
             ---@param data {commandValue:string}
