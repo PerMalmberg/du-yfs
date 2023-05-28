@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.2.3 - 2023-05-28
+
+### Added
+
+* New command `get-parallel-from-route` to ease the creation of parallel routes when using the `create-vertical-route` command.
+* New command `sub-pos` that takes one, optionally two, `::pos{}` strings and prints the direction and distance between them (or from the current position if no second argument is given).
+
 ## 0.2.2 - 2023-05-27
 
 ### Added

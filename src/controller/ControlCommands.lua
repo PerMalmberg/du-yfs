@@ -524,6 +524,27 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             end).AsString().Mandatory()
         sub.Option("-sub").AsString()
 
+        cmd.Accept("get-parallel-from-route",
+            ---@param data {commandValue:string}
+            function(data)
+                local r = rc.LoadRoute(data.commandValue)
+                if not r then
+                    return
+                end
+
+                local points = r.Points()
+                if #points < 2 then
+                    log:Error("Only one point in route, can't make a parallel point from that.")
+                end
+
+                local second = universe.ParsePosition(points[2].Pos()):Coordinates()
+                local first = universe.ParsePosition(points[1].Pos()):Coordinates()
+                local diff = second - first
+
+                local dir, dist = diff:NormalizeLen()
+                log:Info("-distance ", dist, " ", formatVecParts(dir))
+            end).AsString().Mandatory()
+
 
         cmd.Accept("floor",
             ---@param data {commandValue:string}

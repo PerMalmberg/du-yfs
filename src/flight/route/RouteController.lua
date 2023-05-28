@@ -22,6 +22,7 @@ require("util/Table")
 ---@field GetRouteNames fun():string[]
 ---@field GetPageCount fun(perPage:integer):integer
 ---@field GetRoutePage fun(page:integer, perPage:integer):string[]
+---@field LoadRoute fun(name:string):Route|nil
 ---@field LoadFloorRoute fun(name:string):Route
 ---@field DeleteRoute fun(name:string)
 ---@field StoreRoute fun(name:string, route:Route):boolean
@@ -167,7 +168,7 @@ function RouteController.Instance(bufferedDB)
             s.StoreWaypoint(new, oldFound.point:Pos())
 
             for _, name in pairs(s.GetRouteNames()) do
-                local r = s.loadRoute(name)
+                local r = s.LoadRoute(name)
                 if r then
                     local switched = false
                     for _, p in ipairs(r.Points()) do
@@ -207,7 +208,7 @@ function RouteController.Instance(bufferedDB)
     ---Loads a named route
     ---@param name string The name of the route to load
     ---@return Route|nil
-    function s.loadRoute(name)
+    function s.LoadRoute(name)
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
         local data = routes[name] ---@type RouteData
 
@@ -251,7 +252,7 @@ function RouteController.Instance(bufferedDB)
 
     ---@return Route|nil
     function s.LoadFloorRoute(name)
-        floorRoute = s.loadRoute(name)
+        floorRoute = s.LoadRoute(name)
         if s then
             floorRouteName = name
         else
@@ -309,7 +310,7 @@ function RouteController.Instance(bufferedDB)
             return nil
         end
 
-        edit = s.loadRoute(name)
+        edit = s.LoadRoute(name)
 
         if edit == nil then return end
         editName = name
@@ -472,7 +473,7 @@ function RouteController.Instance(bufferedDB)
             return nil
         end
 
-        local route = s.loadRoute(name)
+        local route = s.LoadRoute(name)
 
         if route == nil then
             return nil
