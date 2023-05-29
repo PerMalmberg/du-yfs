@@ -14,6 +14,11 @@ All notable changes to this project will be documented in this file. The version
 
 * `goto` and `move` commands now interpret the `-maxspeed` argument as km/h instead m/s, as they were documented to do.
 * Activating manual control after using `goto` or `move` commands no longer causes a slight unintentional yaw movement.
+* When the ECU is active, CTRL key no longer activates the brakes.
+
+### Changed
+
+* "ECU Active" now displayed in red instead of white.
 
 ## 0.2.2 - 2023-05-27
 

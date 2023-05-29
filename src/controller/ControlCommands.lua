@@ -22,7 +22,7 @@ local Up                      = vehicle.orientation.Up
 
 ---@class ControlCommands
 ---@field New fun(input:Input, cmd:Command, flightCore:FlightCore)
----@field RegisterCommonCommands fun()
+---@field RegisterCommonCommands fun(isECU:boolean)
 ---@field RegisterRouteCommands fun()
 ---@field RegisterMoveCommands fun()
 
@@ -67,10 +67,13 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         return opt
     end
 
-    function s.RegisterCommonCommands()
+    ---@param isECU boolean
+    function s.RegisterCommonCommands(isECU)
         -- Setup brakes
-        input.Register(keys.brake, Criteria.New().OnPress(), function() brakes.Forced(true) end)
-        input.Register(keys.brake, Criteria.New().OnRelease(), function() brakes.Forced(false) end)
+        if not isECU then
+            input.Register(keys.brake, Criteria.New().OnPress(), function() brakes.Forced(true) end)
+            input.Register(keys.brake, Criteria.New().OnRelease(), function() brakes.Forced(false) end)
+        end
 
         cmd.Accept("idle", function(data)
             log:Info("Going idle!")

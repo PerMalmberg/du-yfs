@@ -92,7 +92,7 @@ local function Start(isECU)
         info = InfoCentral.Instance()
         hud = Hud.New()
         commands.RegisterMoveCommands()
-        commands.RegisterCommonCommands()
+        commands.RegisterCommonCommands(isECU)
         if not isECU then
             commands.RegisterRouteCommands()
         end
