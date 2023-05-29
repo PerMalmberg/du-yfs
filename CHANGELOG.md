@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file. The version
 
 ### Fixed
 
-* `goto` and `move` commands not interpret the `-maxspeed` argument as km/h instead m/s, as they were documented to do.
+* `goto` and `move` commands now interpret the `-maxspeed` argument as km/h instead m/s, as they were documented to do.
 
 ## 0.2.2 - 2023-05-27
 
