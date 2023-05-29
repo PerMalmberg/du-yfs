@@ -182,6 +182,19 @@ describe("RouteController #flight", function()
         ConstructMock.Instance().ResetContructPostion()
     end)
 
+    it("Can rename a route", function()
+        clearRoutes(c)
+        c.CreateRoute("1")
+        c.SaveRoute()
+        c.CreateRoute("2")
+        c.SaveRoute()
+        assert.False(c.RenameRoute("1", "2"))
+        assert.is_nil(c.LoadRoute("3"))
+        assert.True(c.RenameRoute("1", "3"))
+        assert.is_not_nil(c.LoadRoute("3"))
+        assert.is_nil(c.LoadRoute("1"))
+    end)
+
     it("Can calculate point distances", function()
         local points = {
             Point.New("::pos{0,2,49.9348,160,50.0}"),

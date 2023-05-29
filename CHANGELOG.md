@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file. The version
 
 * New command `get-parallel-from-route` to ease the creation of parallel routes when using the `create-vertical-route` command.
 * New command `sub-pos` that takes one, optionally two, `::pos{}` strings and prints the direction and distance between them (or from the current position if no second argument is given).
+* New command `route-rename` to rename a route.
 
 ### Fixed
 

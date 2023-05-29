@@ -142,6 +142,14 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 rc.DeleteRoute(data.commandValue)
             end).AsString().Mandatory()
 
+        local renameRoute = cmd.Accept("route-rename",
+            ---@param data {from:string, to:string}
+            function(data)
+                rc.RenameRoute(data.from, data.to)
+            end).AsEmpty()
+        renameRoute.Option("from").AsString().Mandatory()
+        renameRoute.Option("to").AsString().Mandatory()
+
         cmd.Accept("route-print", function(data)
             local route = getEditRoute()
             if route == nil then

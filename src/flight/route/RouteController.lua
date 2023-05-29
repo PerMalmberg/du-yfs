@@ -26,6 +26,7 @@ require("util/Table")
 ---@field LoadFloorRoute fun(name:string):Route
 ---@field DeleteRoute fun(name:string)
 ---@field StoreRoute fun(name:string, route:Route):boolean
+---@field RenameRoute fun(from:string, to:string)
 ---@field StoreWaypoint fun(name:string, pos:string):boolean
 ---@field GetWaypoints fun():NamedWaypoint[]
 ---@field LoadWaypoint fun(name:string, waypoints?:table<string,Point>):Point|nil
@@ -360,6 +361,24 @@ function RouteController.Instance(bufferedDB)
         return true
     end
 
+    ---@param from string
+    ---@param to string
+    function s.RenameRoute(from, to)
+        if s.routeExists(to) then
+            log:Error("Route already exists")
+        else
+            local r = s.LoadRoute(from)
+            if r then
+                s.StoreRoute(to, r)
+                s.DeleteRoute(from)
+                log:Info("Route renamed from ", from, " to ", to)
+                return true
+            end
+        end
+
+        return false
+    end
+
     ---Stores a waypoint under the given name
     ---@param name string The name of the waypoint
     ---@param pos string A ::pos string
@@ -571,6 +590,7 @@ function RouteController.Instance(bufferedDB)
             editName = nil
             edit = nil
             log:Info("Route saved")
+            res = true
         else
             log:Error("No route currently opened for edit.")
         end
