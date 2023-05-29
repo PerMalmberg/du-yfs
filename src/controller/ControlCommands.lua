@@ -553,16 +553,53 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             end).AsString().Mandatory()
     end
 
-    function s.RegisterMoveCommands()
-        local moveFunc = function(data)
-            local route = rc.ActivateTempRoute()
-            local pos = Current()
-            local point = route.AddCoordinate(pos + vehicle.orientation.Forward() * data.f +
-                vehicle.orientation.Right() * data.r - universe.VerticalReferenceVector() * data.u)
-            point.SetOptions(createOptions(data))
-            log:Info("Moving to ", point.Pos())
+    ---@param userInput string
+    ---@return {pos: string, coord:Vec3}|nil
+    local function getPos(userInput)
+        local target
+        local point = rc.LoadWaypoint(userInput)
+        if point then
+            target = { pos = point.Pos(), coord = universe.ParsePosition(point.Pos()).Coordinates() }
+        else
+            local pos = universe.ParsePosition(userInput)
+            if pos then
+                target = { pos = pos.AsPosString(), coord = pos.Coordinates() }
+            end
+        end
 
-            flightCore.StartFlight()
+        if not target then
+            log:Error("Given input is not a :pos{} string or a named waypoint")
+        end
+
+        return target
+    end
+
+    ---@param target Vec3
+    ---@param lockDir boolean
+    ---@param maxSpeed number
+    ---@param margin number
+    ---@param finalSpeed number
+    ---@param ignoreLastInRoute boolean
+    local function executeMove(target, lockDir, maxSpeed, margin, finalSpeed, ignoreLastInRoute)
+        if maxSpeed ~= 0 then
+            maxSpeed = calc.Kph2Mps(maxSpeed)
+        end
+
+        local lockToDir = Vec3.zero
+        if lockDir then
+            lockToDir = Forward()
+        end
+        flightCore.GotoTarget(target, lockToDir, margin, maxSpeed, 0, false)
+        log:Info("Moving to ", universe.CreatePos(target).AsPosString())
+    end
+
+    function s.RegisterMoveCommands()
+        ---@param data {commandValue:string, lockdir:boolean, maxspeed:number, margin:number, u:number, r:number, f:number}
+        local moveFunc = function(data)
+            local target = Current() + vehicle.orientation.Forward() * data.f + vehicle.orientation.Right() * data.r -
+                universe.VerticalReferenceVector() * data.u
+
+            executeMove(target, data.lockdir, data.maxspeed, data.margin, 0, false)
         end
 
         local moveCmd = cmd.Accept("move", moveFunc)
@@ -570,6 +607,26 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         moveCmd.Option("-r").AsNumber().Mandatory().Default(0)
         moveCmd.Option("-f").AsNumber().Mandatory().Default(0)
         addPointOptions(moveCmd)
+
+        local gotoCmd = cmd.Accept("goto",
+            ---@param data {commandValue:string, lockdir:boolean, maxspeed:number, margin:number, offset:number}
+            function(data)
+                local target = getPos(data.commandValue)
+
+                if target then
+                    -- A negative offset means on the other side of the point
+                    local direction, distance = (target.coord - Current()):NormalizeLen()
+                    local remaining = distance - data.offset
+
+                    if remaining > 0 then
+                        executeMove(Current() + direction * remaining, data.lockdir, data.maxspeed, data.margin, 0, false)
+                    else
+                        log:Error("Offset larger than distance to target")
+                    end
+                end
+            end).AsString().Mandatory()
+        addPointOptions(gotoCmd)
+        gotoCmd.Option("offset").AsNumber().Default(0)
 
         local turnFunc = function(data)
             -- Turn in the expected way, i.e. clockwise on positive values.
@@ -592,54 +649,6 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
 
         local strafeCmd = cmd.Accept("strafe", strafeFunc).AsNumber()
         strafeCmd.Option("-maxspeed").AsNumber()
-
-        ---@param userInput string
-        ---@return {pos: string, coord:Vec3}|nil
-        local function getPos(userInput)
-            local target
-            local point = rc.LoadWaypoint(userInput)
-            if point then
-                target = { pos = point.Pos(), coord = universe.ParsePosition(point.Pos()).Coordinates() }
-            else
-                local pos = universe.ParsePosition(userInput)
-                if pos then
-                    target = { pos = pos.AsPosString(), coord = pos.Coordinates() }
-                end
-            end
-
-            if not target then
-                log:Error("Given input is not a :pos{} string or a named waypoint")
-            end
-
-            return target
-        end
-
-        local gotoCmd = cmd.Accept("goto",
-            ---@param data {commandValue:string, lockdir:boolean, maxspeed:number, margin:number, offset:number}
-            function(data)
-                local target = getPos(data.commandValue)
-
-                if target then
-                    local direction, distance = (target.coord - Current()):NormalizeLen()
-                    local remaining = distance - data.offset
-
-                    local offsetTarget
-                    if remaining > 0 then
-                        offsetTarget = Current() + direction * remaining
-                    else
-                        offsetTarget = target.coord
-                    end
-
-                    local lockToDir = Vec3.zero
-                    if data.lockdir then
-                        lockToDir = Forward()
-                    end
-                    flightCore.GotoTarget(offsetTarget, lockToDir, data.margin, data.maxspeed, 0, false)
-                    log:Info("Moving to ", universe.CreatePos(offsetTarget).AsPosString())
-                end
-            end).AsString().Mandatory()
-        addPointOptions(gotoCmd)
-        gotoCmd.Option("offset").AsNumber().Default(0)
 
         ---@param pos Position|nil
         local function alignTo(pos)

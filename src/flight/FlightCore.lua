@@ -180,9 +180,9 @@ function FlightCore.New(routeController, flightFSM)
     ---Starts a movement towards the given coordinate.
     ---@param target Vec3
     ---@param lockDir Vec3 If not zero, direction is locked to this direction
-    ---@param margin number
-    ---@param maxSpeed number
-    ---@param finalSpeed number
+    ---@param margin number meter
+    ---@param maxSpeed number m/s
+    ---@param finalSpeed number m/s
     ---@param forceFinalSpeed boolean If true, the construct will not slow down to come to a stop if the point is last in the route (used for manual control)
     function s.GotoTarget(target, lockDir, margin, maxSpeed, finalSpeed, forceFinalSpeed)
         local temp = routeController.ActivateTempRoute()
