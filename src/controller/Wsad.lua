@@ -127,7 +127,7 @@ function Wsad.New(flightCore, cmd, settings)
         local wantsToMove = false
         local stopPos = Vec3.zero
 
-        pub.RegisterBool("RouteActivated", function(_, _)
+        pub.RegisterBool("ResetWSAD", function(_, _)
             stopPos = Vec3.zero
             wantsToMove = false
             pointDir = Vec3.zero

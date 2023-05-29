@@ -165,7 +165,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
 
                 if rc.ActivateRoute(data.commandValue, data.index, startMargin) then
                     flightCore.StartFlight()
-                    pub.Publish("RouteActivated", true)
+                    pub.Publish("ResetWSAD", true)
                     log:Info("Flight started")
                 end
             end).AsString().Mandatory()
@@ -590,6 +590,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             lockToDir = Forward()
         end
         flightCore.GotoTarget(target, lockToDir, margin, maxSpeed, 0, false)
+        pub.Publish("ResetWSAD", true)
         log:Info("Moving to ", universe.CreatePos(target).AsPosString())
     end
 

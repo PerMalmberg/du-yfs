@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. The version
 ### Fixed
 
 * `goto` and `move` commands now interpret the `-maxspeed` argument as km/h instead m/s, as they were documented to do.
+* Activating manual control after using `goto` or `move` commands no longer causes a slight unintentional yaw movement.
 
 ## 0.2.2 - 2023-05-27
 
