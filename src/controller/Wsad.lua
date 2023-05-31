@@ -133,6 +133,13 @@ function Wsad.New(flightCore, cmd, settings)
             pointDir = Vec3.zero
         end)
 
+        pub.RegisterTable("ForwardDirectionChanged",
+            ---@param _ string
+            ---@param value Vec3
+            function(_, value)
+                pointDir = value
+            end)
+
         while true do
             local curr = Current()
             local body = universe.ClosestBody(curr)
@@ -274,13 +281,6 @@ function Wsad.New(flightCore, cmd, settings)
         log:Info("Manual control on startup active.")
         lockUser()
     end
-
-    pub.RegisterTable("ForwardDirectionChanged",
-        ---@param _ string
-        ---@param value Vec3
-        function(_, value)
-            pointDir = value
-        end)
 
     settings.RegisterCallback("turnAngle",
         ---@param angle number
