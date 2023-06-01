@@ -19,6 +19,7 @@ local Forward                 = vehicle.orientation.Forward
 local Right                   = vehicle.orientation.Right
 local Up                      = vehicle.orientation.Up
 local max                     = math.max
+local Sign                    = calc.Sign
 
 ---@class Wsad
 ---@field New fun(flightcore:FlightCore):Wsad
@@ -27,10 +28,9 @@ local Wsad                    = {}
 Wsad.__index                  = Wsad
 
 ---@param flightCore FlightCore
----@param cmd CommandLine
 ---@param settings Settings
 ---@return Wsad
-function Wsad.New(flightCore, cmd, settings)
+function Wsad.New(flightCore, settings)
     local s = {}
     local turnAngle = settings.Number("turnAngle")
     local desiredAltitude = 0
@@ -40,6 +40,8 @@ function Wsad.New(flightCore, cmd, settings)
     local pointDir = Vec3.zero
     local newMovement = false
     local stopVerticalMovement = false
+    local yawSmoothStop = false
+    local yawStopSign = 0
 
     input.SetThrottle(1) -- Start at max speed
     local throttleStep = settings.Get("throttleStep", constants.flight.throttleStep) / 100
@@ -138,6 +140,18 @@ function Wsad.New(flightCore, cmd, settings)
             ---@param value Vec3
             function(_, value)
                 pointDir = value
+            end)
+
+        pub.RegisterTable("YawData",
+            ---@param value {speed:number}
+            function(_, value)
+                if yawSmoothStop then
+                    if Sign(value.speed) ~= yawStopSign then
+                        flightCore.AlignTo(Current() + Forward() * 1000)
+                        yawSmoothStop = false
+                    end
+                end
+                yawStopSign = Sign(value.speed)
             end)
 
         while true do
@@ -273,6 +287,18 @@ function Wsad.New(flightCore, cmd, settings)
         if not manualInputEnabled() then return end
         pointDir = flightCore.Turn(-turnAngle, Up())
     end)
+
+    input.Register(keys.yawleft, Criteria.New().OnRelease(), function()
+        if not manualInputEnabled() then return end
+        yawSmoothStop = true
+    end)
+
+    input.Register(keys.yawright, Criteria.New().OnRelease(), function()
+        if not manualInputEnabled() then return end
+        yawSmoothStop = true
+    end)
+
+
 
     -- shift + alt + Option9 to switch modes
     input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), toggleUserLock)

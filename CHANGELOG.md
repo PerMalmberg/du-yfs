@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 0.2.3 - 2023-05-2x
+## 0.2.3 - 2023-06-01
 
 ### Added
 
@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file. The version
 ### Changed
 
 * "ECU Active" now displayed in red instead of white.
+* Manual yaw control no longer rotates back to where the A/D key was released. Instead, it comes to a stop as soon as possible and remains at whatever direction that is, like what people are used to from other scripts.
 
 ## 0.2.2 - 2023-05-27
 

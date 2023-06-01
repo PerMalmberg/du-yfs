@@ -142,15 +142,6 @@ function AxisControl.New(axis)
             local offset = SignedRotationAngle(normal(), reference(), vecToTarget) * rad2deg
             axisData.offset = offset
 
-            local sign = Sign(offset)
-            local isLeftOf = sign == -1
-            local isRightOf = sign == 1
-            local speed = s:Speed()
-            local movingLeft = Sign(speed) == 1
-            local movingRight = Sign(speed) == -1
-
-            local movingTowardsTarget = (isLeftOf and movingRight) or (isRightOf and movingLeft)
-
             lightPid:inject(offset)
             heavyPid:inject(offset)
 
