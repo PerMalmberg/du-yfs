@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.2.4 - 2023-06-02
+
+### Changed
+* Implemented a compatibility layer for changes coming in DU 1.4. There is sadly no guarantee this covers everything, time will tell if it is enough.
+
 ## 0.2.3 - 2023-06-01
 
 ### Added

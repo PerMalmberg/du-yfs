@@ -8,9 +8,8 @@ local TotalMass = vehicle.mass.Total
 local Velocity = vehicle.velocity.Movement
 local GravityDirection = vehicle.world.GravityDirection
 local G = vehicle.world.G
-local utils = require("cpml/utils")
 local pub = require("util/PubSub").Instance()
-local clamp = utils.clamp
+local Clamp = calc.Clamp
 local max = math.max
 
 
@@ -143,9 +142,9 @@ function Brake.Instance()
 
         local brakeValue
         if currentSpeed > calc.Kph2Mps(100) then
-            brakeValue = clamp(pidHighSpeed:get(), 0, 1)
+            brakeValue = Clamp(pidHighSpeed:get(), 0, 1)
         else
-            brakeValue = clamp(pidLowSpeed:get(), 0, 1)
+            brakeValue = Clamp(pidLowSpeed:get(), 0, 1)
         end
 
         if currentSpeed <= targetSpeed then

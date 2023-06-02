@@ -1,7 +1,8 @@
 local alignment = require("flight/AlignmentFunctions")
-local r = require("CommonRequire")
-local Ternary = r.calc.Ternary
-local Current = r.vehicle.position.Current
+local vehicle = require("abstraction/Vehicle").New()
+local calc = require("util/Calc")
+local Ternary = calc.Ternary
+local Current = vehicle.position.Current
 
 ---@enum WPReachMode
 WPReachMode = {

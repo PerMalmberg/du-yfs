@@ -1,17 +1,13 @@
-local r = require("CommonRequire")
 local AxisManager = require("flight/AxisManager")
-local universe = r.universe
-local vehicle = r.vehicle
+local Vec3 = require("math/Vec3")
+local vehicle = require("abstraction/Vehicle").New()
+local universe = require("universe/Universe").Instance()
+local calc = require("util/Calc")
 local constants = require("YFSConstants")
 local pub = require("util/PubSub").Instance()
 local Stopwatch = require("system/Stopwatch")
 local Current = vehicle.position.Current
-local GravityDirection = vehicle.world.GravityDirection
-local calc = r.calc
-local abs = math.abs
-local Ternary = r.calc.Ternary
-local Vec3 = r.Vec3
-local nullVec = Vec3.New()
+local Ternary = calc.Ternary
 local Waypoint = require("flight/Waypoint")
 local alignment = require("flight/AlignmentFunctions")
 local PointOptions = require("flight/route/PointOptions")
@@ -45,7 +41,7 @@ local defaultMargin = constants.flight.defaultMargin
 ---@return Waypoint
 function FlightCore.CreateWPFromPoint(point, lastInRoute)
     local opt = point.Options()
-    local dir = Vec3.New(opt.Get(PointOptions.LOCK_DIRECTION, nullVec))
+    local dir = Vec3.New(opt.Get(PointOptions.LOCK_DIRECTION, Vec3.zero))
     local margin = opt.Get(PointOptions.MARGIN, defaultMargin)
     local finalSpeed
     if opt.Get(PointOptions.FORCE_FINAL_SPEED) then
@@ -65,7 +61,7 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
         wp.SetLastInRoute()
     end
 
-    if dir ~= nullVec then
+    if dir ~= Vec3.zero then
         wp.LockDirection(dir, true)
     end
 

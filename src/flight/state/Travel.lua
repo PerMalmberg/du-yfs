@@ -1,5 +1,4 @@
-local r = require("CommonRequire")
-local vehicle = r.vehicle
+local vehicle = require("abstraction/Vehicle").New()
 local CurrentPos = vehicle.position.Current
 
 ---@class Travel

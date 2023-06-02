@@ -1,26 +1,26 @@
-local r = require("CommonRequire")
-local yfsConstants = require("YFSConstants")
+local Vec3                        = require("math/Vec3")
+local vehicle                     = require("abstraction/Vehicle").New()
+local universe                    = require("universe/Universe").Instance()
+local calc                        = require("util/Calc")
+local yfsConstants                = require("YFSConstants")
 local LightConstructMassThreshold = yfsConstants.flight.lightConstructMassThreshold
-local DefaultMargin = yfsConstants.flight.defaultMargin
-local AxisManager = require("flight/AxisManager")
-local AdjustmentTracker = require("flight/AdjustmentTracker")
-local brakes = require("flight/Brakes"):Instance()
-local alignment = require("flight/AlignmentFunctions")
-local vehicle = r.vehicle
-local G = vehicle.world.G
-local AirFrictionAcceleration = vehicle.world.AirFrictionAcceleration
-local calc = r.calc
-local Sign = calc.Sign
-local Ternary = calc.Ternary
-local AngleToDot = calc.AngleToDot
-local universe = r.universe
-local Vec3 = r.Vec3
-local nullVec = Vec3.New()
-local engine = r.engine
-local EngineGroup = require("abstraction/EngineGroup")
-local Stopwatch = require("system/Stopwatch")
-local PID = require("cpml/pid")
-local Ray = require("util/Ray")
+local DefaultMargin               = yfsConstants.flight.defaultMargin
+local AxisManager                 = require("flight/AxisManager")
+local AdjustmentTracker           = require("flight/AdjustmentTracker")
+local brakes                      = require("flight/Brakes"):Instance()
+local alignment                   = require("flight/AlignmentFunctions")
+local G                           = vehicle.world.G
+local AirFrictionAcceleration     = vehicle.world.AirFrictionAcceleration
+local Sign                        = calc.Sign
+local Ternary                     = calc.Ternary
+local AngleToDot                  = calc.AngleToDot
+local nullVec                     = Vec3.zero
+local engine                      = require("abstraction/Engine").Instance()
+local EngineGroup                 = require("abstraction/EngineGroup")
+local Stopwatch                   = require("system/Stopwatch")
+local PID                         = require("cpml/pid")
+local Ray                         = require("util/Ray")
+local pub                         = require("util/PubSub").Instance()
 require("flight/state/Require")
 local CurrentPos                    = vehicle.position.Current
 local Velocity                      = vehicle.velocity.Movement
@@ -28,9 +28,7 @@ local Acceleration                  = vehicle.acceleration.Movement
 local GravityDirection              = vehicle.world.GravityDirection
 local AtmoDensity                   = vehicle.world.AtmoDensity
 local TotalMass                     = vehicle.mass.Total
-local utils                         = require("cpml/utils")
-local pub                           = require("util/PubSub").Instance()
-local clamp                         = utils.clamp
+local Clamp                         = calc.Clamp
 local abs                           = math.abs
 local min                           = math.min
 local max                           = math.max
@@ -475,7 +473,7 @@ function FlightFSM.New(settings, routeController)
                 acc = directionFuture * calc.CalcBrakeAcceleration(Velocity():Dot(axis), distanceNow)
             end
         else
-            local mul = calc.Clamp(data.Feed(distanceNow), 0, 1)
+            local mul = Clamp(data.Feed(distanceNow), 0, 1)
             acc = directionNow * mul *
                 engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionNow)
         end
@@ -557,7 +555,7 @@ function FlightFSM.New(settings, routeController)
 
         -- Don't let the pid value go outside 0 ... 1 - that would cause the calculated thrust to get
         -- skewed outside its intended values and push us off the path, or make us fall when holding position (if pid gets <0)
-        local pidValue = clamp(speedPid:get(), 0, 1)
+        local pidValue = Clamp(speedPid:get(), 0, 1)
 
         flightData.pid = pidValue
 

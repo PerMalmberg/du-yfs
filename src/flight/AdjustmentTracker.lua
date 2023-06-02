@@ -1,5 +1,4 @@
 local PID = require("cpml/pid")
-local Sign = require("util/Calc").Sign
 
 ---@class AdjustmentTracker
 ---@field Feed fun(distance:number):number
