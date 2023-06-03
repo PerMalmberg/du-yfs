@@ -1,7 +1,7 @@
 local Point          = require("flight/route/Point")
 local Route          = require("flight/route/Route")
 local Task           = require("system/Task")
-local log            = require("debug/Log")()
+local log            = require("debug/Log").Instance()
 local universe       = require("universe/Universe").Instance()
 local pub            = require("util/PubSub").Instance()
 local PointOptions   = require("flight/route/PointOptions")
@@ -154,15 +154,15 @@ function RouteController.Instance(bufferedDB)
         local newFound = wps[new]
 
         if not oldFound then
-            log:Info("No waypoint by that name found")
+            log.Info("No waypoint by that name found")
             return
         elseif newFound then
-            log:Info("A waypoint by that name already exists")
+            log.Info("A waypoint by that name already exists")
         end
 
         Task.New("RenameWaypoint", function()
             if edit ~= nil then
-                log:Error("Can't rename a waypoint when a route is open")
+                log.Error("Can't rename a waypoint when a route is open")
                 return
             end
 
@@ -176,7 +176,7 @@ function RouteController.Instance(bufferedDB)
                         if p.HasWaypointRef() and p.WaypointRef() == old then
                             switched = true
                             p.SetWaypointRef(new)
-                            log:Info("Waypoint ref. updated in route '", name, "': '", old, "' -> '", new, "'")
+                            log.Info("Waypoint ref. updated in route '", name, "': '", old, "' -> '", new, "'")
                         end
                     end
 
@@ -214,7 +214,7 @@ function RouteController.Instance(bufferedDB)
         local data = routes[name] ---@type RouteData
 
         if data == nil then
-            log:Error("No route by name '", name, "' found.")
+            log.Error("No route by name '", name, "' found.")
             return nil
         end
 
@@ -223,7 +223,7 @@ function RouteController.Instance(bufferedDB)
         -- For backwards compatibility, check if we have points as a sub property or not.
         -- This can be removed once all the development constructs have had their routes resaved.
         if not data.points then
-            log:Warning("Route is in an old format, please re-save it!")
+            log.Warning("Route is in an old format, please re-save it!")
             data.points = data
         end
 
@@ -232,10 +232,10 @@ function RouteController.Instance(bufferedDB)
 
             if p.HasWaypointRef() then
                 local wpName = p.WaypointRef()
-                log:Debug("Loading waypoint reference '", wpName, "'")
+                log.Debug("Loading waypoint reference '", wpName, "'")
                 local wp = s.LoadWaypoint(wpName)
                 if wp == nil then
-                    log:Error("The referenced waypoint '", wpName, "' in route '", name, "' was not found")
+                    log.Error("The referenced waypoint '", wpName, "' in route '", name, "' was not found")
                     return nil
                 end
 
@@ -246,7 +246,7 @@ function RouteController.Instance(bufferedDB)
             route.AddPoint(p)
         end
 
-        log:Info("Route '", name, "' loaded")
+        log.Info("Route '", name, "' loaded")
 
         return route
     end
@@ -307,7 +307,7 @@ function RouteController.Instance(bufferedDB)
     ---@return Route|nil
     function s.EditRoute(name)
         if edit ~= nil then
-            log:Error("A route is already being edited.")
+            log.Error("A route is already being edited.")
             return nil
         end
 
@@ -328,18 +328,18 @@ function RouteController.Instance(bufferedDB)
         local route = routes[name]
 
         if route == nil then
-            log:Error("No route by name '", name, "' found.")
+            log.Error("No route by name '", name, "' found.")
             return
         end
 
         routes[name] = nil
         db.Put(RouteController.NAMED_ROUTES, routes)
-        log:Info("Route '", name, "' deleted")
+        log.Info("Route '", name, "' deleted")
 
         if name == editName then
             edit = nil
             editName = nil
-            log:Info("No route is currently being edited")
+            log.Info("No route is currently being edited")
         end
     end
 
@@ -357,7 +357,7 @@ function RouteController.Instance(bufferedDB)
 
         routes[name] = data
         db.Put(RouteController.NAMED_ROUTES, routes)
-        log:Info("Route '", name, "' saved.")
+        log.Info("Route '", name, "' saved.")
         return true
     end
 
@@ -365,13 +365,13 @@ function RouteController.Instance(bufferedDB)
     ---@param to string
     function s.RenameRoute(from, to)
         if s.routeExists(to) then
-            log:Error("Route already exists")
+            log.Error("Route already exists")
         else
             local r = s.LoadRoute(from)
             if r then
                 s.StoreRoute(to, r)
                 s.DeleteRoute(from)
-                log:Info("Route renamed from ", from, " to ", to)
+                log.Info("Route renamed from ", from, " to ", to)
                 return true
             end
         end
@@ -387,7 +387,7 @@ function RouteController.Instance(bufferedDB)
         local p = universe.ParsePosition(pos)
         if p == nil then return false end
         if name == nil or string.len(name) == 0 then
-            log:Error("No name provided")
+            log.Error("No name provided")
             return false
         end
 
@@ -395,7 +395,7 @@ function RouteController.Instance(bufferedDB)
         waypoints[name] = Point.New(pos).Persist()
 
         db.Put(RouteController.NAMED_POINTS, waypoints)
-        log:Info("Waypoint saved as '", name, "'")
+        log.Info("Waypoint saved as '", name, "'")
         return true
     end
 
@@ -454,7 +454,7 @@ function RouteController.Instance(bufferedDB)
             waypoints[name] = nil
             db.Put(RouteController.NAMED_POINTS, waypoints)
         else
-            log:Error("No waypoint by name '", name, "' found.")
+            log.Error("No waypoint by name '", name, "' found.")
         end
 
         return found
@@ -483,12 +483,12 @@ function RouteController.Instance(bufferedDB)
     ---@return Route|nil
     function s.doBasicCheckesOnActivation(name, destinationWayPointIndex)
         if not name or string.len(name) == 0 then
-            log:Error("No route name provided")
+            log.Error("No route name provided")
             return nil
         end
 
         if editName ~= nil and name == editName and edit ~= nil then
-            log:Info("Cannot activate route currently being edited, please save first.")
+            log.Info("Cannot activate route currently being edited, please save first.")
             return nil
         end
 
@@ -497,12 +497,12 @@ function RouteController.Instance(bufferedDB)
         if route == nil then
             return nil
         elseif #route.Points() < 2 then
-            log:Error("Less than 2 points in route '", name, "'")
+            log.Error("Less than 2 points in route '", name, "'")
             return nil
         end
 
         if destinationWayPointIndex < 1 or destinationWayPointIndex > #route.Points() then
-            log:Error("Destination index must be >= 1 and <= ", #route.Points(), " it was: ", destinationWayPointIndex)
+            log.Error("Destination index must be >= 1 and <= ", #route.Points(), " it was: ", destinationWayPointIndex)
             return nil
         end
 
@@ -531,7 +531,7 @@ function RouteController.Instance(bufferedDB)
 
         local distance = closestPosInRoute:Dist(currentPos)
         if startMargin > 0 and distance > startMargin then
-            log:Error(string.format(
+            log.Error(string.format(
                 "Currently %0.2fm from closest point in route. Please move within %0.2fm of %s and try again."
                 , distance, startMargin, universe.CreatePos(closestPosInRoute):AsPosString()))
             return false
@@ -540,7 +540,7 @@ function RouteController.Instance(bufferedDB)
         current = candidate
         activeRouteName = name
 
-        log:Info("Route '", name, "' activated at index " .. destinationWayPointIndex)
+        log.Info("Route '", name, "' activated at index " .. destinationWayPointIndex)
 
         return true
     end
@@ -558,17 +558,17 @@ function RouteController.Instance(bufferedDB)
     ---@return Route|nil
     function s.CreateRoute(name)
         if edit ~= nil then
-            log:Error("A route is being edited, can't create a new one.")
+            log.Error("A route is being edited, can't create a new one.")
             return nil
         end
 
         if name == nil or #name == 0 then
-            log:Error("No name provided for route")
+            log.Error("No name provided for route")
             return nil
         end
 
         if s.routeExists(name) then
-            log:Error("Route already exists")
+            log.Error("Route already exists")
             return nil
         end
 
@@ -576,7 +576,7 @@ function RouteController.Instance(bufferedDB)
         editName = name
         s.SaveRoute()
 
-        log:Info("Route '", name, "' created")
+        log.Info("Route '", name, "' created")
         edit = s.EditRoute(name)
         return edit
     end
@@ -589,10 +589,10 @@ function RouteController.Instance(bufferedDB)
             res = s.StoreRoute(editName, edit)
             editName = nil
             edit = nil
-            log:Info("Route saved")
+            log.Info("Route saved")
             res = true
         else
-            log:Error("No route currently opened for edit.")
+            log.Error("No route currently opened for edit.")
         end
 
         return res
@@ -603,9 +603,9 @@ function RouteController.Instance(bufferedDB)
         if edit and editName ~= nil then
             edit = nil
             editName = nil
-            log:Info("All changes discarded.")
+            log.Info("All changes discarded.")
         else
-            log:Error("No route currently opened for edit, nothing to discard.")
+            log.Error("No route currently opened for edit, nothing to discard.")
         end
     end
 

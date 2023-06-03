@@ -7,7 +7,7 @@
 local PointOptions = require("flight/route/PointOptions")
 local vehicle      = require("abstraction/Vehicle"):New()
 local calc         = require("util/Calc")
-local log          = require("debug/Log")()
+local log          = require("debug/Log").Instance()
 local universe     = require("universe/Universe").Instance()
 local Point        = require("flight/route/Point")
 local pagination   = require("util/Pagination")
@@ -74,7 +74,7 @@ function Route.New()
         local pos = universe.ParsePosition(positionString)
 
         if pos == nil then
-            log:Error("Could not add position to route")
+            log.Error("Could not add position to route")
             return nil
         end
 
@@ -120,7 +120,7 @@ function Route.New()
         if checkBounds(pointIndex) then
             points[pointIndex].Options().Set(optionName, value)
         else
-            log:Error("Point index outside bounds")
+            log.Error("Point index outside bounds")
         end
     end
 
@@ -133,7 +133,7 @@ function Route.New()
             local opt = points[pointIndex].Options()
             return opt.Get(optionName, default)
         else
-            log:Error("Point index outside bounds")
+            log.Error("Point index outside bounds")
         end
 
         return default
@@ -283,7 +283,7 @@ function Route.New()
             adjChar = "D"
         end
 
-        log:Info("Route adjusted (", adjChar, ": ", orgCount, " -> ", #points, ")")
+        log.Info("Route adjusted (", adjChar, ": ", orgCount, " -> ", #points, ")")
     end
 
     ---Remove the point at index ix

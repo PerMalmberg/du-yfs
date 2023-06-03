@@ -2,7 +2,7 @@ local Template = require("Template")
 local Task = require("system/Task")
 local standardHud = library.embedFile("hud.html")
 local ecuHud = library.embedFile("ecu.html")
-local log = require("debug/Log")()
+local log = require("debug/Log").Instance()
 local pub = require("util/PubSub").Instance()
 local MaxSpeed = require("abstraction/Vehicle").New().speed.MaxSpeed
 local calc = require("util/Calc")
@@ -36,7 +36,7 @@ function Hud.New()
 
     Task.New("HUD", function()
         local tpl = Template(selectedHud, {}, function(obj, err)
-            log:Error("Error compiling template: ", err)
+            log.Error("Error compiling template: ", err)
         end)
 
         while true do
@@ -51,7 +51,7 @@ function Hud.New()
             coroutine.yield()
         end
     end).Catch(function(t)
-        log:Error(t.Name(), " ", t.Error())
+        log.Error(t.Name(), " ", t.Error())
     end)
 
 

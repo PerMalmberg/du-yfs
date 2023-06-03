@@ -1,4 +1,4 @@
-local log = require("debug/Log")()
+local log = require("debug/Log").Instance()
 
 ---Ensures that the core is linked and returns true if the control unit is an ECU
 ---@return boolean
@@ -9,7 +9,7 @@ local function ensureCoreLink()
 
     local linked = library.getCoreUnit() ~= nil
     if not linked then
-        log:Error(unitInfo.displayNameWithSize, " must be linked to the core.")
+        log.Error(unitInfo.displayNameWithSize, " must be linked to the core.")
     end
 
     return linked, isECU

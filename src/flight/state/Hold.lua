@@ -2,7 +2,7 @@
 ---@module "element/Telemeter"
 local pub = require("util/PubSub").Instance()
 local Stopwatch = require("system/Stopwatch")
-local log = require("debug/Log")()
+local log = require("debug/Log").Instance()
 
 
 ---@class Hold
@@ -66,7 +66,7 @@ function Hold.New(fsm)
             and isLastWaypoint
             and hit.Hit
             and hit.Distance <= settings.Get("autoShutdownFloorDistance") then
-            log:Info("Floor detected at last waypoint, shutting down.")
+            log.Info("Floor detected at last waypoint, shutting down.")
             unit.exit()
         end
     end

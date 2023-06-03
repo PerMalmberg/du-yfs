@@ -1,7 +1,7 @@
 local Criteria                = require("input/Criteria")
 local Vec3                    = require("math/Vec3")
 local Task                    = require("system/Task")
-local log                     = require("debug/Log")()
+local log                     = require("debug/Log").Instance()
 local vehicle                 = require("abstraction/Vehicle").New()
 local calc                    = require("util/Calc")
 local universe                = require("universe/Universe").Instance()
@@ -55,7 +55,7 @@ function Wsad.New(flightCore, settings)
 
     local function checkControlMode()
         if I2B(unit.isMouseControlActivated()) or I2B(unit.isMouseDirectControlActivated()) or I2B(unit.isMouseVirtualJoystickActivated()) then
-            log:Error("Must use control scheme 'Keyboard'")
+            log.Error("Must use control scheme 'Keyboard'")
             unit.exit()
         end
     end
@@ -69,13 +69,13 @@ function Wsad.New(flightCore, settings)
 
     local function lockUser()
         player.freeze(true)
-        log:Info("Player locked and auto shutdown disabled.")
+        log.Info("Player locked and auto shutdown disabled.")
     end
 
     local function toggleUserLock()
         if manualInputEnabled() then
             player.freeze(false)
-            log:Info("Player released and auto shutdown enabled.")
+            log.Info("Player released and auto shutdown enabled.")
         else
             lockUser()
         end
@@ -306,7 +306,7 @@ function Wsad.New(flightCore, settings)
     input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), toggleUserLock)
 
     if settings.Get("manualControlOnStartup", false) then
-        log:Info("Manual control on startup active.")
+        log.Info("Manual control on startup active.")
         lockUser()
     end
 

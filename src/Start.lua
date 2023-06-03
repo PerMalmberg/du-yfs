@@ -1,4 +1,4 @@
-local log              = require("debug/Log")()
+local log              = require("debug/Log").Instance()
 local ControlCommands  = require("controller/ControlCommands")
 local RouteController  = require("flight/route/RouteController")
 local BufferedDB       = require("storage/BufferedDB")
@@ -20,13 +20,13 @@ local input            = require("input/Input").Instance()
 ---Main routine that starts the system
 ---@param isECU boolean
 local function Start(isECU)
-    log:SetLevel(log.LogLevel.WARNING)
+    log.SetLevel(LVL.WARNING)
 
     local routeDbName = "Routes"
     local routeLink   = library.getLinkByName(routeDbName)
 
     if not routeLink then
-        log:Error("Must link a databank named '", routeDbName, "'")
+        log.Error("Must link a databank named '", routeDbName, "'")
         unit.exit()
         return
     end
@@ -34,12 +34,12 @@ local function Start(isECU)
     local settingsDbName = "Settings"
     local settingLink = library.getLinkByName(settingsDbName)
     if not settingLink then
-        log:Info("No DB named '", settingsDbName, "' linked falling back to route DB.")
+        log.Info("No DB named '", settingsDbName, "' linked falling back to route DB.")
         settingLink = routeLink
     end
 
     if isECU then
-        log:Info("Running as ECU")
+        log.Info("Running as ECU")
     end
 
     local settingsDb = BufferedDB.New(settingLink)
@@ -70,11 +70,11 @@ local function Start(isECU)
 
         local floor = floorDetector.Measure()
         if not floor.Hit or floor.Distance > settings.Get("autoShutdownFloorDistance") then
-            log:Info("No floor detected within set limit during startup, holding postition.")
+            log.Info("No floor detected within set limit during startup, holding postition.")
             rc.ActivateHoldRoute()
             fc.StartFlight()
         elseif isECU then
-            log:Info("Floor detected, shutting down")
+            log.Info("Floor detected, shutting down")
             unit.exit()
         else
             fsm.SetState(Idle.New(fsm))
@@ -99,12 +99,12 @@ local function Start(isECU)
 
         pub.Publish("ShowInfoWidgets", settings.Boolean("showWidgetsOnStart", false))
     end).Catch(function(t)
-        log:Error(t.Name(), t:Error())
+        log.Error(t.Name(), t.Error())
     end)
 
     Task.New("FloorMonitor", function()
         if floorDetector.Present() then
-            log:Info("FloorMonitor started")
+            log.Info("FloorMonitor started")
             local sw = Stopwatch.New()
             sw.Start()
 
@@ -117,9 +117,9 @@ local function Start(isECU)
             end
         end
     end).Then(function(...)
-        log:Info("Auto shutdown disabled")
+        log.Info("Auto shutdown disabled")
     end).Catch(function(t)
-        log:Error(t.Name(), t.Error())
+        log.Error(t.Name(), t.Error())
     end)
 end
 

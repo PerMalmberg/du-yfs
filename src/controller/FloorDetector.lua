@@ -1,6 +1,5 @@
 local Telemeter         = require("element/Telemeter")
-local pub               = require("util/PubSub").Instance()
-local log               = require("debug/Log")()
+local log               = require("debug/Log").Instance()
 local Vec3              = require("math/Vec3")
 
 ---@class FloorDetector
@@ -29,7 +28,7 @@ function FloorDetector.Instance()
             tele = nil
         end
     else
-        log:Error("No telementer by name '", floorDetectorName, "' found")
+        log.Error("No telementer by name '", floorDetectorName, "' found")
     end
 
     function instance.Present()

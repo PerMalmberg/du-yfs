@@ -1,4 +1,4 @@
-local log = require("debug/Log")()
+local log = require("debug/Log").Instance()
 local Lock = require("element/Lock")
 local Task = require("system/Task")
 local v = require("version_out")
@@ -16,8 +16,8 @@ function Limited.New()
     local lock = Lock.New()
 
     function s.Start()
-        log:Info(v.APP_NAME)
-        log:Info(v.APP_VERSION)
+        log.Info(v.APP_NAME)
+        log.Info(v.APP_VERSION)
 
         if linked then
             local start = require("Start")
@@ -25,7 +25,7 @@ function Limited.New()
 
             Task.New("Lock", function()
                 if lock.ValidateCo() then
-                    log:Info("Engine check passed")
+                    log.Info("Engine check passed")
                 else
                     error("Engine check failed")
                 end

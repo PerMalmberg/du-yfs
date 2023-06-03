@@ -3,7 +3,7 @@ local ContainerTalents = require("element/ContainerTalents")
 local Stopwatch        = require("system/Stopwatch")
 local Task             = require("system/Task")
 local Vec2             = require("native/Vec2")
-local log              = require("debug/Log")()
+local log              = require("debug/Log").Instance()
 local pub              = require("util/PubSub").Instance()
 
 ---@alias FuelTankInfo {name:string, factorBar:Vec2, percent:number, visible:boolean}
@@ -73,9 +73,9 @@ function Fuel.New(settings)
             end
         end
     end).Then(function(...)
-        log:Info("No fuel tanks detected")
+        log.Info("No fuel tanks detected")
     end).Catch(function(t)
-        log:Error(t.Name(), t.Error())
+        log.Error(t.Name(), t.Error())
     end)
 
     settings.RegisterCallback("containerProficiency", function(value)

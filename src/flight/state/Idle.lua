@@ -1,5 +1,5 @@
 local pub     = require("util/PubSub").Instance()
-local log     = require("debug/Log")()
+local log     = require("debug/Log").Instance()
 local vehicle = require("abstraction/Vehicle").New()
 local Current = vehicle.position.Current
 local Forward = vehicle.orientation.Forward
@@ -64,7 +64,7 @@ function Idle.New(fsm)
     ---@param hit TelemeterResult
     function s.floorMonitor(topic, hit)
         if not hit.Hit or hit.Distance > settings.Get("autoShutdownFloorDistance") then
-            log:Info("Floor gone, holding position.")
+            log.Info("Floor not detected, holding position.")
             fsm.GetRouteController().ActivateHoldRoute(enterPos, enterForward)
             fsm.GetFlightCore().StartFlight()
         end

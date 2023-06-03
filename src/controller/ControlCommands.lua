@@ -4,7 +4,7 @@
 local Criteria                = require("input/Criteria")
 local PointOptions            = require("flight/route/PointOptions")
 local Vec3                    = require("math/Vec3")
-local log                     = require("debug/Log")()
+local log                     = require("debug/Log").Instance()
 local vehicle                 = require("abstraction/Vehicle").New()
 local brakes                  = require("flight/Brakes").Instance()
 local calc                    = require("util/Calc")
@@ -76,7 +76,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         end
 
         cmd.Accept("idle", function(data)
-            log:Info("Going idle!")
+            log.Info("Going idle!")
             flightCore.GoIdle()
         end)
 
@@ -85,8 +85,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         end)
 
         cmd.Accept("print-pos", function(_)
-            log:Info("Current pos:", universe.CreatePos(Current()):AsPosString())
-            log:Info("Alignment pos:",
+            log.Info("Current pos:", universe.CreatePos(Current()):AsPosString())
+            log.Info("Alignment pos:",
                 universe.CreatePos(Current() + vehicle.orientation.Forward() * alignment.DirectionMargin):AsPosString())
         end)
 
@@ -102,7 +102,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
     local function getEditRoute()
         local route = rc.CurrentEdit()
         if route == nil then
-            log:Error("No route being edited")
+            log.Error("No route being edited")
         end
 
         return route
@@ -111,9 +111,9 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
     function s.RegisterRouteCommands()
         cmd.Accept("route-list", function(data)
             local routes = rc.GetRouteNames()
-            log:Info(#routes, " available routes")
+            log.Info(#routes, " available routes")
             for _, r in ipairs(routes) do
-                log:Info(r)
+                log.Info(r)
             end
         end)
 
@@ -121,7 +121,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             ---@param data {commandValue:string}
             function(data)
                 if rc.EditRoute(data.commandValue) then
-                    log:Info("Route open for edit")
+                    log.Info("Route open for edit")
                 end
             end).AsString()
 
@@ -160,11 +160,11 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             end
 
             for i, p in ipairs(route.Points()) do
-                log:Info(i, ":", calc.Ternary(p.HasWaypointRef(), p.WaypointRef(), p.Pos()))
+                log.Info(i, ":", calc.Ternary(p.HasWaypointRef(), p.WaypointRef(), p.Pos()))
 
                 local opts = p.Options()
                 for k, v in pairs(opts.Data()) do
-                    log:Info("- ", k, ": ", v)
+                    log.Info("- ", k, ": ", v)
                 end
             end
         end)
@@ -177,7 +177,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 if rc.ActivateRoute(data.commandValue, data.index, startMargin) then
                     flightCore.StartFlight()
                     pub.Publish("ResetWSAD", true)
-                    log:Info("Flight started")
+                    log.Info("Flight started")
                 end
             end).AsString().Mandatory()
             .Option("index").AsNumber()
@@ -192,7 +192,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
 
                 local point = route.AddCurrentPos()
                 point.SetOptions(createOptions(data))
-                log:Info("Added current position to route")
+                log.Info("Added current position to route")
             end).AsEmpty()
 
         addPointOptions(addCurrentToRoute)
@@ -210,9 +210,9 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     local p = route.AddWaypointRef(data.commandValue, ref.Pos())
                     if p then
                         p.SetOptions(createOptions(data))
-                        log:Info("Added position to route")
+                        log.Info("Added position to route")
                     else
-                        log:Error("Could not add postion")
+                        log.Error("Could not add postion")
                     end
                 end
             end).AsString()
@@ -226,9 +226,9 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     return
                 end
                 if route.RemovePoint(data.commandValue) then
-                    log:Info("Point removed")
+                    log.Info("Point removed")
                 else
-                    log:Error("Could not remove point")
+                    log.Error("Could not remove point")
                 end
             end).AsNumber().Mandatory()
 
@@ -240,9 +240,9 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 return
             end
             if route.MovePoint(from, to) then
-                log:Info("Point moved:", from, " -> ", to)
+                log.Info("Point moved:", from, " -> ", to)
             else
-                log:Error("Could not move point")
+                log.Error("Could not move point")
             end
         end
 
@@ -278,7 +278,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 for _, value in ipairs(route.Points()) do
                     value.Options().Set(PointOptions.MARGIN, data.commandValue)
                 end
-                log:Info("Margins on all points in route set to ", data.commandValue)
+                log.Info("Margins on all points in route set to ", data.commandValue)
             end).AsNumber().Mandatory()
 
         cmd.Accept("route-set-all-max-speeds",
@@ -292,7 +292,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 for _, value in ipairs(route.Points()) do
                     value.Options().Set(PointOptions.MAX_SPEED, newSpeed)
                 end
-                log:Info("Max speeds on all points in route set to ", data.commandValue, "km/h")
+                log.Info("Max speeds on all points in route set to ", data.commandValue, "km/h")
             end).AsNumber().Mandatory()
 
         local cmdPosSkippable = cmd.Accept("route-set-pos-option",
@@ -306,13 +306,13 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 if data.toggleSkippable then
                     local newValue = not route.GetPointOption(data.commandValue, PointOptions.SKIPPABLE, false)
                     route.SetPointOption(data.commandValue, PointOptions.SKIPPABLE, newValue)
-                    log:Info("Set skippable option to ", newValue)
+                    log.Info("Set skippable option to ", newValue)
                 end
 
                 if data.toggleSelectable then
                     local newValue = not route.GetPointOption(data.commandValue, PointOptions.SELECTABLE, true)
                     route.SetPointOption(data.commandValue, PointOptions.SELECTABLE, newValue)
-                    log:Info("Set selectable option to", newValue)
+                    log.Info("Set selectable option to", newValue)
                 end
             end).AsNumber()
         cmdPosSkippable.Option("toggleSkippable").AsEmptyBoolean()
@@ -324,13 +324,13 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 if data.auto then
                     local new = rc.FirstFreeWPName()
                     if not new then
-                        log:Error("Could not find a free waypoint name")
+                        log.Error("Could not find a free waypoint name")
                         return
                     end
 
                     data.name = new
                 elseif not data.name then
-                    log:Error("No name provided")
+                    log.Error("No name provided")
                 end
 
                 local pos = universe.CreatePos(Current()).AsPosString()
@@ -345,14 +345,14 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 local p = universe.ParsePosition(data.pos)
                 if p then
                     if rc.StoreWaypoint(data.commandValue, p.AsPosString()) then
-                        log:Info("Current position saved as ", data.commandValue)
+                        log.Info("Current position saved as ", data.commandValue)
                     end
                 end
             end).AsString().Mandatory().Option("pos").AsString().Mandatory()
 
         cmd.Accept("pos-list", function(_)
             for _, data in ipairs(rc.GetWaypoints()) do
-                log:Info(data.name, ": ", data.point:Pos())
+                log.Info(data.name, ": ", data.point:Pos())
             end
         end)
 
@@ -368,7 +368,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             ---@param data {commandValue:string}
             function(data)
                 if rc.DeleteWaypoint(data.commandValue) then
-                    log:Info("Waypoint deleted")
+                    log.Info("Waypoint deleted")
                 end
             end).AsString().Mandatory()
 
@@ -378,7 +378,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 local pos = Current() - universe.VerticalReferenceVector() * data.u
                 local posStr = universe.CreatePos(pos).AsPosString()
                 if rc.StoreWaypoint(data.commandValue, posStr) then
-                    log:Info("Stored postion ", posStr, " as ", data.commandValue)
+                    log.Info("Stored postion ", posStr, " as ", data.commandValue)
                 end
             end).AsString().Mandatory()
         alongGrav.Option("-u").AsNumber().Mandatory()
@@ -390,12 +390,12 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 local u = data.u or 0
                 local r = data.r or 0
                 if f == 0 and u == 0 and r == 0 then
-                    log:Error("Must provide atleast one direction distance")
+                    log.Error("Must provide atleast one direction distance")
                 else
                     local pos = Current() + Forward() * f + Right() * r + Up() * u
                     local posStr = universe.CreatePos(pos).AsPosString()
                     if rc.StoreWaypoint(data.commandValue, posStr) then
-                        log:Info("Stored postion ", posStr, " as ", data.commandValue)
+                        log.Info("Stored postion ", posStr, " as ", data.commandValue)
                     end
                 end
             end).AsString().Mandatory()
@@ -410,11 +410,11 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 local u = data.u or 0
                 local r = data.r or 0
                 if f == 0 and u == 0 and r == 0 then
-                    log:Error("Must provide atleast one direction distance")
+                    log.Error("Must provide atleast one direction distance")
                 else
                     local pos = Current() + Forward() * f + Right() * r + Up() * u
                     local posStr = universe.CreatePos(pos).AsPosString()
-                    log:Info("Position is at: ", posStr)
+                    log.Info("Position is at: ", posStr)
                 end
             end)
         printRelative.Option("u").AsNumber()
@@ -443,7 +443,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 if partCount == 0 then
                     dir = -universe.VerticalReferenceVector()
                 elseif partCount ~= 3 then
-                    log:Error("Either none or all three vector components must be provided")
+                    log.Error("Either none or all three vector components must be provided")
                     return
                 else
                     dir = Vec3.New(data.x, data.y, data.z)
@@ -463,10 +463,10 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
 
                     if data.followGravInAtmo then
                         if startInAtmo and endInAtmo then
-                            log:Warning(
+                            log.Warning(
                                 "Start and end point are in atmosphere, skipping additional gravity-aligned point in space.")
                         elseif endInAtmo and not startInAtmo then
-                            log:Error(
+                            log.Error(
                                 "Cannot calculate extra gravity aligned point when start point is not within atmosphere")
                             return
                         elseif startInAtmo and not endInAtmo then
@@ -478,7 +478,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                             local extra = route.AddCoordinate(pointInSpace)
                             extra.Options().Set(PointOptions.LOCK_DIRECTION, Forward())
                             extra.Options().Set(PointOptions.MARGIN, data.extraPointMargin)
-                            log:Info("Added extra gravity-aligned point in space at ",
+                            log.Info("Added extra gravity-aligned point in space at ",
                                 extra.Pos(), "with a margin of ", data.extraPointMargin, "m")
                         end
                     end
@@ -487,10 +487,10 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     endPos.Options().Set(PointOptions.LOCK_DIRECTION, Forward())
 
                     if rc.SaveRoute() then
-                        log:Info("Created a route by name '", data.commandValue,
+                        log.Info("Created a route by name '", data.commandValue,
                             "' with start at current position and direction with the endpoint at ", endPos.Pos())
                     else
-                        log:Error("Could not create the route")
+                        log.Error("Could not create the route")
                     end
                 end
             end).AsString().Mandatory()
@@ -507,7 +507,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         end
 
         cmd.Accept("print-vertical-up", function(_)
-            log:Info(formatVecParts(-universe.VerticalReferenceVector()))
+            log.Info(formatVecParts(-universe.VerticalReferenceVector()))
         end)
 
         local sub = cmd.Accept("sub-pos",
@@ -522,7 +522,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
 
                     sub = subPos.Coordinates()
                 else
-                    log:Info("No subtrahend specified, using current position")
+                    log.Info("No subtrahend specified, using current position")
                     sub = Current()
                 end
 
@@ -530,7 +530,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 if pos then
                     local diff = pos.Coordinates() - sub
                     local dir, dist = diff:NormalizeLen()
-                    log:Info("-distance ", dist, " ", formatVecParts(dir))
+                    log.Info("-distance ", dist, " ", formatVecParts(dir))
                 end
             end).AsString().Mandatory()
         sub.Option("-sub").AsString()
@@ -545,7 +545,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
 
                 local points = r.Points()
                 if #points < 2 then
-                    log:Error("Only one point in route, can't make a parallel point from that.")
+                    log.Error("Only one point in route, can't make a parallel point from that.")
                 end
 
                 local second = universe.ParsePosition(points[2].Pos()):Coordinates()
@@ -553,7 +553,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 local diff = second - first
 
                 local dir, dist = diff:NormalizeLen()
-                log:Info("-distance ", dist, " ", formatVecParts(dir))
+                log.Info("-distance ", dist, " ", formatVecParts(dir))
             end).AsString().Mandatory()
 
 
@@ -579,7 +579,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         end
 
         if not target then
-            log:Error("Given input is not a :pos{} string or a named waypoint")
+            log.Error("Given input is not a :pos{} string or a named waypoint")
         end
 
         return target
@@ -602,7 +602,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         end
         flightCore.GotoTarget(target, lockToDir, margin, maxSpeed, 0, false)
         pub.Publish("ResetWSAD", true)
-        log:Info("Moving to ", universe.CreatePos(target).AsPosString())
+        log.Info("Moving to ", universe.CreatePos(target).AsPosString())
     end
 
     function s.RegisterMoveCommands()
@@ -633,7 +633,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     if remaining > 0 then
                         executeMove(Current() + direction * remaining, data.lockdir, data.maxspeed, data.margin, 0, false)
                     else
-                        log:Error("Offset larger than distance to target")
+                        log.Error("Offset larger than distance to target")
                     end
                 end
             end).AsString().Mandatory()
@@ -669,7 +669,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 route.AddCurrentPos()
                 flightCore.StartFlight()
                 flightCore.AlignTo(pos.Coordinates())
-                log:Info("Aligning to ", pos.AsPosString())
+                log.Info("Aligning to ", pos.AsPosString())
             end
         end
 
