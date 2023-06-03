@@ -85,13 +85,13 @@ function FlightFSM.New(settings, routeController)
 
     local normalModeGroup = {
         thrust = {
-            engines = EngineGroup(thrustTag, airfoil),
+            engines = EngineGroup.New(thrustTag, airfoil),
             prio1Tag = airfoil,
             prio2Tag = thrustTag,
             prio3Tag = "",
             antiG = antiG
         },
-        adjust = { engines = EngineGroup(), prio1Tag = "", prio2Tag = "", prio3Tag = "", antiG = noAntiG }
+        adjust = { engines = EngineGroup.New(), prio1Tag = "", prio2Tag = "", prio3Tag = "", antiG = noAntiG }
     }
 
     local warmupTime = 1
@@ -523,7 +523,7 @@ function FlightFSM.New(settings, routeController)
         local adjustAcc = adjustmentAcc + adj.antiG()
 
         local finalAcc = thrustAcc + adjustAcc
-        unit.setEngineCommand(t.engines:Union(), { finalAcc:Unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag, t.prio2Tag,
+        unit.setEngineCommand(t.engines.Union(), { finalAcc:Unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag, t.prio2Tag,
             t.prio3Tag, 1)
     end
 
