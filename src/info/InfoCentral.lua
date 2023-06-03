@@ -1,5 +1,5 @@
 local pub = require("util/PubSub").Instance()
-local sharedPanel = require("panel/SharedPanel")()
+local sharedPanel = require("panel/SharedPanel").Instance()
 local calc = require("util/Calc")
 local format = string.format
 
@@ -94,20 +94,20 @@ function InfoCentral.Instance()
     ---@param value BrakeData
     pub.RegisterTable("BrakeData", function(topic, value)
         if not brakeInfo.panel and brakeInfo.visible then
-            local p = sharedPanel:Get("Brake")
+            local p = sharedPanel.Get("Brake")
             brakeInfo.panel = p
-            brakeInfo.wMaxDeceleration = p:CreateValue("Max deceleration", "m/s2")
-            brakeInfo.wCurrentDec = p:CreateValue("Brake dec.", "m/s2")
-            brakeInfo.wPid = p:CreateValue("Pid")
+            brakeInfo.wMaxDeceleration = p.CreateValue("Max deceleration", "m/s2")
+            brakeInfo.wCurrentDec = p.CreateValue("Brake dec.", "m/s2")
+            brakeInfo.wPid = p.CreateValue("Pid")
         elseif brakeInfo.panel and not brakeInfo.visible then
-            sharedPanel:Close("Brake")
+            sharedPanel.Close("Brake")
             brakeInfo.panel = nil
         end
 
         if brakeInfo.panel then
-            brakeInfo.wMaxDeceleration:Set(calc.Round(value.maxDeceleration, 2))
-            brakeInfo.wCurrentDec:Set(calc.Round(value.currentDeceleration, 2))
-            brakeInfo.wPid:Set(calc.Round(value.pid, 4))
+            brakeInfo.wMaxDeceleration.Set(calc.Round(value.maxDeceleration, 2))
+            brakeInfo.wCurrentDec.Set(calc.Round(value.currentDeceleration, 2))
+            brakeInfo.wPid.Set(calc.Round(value.pid, 4))
         end
     end)
 
@@ -115,39 +115,39 @@ function InfoCentral.Instance()
     ---@param value FlightData
     pub.RegisterTable("FlightData", function(topic, value)
         if not flightInfo.panel and flightInfo.visible then
-            local p = sharedPanel:Get("Movement")
+            local p = sharedPanel.Get("Movement")
             flightInfo.panel = p
-            flightInfo.wStateName = p:CreateValue("State", "")
-            flightInfo.wPointDistance = p:CreateValue("Point dist.", "m")
-            flightInfo.wAcceleration = p:CreateValue("Acceleration", "m/s2")
-            flightInfo.wCtrlAcceleration = p:CreateValue("Ctrl. acc.", "m/s2")
-            flightInfo.wTargetSpeed = p:CreateValue("Target speed")
-            flightInfo.wFinalSpeed = p:CreateValue("Final speed")
-            flightInfo.wDZSpeedInc = p:CreateValue("DZ spd. inc.", "km/h")
-            flightInfo.wSpeedDiff = p:CreateValue("Speed diff", "km/h")
-            flightInfo.wBrakeMaxSpeed = p:CreateValue("Brake Max Speed", "km/h")
-            flightInfo.wPid = p:CreateValue("Pid")
-            flightInfo.wDistToAtmo = p:CreateValue("Atmo dist.", "m")
-            flightInfo.wSpeed = p:CreateValue("Abs. speed", "km/h")
+            flightInfo.wStateName = p.CreateValue("State", "")
+            flightInfo.wPointDistance = p.CreateValue("Point dist.", "m")
+            flightInfo.wAcceleration = p.CreateValue("Acceleration", "m/s2")
+            flightInfo.wCtrlAcceleration = p.CreateValue("Ctrl. acc.", "m/s2")
+            flightInfo.wTargetSpeed = p.CreateValue("Target speed")
+            flightInfo.wFinalSpeed = p.CreateValue("Final speed")
+            flightInfo.wDZSpeedInc = p.CreateValue("DZ spd. inc.", "km/h")
+            flightInfo.wSpeedDiff = p.CreateValue("Speed diff", "km/h")
+            flightInfo.wBrakeMaxSpeed = p.CreateValue("Brake Max Speed", "km/h")
+            flightInfo.wPid = p.CreateValue("Pid")
+            flightInfo.wDistToAtmo = p.CreateValue("Atmo dist.", "m")
+            flightInfo.wSpeed = p.CreateValue("Abs. speed", "km/h")
         elseif brakeInfo.panel and not brakeInfo.visible then
-            sharedPanel:Close("Movement")
+            sharedPanel.Close("Movement")
             flightInfo.panel = nil
         end
 
         if flightInfo.panel then
-            flightInfo.wStateName:Set(value.fsmState)
-            flightInfo.wPointDistance:Set(calc.Round(value.waypointDist, 2))
-            flightInfo.wAcceleration:Set(format("%.1f", value.acceleration))
-            flightInfo.wCtrlAcceleration:Set(format("%.1f", value.controlAcc))
-            flightInfo.wTargetSpeed:Set(format("%.1f (%s)", calc.Mps2Kph(value.targetSpeed), value.targetSpeedReason))
-            flightInfo.wFinalSpeed:Set(format("%.1f km/h in %.1f m", calc.Mps2Kph(value.finalSpeed),
+            flightInfo.wStateName.Set(value.fsmState)
+            flightInfo.wPointDistance.Set(calc.Round(value.waypointDist, 2))
+            flightInfo.wAcceleration.Set(format("%.1f", value.acceleration))
+            flightInfo.wCtrlAcceleration.Set(format("%.1f", value.controlAcc))
+            flightInfo.wTargetSpeed.Set(format("%.1f (%s)", calc.Mps2Kph(value.targetSpeed), value.targetSpeedReason))
+            flightInfo.wFinalSpeed.Set(format("%.1f km/h in %.1f m", calc.Mps2Kph(value.finalSpeed),
                 value.finalSpeedDistance))
-            flightInfo.wDZSpeedInc:Set(calc.Round(calc.Mps2Kph(value.dzSpeedInc)))
-            flightInfo.wSpeedDiff:Set(calc.Round(calc.Mps2Kph(value.speedDiff), 1))
-            flightInfo.wBrakeMaxSpeed:Set(calc.Round(calc.Mps2Kph(value.brakeMaxSpeed)))
-            flightInfo.wPid:Set(calc.Round(value.pid, 4))
-            flightInfo.wDistToAtmo:Set(calc.Round(value.distanceToAtmo, 1))
-            flightInfo.wSpeed:Set(calc.Round(calc.Mps2Kph(value.absSpeed), 1))
+            flightInfo.wDZSpeedInc.Set(calc.Round(calc.Mps2Kph(value.dzSpeedInc)))
+            flightInfo.wSpeedDiff.Set(calc.Round(calc.Mps2Kph(value.speedDiff), 1))
+            flightInfo.wBrakeMaxSpeed.Set(calc.Round(calc.Mps2Kph(value.brakeMaxSpeed)))
+            flightInfo.wPid.Set(calc.Round(value.pid, 4))
+            flightInfo.wDistToAtmo.Set(calc.Round(value.distanceToAtmo, 1))
+            flightInfo.wSpeed.Set(calc.Round(calc.Mps2Kph(value.absSpeed), 1))
         end
     end)
 
@@ -155,37 +155,37 @@ function InfoCentral.Instance()
     ---@param value AdjustmentData
     pub.RegisterTable("AdjustmentData", function(topic, value)
         if not adjustInfo.panel and adjustInfo.visible then
-            local p = sharedPanel:Get("Adjustment")
+            local p = sharedPanel.Get("Adjustment")
             adjustInfo.panel = p
-            adjustInfo.wLong = p:CreateValue("Long", "m")
-            adjustInfo.wLat = p:CreateValue("Lat", "m")
-            adjustInfo.wVert = p:CreateValue("Vert", "m")
+            adjustInfo.wLong = p.CreateValue("Long", "m")
+            adjustInfo.wLat = p.CreateValue("Lat", "m")
+            adjustInfo.wVert = p.CreateValue("Vert", "m")
         elseif adjustInfo.panel and not adjustInfo.visible then
-            sharedPanel:Close("Adjustment")
+            sharedPanel.Close("Adjustment")
             adjustInfo.panel = nil
         end
 
         if adjustInfo.panel then
-            adjustInfo.wLong:Set(calc.Round(value.long, 2))
-            adjustInfo.wLat:Set(calc.Round(value.lat, 2))
-            adjustInfo.wVert:Set(calc.Round(value.ver, 2))
+            adjustInfo.wLong.Set(calc.Round(value.long, 2))
+            adjustInfo.wLat.Set(calc.Round(value.lat, 2))
+            adjustInfo.wVert.Set(calc.Round(value.ver, 2))
         end
     end)
 
     ---@param p Panel
     ---@param axisName string
     local function createAxisValues(p, axis, axisName)
-        axis.wTitle = p:CreateValue("Axis")
-        axis.wTitle:Set(axisName)
-        axis.wAngle = p:CreateValue("Angle", "°")
-        axis.wSpeed = p:CreateValue("Speed", "°/s")
-        axis.wAcceleration = p:CreateValue("Acc.", "°/s2")
-        axis.wOffset = p:CreateValue("Offset", "°")
+        axis.wTitle = p.CreateValue("Axis")
+        axis.wTitle.Set(axisName)
+        axis.wAngle = p.CreateValue("Angle", "°")
+        axis.wSpeed = p.CreateValue("Speed", "°/s")
+        axis.wAcceleration = p.CreateValue("Acc.", "°/s2")
+        axis.wOffset = p.CreateValue("Offset", "°")
     end
 
     local function setupAxisPanels()
         if not axisInfo.pitchPanels and axisInfo.visible then
-            local p = sharedPanel:Get("Rotation")
+            local p = sharedPanel.Get("Rotation")
             axisInfo.panel = p
             axisInfo.pitchPanels = {}
             createAxisValues(p, axisInfo.pitchPanels, "Pitch")
@@ -194,7 +194,7 @@ function InfoCentral.Instance()
             axisInfo.yawPanels = {}
             createAxisValues(p, axisInfo.yawPanels, "Yaw")
         elseif axisInfo.pitchPanels and not axisInfo.visible then
-            sharedPanel:Close("Rotation")
+            sharedPanel.Close("Rotation")
             adjustInfo.pitchPanels = nil
             adjustInfo.rollPanels = nil
             adjustInfo.yawPanels = nil
@@ -204,10 +204,10 @@ function InfoCentral.Instance()
     ---@param p table
     ---@param value AxisControlData
     local function setAxisValues(p, value)
-        p.wAngle:Set(calc.Round(value.angle, 2))
-        p.wSpeed:Set(calc.Round(value.speed, 2))
-        p.wAcceleration:Set(calc.Round(value.acceleration, 2))
-        p.wOffset:Set(calc.Round(value.offset, 2))
+        p.wAngle.Set(calc.Round(value.angle, 2))
+        p.wSpeed.Set(calc.Round(value.speed, 2))
+        p.wAcceleration.Set(calc.Round(value.acceleration, 2))
+        p.wOffset.Set(calc.Round(value.offset, 2))
     end
 
     ---@param topic string
@@ -260,24 +260,24 @@ function InfoCentral.Instance()
         ---@param waypoint Waypoint
         function(topic, waypoint)
             if not waypointInfo.panel and waypointInfo.visible then
-                local p = sharedPanel:Get("Waypoint")
+                local p = sharedPanel.Get("Waypoint")
                 waypointInfo.panel = p
-                waypointInfo.wDistance = p:CreateValue("Distance", "m")
-                waypointInfo.wMargin = p:CreateValue("Margin", "m")
-                waypointInfo.wFinalSpeed = p:CreateValue("Final speed", "km/h")
-                waypointInfo.wMaxSpeed = p:CreateValue("Max speed", "km/h")
-                waypointInfo.wDirLock = p:CreateValue("Dir lock")
+                waypointInfo.wDistance = p.CreateValue("Distance", "m")
+                waypointInfo.wMargin = p.CreateValue("Margin", "m")
+                waypointInfo.wFinalSpeed = p.CreateValue("Final speed", "km/h")
+                waypointInfo.wMaxSpeed = p.CreateValue("Max speed", "km/h")
+                waypointInfo.wDirLock = p.CreateValue("Dir lock")
             elseif waypointInfo.panel and not waypointInfo.visible then
-                sharedPanel:Close("Waypoint")
+                sharedPanel.Close("Waypoint")
                 waypointInfo.panel = nil
             end
 
             if waypointInfo.panel then
-                waypointInfo.wDistance:Set(calc.Round(waypoint.DistanceTo(), 3))
-                waypointInfo.wMargin:Set(calc.Round(waypoint.Margin(), 3))
-                waypointInfo.wFinalSpeed:Set(calc.Round(calc.Kph2Mps(waypoint.FinalSpeed()), 1))
-                waypointInfo.wMaxSpeed:Set(calc.Round(calc.Kph2Mps(waypoint.MaxSpeed()), 1))
-                waypointInfo.wDirLock:Set(waypoint.DirectionLocked())
+                waypointInfo.wDistance.Set(calc.Round(waypoint.DistanceTo(), 3))
+                waypointInfo.wMargin.Set(calc.Round(waypoint.Margin(), 3))
+                waypointInfo.wFinalSpeed.Set(calc.Round(calc.Kph2Mps(waypoint.FinalSpeed()), 1))
+                waypointInfo.wMaxSpeed.Set(calc.Round(calc.Kph2Mps(waypoint.MaxSpeed()), 1))
+                waypointInfo.wDirLock.Set(waypoint.DirectionLocked())
             end
         end)
 
