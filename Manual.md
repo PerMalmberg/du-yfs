@@ -104,7 +104,8 @@ To get a near-perfect alignment of the elevator to your ground construct, follow
       ```lua
       local Vec3 = require("cpml/vec3")
       local v = Vec3(construct.getWorldOrientationForward())
-      local s = string.format("align-to-vector -x %0.14f -y %0.14f -z %0.14f", v.x, v.y, v.z)
+      local fmt = "align-to-vector -x %0.14f -y %0.14f -z %0.14f"
+      local s = string.format(fmt, v.x, v.y, v.z)
       slot1.setCenteredText(s)
       unit.exit()
       ```
@@ -112,7 +113,8 @@ To get a near-perfect alignment of the elevator to your ground construct, follow
       ```lua
       local Vec3 = require("cpml/vec3")
       local v = -Vec3(construct.getWorldOrientationForward())
-      local s = string.format("align-to-vector -x %0.14f -y %0.14f -z %0.14f", v.x, v.y, v.z)
+      local fmt = "align-to-vector -x %0.14f -y %0.14f -z %0.14f"
+      local s = string.format(fmt, v.x, v.y, v.z)
       slot1.setCenteredText(s)
       unit.exit()
       ```
@@ -120,7 +122,8 @@ To get a near-perfect alignment of the elevator to your ground construct, follow
       ```lua
       local Vec3 = require("cpml/vec3")
       local v = Vec3(construct.getWorldOrientationRight())
-      local s = string.format("align-to-vector -x %0.14f -y %0.14f -z %0.14f", v.x, v.y, v.z)
+      local fmt = "align-to-vector -x %0.14f -y %0.14f -z %0.14f"
+      local s = string.format(fmt, v.x, v.y, v.z)
       slot1.setCenteredText(s)
       unit.exit()
       ```
@@ -128,18 +131,19 @@ To get a near-perfect alignment of the elevator to your ground construct, follow
       ```lua
       local Vec3 = require("cpml/vec3")
       local v = -Vec3(construct.getWorldOrientationRight())
-      local s = string.format("align-to-vector -x %0.14f -y %0.14f -z %0.14f", v.x, v.y, v.z)
+      local fmt = "align-to-vector -x %0.14f -y %0.14f -z %0.14f"
+      local s = string.format(fmt, v.x, v.y, v.z)
       slot1.setCenteredText(s)
       unit.exit()
       ```
 
-4. Start the Programming Board and copy the command from the screen (CTRL-L to to open editor while pointing to the screen).
+1. Start the Programming Board and copy the command from the screen (CTRL-L to to open editor while pointing to the screen).
    * The command is the part in the `text = ....` line of the screen code. Do not copy the quotation marks.
-5. Start the elevator, enter manual control mode and raise it up slightly using the `move` command. Manual mode is needed to prevent it to shutdown automatically.
-6. Paste the command into Lua-chat and press enter to perform the alignment.
+2. Start the elevator, enter manual control mode and raise it up slightly using the `move` command. Manual mode is needed to prevent it to shutdown automatically.
+3. Paste the command into Lua-chat and press enter to perform the alignment.
    * Showing the widgets (`show-widgets 1`) and looking in the "Rotation" widget, under "Axis/Yaw", at the _offset_ value will show 0 when it is aligned.
-7. Once aligned, either hold C or use the `move` command to set it down again.
-8. Turn off the elevator.
+4. Once aligned, either hold C or use the `move` command to set it down again.
+5. Turn off the elevator.
 
 ### Creating a route
 
