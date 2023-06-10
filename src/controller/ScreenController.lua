@@ -18,7 +18,7 @@ local max                = math.max
 local min                = math.min
 
 ---@class ScreenController
----@field ActivateFloorMode fun(string)
+---@field ActivateFloorMode fun(string):boolean
 
 local ScreenController   = {}
 ScreenController.__index = ScreenController
@@ -253,12 +253,15 @@ function ScreenController.New(flightCore, settings)
     end
 
     ---@param routeName string
+    ---@return boolean
     function s.ActivateFloorMode(routeName)
-        if rc.LoadFloorRoute(routeName) then
+        local r = rc.LoadFloorRoute(routeName)
+        if r then
             floorPage = 1
             s.updateFloorData()
             stream.Write({ activate_page = "status,floor" })
         end
+        return r ~= nil
     end
 
     ---@param isTimedOut boolean
@@ -270,9 +273,16 @@ function ScreenController.New(flightCore, settings)
             stream.Write({ screen_layout = layout })
 
             local floorRoute = settings.String("showFloor")
+            local floorActivated = false
+
             if floorRoute ~= "-" then
-                s.ActivateFloorMode(floorRoute)
-            else
+                floorActivated = s.ActivateFloorMode(floorRoute)
+                if not floorActivated then
+                    log.Error("Could not activate floor mode")
+                end
+            end
+
+            if not floorActivated then
                 stream.Write({ activate_page = "status,routeSelection" })
             end
 
