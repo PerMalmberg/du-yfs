@@ -49,6 +49,11 @@
       "type": "control",
       "slots": {}
     },
+    "Y-Lift M6 0T XS The Bug v2.0": {
+      "name": "variants/Y-Lift M6 0T XS The Bug v2.0",
+      "type": "control",
+      "slots": {}
+    },
     "screen/main": {
       "name": "screen/screen",
       "type": "screen",

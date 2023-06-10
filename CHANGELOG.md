@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.2.5 - 2023-06-10
+
+### Fixed
+* If a route has been selected using the command `set -showFloor` and that route does not exist, the an error message is printed and a the regular route selection screen is displayed instead of leaving the screen in "offline" mode.
+* Slight formatting fixes in log messages for the `set` command.
+
+### Added
+* Variant for The Bug v2.0
+
 ## 0.2.4 - 2023-06-04
 
 ### Changed

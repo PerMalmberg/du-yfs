@@ -84,7 +84,7 @@ function Settings.New(db)
                 if val ~= nil then
                     db.Put(key, val)
                     publishToSubscribers(key, val)
-                    log.Info("Set", key, " to ", val)
+                    log.Info("Set '", key, "' to '", val, "'")
                 end
             end
         end)
@@ -103,7 +103,7 @@ function Settings.New(db)
     cmd.Accept("reset-settings", function(_)
         for key, value in pairs(settings) do
             db.Put(key, value.default)
-            log.Info("Reset", key, " to ", value.default)
+            log.Info("Reset '", key, "' to '", value.default, "'")
         end
 
         s.Reload()
@@ -115,7 +115,7 @@ function Settings.New(db)
             local setting = settings[data.commandValue]
 
             if setting == nil then
-                log.Error("Unknown setting:", data.commandValue)
+                log.Error("Unknown setting: ", data.commandValue)
                 return
             end
 
