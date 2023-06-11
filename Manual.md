@@ -27,6 +27,7 @@ Please read the entire manual before attempting to perform an installation, ther
   - [Accuracy](#accuracy)
     - [Custom / non-gravity aligned travel vectors](#custom--non-gravity-aligned-travel-vectors)
     - [A note on non gravity-aligned atmospheric accent/decent and angled flight paths](#a-note-on-non-gravity-aligned-atmospheric-accentdecent-and-angled-flight-paths)
+  - [Shifting gravity wells](#shifting-gravity-wells)
   - [Emergency Controller Unit](#emergency-controller-unit)
   - [Thanks](#thanks)
 
@@ -41,7 +42,7 @@ The goal of this project was initially to write a flight system capable of worki
 * A telemeter named "FloorDetector", pointing downwards
 * Optional data bank named "Settings"
 * Screen (optional, but strongly recommended)
-* Atmospheric engines are required in all direction, except in the upward direction as gravity does the job.
+* Atmospheric engines are required in all direction, except in the upward direction as gravity does the job. Upward engines are used if present.
 * In space, you need engines in all directions.
 * Aim for 3g for upward lift when fully loaded.
 
@@ -375,6 +376,12 @@ While it is possible to make routes that are not gravity aligned work, they may 
 * Strong acceleration
 
   Sideways engines are generally weaker than the main downward pointing engines so when accelerating, the weaker ones may have difficulties to keep the construct on the path.
+
+## Shifting gravity wells
+
+The script always aligns so that the construct's up direction points away from the the current gravity well. When the gravity direction changes, such as near Thades' moonlets (where they appear to be the sum of the different gravity wells depending on the location of the construct), the script will adjust its alignment accordingly. Another case where this will happen (theoretically, not actually tested at the time of writing this) is when traveling between planets such as Alioth and Haven/Sanctuary; at the midpoint the script should flip over 180 degrees.
+
+This means that a route starting at the surface of Thades and ending among the moonlets will have different alignment along the travel path. As such, a space construct placed based on the elevator's alignment in space will not point exactly away from Thades, but clearly be at an angle to the planet. Please keep all this in mind when building your space construct - you most likely need to increase margins around the dock/cradle so that alignment can be done without intersecting.
 
 ## Emergency Controller Unit
 
