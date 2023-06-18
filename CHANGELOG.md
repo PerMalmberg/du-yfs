@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.2.6 - 2023-06-18
+
+### Changed
+* Mainly noticeable on ships like the Bug and Beetle, drive engines are now kept active when transitioning from vertical to horizontal flight.
+
 ## 0.2.5 - 2023-06-11
 
 ### Fixed
