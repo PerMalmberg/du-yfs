@@ -103,22 +103,27 @@ function Wsad.New(flightCore, settings)
     local function movement(body, interval)
         local curr = Current()
         -- Put the point 1.5 times the distance we travel per timer interval
-        local dist = max(50, vehicle.velocity.Movement():Len() * interval * 1.5)
+        local dist = max(50, Velocity():Len() * interval * 1.5)
 
         local dir = (Forward() * longitudal + Right() * lateral + Up() * vertical):Normalize()
 
         if body:IsInAtmo(curr) and vertical == 0 then
-            local currHeight = getHeight()
             -- As we meassure only periodically, we can't make the threshold too small. 0.2m/s was too small, we can miss that when moving fast.
             if stopVerticalMovement and Velocity():ProjectOn(-VerticalReferenceVector()):Len() < 0.5 then
-                desiredAltitude = currHeight
+                desiredAltitude = getHeight()
                 stopVerticalMovement = false
+            end
+
+            -- When we want to stop vertical movement, we want to keep longitudal engines active so overide target height
+            if stopVerticalMovement then
+                desiredAltitude = getHeight()
             end
 
             -- Find the direction from body center to forward point and calculate a new point with same
             -- height as the movement started at so that we move along the curvature of the body.
             local pointInDir = curr + dir * dist
-            return body.Geography.Center + (pointInDir - body.Geography.Center):NormalizeInPlace() * desiredAltitude
+            local center = body.Geography.Center
+            return center + (pointInDir - center):NormalizeInPlace() * desiredAltitude
         end
 
         return Current() + dir * dist
