@@ -20,13 +20,12 @@ local Right                   = vehicle.orientation.Right
 local Up                      = vehicle.orientation.Up
 local max                     = math.max
 local Sign                    = calc.Sign
-require("compat/Compat")
 
 ---@class Wsad
 ---@field New fun(flightcore:FlightCore):Wsad
 
-local Wsad   = {}
-Wsad.__index = Wsad
+local Wsad                    = {}
+Wsad.__index                  = Wsad
 
 ---@param flightCore FlightCore
 ---@param settings Settings
@@ -54,7 +53,7 @@ function Wsad.New(flightCore, settings)
     end)
 
     local function checkControlMode()
-        if I2B(unit.isMouseControlActivated()) or I2B(unit.isMouseDirectControlActivated()) or I2B(unit.isMouseVirtualJoystickActivated()) then
+        if unit.isMouseControlActivated() or unit.isMouseDirectControlActivated() or unit.isMouseVirtualJoystickActivated() then
             log.Error("Must use control scheme 'Keyboard'")
             unit.exit()
         end
@@ -64,7 +63,7 @@ function Wsad.New(flightCore, settings)
 
     ---@return boolean
     local function manualInputEnabled()
-        return I2B(player.isFrozen())
+        return player.isFrozen()
     end
 
     local function lockUser()

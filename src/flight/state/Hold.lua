@@ -62,7 +62,7 @@ function Hold.New(fsm)
     ---@param topic string
     ---@param hit TelemeterResult
     function s.floorMonitor(topic, hit)
-        if player.isFrozen() == 0
+        if not player.isFrozen()
             and isLastWaypoint
             and hit.Hit
             and hit.Distance <= settings.Get("autoShutdownFloorDistance") then
