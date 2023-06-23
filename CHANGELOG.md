@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.2.9 - 2023-06-23
+
+## Fixed
+
+* Options, including margin, for the first waypoint in a route was not kept when a route was adjusted during route-activation. For example, this could cause issues taking off, where the elevator would just stand still with vertical engines active without going anywhere. If you have points with non-default margins, these will now be used as intended.
+
 ## 0.2.8 - 2023-06-23
 
 ### Fixed
