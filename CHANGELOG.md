@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.2.8 - 2023-06-23
+
+### Fixed
+* Alignment along the path instead of gravity now works on both intended axes instead of just one.
+
+### Added
+* New command: `route-print-pos-options` to print options set on a point in a route.
+
 ## 0.2.7 - 2023-06-20
 
 ### Fixed

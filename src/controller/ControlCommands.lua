@@ -295,7 +295,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 log.Info("Max speeds on all points in route set to ", data.commandValue, "km/h")
             end).AsNumber().Mandatory()
 
-        local cmdPosSkippable = cmd.Accept("route-set-pos-option",
+        local cmdSetPosOption = cmd.Accept("route-set-pos-option",
             ---@param data {commandValue:number, toggleSkippable:boolean, toggleSelectable:boolean}
             function(data)
                 local route = getEditRoute()
@@ -305,18 +305,36 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
 
                 if data.toggleSkippable then
                     local newValue = not route.GetPointOption(data.commandValue, PointOptions.SKIPPABLE, false)
-                    route.SetPointOption(data.commandValue, PointOptions.SKIPPABLE, newValue)
-                    log.Info("Set skippable option to ", newValue)
+                    if route.SetPointOption(data.commandValue, PointOptions.SKIPPABLE, newValue) then
+                        log.Info("Set skippable option to ", newValue)
+                    end
                 end
 
                 if data.toggleSelectable then
                     local newValue = not route.GetPointOption(data.commandValue, PointOptions.SELECTABLE, true)
-                    route.SetPointOption(data.commandValue, PointOptions.SELECTABLE, newValue)
-                    log.Info("Set selectable option to", newValue)
+                    if route.SetPointOption(data.commandValue, PointOptions.SELECTABLE, newValue) then
+                        log.Info("Set selectable option to ", newValue)
+                    end
                 end
             end).AsNumber()
-        cmdPosSkippable.Option("toggleSkippable").AsEmptyBoolean()
-        cmdPosSkippable.Option("toggleSelectable").AsEmptyBoolean()
+        cmdSetPosOption.Option("toggleSkippable").AsEmptyBoolean()
+        cmdSetPosOption.Option("toggleSelectable").AsEmptyBoolean()
+
+        cmd.Accept("route-print-pos-options",
+            ---@param data {commandValue:number}
+            function(data)
+                local route = getEditRoute()
+                if route == nil then
+                    return
+                end
+
+                for i, k in ipairs(PointOptions.ALL) do
+                    local val = route.GetPointOption(data.commandValue, k, nil)
+                    if val ~= nil then
+                        log.Info(k, ": ", val)
+                    end
+                end
+            end).AsNumber()
 
         local saveCurrAs = cmd.Accept("pos-save-current-as",
             ---@param data {name:string, auto:boolean}

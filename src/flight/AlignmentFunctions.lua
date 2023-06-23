@@ -122,12 +122,7 @@ end
 ---@param previousWaypoint Waypoint
 ---@return Vec3
 function alignment.RollTopsideAwayFromVerticalReference(waypoint, previousWaypoint)
-    local normal = -universe.VerticalReferenceVector()
-    -- When next waypoint is nearly above us, use the line between them as the vertical reference instead to make following the path more exact
-    --[[local wpNormal = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
-    if not waypoint.WithinMargin(WPReachMode.ENTRY) and normal:Dot(wpNormal) > 0.8 then
-        normal = wpNormal
-    end]]
+    local normal = getVerticalUpReference(waypoint, previousWaypoint)
     return Current() + normal * directionMargin
 end
 
@@ -136,7 +131,7 @@ end
 ---@return Vec3 direction The direction from `previous` to `next` projected on the current plane
 function alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(next, previous)
     local current = Current()
-    local normal = -universe.VerticalReferenceVector()
+    local normal = getVerticalUpReference(next, previous)
     local p = calc.ProjectPointOnPlane(normal, current, previous.Destination())
     local n = calc.ProjectPointOnPlane(normal, current, next.Destination())
     return (n - p):NormalizeInPlace()

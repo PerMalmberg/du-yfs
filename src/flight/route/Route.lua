@@ -23,8 +23,8 @@ require("util/Table")
 ---@field AddWaypointRef fun(namedWaypoint:string, pos?:string):Point|nil
 ---@field AddCurrentPos fun():Point
 ---@field AddPoint fun(sp:Point)
----@field SetPointOption fun(pointIndex:number, optionName:string, value:string|boolean|number)
----@field GetPointOption fun(pointIndex:number, optionName:string, default:string|boolean):string|number|boolean
+---@field SetPointOption fun(pointIndex:number, optionName:string, value:string|boolean|number):boolean
+---@field GetPointOption fun(pointIndex:number, optionName:string, default:string|boolean|nil):string|number|boolean|nil
 ---@field Clear fun()
 ---@field Next fun():Point|nil
 ---@field Peek fun():Point|nil
@@ -116,18 +116,21 @@ function Route.New()
     ---@param pointIndex integer
     ---@param optionName string
     ---@param value string|boolean|number
+    ---@return boolean
     function s.SetPointOption(pointIndex, optionName, value)
         if checkBounds(pointIndex) then
             points[pointIndex].Options().Set(optionName, value)
+            return true
         else
             log.Error("Point index outside bounds")
+            return false
         end
     end
 
     ---@param pointIndex number
     ---@param optionName string
-    ---@param default string|number|boolean
-    ---@return string|number|boolean
+    ---@param default string|number|boolean|nil
+    ---@return string|number|boolean|nil
     function s.GetPointOption(pointIndex, optionName, default)
         if checkBounds(pointIndex) then
             local opt = points[pointIndex].Options()

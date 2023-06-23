@@ -54,4 +54,7 @@ PointOptions.SKIPPABLE = "skippable"
 -- Boolean. If true, the point is not shown on the waypoint page
 PointOptions.SELECTABLE = "selectable"
 
+PointOptions.ALL = { PointOptions.LOCK_DIRECTION, PointOptions.MARGIN, PointOptions.FINAL_SPEED, PointOptions.MAX_SPEED,
+    PointOptions.FORCE_FINAL_SPEED, PointOptions.SKIPPABLE, PointOptions.SELECTABLE }
+
 return PointOptions

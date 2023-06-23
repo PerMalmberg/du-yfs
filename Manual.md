@@ -29,7 +29,6 @@ Please read the entire manual before attempting to perform an installation, ther
     - [A note on non gravity-aligned atmospheric accent/decent and angled flight paths](#a-note-on-non-gravity-aligned-atmospheric-accentdecent-and-angled-flight-paths)
   - [Shifting gravity wells](#shifting-gravity-wells)
   - [Emergency Controller Unit](#emergency-controller-unit)
-  - [Troubleshooting](#troubleshooting)
   - [Thanks](#thanks)
 
 
@@ -281,6 +280,7 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 | route-set-pos-option      | -index                      | number        | N        | Sets the respective option on the point given by `index` in the currently edited route.                                                                                                                              |
 |                           | -toggleSkippable            |               | Y        | Toggles the skippable option of the point. A skippable point may be skipped when traveling to another point in the route.                                                                                            |
 |                           | -toggleSelectable           |               | Y        | Toggles the selectable option of the point. A selectable point will show up in the list of available points when a route is show in floor-mode.                                                                      |
+| route-print-pos-options   |                             | number        | N        | Prints the options of the given point in the currently open route.                                                                                                                                                   |
 | route-print               |                             |               |          | Prints the current route to the console                                                                                                                                                                              |
 | pos-create-along-gravity  | name of waypoint            |               |          | Creates a waypoint relative to the constructs position along the gravity vector.                                                                                                                                     |
 |                           | -u                          | meter         | N        | Upward distance; negate to place point downwards the source of gravity                                                                                                                                               |
@@ -330,7 +330,7 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 |                           | -turnAngle                  | degrees       | Y        | Sets the turn angle per key press for the manual control mode.                                                                                                                                                       |
 |                           | -minimumPathCheckOffset     | meter         | Y        | Sets the minimum allowed offset from the path during travel at which the construct will stop to and return to the path. Default 2m.                                                                                  |
 |                           | -showFloor                  | name of route | Y        | If set, causes the named route to be displayed in floor-mode on startup. To disable, use '-' as the route name.                                                                                                      |
-|                           | -pathAlignmentAngleLimit    | degrees       | Y        | The threshold angle that determines if the construct will align to the flight path or the gravity vector. Default: 10 degrees.                                                                                       |
+|                           | -pathAlignmentAngleLimit    | degrees       | Y        | The threshold angle that determines if the construct will align to the flight path or the gravity vector. Default: 10 degrees. Set to 0 to disable path alignment.                                                   |
 |                           | -pathAlignmentDistanceLimit | meter         | Y        | The threshold distance that determines if the construct will align to the flight path or the gravity vector. Default: 200m.                                                                                          |
 | get                       | See `set`                   |               | Y        | Prints the setting set with the `set` command, don't add the leading `-`.                                                                                                                                            |
 | get-all                   |                             |               |          | Prints all current settings. Don't add the "-" before the argument. Example: `get turnAngle`.                                                                                                                        |
@@ -380,9 +380,11 @@ While it is possible to make routes that are not gravity aligned work, they may 
 
 ## Shifting gravity wells
 
-The script always aligns so that the construct's up direction points away from the the current gravity well. When the gravity direction changes, such as near Thades' moonlets (where they appear to be the sum of the different gravity wells depending on the location of the construct), the script will adjust its alignment accordingly. Another case where this will happen (theoretically, not actually tested at the time of writing this) is when traveling between planets such as Alioth and Haven/Sanctuary; at the midpoint the script should flip over 180 degrees.
+As described in [Accuracy](#accuracy), the script aligns either to gravity or the travel path. When gravity direction changes, such as near Thades' moonlets (where they appear to be the sum of the different gravity wells depending on the location of the construct), the script will adjust its alignment accordingly. Another case where this will happen (theoretically, not actually tested at the time of writing this) is when traveling between planets such as Alioth and Haven/Sanctuary; at the midpoint the script should flip over 180 degrees.
 
-This means that a route starting at the surface of Thades and ending among the moonlets will have different alignment along the travel path. As such, a space construct placed based on the elevator's alignment in space will not point exactly away from Thades, but clearly be at an angle to the planet. Please keep all this in mind when building your space construct - you most likely need to increase margins around the dock/cradle so that alignment can be done without intersecting.
+This means that a route starting at the surface of Thades and ending among the moonlets will have different alignment directions along the travel path. As such, a space construct placed based on the elevator's alignment in space will not point exactly away from Thades, but clearly be at an angle to the planet. Please keep all this in mind when building your space construct.
+
+A way to work around this is to add an extra point in the route within the distance of `pathAlignmentDistanceLimit` so that you force the alignment to be along gravity for the duration of the travel between the points.
 
 ## Emergency Controller Unit
 
@@ -391,10 +393,6 @@ When running on an ECU, the script only do two things:
 * Detect a floor, and if detected it shuts down.
 
 The requirements for linking are the same as for when running on a controller.
-
-## Troubleshooting
-
-This is a collection of random questions and answer that, even though they may have answers elsewhere in the manual
 
 ## Thanks
 
