@@ -3,6 +3,7 @@
 ---@field Set fun(name:string, value:any) Sets an option value
 ---@field Get fun(opt:string, defaultValue:any): any a Gets an option value
 ---@field Data fun():table<string, any> Gets the options as a table
+---@field Clone fun():PointOptions Clones the options
 
 local PointOptions = {}
 PointOptions.__index = PointOptions
@@ -34,6 +35,12 @@ function PointOptions.New(optionData)
     ---@return table<string, any> # The options as a table
     function s.Data()
         return options
+    end
+
+    ---Clones the options
+    ---@return PointOptions
+    function s.Clone()
+        return PointOptions.New(DeepCopy(options))
     end
 
     return setmetatable(s, PointOptions)

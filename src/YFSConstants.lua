@@ -24,6 +24,7 @@ local constants = {
         },
         throttleStep = 10,                   -- percent
         defaultMargin = 0.1,                 -- meter
+        defaultStartEndMargin = 0.3,         -- meter
         defaultTurnAngle = 1,                -- degrees
         lightConstructMassThreshold = 10000, -- ten tons
         minimumPathCheckOffset = 2,          -- meters

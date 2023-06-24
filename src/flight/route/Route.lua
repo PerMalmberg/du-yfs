@@ -235,14 +235,17 @@ function Route.New()
         points = toKeep
     end
 
-    ---Replaces a point in the route, keping only direction option
+    ---Replaces a point in the route, keping options from original point
     ---@param ix number
     ---@param newPos Vec3
     ---@param point Point Point to take options from.
     local function replacePointWithDir(ix, newPos, point)
-        local p = Point.New(universe.CreatePos(newPos):AsPosString())
-        points[ix] = p
-        p.SetOptions(point.Options())
+        -- Clone original options
+        local opt = points[ix].Options().Clone()
+        -- Take dir from the given point
+        opt.Set(PointOptions.LOCK_DIRECTION, point.Options().Get(PointOptions.LOCK_DIRECTION))
+        -- Replace the point
+        points[ix] = Point.New(universe.CreatePos(newPos):AsPosString(), nil, opt)
     end
 
     ---Adjust the route so that it will be traveled in the correct direction.

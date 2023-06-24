@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.2.10 - 2023-06-24
+
+## Fixed
+* Further improvements relating to the end points in a route. `create-vertical-route` now sets a 0.3m margin on them by default to reduce the risk of "getting stuck" due to being offset from the route and unable to slide along the floor/ground.
+
 ## 0.2.9 - 2023-06-23
 
 ## Fixed

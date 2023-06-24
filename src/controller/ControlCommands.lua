@@ -12,6 +12,7 @@ local universe                = require("universe/Universe").Instance()
 local keys                    = require("input/Keys")
 local alignment               = require("flight/AlignmentFunctions")
 local pub                     = require("util/PubSub").Instance()
+local constants               = require("YFSConstants")
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local Current                 = vehicle.position.Current
 local Forward                 = vehicle.orientation.Forward
@@ -296,7 +297,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             end).AsNumber().Mandatory()
 
         local cmdSetPosOption = cmd.Accept("route-set-pos-option",
-            ---@param data {commandValue:number, toggleSkippable:boolean, toggleSelectable:boolean}
+            ---@param data {commandValue:number, toggleSkippable:boolean, toggleSelectable:boolean, margin:boolean}
             function(data)
                 local route = getEditRoute()
                 if route == nil then
@@ -316,9 +317,18 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                         log.Info("Set selectable option to ", newValue)
                     end
                 end
+
+                if data.margin then
+                    if data.margin < 0.1 then
+                        log.Error("Margin must be larger or equal to 0.1m")
+                        return
+                    end
+                    route.SetPointOption(data.commandValue, PointOptions.MARGIN, data.margin)
+                end
             end).AsNumber()
         cmdSetPosOption.Option("toggleSkippable").AsEmptyBoolean()
         cmdSetPosOption.Option("toggleSelectable").AsEmptyBoolean()
+        cmdSetPosOption.Option("margin").AsNumber()
 
         cmd.Accept("route-print-pos-options",
             ---@param data {commandValue:number}
@@ -470,7 +480,9 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 local route = rc.CreateRoute(data.commandValue)
                 if route then
                     local startPos = route.AddCurrentPos()
-                    startPos.Options().Set(PointOptions.LOCK_DIRECTION, Forward())
+                    local startOpt = startPos.Options()
+                    startOpt.Set(PointOptions.LOCK_DIRECTION, Forward())
+                    startOpt.Set(PointOptions.MARGIN, constants.flight.defaultStartEndMargin)
 
                     local targetPos = Current() + dir * data.distance
 
@@ -502,7 +514,9 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     end
 
                     local endPos = route.AddCoordinate(targetPos)
-                    endPos.Options().Set(PointOptions.LOCK_DIRECTION, Forward())
+                    local endOpt = endPos.Options()
+                    endOpt.Set(PointOptions.LOCK_DIRECTION, Forward())
+                    endOpt.Set(PointOptions.MARGIN, constants.flight.defaultStartEndMargin)
 
                     if rc.SaveRoute() then
                         log.Info("Created a route by name '", data.commandValue,
