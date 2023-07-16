@@ -7,6 +7,7 @@ local IsInAtmo = vehicle.world.IsInAtmo
 local TotalMass = vehicle.mass.Total
 local Velocity = vehicle.velocity.Movement
 local GravityDirection = vehicle.world.GravityDirection
+local VerticalReferenceVector = universe.VerticalReferenceVector
 local G = vehicle.world.G
 local pub = require("util/PubSub").Instance()
 local Clamp = calc.Clamp
@@ -27,7 +28,7 @@ local spaceEfficiencyFactor = 0.9              -- Reduced from one to counter br
 ---@field MaxSeenGravityInfluencedAvailableAtmoDeceleration fun():number
 ---@field AvailableDeceleration fun():number
 ---@field BrakeEfficiency fun(inAtmo:boolean, speed:number):number
----@field Feed fun(targetSpeed:number, currentSpeed:number)
+---@field Feed fun(targetSpeed:number, currentSpeed:number):Vec3
 
 local Brake = {}
 Brake.__index = Brake
@@ -89,7 +90,7 @@ function Brake.Instance()
         ]]
         local res = nullVec
         if IsInAtmo() then
-            res = finalDeceleration():ProjectOn(universe:VerticalReferenceVector())
+            res = finalDeceleration():ProjectOn(VerticalReferenceVector())
         end
 
         return res
