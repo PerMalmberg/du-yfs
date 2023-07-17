@@ -297,38 +297,83 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             end).AsNumber().Mandatory()
 
         local cmdSetPosOption = cmd.Accept("route-set-pos-option",
-            ---@param data {commandValue:number, toggleSkippable:boolean, toggleSelectable:boolean, margin:boolean}
+            ---@param data {ix:number, endIx:number, toggleSkippable:boolean, toggleSelectable:boolean, margin:boolean, finalSpeed:number, maxSpeed:number}
             function(data)
                 local route = getEditRoute()
                 if route == nil then
                     return
                 end
 
-                if data.toggleSkippable then
-                    local newValue = not route.GetPointOption(data.commandValue, PointOptions.SKIPPABLE, false)
-                    if route.SetPointOption(data.commandValue, PointOptions.SKIPPABLE, newValue) then
-                        log.Info("Set skippable option to ", newValue)
-                    end
+                if not data.endIx then
+                    data.endIx = data.ix
                 end
 
-                if data.toggleSelectable then
-                    local newValue = not route.GetPointOption(data.commandValue, PointOptions.SELECTABLE, true)
-                    if route.SetPointOption(data.commandValue, PointOptions.SELECTABLE, newValue) then
-                        log.Info("Set selectable option to ", newValue)
-                    end
+                if data.maxSpeed and data.maxSpeed < 0 then
+                    log.Error("Max speed must be larger than 0")
+                    return
                 end
 
-                if data.margin then
-                    if data.margin < 0.1 then
-                        log.Error("Margin must be larger or equal to 0.1m")
-                        return
-                    end
-                    route.SetPointOption(data.commandValue, PointOptions.MARGIN, data.margin)
+                if data.ix > data.endIx then
+                    log.Error("Start index must be less or equal to end index")
+                    return
                 end
-            end).AsNumber()
+
+                if not (route.CheckBounds(data.ix) and route.CheckBounds(data.endIx)) then
+                    log.Error("Index out of bounds")
+                    return
+                end
+
+                if data.margin and data.margin < 0.1 then
+                    log.Error("Margin must be larger or equal to 0.1m")
+                    return
+                end
+
+                if data.finalSpeed and data.finalSpeed < 0 then
+                    log.Error("Final speed must be >= 0")
+                    return
+                end
+
+                log.Info("Setting point options for point indexes ", data.ix, " through ", data.endIx)
+
+                for i = data.ix, data.endIx, 1 do
+                    if data.toggleSkippable then
+                        local newValue = not route.GetPointOption(i, PointOptions.SKIPPABLE, false)
+                        if route.SetPointOption(i, PointOptions.SKIPPABLE, newValue) then
+                            log.Info("Set skippable option to ", newValue)
+                        end
+                    end
+
+                    if data.toggleSelectable then
+                        local newValue = not route.GetPointOption(i, PointOptions.SELECTABLE, true)
+                        if route.SetPointOption(i, PointOptions.SELECTABLE, newValue) then
+                            log.Info("Set selectable option to ", newValue)
+                        end
+                    end
+
+                    if data.margin then
+                        route.SetPointOption(i, PointOptions.MARGIN, data.margin)
+                    end
+
+                    if data.finalSpeed then
+                        route.SetPointOption(i, PointOptions.FINAL_SPEED, calc.Kph2Mps(data.finalSpeed))
+                    end
+
+                    if data.maxSpeed then
+                        route.SetPointOption(i, PointOptions.MAX_SPEED, calc.Kph2Mps(data.maxSpeed))
+                    end
+
+                    if data.maxSpeed then
+
+                    end
+                end
+            end).AsEmpty()
+        cmdSetPosOption.Option("ix").AsNumber()
+        cmdSetPosOption.Option("endIx").AsNumber()
         cmdSetPosOption.Option("toggleSkippable").AsEmptyBoolean()
         cmdSetPosOption.Option("toggleSelectable").AsEmptyBoolean()
         cmdSetPosOption.Option("margin").AsNumber()
+        cmdSetPosOption.Option("finalSpeed").AsNumber()
+        cmdSetPosOption.Option("maxSpeed").AsNumber()
 
         cmd.Accept("route-print-pos-options",
             ---@param data {commandValue:number}

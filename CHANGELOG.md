@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 0.2.xx - 2023-06-xx
+
+## Fixed
+
+* Formatting of a few log messages
+
+## Changed
+
+Command `route-set-pos-option` now takes a range of indexes, which allows setting options on multiple points at the same time. Use `-ix`and `-endIx` to specify start and end index.
+
 ## 0.2.10 - 2023-06-24
 
 ## Fixed

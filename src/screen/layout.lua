@@ -1313,7 +1313,7 @@ local layout = {
                     mouse = {
                         click = {
                             command =
-                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option %d -toggleSkippable})"
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option -ix %d -toggleSkippable})"
                         },
                         inside = {
                             set_style = "routeEditHover"
@@ -1337,7 +1337,7 @@ local layout = {
                     mouse = {
                         click = {
                             command =
-                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option %d -toggleSkippable})"
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option -ix %d -toggleSkippable})"
                         },
                         inside = {
                             set_style = "routeEditHover"
@@ -1361,7 +1361,7 @@ local layout = {
                     mouse = {
                         click = {
                             command =
-                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option %d -toggleSelectable})"
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option -ix %d -toggleSelectable})"
                         },
                         inside = {
                             set_style = "routeEditHover"
@@ -1385,7 +1385,7 @@ local layout = {
                     mouse = {
                         click = {
                             command =
-                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option %d -toggleSelectable})"
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option -ix %d -toggleSelectable})"
                         },
                         inside = {
                             set_style = "routeEditHover"

@@ -23,6 +23,7 @@ require("util/Table")
 ---@field AddWaypointRef fun(namedWaypoint:string, pos?:string):Point|nil
 ---@field AddCurrentPos fun():Point
 ---@field AddPoint fun(sp:Point)
+---@field CheckBounds fun(ix:integer):boolean
 ---@field SetPointOption fun(pointIndex:number, optionName:string, value:string|boolean|number):boolean
 ---@field GetPointOption fun(pointIndex:number, optionName:string, default:string|boolean|nil):string|number|boolean|nil
 ---@field Clear fun()
@@ -50,17 +51,19 @@ function Route.New()
     local points = {} ---@type Point[]
     local nextPointIx = 1
 
-    ---@param ix integer
-    ---@return boolean
-    local function checkBounds(ix)
-        return ix > 0 and ix <= #points
-    end
-
     ---@param ix number
     ---@return Vec3
     local function coordsFromPoint(ix)
         return universe.ParsePosition(points[ix]:Pos()):Coordinates()
     end
+
+    ---Returns true if the index is within bounds
+    ---@param ix integer
+    ---@return boolean
+    function s.CheckBounds(ix)
+        return ix > 0 and ix <= #points
+    end
+
     ---Returns all the points in the route
     ---@return Point[]
     function s.Points()
@@ -118,7 +121,7 @@ function Route.New()
     ---@param value string|boolean|number
     ---@return boolean
     function s.SetPointOption(pointIndex, optionName, value)
-        if checkBounds(pointIndex) then
+        if s.CheckBounds(pointIndex) then
             points[pointIndex].Options().Set(optionName, value)
             return true
         else
@@ -132,7 +135,7 @@ function Route.New()
     ---@param default string|number|boolean|nil
     ---@return string|number|boolean|nil
     function s.GetPointOption(pointIndex, optionName, default)
-        if checkBounds(pointIndex) then
+        if s.CheckBounds(pointIndex) then
             local opt = points[pointIndex].Options()
             return opt.Get(optionName, default)
         else
@@ -295,7 +298,7 @@ function Route.New()
     ---Remove the point at index ix
     ---@param ix number
     function s.RemovePoint(ix)
-        if not checkBounds(ix) then return false end
+        if not s.CheckBounds(ix) then return false end
 
         table.remove(points, ix)
         return true
@@ -305,7 +308,7 @@ function Route.New()
     ---@param from number
     ---@param to number
     function s.MovePoint(from, to)
-        if not checkBounds(from) or not checkBounds(to) or to == from then return false end
+        if not s.CheckBounds(from) or not s.CheckBounds(to) or to == from then return false end
 
         local v = table.remove(points, from)
         table.insert(points, to, v)
