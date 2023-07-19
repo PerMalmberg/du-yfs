@@ -10,7 +10,7 @@ local brakes                  = require("flight/Brakes").Instance()
 local calc                    = require("util/Calc")
 local universe                = require("universe/Universe").Instance()
 local keys                    = require("input/Keys")
-local alignment               = require("flight/AlignmentFunctions")
+local Alignment               = require("flight/Alignment")
 local pub                     = require("util/PubSub").Instance()
 local constants               = require("YFSConstants")
 local VerticalReferenceVector = universe.VerticalReferenceVector
@@ -88,7 +88,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         cmd.Accept("print-pos", function(_)
             log.Info("Current pos:", universe.CreatePos(Current()):AsPosString())
             log.Info("Alignment pos:",
-                universe.CreatePos(Current() + vehicle.orientation.Forward() * alignment.DirectionMargin):AsPosString())
+                universe.CreatePos(Current() + vehicle.orientation.Forward() * Alignment.DirectionMargin):AsPosString())
         end)
 
         cmd.Accept("show-widgets",
@@ -367,7 +367,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     end
                 end
             end).AsEmpty()
-        cmdSetPosOption.Option("ix").AsNumber()
+        cmdSetPosOption.Option("ix").AsNumber().Mandatory()
         cmdSetPosOption.Option("endIx").AsNumber()
         cmdSetPosOption.Option("toggleSkippable").AsEmptyBoolean()
         cmdSetPosOption.Option("toggleSelectable").AsEmptyBoolean()

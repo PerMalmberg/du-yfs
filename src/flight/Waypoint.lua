@@ -1,4 +1,3 @@
-local alignment = require("flight/AlignmentFunctions")
 local vehicle = require("abstraction/Vehicle").New()
 local calc = require("util/Calc")
 local Ternary = calc.Ternary
@@ -11,7 +10,7 @@ WPReachMode = {
 }
 
 ---@class Waypoint
----@field New fun():Waypoint
+---@field New fun(destination:Vec3, finalSpeed:number, maxSpeed:number, margin:number):Waypoint
 ---@field FinalSpeed fun():number
 ---@field MaxSpeed fun():number
 ---@field Margin fun():number
@@ -19,13 +18,8 @@ WPReachMode = {
 ---@field Destination fun():Vec3
 ---@field DistanceTo fun():number
 ---@field DirectionTo fun():Vec3
----@field LockDirection fun(direction:Vec3, forced:boolean)
----@field DirectionLocked fun():boolean
 ---@field Roll fun(previous:Waypoint):Vec3
 ---@field YawAndPitch fun(previous:Waypoint):{yaw:Vec3, pitch:Vec3}|nil
----@field YawPitchDirection fun():Vec3
----@field LastInRoute fun():boolean
----@field SetLastInRoute fun()
 
 local Waypoint = {}
 Waypoint.__index = Waypoint
@@ -35,18 +29,13 @@ Waypoint.__index = Waypoint
 ---@param finalSpeed number The final speed to reach when at the waypoint (0 if stopping is intended).
 ---@param maxSpeed number The maximum speed to to travel at. Less than or equal to finalSpeed.
 ---@param margin number The number of meters to be within for the waypoint to be considered reached
----@param rollFunc AlignmentFunction Function that determines how the constrol aligns its topside (rolls)
----@param yawPitchFunc AlignmentFunction
 ---@return Waypoint
-function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPitchFunc)
+function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
     local s = {
         destination = destination,
         finalSpeed = finalSpeed,
         maxSpeed = Ternary(finalSpeed > maxSpeed and maxSpeed > 0, finalSpeed, maxSpeed), ---@type number -- Guard against bad settings.
         margin = margin,
-        rollFunc = rollFunc,
-        yawPitchFunc = yawPitchFunc,
-        yawPitchDirection = nil, ---@type Vec3 -- Fixed target direction
         lastPointInRoute = false
     }
 
@@ -54,12 +43,6 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
     ---@return Vec3
     function s.Destination()
         return s.destination
-    end
-
-    ---Gets the yaw/pitch direction
-    ---@return Vec3
-    function s.YawPitchDirection()
-        return s.yawPitchDirection
     end
 
     ---Gets the final speed for the waypoint
@@ -105,52 +88,6 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, rollFunc, yawPi
     ---@return Vec3
     function s.DirectionTo()
         return (s.destination - Current()):NormalizeInPlace()
-    end
-
-    ---Locks the direction
-    ---@param direction Vec3 The direction to lock towards
-    ---@param forced boolean If true, overrides existing lock
-    function s.LockDirection(direction, forced)
-        if s.yawPitchDirection == nil or forced then
-            s.yawPitchDirection = direction
-            s.yawPitchFunc = alignment.YawPitchKeepLockedWaypointDirectionOrthogonalToVerticalReference
-        end
-    end
-
-    ---Indicates of the direction is locked
-    ---@return boolean
-    function s.DirectionLocked()
-        return s.yawPitchDirection ~= nil
-    end
-
-    ---Performs the roll applicable for this waypoint
-    ---@param previousWaypoint Waypoint
-    ---@return Vec3|nil
-    function s.Roll(previousWaypoint)
-        if s.rollFunc ~= nil then
-            return s.rollFunc(s, previousWaypoint)
-        end
-
-        return nil
-    end
-
-    ---Performs the way and pitch applicable for this waypoint
-    ---@param previousWaypoint Waypoint
-    ---@return {yaw:Vec3, pitch:Vec3}|nil
-    function s.YawAndPitch(previousWaypoint)
-        if s.yawPitchFunc ~= nil then
-            return s.yawPitchFunc(s, previousWaypoint)
-        end
-
-        return nil
-    end
-
-    function s.LastInRoute()
-        return s.lastPointInRoute
-    end
-
-    function s.SetLastInRoute()
-        s.lastPointInRoute = true
     end
 
     return setmetatable(s, Waypoint)

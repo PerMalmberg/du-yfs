@@ -15,9 +15,7 @@ local Velocity                = vehicle.velocity.Movement
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local MaxSpeed                = vehicle.speed.MaxSpeed
 local Current                 = vehicle.position.Current
-local Forward                 = vehicle.orientation.Forward
-local Right                   = vehicle.orientation.Right
-local Up                      = vehicle.orientation.Up
+local Plane                   = require("math/Plane")
 local max                     = math.max
 local Sign                    = calc.Sign
 
@@ -42,6 +40,7 @@ function Wsad.New(flightCore, settings)
     local stopVerticalMovement = false
     local yawSmoothStop = false
     local yawStopSign = 0
+    local plane = Plane.NewByVertialReference()
 
     input.SetThrottle(1) -- Start at max speed
     local throttleStep = settings.Get("throttleStep", constants.flight.throttleStep) / 100
@@ -104,7 +103,7 @@ function Wsad.New(flightCore, settings)
         -- Put the point 1.5 times the distance we travel per timer interval
         local dist = max(50, Velocity():Len() * interval * 1.5)
 
-        local dir = (Forward() * longitudal + Right() * lateral + Up() * vertical):Normalize()
+        local dir = (plane.Forward() * longitudal + plane.Right() * lateral + plane.Up() * vertical):Normalize()
 
         if body:IsInAtmo(curr) and vertical == 0 then
             -- As we meassure only periodically, we can't make the threshold too small. 0.2m/s was too small, we can miss that when moving fast.
@@ -153,7 +152,7 @@ function Wsad.New(flightCore, settings)
             function(_, value)
                 if yawSmoothStop then
                     if Sign(value.speed) ~= yawStopSign then
-                        flightCore.AlignTo(Current() + Forward() * 1000)
+                        flightCore.AlignTo(Current() + plane.Forward() * 1000)
                         yawSmoothStop = false
                     end
                 end
@@ -175,7 +174,7 @@ function Wsad.New(flightCore, settings)
                 if wantsToMove then
                     if pointDir:IsZero() then
                         -- Recovery after running a route
-                        pointDir = Forward()
+                        pointDir = plane.Forward()
                     end
 
                     if sw.Elapsed() > t or newMovement then
@@ -286,12 +285,12 @@ function Wsad.New(flightCore, settings)
 
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
-        pointDir = flightCore.Turn(turnAngle, Up())
+        pointDir = flightCore.Turn(turnAngle, plane.Up())
     end)
 
     input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
         if not manualInputEnabled() then return end
-        pointDir = flightCore.Turn(-turnAngle, Up())
+        pointDir = flightCore.Turn(-turnAngle, plane.Up())
     end)
 
     input.Register(keys.yawleft, Criteria.New().OnRelease(), function()

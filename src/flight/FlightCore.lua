@@ -9,8 +9,8 @@ local Stopwatch = require("system/Stopwatch")
 local Current = vehicle.position.Current
 local Ternary = calc.Ternary
 local Waypoint = require("flight/Waypoint")
-local alignment = require("flight/AlignmentFunctions")
 local PointOptions = require("flight/route/PointOptions")
+local alignment = require("flight/Alignment").Instance()
 require("flight/state/Require")
 
 ---@module "flight/route/RouteController"
@@ -23,7 +23,7 @@ require("flight/state/Require")
 ---@field Turn fun(degrees:number, axis:Vec3):Vec3
 ---@field AlignTo fun(point:Vec3)
 ---@field StopEvents fun()
----@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean):Waypoint
+---@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean, pointNoseToNextWaypoint:boolean):Waypoint
 ---@field GoIdle fun()
 ---@field GotoTarget fun(target:Vec3, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean)
 
@@ -38,10 +38,11 @@ local defaultMargin = constants.flight.defaultMargin
 ---Creates a waypoint from a point
 ---@param point Point
 ---@param lastInRoute boolean
+---@param pointNoseToNextWaypoint boolean
 ---@return Waypoint
-function FlightCore.CreateWPFromPoint(point, lastInRoute)
+function FlightCore.CreateWPFromPoint(point, lastInRoute, pointNoseToNextWaypoint)
     local opt = point.Options()
-    local dir = Vec3.New(opt.Get(PointOptions.LOCK_DIRECTION, Vec3.zero))
+    local lockDir = Vec3.New(opt.Get(PointOptions.LOCK_DIRECTION, Vec3.zero))
     local margin = opt.Get(PointOptions.MARGIN, defaultMargin)
     local finalSpeed
     if opt.Get(PointOptions.FORCE_FINAL_SPEED) then
@@ -52,17 +53,17 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
     local maxSpeed = opt.Get(PointOptions.MAX_SPEED, 0) -- 0 = ignored/max speed.
 
     local coordinate = universe.ParsePosition(point.Pos()).Coordinates()
-    local wp = Waypoint.New(coordinate, finalSpeed, maxSpeed, margin,
-        alignment.RollTopsideAwayFromVerticalReference,
-        alignment.YawPitchKeepOrthogonalToVerticalReference)
 
+    alignment.SetNoseMode(pointNoseToNextWaypoint)
 
-    if lastInRoute then
-        wp.SetLastInRoute()
-    end
+    local wp = Waypoint.New(coordinate, finalSpeed, maxSpeed, margin)
 
-    if dir ~= Vec3.zero then
-        wp.LockDirection(dir, true)
+    alignment.SetLastInRoute(lastInRoute)
+
+    if lockDir == Vec3.zero then
+        alignment.LockYawTo(nil, true)
+    else
+        alignment.LockYawTo(lockDir, true)
     end
 
     return wp
@@ -79,11 +80,12 @@ function FlightCore.New(routeController, flightFSM)
     local flushHandlerId = 0
     local updateHandlerId = 0
     local axes = AxisManager.Instance()
+    local settings = flightFSM.GetSettings()
 
     local routePublishTimer = Stopwatch.New()
 
     local function createDefaultWP()
-        return Waypoint.New(vehicle.position.Current(), 0, 0, defaultMargin, alignment.NoAdjust, alignment.NoAdjust)
+        return Waypoint.New(vehicle.position.Current(), 0, 0, defaultMargin)
     end
 
     -- Setup start waypoints to prevent nil values
@@ -109,7 +111,8 @@ function FlightCore.New(routeController, flightFSM)
         end
 
         previousWaypoint = currentWaypoint
-        currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached())
+        currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached(),
+            settings.Boolean("pointNoseToNextWaypoint", false))
     end
 
     ---Starts the flight
@@ -138,7 +141,7 @@ function FlightCore.New(routeController, flightFSM)
             current + vehicle.orientation.Forward() * alignment.DirectionMargin)
         forwardPointOnPlane = calc.RotateAroundAxis(forwardPointOnPlane, current, degrees, axis)
         local dir = (forwardPointOnPlane - Current()):NormalizeInPlace()
-        currentWaypoint.LockDirection(dir, true)
+        alignment.LockYawTo(dir, true)
         pub.Publish("ForwardDirectionChanged", dir)
         return dir
     end
@@ -150,7 +153,8 @@ function FlightCore.New(routeController, flightFSM)
             local current = vehicle.position.Current()
             local pointOnPlane = calc.ProjectPointOnPlane(-universe.VerticalReferenceVector(), current, point)
             local dir = (pointOnPlane - current):NormalizeInPlace()
-            currentWaypoint.LockDirection(dir, true)
+            ---QQQ Just (point - curr):NormalizeInPlace() ???
+            alignment.LockYawTo(dir, true)
             pub.Publish("ForwardDirectionChanged", dir)
         end
     end
@@ -196,21 +200,6 @@ function FlightCore.New(routeController, flightFSM)
         s.StartFlight()
     end
 
-    local function align()
-        local target = currentWaypoint.YawAndPitch(previousWaypoint)
-
-        if target ~= nil then
-            axes.SetYawTarget(target.yaw)
-            axes.SetPitchTarget(target.pitch)
-        else
-            axes.SetYawTarget()
-            axes.SetPitchTarget()
-        end
-
-        local topSideAlignment = currentWaypoint.Roll(previousWaypoint)
-        axes.SetRollTarget(topSideAlignment)
-    end
-
     function s.fcUpdate()
         local status, err, _ = xpcall(
             function()
@@ -225,9 +214,12 @@ function FlightCore.New(routeController, flightFSM)
                     })
                 end
 
-                local wp = currentWaypoint
-                if wp ~= nil then
-                    pub.Publish("WaypointData", wp)
+                if currentWaypoint ~= nil then
+                    pub.Publish("WaypointData", currentWaypoint)
+
+                    if settings.Boolean("setWaypointAlongRoute", false) then
+                        system.setWaypoint(universe.CreatePos(currentWaypoint.Destination()).AsPosString(), false)
+                    end
                 end
             end,
             traceback
@@ -243,16 +235,21 @@ function FlightCore.New(routeController, flightFSM)
         local status, err, _ = xpcall(
             function()
                 if currentWaypoint and route then
-                    align()
+                    alignment.SetWaypoints(currentWaypoint, previousWaypoint)
+
+                    axes.SetYawTarget(alignment.Yaw())
+                    axes.SetPitchTarget(alignment.Pitch())
+                    axes.SetRollTarget(alignment.Roll())
+
                     flightFSM.FsmFlush(currentWaypoint, previousWaypoint)
 
                     if currentWaypoint.WithinMargin(WPReachMode.ENTRY) then
                         flightFSM.AtWaypoint(route.LastPointReached(), currentWaypoint, previousWaypoint)
 
                         -- Lock direction when WP is reached, but don't override existing locks, such as is in place when strafing.
-                        currentWaypoint.LockDirection(
-                            alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(currentWaypoint, previousWaypoint),
-                            false)
+                        local lockDir = (currentWaypoint.Destination() - previousWaypoint.Destination())
+                            :NormalizeInPlace()
+                        alignment.LockYawTo(lockDir, false)
 
                         -- Switch to next waypoint
                         s.NextWP()

@@ -12,6 +12,8 @@ local SignedRotationAngle = calc.SignedRotationAngle
 local setEngineCommand = unit.setEngineCommand
 local PID = require("cpml/pid")
 local pub = require("util/PubSub").Instance()
+local Plane = require("math/Plane")
+local visual = require("debug/Visual").New()
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
@@ -37,10 +39,11 @@ finalAcceleration[ControlledAxis.Yaw] = nullVec
 ---@field Disable fun()
 ---@field Speed fun():number
 ---@field Acceleration fun():number
----@field AxisFlush fun(apply:boolean)
+---@field AxisFlush fun()
 ---@field Update fun()
 ---@field SetTarget fun(target:Vec3)
 ---@field OffsetDegrees fun():number
+---@field Apply fun()
 
 local AxisControl = {}
 AxisControl.__index = AxisControl
@@ -65,27 +68,27 @@ function AxisControl.New(axis)
     local lastReadMass = TotalMass()
 
     local axisData = {
-        angle = 0,
         speed = 0,
         acceleration = 0,
         offset = 0 -- in degrees
     }
 
+    local plane = Plane.NewByVertialReference()
     local o = vehicle.orientation
 
     if axis == ControlledAxis.Pitch then
         reference = o.Forward
-        normal = o.Right
+        normal = plane.Right
         localNormal = vehicle.orientation.localized.Right
         pubTopic = "PitchData"
     elseif axis == ControlledAxis.Roll then
         reference = o.Up
-        normal = o.Forward
+        normal = plane.Forward
         localNormal = vehicle.orientation.localized.Forward
         pubTopic = "RollData"
     elseif axis == ControlledAxis.Yaw then
         reference = o.Forward
-        normal = o.Up
+        normal = plane.Up
         localNormal = vehicle.orientation.localized.Up
         pubTopic = "YawData"
     end
@@ -130,14 +133,13 @@ function AxisControl.New(axis)
         return (vel * localNormal()):Len()
     end
 
-    ---@param apply boolean
-    function s.AxisFlush(apply)
+    function s.AxisFlush()
         if targetCoordinate ~= nil then
             -- Positive offset means we're right of target, clock-wise
             -- Positive acceleration turns counter-clockwise
             -- Positive velocity means we're turning counter-clockwise
 
-            local vecToTarget = targetCoordinate - vehicle.position.Current()
+            local vecToTarget = (targetCoordinate - vehicle.position.Current()):Normalize()
             local offset = SignedRotationAngle(normal(), reference(), vecToTarget) * rad2deg
             axisData.offset = offset
 
@@ -153,12 +155,12 @@ function AxisControl.New(axis)
 
             finalAcceleration[axis] = normal() * v * deg2rad
         end
+    end
 
-        if apply then
-            local acc = finalAcceleration[ControlledAxis.Pitch] + finalAcceleration[ControlledAxis.Roll] +
-                finalAcceleration[ControlledAxis.Yaw]
-            setEngineCommand("torque", { 0, 0, 0 }, { acc:Unpack() }, true, true, "", "", "", 0.1)
-        end
+    function s.Apply()
+        local acc = finalAcceleration[ControlledAxis.Pitch] + finalAcceleration[ControlledAxis.Roll] +
+            finalAcceleration[ControlledAxis.Yaw]
+        setEngineCommand("torque", { 0, 0, 0 }, { acc:Unpack() }, true, true, "", "", "", 0.1)
     end
 
     function s.Update()

@@ -11,6 +11,8 @@ local AxisControl = require("flight/AxisControl")
 ---@field SetPitchTarget fun(target:Vec3?)
 ---@field SetRollTarget fun(target:Vec3?)
 
+local abs = math.abs
+
 local AxisManager = {}
 AxisManager.__index = AxisManager
 local instance ---@type AxisManager
@@ -53,9 +55,16 @@ function AxisManager.Instance()
     end
 
     function s.Flush()
-        pitch.AxisFlush(false)
-        roll.AxisFlush(false)
-        yaw.AxisFlush(true)
+        if abs(yaw.OffsetDegrees()) > 20 then
+            roll.Disable()
+        end
+
+        pitch.AxisFlush()
+        roll.AxisFlush()
+        yaw.AxisFlush()
+
+        -- Can call apply on any of the axes, it doesn't matter
+        yaw.Apply()
     end
 
     function s.Yaw() return yaw end

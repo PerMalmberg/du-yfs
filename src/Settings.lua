@@ -69,7 +69,9 @@ function Settings.New(db)
         minimumPathCheckOffset = { default = flightDefaults.minimumPathCheckOffset },
         showFloor = { default = "-" },
         pathAlignmentAngleLimit = { default = flightDefaults.pathAlignmentAngleLimit },
-        pathAlignmentDistanceLimit = { default = flightDefaults.pathAlignmentDistanceLimit }
+        pathAlignmentDistanceLimit = { default = flightDefaults.pathAlignmentDistanceLimit },
+        pointNoseToNextWaypoint = { default = false },
+        setWaypointAlongRoute = { default = false }
     }
 
     for k, v in pairs(containerSettings) do

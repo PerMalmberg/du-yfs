@@ -35,7 +35,7 @@ function ReturnToPath.New(fsm, returnPoint)
     ---@param nearestPointOnPath Vec3
     function s.Flush(deltaTime, next, previous, nearestPointOnPath)
         if not temporaryWP then
-            temporaryWP = Waypoint.New(returnPoint, 0, 0, next.Margin(), next.Roll, next.YawAndPitch)
+            temporaryWP = Waypoint.New(returnPoint, 0, 0, next.Margin())
             fsm.SetTemporaryWaypoint(temporaryWP)
         end
 

@@ -8,7 +8,7 @@ local DefaultMargin               = yfsConstants.flight.defaultMargin
 local AxisManager                 = require("flight/AxisManager")
 local AdjustmentTracker           = require("flight/AdjustmentTracker")
 local brakes                      = require("flight/Brakes"):Instance()
-local alignment                   = require("flight/AlignmentFunctions")
+local alignment                   = require("flight/Alignment").Instance()
 local G                           = vehicle.world.G
 local AirFrictionAcceleration     = vehicle.world.AirFrictionAcceleration
 local Sign                        = calc.Sign
@@ -412,12 +412,12 @@ function FlightFSM.New(settings, routeController)
 
         if waypoint.FinalSpeed() == 0 then
             targetSpeed = linearApproach(targetSpeed, remainingDistance)
-            local alignment = (waypoint.Destination() - previousWaypoint.Destination()):Normalize():Dot(universe
+            local pathAlignment = (waypoint.Destination() - previousWaypoint.Destination()):Normalize():Dot(universe
                 .VerticalReferenceVector())
-            local approachingVertically = abs(alignment) > AngleToDot(5) -- Both up up and down
+            local approachingVertically = abs(pathAlignment) > AngleToDot(5) -- Both up up and down
 
             -- When approching the final parking position vertically, move extra slow so that there is enough time to adjust sideways.
-            if waypoint.LastInRoute()
+            if alignment.IsLastInRoute()
                 and outsideAdjustmentMargin(waypoint)
                 and approachingVertically -- within this angle
                 and remainingDistance < 400 then

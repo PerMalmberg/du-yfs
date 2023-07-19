@@ -69,7 +69,6 @@ function InfoCentral.Instance()
         wMargin = nil,
         wFinalSpeed = nil,
         wMaxSpeed = nil,
-        wDirLock = nil
     }
 
     pub.RegisterBool("ShowInfoWidgets", function(_, value)
@@ -177,7 +176,6 @@ function InfoCentral.Instance()
     local function createAxisValues(p, axis, axisName)
         axis.wTitle = p.CreateValue("Axis")
         axis.wTitle.Set(axisName)
-        axis.wAngle = p.CreateValue("Angle", "°")
         axis.wSpeed = p.CreateValue("Speed", "°/s")
         axis.wAcceleration = p.CreateValue("Acc.", "°/s2")
         axis.wOffset = p.CreateValue("Offset", "°")
@@ -188,11 +186,11 @@ function InfoCentral.Instance()
             local p = sharedPanel.Get("Rotation")
             axisInfo.panel = p
             axisInfo.pitchPanels = {}
-            createAxisValues(p, axisInfo.pitchPanels, "Pitch")
+            createAxisValues(p, axisInfo.pitchPanels, "--- Pitch ---")
             axisInfo.rollPanels = {}
-            createAxisValues(p, axisInfo.rollPanels, "Roll")
+            createAxisValues(p, axisInfo.rollPanels, "--- Roll ---")
             axisInfo.yawPanels = {}
-            createAxisValues(p, axisInfo.yawPanels, "Yaw")
+            createAxisValues(p, axisInfo.yawPanels, "--- Yaw ---")
         elseif axisInfo.pitchPanels and not axisInfo.visible then
             sharedPanel.Close("Rotation")
             adjustInfo.pitchPanels = nil
@@ -204,7 +202,6 @@ function InfoCentral.Instance()
     ---@param p table
     ---@param value AxisControlData
     local function setAxisValues(p, value)
-        p.wAngle.Set(calc.Round(value.angle, 2))
         p.wSpeed.Set(calc.Round(value.speed, 2))
         p.wAcceleration.Set(calc.Round(value.acceleration, 2))
         p.wOffset.Set(calc.Round(value.offset, 2))
@@ -266,7 +263,6 @@ function InfoCentral.Instance()
                 waypointInfo.wMargin = p.CreateValue("Margin", "m")
                 waypointInfo.wFinalSpeed = p.CreateValue("Final speed", "km/h")
                 waypointInfo.wMaxSpeed = p.CreateValue("Max speed", "km/h")
-                waypointInfo.wDirLock = p.CreateValue("Dir lock")
             elseif waypointInfo.panel and not waypointInfo.visible then
                 sharedPanel.Close("Waypoint")
                 waypointInfo.panel = nil
@@ -277,7 +273,6 @@ function InfoCentral.Instance()
                 waypointInfo.wMargin.Set(calc.Round(waypoint.Margin(), 3))
                 waypointInfo.wFinalSpeed.Set(calc.Round(calc.Kph2Mps(waypoint.FinalSpeed()), 1))
                 waypointInfo.wMaxSpeed.Set(calc.Round(calc.Kph2Mps(waypoint.MaxSpeed()), 1))
-                waypointInfo.wDirLock.Set(waypoint.DirectionLocked())
             end
         end)
 

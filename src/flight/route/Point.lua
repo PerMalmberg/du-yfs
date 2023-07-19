@@ -30,7 +30,7 @@ function Point.New(pos, waypointRef, options)
     local wpRef = waypointRef
     local opt = options or PointOptions.New()
 
-    ---Returns the ::pos{} string
+    ---Returns the ::pos{} string. When retrieved from a loaded route, this is guaranteed to be populated.
     ---@return string
     function s.Pos()
         return position
