@@ -1,7 +1,7 @@
 local calc = require("util/Calc")
 local vehicle = require("abstraction/Vehicle").New()
+local constructRight = vehicle.orientation.Right
 local universe = require("universe/Universe").Instance()
-local Plane = require("math/Plane")
 local Ternary = calc.Ternary
 local Current = vehicle.position.Current
 local max = math.max
@@ -30,7 +30,6 @@ WPReachMode = {
 ---@field SetAlignmentAngleLimit fun(limit:number)
 ---@field SetAlignmentDistanceLimit fun(limit:number)
 ---@field SetLastInRoute fun(lastInRoute:boolean)
----@field SetNoseMode fun(pointToNext:boolean)
 ---@field WithinMargin fun(mode:WPReachMode):boolean
 ---@field Yaw fun(prev:Waypoint):Vec3|nil
 
@@ -70,9 +69,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
         lastPointInRoute = false
     }
 
-    local plane = Plane.NewByVertialReference()
     local lastInRoute = false
-    local noseMode = false
     local yawLockDir = nil ---@type Vec3|nil
 
     ---Gets the destination
@@ -134,10 +131,6 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
         return lastInRoute
     end
 
-    function s.SetNoseMode(mode)
-        noseMode = mode
-    end
-
     ---Locks the yaw direction to the given direction
     ---@param direction Vec3|nil
     ---@param forced boolean? If true, existing locks are overridden
@@ -154,7 +147,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
 
     ---Gets the vertical up reference to use
     ---@param prev Waypoint Previous waypoint
-    ---@return number|Vec3
+    ---@return Vec3
     function s.GetVerticalUpReference(prev)
         -- When next waypoint is nearly aligned with -gravity, use the line between them as the vertical reference instead to make following the path more exact.
         local vertUp = -universe.VerticalReferenceVector()
@@ -183,8 +176,11 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
         return Current() + s.GetVerticalUpReference(prev) * directionMargin
     end
 
-    local function pitchKeepOrtogonalToVerticalRef()
-        return Current() + plane.Forward() * directionMargin
+    ---@param prev Waypoint
+    local function pitchKeepOrtogonalToVerticalRef(prev)
+        local forward = s.GetVerticalUpReference(prev):Cross(constructRight())
+
+        return Current() + forward * directionMargin
     end
 
     ---@param prev Waypoint
@@ -196,12 +192,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
     ---@param prev Waypoint
     ---@return Vec3|nil
     function s.Pitch(prev)
-        if noseMode and not s.IsLastInRoute() then
-            local travelDir = (s.Destination() - prev.Destination()):NormalizeInPlace()
-            return Current() + travelDir * directionMargin
-        end
-
-        return pitchKeepOrtogonalToVerticalRef()
+        return pitchKeepOrtogonalToVerticalRef(prev)
     end
 
     ---@param prev Waypoint

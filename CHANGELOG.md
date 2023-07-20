@@ -5,16 +5,14 @@ All notable changes to this project will be documented in this file. The version
 ## 0.2.xx - 2023-06-xx
 
 ### Added
-* Two new settings `setWaypointAlongRoute` and `pointNoseToNextWaypoint`, where the latter one allows more aircraft-like movement.
+* New setting `setWaypointAlongRoute`, which, if enabled, makes the waypoint to be set for the next point in the route.
 
 ### Fixed
-
 * Formatting of a few log messages
 
 ### Changed
-
-Command `route-set-pos-option` now takes a range of indexes, which allows setting options on multiple points at the same time. Use `-ix`and `-endIx` to specify start and end index.
-Major rewrite of alignment handling, splitting pitch and yaw from each other.
+* Command `route-set-pos-option` now takes a range of indexes, which allows setting options on multiple points at the same time. Use `-ix`and `-endIx` to specify start and end index.
+* Major rewrite of alignment handling, splitting pitch and yaw from each other.
 
 ## 0.2.10 - 2023-06-24
 

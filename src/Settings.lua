@@ -70,7 +70,6 @@ function Settings.New(db)
         showFloor = { default = "-" },
         pathAlignmentAngleLimit = { default = flightDefaults.pathAlignmentAngleLimit },
         pathAlignmentDistanceLimit = { default = flightDefaults.pathAlignmentDistanceLimit },
-        pointNoseToNextWaypoint = { default = false },
         setWaypointAlongRoute = { default = false }
     }
 

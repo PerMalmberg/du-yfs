@@ -24,7 +24,7 @@ require("flight/state/Require")
 ---@field Turn fun(degrees:number, axis:Vec3):Vec3
 ---@field AlignTo fun(point:Vec3)
 ---@field StopEvents fun()
----@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean, pointNoseToNextWaypoint:boolean):Waypoint
+---@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean):Waypoint
 ---@field GoIdle fun()
 ---@field GotoTarget fun(target:Vec3, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean)
 
@@ -39,9 +39,8 @@ local defaultMargin = constants.flight.defaultMargin
 ---Creates a waypoint from a point
 ---@param point Point
 ---@param lastInRoute boolean
----@param pointNoseToNextWaypoint boolean
 ---@return Waypoint
-function FlightCore.CreateWPFromPoint(point, lastInRoute, pointNoseToNextWaypoint)
+function FlightCore.CreateWPFromPoint(point, lastInRoute)
     local opt = point.Options()
     local lockDir = Vec3.New(opt.Get(PointOptions.LOCK_DIRECTION, Vec3.zero))
     local margin = opt.Get(PointOptions.MARGIN, defaultMargin)
@@ -56,7 +55,6 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute, pointNoseToNextWaypoin
     local coordinate = universe.ParsePosition(point.Pos()).Coordinates()
 
     local wp = Waypoint.New(coordinate, finalSpeed, maxSpeed, margin)
-    wp.SetNoseMode(pointNoseToNextWaypoint)
     wp.SetLastInRoute(lastInRoute)
 
     if lockDir ~= Vec3.zero then
@@ -108,8 +106,7 @@ function FlightCore.New(routeController, flightFSM)
         end
 
         previousWaypoint = currentWaypoint
-        currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached(),
-            settings.Boolean("pointNoseToNextWaypoint", false))
+        currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached())
 
         -- When the next waypoint is nearly above or below us, lock yaw, but don't override of it already is locked
         local dir = (currentWaypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
