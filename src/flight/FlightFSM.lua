@@ -7,8 +7,8 @@ local LightConstructMassThreshold = yfsConstants.flight.lightConstructMassThresh
 local DefaultMargin               = yfsConstants.flight.defaultMargin
 local AxisManager                 = require("flight/AxisManager")
 local AdjustmentTracker           = require("flight/AdjustmentTracker")
+local Waypoint                    = require("flight/Waypoint")
 local brakes                      = require("flight/Brakes"):Instance()
-local alignment                   = require("flight/Alignment").Instance()
 local G                           = vehicle.world.G
 local AirFrictionAcceleration     = vehicle.world.AirFrictionAcceleration
 local Sign                        = calc.Sign
@@ -80,8 +80,8 @@ function FlightFSM.New(settings, routeController)
         minimumPathCheckOffset = number
     end)
 
-    settings.RegisterCallback("pathAlignmentAngleLimit", alignment.SetAlignmentAngleLimit)
-    settings.RegisterCallback("pathAlignmentDistanceLimit", alignment.SetAlignmentDistanceLimit)
+    settings.RegisterCallback("pathAlignmentAngleLimit", Waypoint.SetAlignmentAngleLimit)
+    settings.RegisterCallback("pathAlignmentDistanceLimit", Waypoint.SetAlignmentDistanceLimit)
 
     local normalModeGroup = {
         thrust = {
@@ -417,7 +417,7 @@ function FlightFSM.New(settings, routeController)
             local approachingVertically = abs(pathAlignment) > AngleToDot(5) -- Both up up and down
 
             -- When approching the final parking position vertically, move extra slow so that there is enough time to adjust sideways.
-            if alignment.IsLastInRoute()
+            if waypoint.IsLastInRoute()
                 and outsideAdjustmentMargin(waypoint)
                 and approachingVertically -- within this angle
                 and remainingDistance < 400 then

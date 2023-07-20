@@ -4,13 +4,13 @@
 local Criteria                = require("input/Criteria")
 local PointOptions            = require("flight/route/PointOptions")
 local Vec3                    = require("math/Vec3")
+local Waypoint                = require("flight/Waypoint")
 local log                     = require("debug/Log").Instance()
 local vehicle                 = require("abstraction/Vehicle").New()
 local brakes                  = require("flight/Brakes").Instance()
 local calc                    = require("util/Calc")
 local universe                = require("universe/Universe").Instance()
 local keys                    = require("input/Keys")
-local Alignment               = require("flight/Alignment")
 local pub                     = require("util/PubSub").Instance()
 local constants               = require("YFSConstants")
 local VerticalReferenceVector = universe.VerticalReferenceVector
@@ -88,7 +88,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         cmd.Accept("print-pos", function(_)
             log.Info("Current pos:", universe.CreatePos(Current()):AsPosString())
             log.Info("Alignment pos:",
-                universe.CreatePos(Current() + vehicle.orientation.Forward() * Alignment.DirectionMargin):AsPosString())
+                universe.CreatePos(Current() + vehicle.orientation.Forward() * Waypoint.DirectionMargin):AsPosString())
         end)
 
         cmd.Accept("show-widgets",

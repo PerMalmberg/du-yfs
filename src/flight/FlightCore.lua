@@ -10,7 +10,8 @@ local Current = vehicle.position.Current
 local Ternary = calc.Ternary
 local Waypoint = require("flight/Waypoint")
 local PointOptions = require("flight/route/PointOptions")
-local alignment = require("flight/Alignment").Instance()
+local plane = require("math/Plane").NewByVertialReference()
+local abs = math.abs
 require("flight/state/Require")
 
 ---@module "flight/route/RouteController"
@@ -54,16 +55,12 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute, pointNoseToNextWaypoin
 
     local coordinate = universe.ParsePosition(point.Pos()).Coordinates()
 
-    alignment.SetNoseMode(pointNoseToNextWaypoint)
-
     local wp = Waypoint.New(coordinate, finalSpeed, maxSpeed, margin)
+    wp.SetNoseMode(pointNoseToNextWaypoint)
+    wp.SetLastInRoute(lastInRoute)
 
-    alignment.SetLastInRoute(lastInRoute)
-
-    if lockDir == Vec3.zero then
-        alignment.LockYawTo(nil, true)
-    else
-        alignment.LockYawTo(lockDir, true)
+    if lockDir ~= Vec3.zero then
+        wp.LockYawTo(lockDir, true)
     end
 
     return wp
@@ -113,6 +110,12 @@ function FlightCore.New(routeController, flightFSM)
         previousWaypoint = currentWaypoint
         currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached(),
             settings.Boolean("pointNoseToNextWaypoint", false))
+
+        -- When the next waypoint is nearly above or below us, lock yaw, but don't override of it already is locked
+        local dir = (currentWaypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
+        if abs(dir:Dot(plane.Up())) > 0.9 then -- <= calc.AngleToDot(25) then
+            currentWaypoint.LockYawTo(plane.Forward(), false)
+        end
     end
 
     ---Starts the flight
@@ -138,10 +141,10 @@ function FlightCore.New(routeController, flightFSM)
     function s.Turn(degrees, axis)
         local current = vehicle.position.Current()
         local forwardPointOnPlane = calc.ProjectPointOnPlane(axis, current,
-            current + vehicle.orientation.Forward() * alignment.DirectionMargin)
+            current + vehicle.orientation.Forward() * Waypoint.DirectionMargin)
         forwardPointOnPlane = calc.RotateAroundAxis(forwardPointOnPlane, current, degrees, axis)
         local dir = (forwardPointOnPlane - Current()):NormalizeInPlace()
-        alignment.LockYawTo(dir, true)
+        currentWaypoint.LockYawTo(dir, true)
         pub.Publish("ForwardDirectionChanged", dir)
         return dir
     end
@@ -154,7 +157,7 @@ function FlightCore.New(routeController, flightFSM)
             local pointOnPlane = calc.ProjectPointOnPlane(-universe.VerticalReferenceVector(), current, point)
             local dir = (pointOnPlane - current):NormalizeInPlace()
             ---QQQ Just (point - curr):NormalizeInPlace() ???
-            alignment.LockYawTo(dir, true)
+            currentWaypoint.LockYawTo(dir, true)
             pub.Publish("ForwardDirectionChanged", dir)
         end
     end
@@ -235,11 +238,9 @@ function FlightCore.New(routeController, flightFSM)
         local status, err, _ = xpcall(
             function()
                 if currentWaypoint and route then
-                    alignment.SetWaypoints(currentWaypoint, previousWaypoint)
-
-                    axes.SetYawTarget(alignment.Yaw())
-                    axes.SetPitchTarget(alignment.Pitch())
-                    axes.SetRollTarget(alignment.Roll())
+                    axes.SetYawTarget(currentWaypoint.Yaw(previousWaypoint))
+                    axes.SetPitchTarget(currentWaypoint.Pitch(previousWaypoint))
+                    axes.SetRollTarget(currentWaypoint.Roll(previousWaypoint))
 
                     flightFSM.FsmFlush(currentWaypoint, previousWaypoint)
 
@@ -249,7 +250,7 @@ function FlightCore.New(routeController, flightFSM)
                         -- Lock direction when WP is reached, but don't override existing locks, such as is in place when strafing.
                         local lockDir = (currentWaypoint.Destination() - previousWaypoint.Destination())
                             :NormalizeInPlace()
-                        alignment.LockYawTo(lockDir, false)
+                        currentWaypoint.LockYawTo(lockDir, false)
 
                         -- Switch to next waypoint
                         s.NextWP()

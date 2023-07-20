@@ -1,3 +1,4 @@
+--[[
 local vehicle = require("abstraction/Vehicle").New()
 local universe = require("universe/Universe").Instance()
 local calc = require("util/Calc")
@@ -5,27 +6,16 @@ local Current = vehicle.position.Current
 local abs = math.abs
 local max = math.max
 
----@alias AlignmentFunction fun(currentWaypoint:Waypoint, previous:Waypoint):{yaw:Vec3, pitch:Vec3}
-
 -- Reminder: Don't return a point based on the constructs' current position, it will cause spin if it overshoots etc.
 
 ---@class Alignment
 ---@field SetAlignmentAngleLimit fun(angle:number)
 ---@field SetAlignmentDistanceLimit fun(distance:number)
+---@field GetVerticalUpReference fun(wp:Waypoint, prev:Waypoint):Vec3
+---@field YawPitchPointNoseToNextWaypoint AlignmentFunction
 
 local alignment = {} ---@type Alignment
-local pathAlignmentAngleLimit = 40
-local pathAlignmentDistanceLimit = 50
 
----@param angle number
-function alignment.SetAlignmentAngleLimit(angle)
-    pathAlignmentAngleLimit = max(0, angle)
-end
-
----@param distance number
-function alignment.SetAlignmentDistanceLimit(distance)
-    pathAlignmentDistanceLimit = max(0, distance)
-end
 
 -- Return a direction target point this far from the waypoint so that in case we overshoot
 -- we don't get the point behind us and start turning around and also reduces oscilliating yaw.
@@ -43,7 +33,6 @@ local function pointAtSameHeightAsConstructParallelToVerticalRef(vertRef)
 
     local alignmentPoint = current + vehicle.orientation.Forward() * directionMargin
     alignmentPoint = calc.ProjectPointOnPlane(vertRef, current, alignmentPoint)
-
     return alignmentPoint
 end
 
@@ -57,7 +46,7 @@ end
 ---@param waypoint Waypoint
 ---@param previousWaypoint Waypoint
 ---@return Vec3
-local function getVerticalUpReference(waypoint, previousWaypoint)
+function alignment.GetVerticalUpReference(waypoint, previousWaypoint)
     -- When next waypoint is nearly aligned with -gravity, use the line between them as the vertical reference instead to make following the path more exact.
     local vertUp = -universe.VerticalReferenceVector()
     local pathDirection = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
@@ -82,10 +71,10 @@ end
 ---@param previousWaypoint Waypoint
 ---@return {yaw:Vec3, pitch:Vec3}
 function alignment.YawPitchKeepLockedWaypointDirectionOrthogonalToVerticalReference(waypoint, previousWaypoint)
-    local normal = getVerticalUpReference(waypoint, previousWaypoint)
+    local normal = alignment.GetVerticalUpReference(waypoint, previousWaypoint)
 
     return {
-        yaw = Current() + waypoint.YawPitchDirection() * directionMargin,
+        yaw = Current() + waypoint.YawLockDirection() * directionMargin,
         pitch = pointAtSameHeightAsConstructParallelToVerticalRef(normal)
     }
 end
@@ -95,7 +84,7 @@ end
 ---@return {yaw:Vec3, pitch:Vec3}|nil
 function alignment.YawPitchKeepOrthogonalToVerticalReference(waypoint, previousWaypoint)
     local current = Current()
-    local normal = getVerticalUpReference(waypoint, previousWaypoint)
+    local normal = alignment.GetVerticalUpReference(waypoint, previousWaypoint)
 
     local travelDir = (waypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
 
@@ -118,11 +107,26 @@ function alignment.YawPitchKeepOrthogonalToVerticalReference(waypoint, previousW
     return res
 end
 
+local i = 1
+---@param waypoint Waypoint
+---@param previousWaypoint Waypoint
+---@return {yaw:Vec3, pitch:Vec3}|nil
+function alignment.YawPitchPointNoseToNextWaypoint(waypoint, previousWaypoint)
+    local res = {} ---@type {yaw:Vec3, pitch:Vec3}
+
+    local travelDir = (waypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
+    local target = Current() + travelDir * directionMargin
+
+    res.yaw = target
+    res.pitch = target
+    return res
+end
+
 ---@param waypoint Waypoint
 ---@param previousWaypoint Waypoint
 ---@return Vec3
 function alignment.RollTopsideAwayFromVerticalReference(waypoint, previousWaypoint)
-    local normal = getVerticalUpReference(waypoint, previousWaypoint)
+    local normal = alignment.GetVerticalUpReference(waypoint, previousWaypoint)
     return Current() + normal * directionMargin
 end
 
@@ -131,10 +135,12 @@ end
 ---@return Vec3 direction The direction from `previous` to `next` projected on the current plane
 function alignment.DirectionBetweenWaypointsOrthogonalToVerticalRef(next, previous)
     local current = Current()
-    local normal = getVerticalUpReference(next, previous)
+    local normal = alignment.GetVerticalUpReference(next, previous)
     local p = calc.ProjectPointOnPlane(normal, current, previous.Destination())
     local n = calc.ProjectPointOnPlane(normal, current, next.Destination())
     return (n - p):NormalizeInPlace()
 end
 
 return alignment
+
+]]
