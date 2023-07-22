@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file. The version
 ### Changed
 * Command `route-set-pos-option` now takes a range of indexes, which allows setting options on multiple points at the same time. Use `-ix`and `-endIx` to specify start and end index.
 * Major rewrite of alignment handling, splitting pitch and yaw from each other.
+* Sped up fuel gauges so they show quicker, mostly noticeable on constructs with many elements.
 
 ## 0.2.10 - 2023-06-24
 
