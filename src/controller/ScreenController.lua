@@ -8,6 +8,7 @@ local commandLine        = require("commandline/CommandLine").Instance()
 local pub                = require("util/PubSub").Instance()
 local layout             = require("screen/layout_out")
 local Stream             = require("Stream")
+local ScreenDevice       = require("device/ScreenDevice")
 local calc               = require("util/Calc")
 local pagination         = require("util/Pagination")
 local distanceFormat     = require("util/DistanceFormat")
@@ -55,7 +56,7 @@ function ScreenController.New(flightCore, settings)
         editPointPage = 1
     end)
 
-    function s.dataReceived(data)
+    function s.OnData(data)
         -- Publish data to system
         if data == nil then return end
         local command = data["mouse_click"]
@@ -73,6 +74,37 @@ function ScreenController.New(flightCore, settings)
                 s.sendRoutes()
             end
         end
+    end
+
+    ---@param isTimedOut boolean
+    ---@param stream Stream
+    function s.OnTimeout(isTimedOut, stream)
+        if isTimedOut then
+            layoutSent = false
+        elseif not layoutSent then
+            stream.Write({ screen_layout = layout })
+
+            local floorRoute = settings.String("showFloor")
+            local floorActivated = false
+
+            if floorRoute ~= "-" then
+                floorActivated = s.ActivateFloorMode(floorRoute)
+                if not floorActivated then
+                    log.Error("Could not activate floor mode")
+                end
+            end
+
+            if not floorActivated then
+                stream.Write({ activate_page = "status,routeSelection" })
+            end
+
+            s.sendRoutes()
+            layoutSent = true
+        end
+    end
+
+    function s.RegisterStream(stream)
+
     end
 
     ---@param cmd string
@@ -264,33 +296,6 @@ function ScreenController.New(flightCore, settings)
         return r ~= nil
     end
 
-    ---@param isTimedOut boolean
-    ---@param stream Stream
-    local function onTimeout(isTimedOut, stream)
-        if isTimedOut then
-            layoutSent = false
-        elseif not layoutSent then
-            stream.Write({ screen_layout = layout })
-
-            local floorRoute = settings.String("showFloor")
-            local floorActivated = false
-
-            if floorRoute ~= "-" then
-                floorActivated = s.ActivateFloorMode(floorRoute)
-                if not floorActivated then
-                    log.Error("Could not activate floor mode")
-                end
-            end
-
-            if not floorActivated then
-                stream.Write({ activate_page = "status,routeSelection" })
-            end
-
-            s.sendRoutes()
-            layoutSent = true
-        end
-    end
-
     local function screenTask()
         local screen = library.getLinkByClass("ScreenUnit")
 
@@ -351,7 +356,7 @@ function ScreenController.New(flightCore, settings)
                 end
             end)
 
-        stream = Stream.New(screen, s.dataReceived, 1, onTimeout)
+        stream = Stream.New(ScreenDevice.New(screen), s, 1)
 
         while screen do
             screen.activate()

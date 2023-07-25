@@ -5,10 +5,11 @@ PWD=$(shell pwd)
 LUA_PATH := ./src/?.lua
 LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/src/?.lua
 LUA_PATH := $(LUA_PATH);$(PWD)/external/du-render/src/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/external/du-render/external/du-stream/src/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/external/du-render/external/du-stream/external/du-serializer/?.lua
 LUA_PATH := $(LUA_PATH);$(PWD)/external/SmartTemplateLibrary/src/?.lua
 
 LUA_PATH_TEST := $(LUA_PATH);$(PWD)/external/du-libs/src/builtin/du_provided/?.lua
-LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-lua-examples/api-mockup/?.lua
 LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-libs/external/du-unit-testing/src/?.lua
 LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-libs/external/du-unit-testing/src/mocks/?.lua
 LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-libs/external/du-unit-testing/external/du-luac/lua/?.lua
@@ -35,7 +36,7 @@ update_version:
 	@./update_version_info.sh
 
 test: clean
-	@LUA_PATH="$(LUA_PATH_TEST)" busted -t "flight" .
+	@LUA_PATH="$(LUA_PATH_TEST)" busted -t "flight" . --exclude-pattern="serializer_spec.lua" --exclude-pattern="Stream_spec.lua"
 	@luacov
 	@$(CLEAN_COV)
 
