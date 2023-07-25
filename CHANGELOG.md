@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 1.0.0 - 2023-07-25
+
+This version is identical to 0.2.10 and marks the first 'complete' version and the end of free updates. Updates to this version are still free.
+
 ## 0.2.10 - 2023-06-24
 
 ## Fixed
