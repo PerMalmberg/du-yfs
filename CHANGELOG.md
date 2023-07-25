@@ -16,6 +16,10 @@ All notable changes to this project will be documented in this file. The version
 * Sped up fuel gauges so they show quicker, mostly noticeable on constructs with many elements.
 * Extracted the stream code used for communicating with the screen into its own open-source library (https://github.com/PerMalmberg/du-stream) so it can be used to also communicate using emitter/receivers.
 
+## 1.0.0 - 2023-07-25
+
+This version is identical to 0.2.10 and marks the first 'complete' version and the end of free updates. Updates to this version are still free.
+
 ## 0.2.10 - 2023-06-24
 
 ## Fixed
