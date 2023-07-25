@@ -55,9 +55,10 @@ function AxisManager.Instance()
     end
 
     function s.Flush()
-        if abs(yaw.OffsetDegrees()) > 20 then
-            roll.Disable()
-        end
+        -- Enabling this causes an uninteded roll when making hard turns.
+        --if abs(yaw.OffsetDegrees()) > 20 then
+        --roll.Disable()
+        --end
 
         pitch.AxisFlush()
         roll.AxisFlush()
