@@ -14,47 +14,57 @@
     }
   ],
   "builds": {
-    "Unlimited": {
+    "variants/Unlimited": {
       "name": "variants/Unlimited",
       "type": "control",
-      "slots": {}
+      "slots": {
+        "receiver": {
+          "name": "receiver",
+          "type": "receiver"
+        }
+      }
     },
-    "Atmo10XS": {
-      "name": "variants/Atmo10XS",
-      "type": "control",
-      "slots": {}
-    },
-    "Atmo12XS": {
-      "name": "variants/Atmo12XS",
-      "type": "control",
-      "slots": {}
-    },
-    "Atmo16XS": {
-      "name": "variants/Atmo16XS",
-      "type": "control",
-      "slots": {}
-    },
-    "Y-Lift M4 0T XS Beetle v1.0": {
+    "variants/Y-Lift M4 0T XS Beetle v1.0": {
       "name": "variants/Y-Lift M4 0T XS Beetle v1.0",
       "type": "control",
-      "slots": {}
+      "slots": {
+        "receiver": {
+          "name": "receiver",
+          "type": "receiver"
+        }
+      }
     },
-    "Y-Lift M3 0T XS The Bug v1.0": {
+    "variants/Y-Lift M3 0T XS The Bug v1.0": {
       "name": "variants/Y-Lift M3 0T XS The Bug v1.0",
       "type": "control",
-      "slots": {}
+      "slots": {
+        "receiver": {
+          "name": "receiver",
+          "type": "receiver"
+        }
+      }
     },
-    "Y-Lift M5 0T XS Planck v1.0": {
+    "variants/Y-Lift M5 0T XS Planck v1.0": {
       "name": "variants/Y-Lift M5 0T XS Planck v1.0",
       "type": "control",
-      "slots": {}
+      "slots": {
+        "receiver": {
+          "name": "receiver",
+          "type": "receiver"
+        }
+      }
     },
-    "Y-Lift M6 0T XS The Bug v2.0": {
+    "variants/Y-Lift M6 0T XS The Bug v2.0": {
       "name": "variants/Y-Lift M6 0T XS The Bug v2.0",
       "type": "control",
-      "slots": {}
+      "slots": {
+        "receiver": {
+          "name": "receiver",
+          "type": "receiver"
+        }
+      }
     },
-    "screen/main": {
+    "screen/screen": {
       "name": "screen/screen",
       "type": "screen",
       "slots": {}

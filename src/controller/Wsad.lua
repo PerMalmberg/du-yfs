@@ -18,6 +18,7 @@ local Current                 = vehicle.position.Current
 local Plane                   = require("math/Plane")
 local max                     = math.max
 local Sign                    = calc.Sign
+local IsFrozen                = vehicle.player.IsFrozen
 
 ---@class Wsad
 ---@field New fun(flightcore:FlightCore):Wsad
@@ -60,18 +61,13 @@ function Wsad.New(flightCore, settings)
 
     checkControlMode()
 
-    ---@return boolean
-    local function manualInputEnabled()
-        return player.isFrozen()
-    end
-
     local function lockUser()
         player.freeze(true)
         log.Info("Player locked and auto shutdown disabled.")
     end
 
     local function toggleUserLock()
-        if manualInputEnabled() then
+        if IsFrozen() then
             player.freeze(false)
             log.Info("Player released and auto shutdown enabled.")
         else
@@ -170,7 +166,7 @@ function Wsad.New(flightCore, settings)
                 stopPos = Current()
             end
 
-            if manualInputEnabled() then
+            if IsFrozen() then
                 if wantsToMove then
                     if pointDir:IsZero() then
                         -- Recovery after running a route
@@ -284,26 +280,24 @@ function Wsad.New(flightCore, settings)
     end)
 
     input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
-        if not manualInputEnabled() then return end
+        if not IsFrozen() then return end
         pointDir = flightCore.Turn(turnAngle, plane.Up())
     end)
 
     input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
-        if not manualInputEnabled() then return end
+        if not IsFrozen() then return end
         pointDir = flightCore.Turn(-turnAngle, plane.Up())
     end)
 
     input.Register(keys.yawleft, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
+        if not IsFrozen() then return end
         yawSmoothStop = true
     end)
 
     input.Register(keys.yawright, Criteria.New().OnRelease(), function()
-        if not manualInputEnabled() then return end
+        if not IsFrozen() then return end
         yawSmoothStop = true
     end)
-
-
 
     -- shift + alt + Option9 to switch modes
     input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), toggleUserLock)

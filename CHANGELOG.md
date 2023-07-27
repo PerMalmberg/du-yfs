@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file. The version
 
 ### Added
 * New setting `setWaypointAlongRoute`, which, if enabled, makes the waypoint to be set for the next point in the route.
+* Support for automatically opening and closing doors/gates when entering travel and hold states, respectively.
+
 
 ### Fixed
 * Formatting of a few log messages

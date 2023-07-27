@@ -12,7 +12,7 @@ Please read the entire manual before attempting to perform an installation, ther
     - [Enclosures](#enclosures)
     - [Floors for parking; ground and space](#floors-for-parking-ground-and-space)
     - [Cargo mass capacity](#cargo-mass-capacity)
-  - [Automatic shutdown](#automatic-shutdown)
+  - [Automatic shutdown / Gate control](#automatic-shutdown--gate-control)
   - [Fuel gauges](#fuel-gauges)
   - [Installation as an elevator (ground to space)](#installation-as-an-elevator-ground-to-space)
     - [Aligning the elevator to your ground construct](#aligning-the-elevator-to-your-ground-construct)
@@ -38,13 +38,14 @@ The goal of this project was initially to write a flight system capable of worki
 
 ### Required elements (for Do-It-Yourself kits)
 
-* A data bank named "Routes"
 * A telemeter named "FloorDetector", pointing downwards
+* A data bank named "Routes"
 * Optional data bank named "Settings"
 * Screen (optional, but strongly recommended)
 * Atmospheric engines are required in all direction, except in the upward direction as gravity does the job. Upward engines are used if present.
 * In space, you need engines in all directions.
 * Aim for 3g for upward lift when fully loaded.
+* Don't forget the brakes
 
 ### Routes and Waypoints
 
@@ -68,7 +69,7 @@ If you intend to build an enclosure for the construct remember that physics in D
 
 ### Floors for parking; ground and space
 
-Due to Dual Universe's slightly wonky physics, when creating floors for any dynamic construct, ensure that the floor fully encompasses the dynamic construct and it does NOT cross core boundaries or it might clip through and fall, or worse, explode.
+When creating floors for any dynamic construct, ensure that the floor fully encompasses the dynamic construct and it does NOT cross core boundaries or it might clip through and fall, or worse, explode.
 
 ### Cargo mass capacity
 
@@ -83,9 +84,26 @@ The rating is based on these prerequisites:
 
 From the above it should be understood that taking off from lower atmosphere (such as from a higher point, or a low-atmosphere planet) makes a big difference in capacity. Likewise, coming into atmosphere and stopping at higher up/in low atmosphere is also subject to the same altered performance.
 
-## Automatic shutdown
+## Automatic shutdown / Gate control
 
 When the last point in the route is reached, and the telemeter reports a distance less than the one configured, the script will automatically shutdown.
+
+You can also setup automatic control of gates or doors by linking elements on the ground/space construct as follows, in the given order:
+
+1. Programming Board -> Receiver
+1. Programming Board -> Emitter
+1. Programming Board -> Manual Switch XS
+1. Manual Switch XS -> Programming Board
+1. Programming Board -> Manual Switch XS
+
+Now copy the contents of [this file](https://github.com/PerMalmberg/du-elevator-docking-control/), right-click on the Programming Board, open the Advanced menu and click `Paste Lua Configuration from clipboard`.
+
+Right-click on the programming board and click `Edit Lua parameters` and set a unique communication channel, using alpha numerical characters only, no spaces. Then click OK to close the dialog.
+Now activate the programming board to complete the setup of the worker side. It will turn itself off automatically.
+
+Using Lua chat, you must now run the command `set -commChannel CHANNEL` on the elevator, replacing `CHANNEL` with the same channel name you used above.
+
+When the traveling or reaching the final waypoint, the gates/doors will now open and close automatically (except when manual control is active).
 
 ## Fuel gauges
 
@@ -337,6 +355,8 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 |                           | -pathAlignmentAngleLimit    | degrees       | Y        | The threshold angle that determines if the construct will align to the flight path or the gravity vector. Default: 10 degrees. Set to 0 to disable path alignment.                                                                                                                                       |
 |                           | -pathAlignmentDistanceLimit | meter         | Y        | The threshold distance that determines if the construct will align to the flight path or the gravity vector. Default: 200m.                                                                                                                                                                              |
 |                           | -setWaypointAlongRoute      | boolean       | Y        | If true, the next point in the route will become your waypoint.                                                                                                                                                                                                                                          |
+|                           | -commChannel                | string        | Y        | If set to anything but an empty string, this defines the channel used to communicate with other constructs on.                                                                                                                                                                                           |
+|                           | -gateCloseDelay             | number        | Y        | The number of seconds to wait in the hold-state before giving the command to close gates for automatic parking.                                                                                                                                                                                          |
 | get                       | See `set`                   |               | Y        | Prints the setting set with the `set` command, don't add the leading `-`.                                                                                                                                                                                                                                |
 | get-all                   |                             |               |          | Prints all current settings. Don't add the "-" before the argument. Example: `get turnAngle`.                                                                                                                                                                                                            |
 | reset-settings            |                             |               |          | Resets all settings to their defaults.                                                                                                                                                                                                                                                                   |

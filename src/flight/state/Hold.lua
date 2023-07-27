@@ -1,8 +1,12 @@
 ---@module "flight/state/Travel"
 ---@module "element/Telemeter"
-local pub = require("util/PubSub").Instance()
+
+local pub       = require("util/PubSub").Instance()
+local log       = require("debug/Log").Instance()
+local timer     = require("system/Timer").Instance()
 local Stopwatch = require("system/Stopwatch")
-local log = require("debug/Log").Instance()
+local vehicle   = require("abstraction/Vehicle").New()
+local IsFrozen  = vehicle.player.IsFrozen
 
 
 ---@class Hold
@@ -25,17 +29,18 @@ local name = "Hold"
 function Hold.New(fsm)
     local s = {}
     local isLastWaypoint = false
-    local watch = Stopwatch.New()
-
     local settings = fsm.GetSettings()
+    local closeTimeout = Stopwatch.New()
 
     function s.Enter()
         pub.RegisterTable("FloorMonitor", s.floorMonitor)
-        watch.Start()
+        timer.Add("CloseGate", s.closeGates, 0.5)
+        closeTimeout.Start()
     end
 
     function s.Leave()
         pub.Unregister("FloorMonitor", s.floorMonitor)
+        timer.Remove("CloseGate")
     end
 
     ---@param deltaTime number
@@ -62,7 +67,7 @@ function Hold.New(fsm)
     ---@param topic string
     ---@param hit TelemeterResult
     function s.floorMonitor(topic, hit)
-        if not player.isFrozen()
+        if not IsFrozen()
             and isLastWaypoint
             and hit.Hit
             and hit.Distance <= settings.Get("autoShutdownFloorDistance") then
@@ -71,12 +76,18 @@ function Hold.New(fsm)
         end
     end
 
+    function s.closeGates()
+        -- When in manual mode, we don't open or close the gate
+        if not IsFrozen() and closeTimeout.Elapsed() > settings.Number("gateCloseDelay") then
+            pub.Publish("SendData", { topic = "GateControl", data = { desiredDoorState = "closed" } })
+        end
+    end
+
     function s.InhibitsThrust()
         return false
     end
 
     setmetatable(s, Hold)
-
     return s
 end
 

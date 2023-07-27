@@ -70,7 +70,9 @@ function Settings.New(db)
         showFloor = { default = "-" },
         pathAlignmentAngleLimit = { default = flightDefaults.pathAlignmentAngleLimit },
         pathAlignmentDistanceLimit = { default = flightDefaults.pathAlignmentDistanceLimit },
-        setWaypointAlongRoute = { default = false }
+        setWaypointAlongRoute = { default = false },
+        commChannel = { default = "" },
+        gateCloseDelay = { default = 1.5 }
     }
 
     for k, v in pairs(containerSettings) do

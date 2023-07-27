@@ -6,6 +6,7 @@ local Fuel             = require("info/Fuel")
 local FlightFSM        = require("flight/FlightFSM")
 local FlightCore       = require("flight/FlightCore")
 local ScreenController = require("controller/ScreenController")
+local Communcation     = require("controller/Communication")
 local Settings         = require("Settings")
 local Stopwatch        = require("system/Stopwatch")
 local Hud              = require("hud/Hud")
@@ -98,6 +99,12 @@ local function Start(isECU)
         end
 
         pub.Publish("ShowInfoWidgets", settings.Boolean("showWidgetsOnStart", false))
+
+        local channel = settings.String("commChannel")
+        local comm
+        if not isECU and channel ~= "" then
+            comm = Communcation.New(channel)
+        end
     end).Catch(function(t)
         log.Error(t.Name(), t.Error())
     end)
