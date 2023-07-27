@@ -88,17 +88,21 @@ From the above it should be understood that taking off from lower atmosphere (su
 
 When the last point in the route is reached, and the telemeter reports a distance less than the one configured, the script will automatically shutdown.
 
-You can also setup automatic control of gates or doors by linking elements on the ground/space construct as follows, in the given order:
+You can also setup automatic control of gates or doors by linking elements on the ground/space construct as follows, in the given order Also name elements as stated.
 
 1. Programming Board -> Receiver
 1. Programming Board -> Emitter
-1. Programming Board -> Manual Switch XS
-1. Manual Switch XS -> Programming Board
-1. Programming Board -> Manual Switch XS
+1. Programming Board -> Core
+1. Receiver -> Manual Switch XS (name: hold)
+1. Programming Board -> Manual Switch XS (name: hold)
+1. Manual Switch XS (name: hold) -> Programming Board
+1. Programming Board -> Manual Switch XS (name: gates)
+1. Manual Switch XS (name: gates) -> Relay
+1. Relay -> Any number of gates or doors
 
 Now copy the contents of [this file](https://github.com/PerMalmberg/du-elevator-docking-control/), right-click on the Programming Board, open the Advanced menu and click `Paste Lua Configuration from clipboard`.
 
-Right-click on the programming board and click `Edit Lua parameters` and set a unique communication channel, using alpha numerical characters only, no spaces. Then click OK to close the dialog.
+Right-click on the programming board and click `Edit Lua parameters` and set a unique communication channel, using alpha numerical characters only, no spaces. Ensure you keep the quotation marks! The channel must be unique per elevator/gate set or they will interfere with each other. Click OK to close the dialog.
 Now activate the programming board to complete the setup of the worker side. It will turn itself off automatically.
 
 Using Lua chat, you must now run the command `set -commChannel CHANNEL` on the elevator, replacing `CHANNEL` with the same channel name you used above.
