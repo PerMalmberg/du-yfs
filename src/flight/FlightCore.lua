@@ -112,6 +112,8 @@ function FlightCore.New(routeController, flightFSM)
         local dir = (currentWaypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
         if abs(dir:Dot(plane.Up())) > 0.9 then -- <= calc.AngleToDot(25) then
             currentWaypoint.LockYawTo(plane.Forward(), false)
+        else
+            currentWaypoint.LockYawTo(dir)
         end
     end
 
