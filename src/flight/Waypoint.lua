@@ -203,7 +203,13 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
         if yawLockDir then
             dir = yawLockDir
         else
-            dir = s.DirectionTo()
+            -- Point towards the next point. Use the previous point as a reference when we get close to prevent spinning.
+            if s.DistanceTo() > 100 then
+                dir = s.DirectionTo()
+            else
+                dir = s.Destination() - prev.Destination()
+                dir:NormalizeInPlace()
+            end
         end
 
         return Current() + dir * directionMargin
