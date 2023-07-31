@@ -12,7 +12,8 @@ Please read the entire manual before attempting to perform an installation, ther
     - [Enclosures](#enclosures)
     - [Floors for parking; ground and space](#floors-for-parking-ground-and-space)
     - [Cargo mass capacity](#cargo-mass-capacity)
-  - [Automatic shutdown / Gate control](#automatic-shutdown--gate-control)
+  - [Automatic shutdown](#automatic-shutdown)
+  - [Gate control](#gate-control)
   - [Fuel gauges](#fuel-gauges)
   - [Installation as an elevator (ground to space)](#installation-as-an-elevator-ground-to-space)
     - [Aligning the elevator to your ground construct](#aligning-the-elevator-to-your-ground-construct)
@@ -84,11 +85,20 @@ The rating is based on these prerequisites:
 
 From the above it should be understood that taking off from lower atmosphere (such as from a higher point, or a low-atmosphere planet) makes a big difference in capacity. Likewise, coming into atmosphere and stopping at higher up/in low atmosphere is also subject to the same altered performance.
 
-## Automatic shutdown / Gate control
+## Automatic shutdown
 
 When the last point in the route is reached, and the telemeter reports a distance less than the one configured, the script will automatically shutdown.
 
-You can also setup automatic control of gates or doors by linking elements on the ground/space construct as follows, in the given order. Also name elements as stated in parenthesis.
+## Gate control
+
+You can setup automatic control of gates or doors, completely automating the travel, this gets you:
+
+* Automatically opened gates/doors on route activation.
+* Automatically closed gates/doors when arriving at the final waypoint.
+
+You do _not_ get automatically closed gates/doors on leaving the start of the route.
+
+Link the following elements on the ground/space construct as follows, in the given order. Also name elements as stated in parenthesis.
 
 1. PB -> Receiver (green link)
 2. PB -> Emitter (green link)
@@ -105,14 +115,14 @@ You can also setup automatic control of gates or doors by linking elements on th
 
 *PB = Programming Board
 
-Now copy the contents of [this file](https://github.com/PerMalmberg/du-elevator-docking-control/), right-click on the Programming Board, open the Advanced menu and click `Paste Lua Configuration from clipboard`.
+Now copy the _contents_ the latest released [Json file from here](https://github.com/PerMalmberg/du-elevator-docking-control/), right-click on the Programming Board, open the Advanced menu and click `Paste Lua Configuration from clipboard`. Ensure you get a success message on screen.
 
 Right-click on the programming board and click `Edit Lua parameters` and set a unique communication channel, using alpha numerical characters only, no spaces. Ensure you keep the quotation marks! The channel must be unique per elevator/gate set or they will interfere with each other. Click OK to close the dialog.
 Now activate the programming board to complete the setup of the worker side. It will turn itself off automatically.
 
-Using Lua chat, you must now run the command `set -commChannel CHANNEL` on the elevator, replacing `CHANNEL` with the same channel name you used above.
+On the elevator, in Lua chat, you must now run the command `set -commChannel CHANNEL`, replacing `CHANNEL` with the same channel name you used above.
 
-When the traveling or reaching the final waypoint, the gates/doors will now open and close automatically (except when manual control is active).
+> Note: Gate Control is only active while running a route, not when manually controlling the construct with keys or via the `move` command.
 
 ## Fuel gauges
 

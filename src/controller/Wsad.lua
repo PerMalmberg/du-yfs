@@ -11,6 +11,7 @@ local Stopwatch               = require("system/Stopwatch")
 local input                   = require("input/Input").Instance()
 local pub                     = require("util/PubSub").Instance()
 local defaultMargin           = constants.flight.defaultMargin
+local gateControl             = require("controller/GateControl").Instance()
 local Velocity                = vehicle.velocity.Movement
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local MaxSpeed                = vehicle.speed.MaxSpeed
@@ -168,6 +169,7 @@ function Wsad.New(flightCore, settings)
 
             if IsFrozen() then
                 if wantsToMove then
+                    gateControl.Enable(false)
                     if pointDir:IsZero() then
                         -- Recovery after running a route
                         pointDir = plane.Forward()

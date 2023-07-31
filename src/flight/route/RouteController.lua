@@ -247,8 +247,8 @@ function RouteController.Instance(bufferedDB)
         end
 
         route.UpdateGateControlPoints()
+        -- Values may bot be present so set to true only if they are actually true
         local gc = data.gateControl
-
         if gc then
             route.SetGateWaitState(gc.waitAtStart == true, gc.waitAtEnd == true)
         end
@@ -560,7 +560,7 @@ function RouteController.Instance(bufferedDB)
     ---@return Route
     function s.ActivateTempRoute()
         current = Route.New()
-        activeRouteName = "Temporary"
+        activeRouteName = "---"
         return current
     end
 
