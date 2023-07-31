@@ -56,8 +56,8 @@ function Idle.New(fsm)
         return name
     end
 
-    function s.InhibitsThrust()
-        return true
+    function s.Inhibitions()
+        return { thrust = true, alignment = true }
     end
 
     ---@param topic string

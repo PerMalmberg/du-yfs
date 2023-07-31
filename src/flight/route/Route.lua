@@ -11,6 +11,7 @@ local log          = require("debug/Log").Instance()
 local universe     = require("universe/Universe").Instance()
 local Point        = require("flight/route/Point")
 local pagination   = require("util/Pagination")
+local Vec3         = require("math/Vec3")
 require("util/Table")
 
 ---@alias RouteRemainingInfo {Legs:integer, TotalDistance:number}
@@ -38,7 +39,10 @@ require("util/Table")
 ---@field GetRemaining fun(fromPos:Vec3):RouteRemainingInfo
 ---@field GetPointPage fun(page:integer, perPage:integer):Point[]
 ---@field GetPageCount fun(perPage:integer):integer
-
+---@field WaitForGateToOpen fun(current:Vec3, margin:number):boolean
+---@field UpdateGateControlPoints fun()
+---@field SetGateWaitState fun(startPoint:boolean, endPoint:boolean)
+---@field GetGateWaitState fun():boolean, boolean
 
 local Route = {}
 Route.__index = Route
@@ -50,6 +54,11 @@ function Route.New()
 
     local points = {} ---@type Point[]
     local nextPointIx = 1
+
+    local originalStartPos = Vec3.zero
+    local originalEndPos = Vec3.zero
+    local waitForGateAtStart = false
+    local waitForGateAtEnd = false
 
     ---@param ix number
     ---@return Vec3
@@ -352,6 +361,33 @@ function Route.New()
     ---@return integer
     function s.GetPageCount(perPage)
         return pagination.GetPageCount(s.Points(), perPage)
+    end
+
+    ---@param startPoint boolean
+    ---@param endPoint boolean
+    function s.SetGateWaitState(startPoint, endPoint)
+        waitForGateAtStart = startPoint
+        waitForGateAtEnd = endPoint
+    end
+
+    function s.GetGateWaitState()
+        return waitForGateAtStart, waitForGateAtEnd
+    end
+
+    ---Determines if we should wait for gates to open at the current position.
+    ---@param current Vec3
+    ---@param margin number
+    ---@return boolean
+    function s.WaitForGateToOpen(current, margin)
+        return (waitForGateAtStart and (originalStartPos - current):Len() < margin) or
+            (waitForGateAtEnd and (originalEndPos - current):Len() < margin)
+    end
+
+    function s.UpdateGateControlPoints()
+        if #points > 0 then
+            originalStartPos = coordsFromPoint(1)
+            originalEndPos = coordsFromPoint(#points)
+        end
     end
 
     return setmetatable(s, Route)

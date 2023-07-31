@@ -1,4 +1,3 @@
-local Stopwatch = require("system/Stopwatch")
 local Waypoint = require("flight/Waypoint")
 
 ---@class ReturnToPath
@@ -54,8 +53,8 @@ function ReturnToPath.New(fsm, returnPoint)
         return name
     end
 
-    function s.InhibitsThrust()
-        return false
+    function s.Inhibitions()
+        return { thrust = false, alignment = false }
     end
 
     return setmetatable(s, ReturnToPath)

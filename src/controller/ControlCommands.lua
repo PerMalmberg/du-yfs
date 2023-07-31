@@ -13,6 +13,7 @@ local universe                = require("universe/Universe").Instance()
 local keys                    = require("input/Keys")
 local pub                     = require("util/PubSub").Instance()
 local constants               = require("YFSConstants")
+local gateCtrl                = require("controller/GateControl").Instance()
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local Current                 = vehicle.position.Current
 local Forward                 = vehicle.orientation.Forward
@@ -168,6 +169,11 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     log.Info("- ", k, ": ", v)
                 end
             end
+
+            local atStart, atEnd = route.GetGateWaitState()
+            log.Info("Wait for open gates")
+            log.Info("- at start: ", atStart)
+            log.Info("- at end: ", atEnd)
         end)
 
         cmd.Accept("route-activate",
@@ -176,6 +182,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 local startMargin = settings.Number("routeStartDistanceLimit")
 
                 if rc.ActivateRoute(data.commandValue, data.index, startMargin) then
+                    gateCtrl.Enable(true)
                     flightCore.StartFlight()
                     pub.Publish("ResetWSAD", true)
                     log.Info("Flight started")
@@ -361,10 +368,6 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     if data.maxSpeed then
                         route.SetPointOption(i, PointOptions.MAX_SPEED, calc.Kph2Mps(data.maxSpeed))
                     end
-
-                    if data.maxSpeed then
-
-                    end
                 end
             end).AsEmpty()
         cmdSetPosOption.Option("ix").AsNumber().Mandatory()
@@ -390,6 +393,19 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     end
                 end
             end).AsNumber()
+
+        local gateCtrl = cmd.Accept("route-set-gate-control",
+            ---@param data {atStart:boolean, atEnd:boolean}
+            function(data)
+                local route = getEditRoute()
+                if route == nil then
+                    return
+                end
+
+                route.SetGateWaitState(data.atStart, data.atEnd)
+            end)
+        gateCtrl.Option("atStart").AsBoolean().Mandatory()
+        gateCtrl.Option("atEnd").AsBoolean().Mandatory()
 
         local saveCurrAs = cmd.Accept("pos-save-current-as",
             ---@param data {name:string, auto:boolean}
@@ -677,6 +693,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         if lockDir then
             lockToDir = Forward()
         end
+
+        gateCtrl.Enable(false)
         flightCore.GotoTarget(target, lockToDir, margin, maxSpeed, 0, false)
         pub.Publish("ResetWSAD", true)
         log.Info("Moving to ", universe.CreatePos(target).AsPosString())

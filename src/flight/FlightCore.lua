@@ -1,17 +1,19 @@
-local AxisManager = require("flight/AxisManager")
-local Vec3 = require("math/Vec3")
-local vehicle = require("abstraction/Vehicle").New()
-local universe = require("universe/Universe").Instance()
-local calc = require("util/Calc")
-local constants = require("YFSConstants")
-local pub = require("util/PubSub").Instance()
-local Stopwatch = require("system/Stopwatch")
-local Current = vehicle.position.Current
-local Ternary = calc.Ternary
-local Waypoint = require("flight/Waypoint")
+local AxisManager  = require("flight/AxisManager")
 local PointOptions = require("flight/route/PointOptions")
-local plane = require("math/Plane").NewByVertialReference()
-local abs = math.abs
+local Stopwatch    = require("system/Stopwatch")
+local Vec3         = require("math/Vec3")
+local Waypoint     = require("flight/Waypoint")
+local calc         = require("util/Calc")
+local constants    = require("YFSConstants")
+local gateControl  = require("controller/GateControl").Instance()
+local pub          = require("util/PubSub").Instance()
+local universe     = require("universe/Universe").Instance()
+local vehicle      = require("abstraction/Vehicle").New()
+local Current      = vehicle.position.Current
+local Ternary      = calc.Ternary
+local plane        = require("math/Plane").NewByVertialReference()
+local log          = require("debug/Log").Instance()
+local abs          = math.abs
 require("flight/state/Require")
 
 ---@module "flight/route/RouteController"
@@ -118,13 +120,22 @@ function FlightCore.New(routeController, flightFSM)
     ---Starts the flight
     function s.StartFlight()
         route = routeController.CurrentRoute()
+        if not route then
+            log.Error("Can't start a flight without a route")
+            return
+        end
+
         routePublishTimer.Start()
 
         -- Setup waypoint that will be the previous waypoint
         currentWaypoint = createDefaultWP()
         s.NextWP()
 
-        flightFSM.SetState(Travel.New(flightFSM))
+        if gateControl.Enabled() and route.WaitForGateToOpen(Current(), 10) then
+            flightFSM.SetState(OpenGates.New(flightFSM, Current(), plane.Forward()))
+        else
+            flightFSM.SetState(Travel.New(flightFSM))
+        end
     end
 
     function s.GoIdle()
@@ -257,7 +268,9 @@ function FlightCore.New(routeController, flightFSM)
                     unit.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
                 end
 
-                axes.Flush()
+                if not flightFSM.Inhibitions().alignment then
+                    axes.Flush()
+                end
 
                 brakes:BrakeFlush()
             end,
