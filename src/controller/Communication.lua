@@ -23,12 +23,19 @@ function Communication.New(channel)
     local s = {}
     local stream ---@type Stream
     local timedOut = true
+    local outstanding = {} ---@type table<string, table|string>
 
-    local queue = {} ---@type {topic:string, data:table}
+    local function getOutstanding()
+        for k, v in pairs(outstanding) do
+            return k, v
+        end
+
+        return nil, nil
+    end
 
     pub.RegisterTable("SendData", function(_, value)
         if value.topic and value.data then
-            queue[#queue + 1] = value
+            outstanding[value.topic] = value
         else
             log.Error("Got data to send without topic or value")
         end
@@ -39,9 +46,14 @@ function Communication.New(channel)
         local topic = incomingData.topic
         local data = incomingData.data
 
-        if topic and data then
-            pub.Publish("RecData-" .. topic, data)
+        if not (topic and data) then
+            log.Error("Received data without topic or value")
+            return
         end
+
+        outstanding[topic] = nil
+
+        pub.Publish("RecData-" .. topic, data)
     end
 
     function s.OnTimeout(isTimedOut, stream)
@@ -67,13 +79,15 @@ function Communication.New(channel)
     stream = Stream.New(RxTx.New(tx, rx, channel, true), s, 1)
 
     system:onEvent("onUpdate", function()
-        if not stream.WaitingToSend() then
-            local toSend = table.remove(queue, 1)
-            if toSend then
-                stream.Write(toSend)
+        -- Stop sending if we're all done
+        local topic, data = getOutstanding()
+        if topic and data then
+            if not stream.WaitingToSend() then
+                stream.Write(data)
             end
+
+            stream.Tick()
         end
-        stream.Tick()
     end)
 
     log.Info("Communication enabled")

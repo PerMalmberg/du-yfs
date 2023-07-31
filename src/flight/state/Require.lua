@@ -5,4 +5,5 @@ if not FLIGHT_STATES_INCLUDED then
     Idle = require("flight/state/Idle") ---@type Idle
     Travel = require("flight/state/Travel") ---@type Travel
     ReturnToPath = require("flight/state/ReturnToPath") ---@type ReturnToPath
+    OpenGates = require("flight/state/OpenGates") ---@type OpenGates
 end

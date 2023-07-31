@@ -14,7 +14,7 @@ require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}
 ---@alias WaypointMap table<string,Point>
----@alias RouteData {points:PointPOD[]}
+---@alias RouteData {points:PointPOD[], gateControl:{waitAtStart:boolean, waitAtEnd:boolean}}
 ---@alias SelectablePoint {visible:boolean, name:string, activate:string, index:number}
 ---@module "storage/BufferedDB"
 
@@ -246,6 +246,13 @@ function RouteController.Instance(bufferedDB)
             route.AddPoint(p)
         end
 
+        route.UpdateGateControlPoints()
+        local gc = data.gateControl
+
+        if gc then
+            route.SetGateWaitState(gc.waitAtStart == true, gc.waitAtEnd == true)
+        end
+
         log.Info("Route '", name, "' loaded")
 
         return route
@@ -349,11 +356,15 @@ function RouteController.Instance(bufferedDB)
     ---@return boolean
     function s.StoreRoute(name, route)
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
-        local data = { points = {} } ---@type RouteData
+        local data = { points = {}, gateControl = {} } ---@type RouteData
 
         for _, p in ipairs(route.Points()) do
             table.insert(data.points, p.Persist())
         end
+
+        local waitAtStart, waitAtEnd = route.GetGateWaitState()
+        data.gateControl.waitAtStart = waitAtStart
+        data.gateControl.waitAtEnd = waitAtEnd
 
         routes[name] = data
         db.Put(RouteController.NAMED_ROUTES, routes)

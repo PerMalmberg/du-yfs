@@ -4,7 +4,7 @@
 ---@field Leave fun()
 ---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)
 ---@field AtWaypoint fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
----@field InhibitsThrust fun():boolean
+---@field Inhibitions fun():{ thrust:boolean, alignment:boolean}
 ---@field Update fun()
 ---@field Name fun():string
 
@@ -41,9 +41,10 @@ function NameOfState.New(fsm)
         return name
     end
 
-    ---Inihibits thrust
-    function s.InhibitsThrust()
-        return false
+    ---Controls inhibitions of thrust and alignment
+    ---@return { thrust:boolean, alignment:boolean}
+    function s.Inhibitions()
+        return { thrust = false, alignment = false }
     end
 
     return setmetatable(s, NameOfState)

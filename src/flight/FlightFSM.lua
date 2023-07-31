@@ -58,6 +58,7 @@ local adjustAngleThreshold          = calc.AngleToDot(45)
 ---@field GetRouteController fun():RouteController
 ---@field SetFlightCore fun(fc:FlightCore)
 ---@field GetFlightCore fun():FlightCore
+---@field Inhibitions fun():{ thrust:boolean, alignment:boolean }
 
 local FlightFSM                     = {}
 FlightFSM.__index                   = FlightFSM
@@ -591,7 +592,7 @@ function FlightFSM.New(settings, routeController)
 
         currentWP = next
 
-        if currentState.InhibitsThrust() then
+        if currentState.Inhibitions().thrust then
             applyAcceleration(nil, nullVec)
             brakes.Feed(0, Velocity():Len())
         else
@@ -727,6 +728,14 @@ function FlightFSM.New(settings, routeController)
 
     function s.GetFlightCore()
         return fc
+    end
+
+    function s.Inhibitions()
+        if currentState then
+            return currentState.Inhibitions()
+        else
+            return { thrust = true, alignment = true }
+        end
     end
 
     s.SetState(Idle.New(s))

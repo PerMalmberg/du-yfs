@@ -88,17 +88,22 @@ From the above it should be understood that taking off from lower atmosphere (su
 
 When the last point in the route is reached, and the telemeter reports a distance less than the one configured, the script will automatically shutdown.
 
-You can also setup automatic control of gates or doors by linking elements on the ground/space construct as follows, in the given order Also name elements as stated.
+You can also setup automatic control of gates or doors by linking elements on the ground/space construct as follows, in the given order. Also name elements as stated in parenthesis.
 
-1. Programming Board -> Receiver
-1. Programming Board -> Emitter
-1. Programming Board -> Core
-1. Receiver -> Manual Switch XS (name: hold)
-1. Programming Board -> Manual Switch XS (name: hold)
-1. Manual Switch XS (name: hold) -> Programming Board
-1. Programming Board -> Manual Switch XS (name: gates)
-1. Manual Switch XS (name: gates) -> Relay
-1. Relay -> Any number of gates or doors
+1. PB -> Receiver (green link)
+2. PB -> Emitter (green link)
+3. PB -> Core (green link)
+4. PB -> Manual Switch (name: hold) (blue link)
+5. PB -> Manual Switch (name: gates) (blue link)
+6. Manual Switch (hold) -> OR (blue link)
+7. Receiver -> Relay (blue link)
+8. Relay -> 2-counter (blue link)
+9. Relay -> XOR (blue link)
+10. 2-counter -> XOR (blue link)
+11. XOR -> OR (blue link)
+12. OR -> PB (blue link)
+
+*PB = Programming Board
 
 Now copy the contents of [this file](https://github.com/PerMalmberg/du-elevator-docking-control/), right-click on the Programming Board, open the Advanced menu and click `Paste Lua Configuration from clipboard`.
 

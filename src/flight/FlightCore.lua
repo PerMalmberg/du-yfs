@@ -11,6 +11,7 @@ local Ternary = calc.Ternary
 local Waypoint = require("flight/Waypoint")
 local PointOptions = require("flight/route/PointOptions")
 local plane = require("math/Plane").NewByVertialReference()
+local log = require("debug/Log").Instance()
 local abs = math.abs
 require("flight/state/Require")
 
@@ -118,13 +119,22 @@ function FlightCore.New(routeController, flightFSM)
     ---Starts the flight
     function s.StartFlight()
         route = routeController.CurrentRoute()
+        if not route then
+            log.Error("Can't start a flight without a route")
+            return
+        end
+
         routePublishTimer.Start()
 
         -- Setup waypoint that will be the previous waypoint
         currentWaypoint = createDefaultWP()
         s.NextWP()
 
-        flightFSM.SetState(Travel.New(flightFSM))
+        if route.WaitForGateToOpen(Current(), 10) then
+            flightFSM.SetState(OpenGates.New(flightFSM, Current(), plane.Forward()))
+        else
+            flightFSM.SetState(Travel.New(flightFSM))
+        end
     end
 
     function s.GoIdle()
@@ -257,7 +267,9 @@ function FlightCore.New(routeController, flightFSM)
                     unit.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
                 end
 
-                axes.Flush()
+                if not flightFSM.Inhibitions().alignment then
+                    axes.Flush()
+                end
 
                 brakes:BrakeFlush()
             end,
