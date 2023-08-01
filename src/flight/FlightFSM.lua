@@ -58,7 +58,9 @@ local adjustAngleThreshold          = calc.AngleToDot(45)
 ---@field GetRouteController fun():RouteController
 ---@field SetFlightCore fun(fc:FlightCore)
 ---@field GetFlightCore fun():FlightCore
----@field Inhibitions fun():{ thrust:boolean, alignment:boolean }
+---@field DisablesAllThrust fun():boolean
+---@field PreventNextWp fun():boolean
+---@field SelectWP fun():Waypoint
 
 local FlightFSM                     = {}
 FlightFSM.__index                   = FlightFSM
@@ -157,8 +159,8 @@ function FlightFSM.New(settings, routeController)
 
     ---Selects the waypoint to go to
     ---@return Waypoint
-    local function selectWP()
-        if temporaryWaypoint == nil then return currentWP else return temporaryWaypoint end
+    function s.SelectWP()
+        return temporaryWaypoint and temporaryWaypoint or currentWP
     end
 
     ---Calculates the width of the dead zone
@@ -592,11 +594,11 @@ function FlightFSM.New(settings, routeController)
 
         currentWP = next
 
-        if currentState.Inhibitions().thrust then
+        if currentState.DisablesAllThrust() then
             applyAcceleration(nil, nullVec)
             brakes.Feed(0, Velocity():Len())
         else
-            local selectedWP = selectWP()
+            local selectedWP = s.SelectWP()
 
             local pos = CurrentPos()
             local nearest = calc.NearestOnLineBetweenPoints(previous.Destination(), selectedWP.Destination(), pos)
@@ -730,12 +732,12 @@ function FlightFSM.New(settings, routeController)
         return fc
     end
 
-    function s.Inhibitions()
-        if currentState then
-            return currentState.Inhibitions()
-        else
-            return { thrust = true, alignment = true }
-        end
+    function s.DisablesAllThrust()
+        return currentState and currentState.DisablesAllThrust() or true
+    end
+
+    function s.PreventNextWp()
+        return currentState and currentState.PreventNextWp() or false
     end
 
     s.SetState(Idle.New(s))

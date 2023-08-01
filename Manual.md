@@ -115,7 +115,7 @@ Link the following elements on the ground/space construct as follows, in the giv
 
 *PB = Programming Board
 
-Now copy the _contents_ the latest released [Json file from here](https://github.com/PerMalmberg/du-elevator-docking-control/), right-click on the Programming Board, open the Advanced menu and click `Paste Lua Configuration from clipboard`. Ensure you get a success message on screen.
+Now copy the _contents_ of the latest released [Json file from here](https://github.com/PerMalmberg/du-elevator-docking-control/), right-click on the Programming Board, open the Advanced menu and click `Paste Lua Configuration from clipboard`. Ensure you get a success message on screen.
 
 Right-click on the programming board and click `Edit Lua parameters` and set a unique communication channel, using alpha numerical characters only, no spaces. Ensure you keep the quotation marks! The channel must be unique per elevator/gate set or they will interfere with each other. Click OK to close the dialog.
 Now activate the programming board to complete the setup of the worker side. It will turn itself off automatically.

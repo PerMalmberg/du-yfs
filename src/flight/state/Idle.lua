@@ -56,8 +56,8 @@ function Idle.New(fsm)
         return name
     end
 
-    function s.Inhibitions()
-        return { thrust = true, alignment = true }
+    function s.DisablesAllThrust()
+        return true
     end
 
     ---@param topic string
@@ -68,6 +68,10 @@ function Idle.New(fsm)
             fsm.GetRouteController().ActivateHoldRoute(enterPos, enterForward)
             fsm.GetFlightCore().StartFlight()
         end
+    end
+
+    function s.PreventNextWp()
+        return false
     end
 
     return setmetatable(s, Idle)

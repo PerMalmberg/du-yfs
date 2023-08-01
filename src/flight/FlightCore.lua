@@ -246,29 +246,34 @@ function FlightCore.New(routeController, flightFSM)
         local status, err, _ = xpcall(
             function()
                 if currentWaypoint and route then
-                    axes.SetYawTarget(currentWaypoint.Yaw(previousWaypoint))
-                    axes.SetPitchTarget(currentWaypoint.Pitch(previousWaypoint))
-                    axes.SetRollTarget(currentWaypoint.Roll(previousWaypoint))
-
                     flightFSM.FsmFlush(currentWaypoint, previousWaypoint)
 
-                    if currentWaypoint.WithinMargin(WPReachMode.ENTRY) then
-                        flightFSM.AtWaypoint(route.LastPointReached(), currentWaypoint, previousWaypoint)
+                    -- The FSM can set a temporary waypoint so we must honor that
+                    local selectedWp = flightFSM.SelectWP()
+
+                    axes.SetYawTarget(selectedWp.Yaw(previousWaypoint))
+                    axes.SetPitchTarget(selectedWp.Pitch(previousWaypoint))
+                    axes.SetRollTarget(selectedWp.Roll(previousWaypoint))
+
+                    if selectedWp.WithinMargin(WPReachMode.ENTRY) then
+                        flightFSM.AtWaypoint(route.LastPointReached(), selectedWp, previousWaypoint)
 
                         -- Lock direction when WP is reached, but don't override existing locks, such as is in place when strafing.
-                        local lockDir = (currentWaypoint.Destination() - previousWaypoint.Destination())
+                        local lockDir = (selectedWp.Destination() - previousWaypoint.Destination())
                             :NormalizeInPlace()
-                        currentWaypoint.LockYawTo(lockDir, false)
+                        selectedWp.LockYawTo(lockDir, false)
 
-                        -- Switch to next waypoint
-                        s.NextWP()
+                        if not flightFSM.PreventNextWp() then
+                            -- Switch to next waypoint
+                            s.NextWP()
+                        end
                     end
                 else
                     --- This is a workaround for engines remembering their states from a previous session; shut down all engines.
                     unit.setEngineCommand("all", { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
                 end
 
-                if not flightFSM.Inhibitions().alignment then
+                if not flightFSM.DisablesAllThrust() then
                     axes.Flush()
                 end
 

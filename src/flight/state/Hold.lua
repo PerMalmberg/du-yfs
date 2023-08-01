@@ -81,8 +81,12 @@ function Hold.New(fsm)
         end
     end
 
-    function s.Inhibitions()
-        return { thrust = false, alignment = false }
+    function s.DisablesAllThrust()
+        return false
+    end
+
+    function s.PreventNextWp()
+        return false
     end
 
     setmetatable(s, Hold)

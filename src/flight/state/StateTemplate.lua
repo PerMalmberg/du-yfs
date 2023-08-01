@@ -4,7 +4,8 @@
 ---@field Leave fun()
 ---@field Flush fun(deltaTime:number, next:Waypoint, previous:Waypoint, nearestPointOnPath:Vec3)
 ---@field AtWaypoint fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
----@field Inhibitions fun():{ thrust:boolean, alignment:boolean}
+---@field DisablesAllThrust fun():boolean
+---@field PreventNextWp fun():boolean
 ---@field Update fun()
 ---@field Name fun():string
 
@@ -41,10 +42,16 @@ function NameOfState.New(fsm)
         return name
     end
 
-    ---Controls inhibitions of thrust and alignment
-    ---@return { thrust:boolean, alignment:boolean}
-    function s.Inhibitions()
-        return { thrust = false, alignment = false }
+    ---Controls enablement of of thrust and torque
+    ---@return boolean
+    function s.DisablesAllThrust()
+        return false
+    end
+
+    ---If returning true, the construct won't move to the next WP
+    ---@return boolean
+    function s.PreventNextWp()
+        return false
     end
 
     return setmetatable(s, NameOfState)

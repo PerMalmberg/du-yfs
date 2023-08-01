@@ -67,11 +67,11 @@ function OpenGates.New(fsm, holdPoint, holdDir)
         return name
     end
 
-    function s.Inhibitions()
-        return { thrust = false, alignment = false }
+    function s.DisablesAllThrust()
+        return false
     end
 
-    function s.InhibitsAlignment()
+    function s.PreventNextWp()
         return true
     end
 

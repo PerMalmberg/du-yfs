@@ -53,8 +53,12 @@ function ReturnToPath.New(fsm, returnPoint)
         return name
     end
 
-    function s.Inhibitions()
-        return { thrust = false, alignment = false }
+    function s.DisablesAllThrust()
+        return false
+    end
+
+    function s.PreventNextWp()
+        return false
     end
 
     return setmetatable(s, ReturnToPath)
