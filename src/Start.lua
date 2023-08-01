@@ -53,6 +53,21 @@ local function Start(isECU)
     local fuel ---@type Fuel
     local info ---@type InfoCentral
 
+    local followRemote = library.getLinkByName("FollowRemote") ---@type any
+
+    if followRemote and (type(followRemote.activate) ~= "function" or type(followRemote.deactivate) ~= "function") then
+        followRemote = nil
+    end
+
+    if followRemote then
+        log.Info("Found FollowRemote switch")
+        followRemote.activate()
+
+        unit:onEvent("onStop", function()
+            followRemote.deactivate()
+        end)
+    end
+
     Task.New("Main", function()
         settingsDb.BeginLoad()
         routeDb.BeginLoad()
@@ -80,7 +95,6 @@ local function Start(isECU)
         else
             fsm.SetState(Idle.New(fsm))
         end
-
 
         if not isECU then
             screen = ScreenController.New(fc, settings)

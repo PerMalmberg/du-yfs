@@ -35,7 +35,7 @@ function Hold.New(fsm)
         timer.Add("WaitForGatesToClose", function()
                 unit.exit()
             end,
-            settings.Number("gateCloseDelay"))
+            settings.Number("shutdownDelayForGate"))
     end
 
     function s.Enter()

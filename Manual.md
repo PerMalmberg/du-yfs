@@ -5,6 +5,7 @@ Please read the entire manual before attempting to perform an installation, ther
 - [Yoarii's Flight system](#yoariis-flight-system)
   - [Overview](#overview)
     - [Required elements (for Do-It-Yourself kits)](#required-elements-for-do-it-yourself-kits)
+      - [Optional parts](#optional-parts)
     - [Routes and Waypoints](#routes-and-waypoints)
       - [Route vs Floor mode](#route-vs-floor-mode)
       - [Waypoint alignment](#waypoint-alignment)
@@ -13,7 +14,10 @@ Please read the entire manual before attempting to perform an installation, ther
     - [Floors for parking; ground and space](#floors-for-parking-ground-and-space)
     - [Cargo mass capacity](#cargo-mass-capacity)
   - [Automatic shutdown](#automatic-shutdown)
-  - [Gate control](#gate-control)
+  - [Integrations](#integrations)
+    - [Gate control](#gate-control)
+      - [Elevator side](#elevator-side)
+    - [Manual switches](#manual-switches)
   - [Fuel gauges](#fuel-gauges)
   - [Installation as an elevator (ground to space)](#installation-as-an-elevator-ground-to-space)
     - [Aligning the elevator to your ground construct](#aligning-the-elevator-to-your-ground-construct)
@@ -47,6 +51,10 @@ The goal of this project was initially to write a flight system capable of worki
 * In space, you need engines in all directions.
 * Aim for 3g for upward lift when fully loaded.
 * Don't forget the brakes
+
+#### Optional parts
+* Emitter
+* Receiver
 
 ### Routes and Waypoints
 
@@ -89,7 +97,9 @@ From the above it should be understood that taking off from lower atmosphere (su
 
 When the last point in the route is reached, and the telemeter reports a distance less than the one configured, the script will automatically shutdown.
 
-## Gate control
+## Integrations
+
+### Gate control
 
 You can setup automatic control of gates or doors, completely automating the travel, this gets you:
 
@@ -98,7 +108,18 @@ You can setup automatic control of gates or doors, completely automating the tra
 
 You do _not_ get automatically closed gates/doors on leaving the start of the route.
 
-Link the following elements on the ground/space construct as follows, in the given order. Also name elements as stated in parenthesis.
+Elements needed on the space/static construct:
+* 1x Receiver
+* 1x Emitter
+* 1x Programming Board
+* 1x Relay (2x if you want to control more than one gate/door)
+* 1x XOR operator
+* 1x OR operator
+* 1x 2-Counter
+* 2x Manual Switch
+* Any number of gates/doors
+
+Link the following elements on the ground/space construct as follows. You can link the elements in any order, with the exception of the first step which *must* be the first link on the programming board. Also name elements as stated in parenthesis.
 
 1. PB -> Receiver (green link)
 2. PB -> Emitter (green link)
@@ -112,17 +133,31 @@ Link the following elements on the ground/space construct as follows, in the giv
 10. 2-counter -> XOR (blue link)
 11. XOR -> OR (blue link)
 12. OR -> PB (blue link)
+13. Manual Switch (name: gates) -> Relay and/or gates/doors
 
 *PB = Programming Board
 
-Now copy the _contents_ of the latest released [Json file from here](https://github.com/PerMalmberg/du-elevator-docking-control/), right-click on the Programming Board, open the Advanced menu and click `Paste Lua Configuration from clipboard`. Ensure you get a success message on screen.
+Now copy the _contents_ of the latest released [Json file from here](https://github.com/PerMalmberg/du-yfs-gate-control/releases/latest), right-click on the Programming Board, open the Advanced menu and click `Paste Lua Configuration from clipboard`. Ensure you get a success message on screen.
 
 Right-click on the programming board and click `Edit Lua parameters` and set a unique communication channel, using alpha numerical characters only, no spaces. Ensure you keep the quotation marks! The channel must be unique per elevator/gate set or they will interfere with each other. Click OK to close the dialog.
-Now activate the programming board to complete the setup of the worker side. It will turn itself off automatically.
-
-On the elevator, in Lua chat, you must now run the command `set -commChannel CHANNEL`, replacing `CHANNEL` with the same channel name you used above.
+Now activate the programming board to complete the setup of the worker side, look in Lua chat for any errors printed and adjust accordingly.
 
 > Note: Gate Control is only active while running a route, not when manually controlling the construct with keys or via the `move` command.
+
+#### Elevator side
+
+The receiver *must* be linked on the first slot of the remote controller. You do this easiest by removing all links, then linking from the Remote Controller to the Receiver, followed by linking the Core, Telemeter, Screen, Databank(s) and Emitter.
+
+In Lua chat, you must run the command `set -commChannel CHANNEL`, replacing `CHANNEL` with the same channel name you used on the programming board on the space/static construct so that they can communicate with each other. Next, for each route you want the elevator to control the gates, open the route for editing then run the command `route-set-gate-control -atStart true -atEnd true`, changing `true` to `false` if you don't want it to perform gate controls at that end. Finish by saving the route.
+
+For example, the most common setup is to have gates/doors only at the space station. If we assume the first point in the route is at the ground, run `route-set-gate-control -atStart false -atEnd true`.
+
+### Manual switches
+
+If linked to the remote controller, the script can control two Manual Switches, depending on their names:
+
+* A Manual Switch named "FollowGate" will be activated whenever the gate control opens the gates and deactivated when gates are closed.
+* A Manual Switch named "FollowRemote" will follow the state of the Remote Controller.
 
 ## Fuel gauges
 
@@ -321,6 +356,9 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 |                           | -margin                     | meter         | Y        | Sets the margin, in meters, for the point.                                                                                                                                                                                                                                                               |
 |                           | -maxSpeed                   | km/h          | Y        | Sets the max speed, in km/h for the point.                                                                                                                                                                                                                                                               |
 |                           | -finalSpeed                 | km/h          | Y        | Sets the final speed, i.e. the speed to have when reaching the point.                                                                                                                                                                                                                                    |
+| route-set-gate-control    |                             |               |          | Enables/disables gate control at the start/end of the route.                                                                                                                                                                                                                                             |
+|                           | -atStart                    | boolean       | N        | If true, gate controls are enabled at the start (first waypoint) of the route.                                                                                                                                                                                                                           |
+|                           | -atEnd                      | boolean       | N        | If true, gate controls are enabled at the end (last waypoint) of the route.                                                                                                                                                                                                                              |
 | route-print-pos-options   |                             | number        | N        | Prints the options of the given point in the currently open route.                                                                                                                                                                                                                                       |
 | route-print               |                             |               |          | Prints the current route to the console                                                                                                                                                                                                                                                                  |
 | pos-create-along-gravity  | name of waypoint            |               |          | Creates a waypoint relative to the constructs position along the gravity vector.                                                                                                                                                                                                                         |
@@ -374,8 +412,8 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 |                           | -pathAlignmentAngleLimit    | degrees       | Y        | The threshold angle that determines if the construct will align to the flight path or the gravity vector. Default: 10 degrees. Set to 0 to disable path alignment.                                                                                                                                       |
 |                           | -pathAlignmentDistanceLimit | meter         | Y        | The threshold distance that determines if the construct will align to the flight path or the gravity vector. Default: 200m.                                                                                                                                                                              |
 |                           | -setWaypointAlongRoute      | boolean       | Y        | If true, the next point in the route will become your waypoint.                                                                                                                                                                                                                                          |
-|                           | -commChannel                | string        | Y        | If set to anything but an empty string, this defines the channel used to communicate with other constructs on.                                                                                                                                                                                           |
-|                           | -gateCloseDelay             | number        | Y        | The number of seconds to wait in the hold-state before giving the command to close gates for automatic parking.                                                                                                                                                                                          |
+|                           | -commChannel                | string        | Y        | If set to anything but an empty string, this enables gate controls and defines the channel used to communicate with other constructs on.                                                                                                                                                                 |
+|                           | -shutdownDelayForGate       | number        | Y        | The number of seconds to wait in the hold-state after detecting a floor to land on before shutting down. Intended for when you have a gate above or beside the elevator that you want to close. Default 2 seconds.                                                                                       |
 | get                       | See `set`                   |               | Y        | Prints the setting set with the `set` command, don't add the leading `-`.                                                                                                                                                                                                                                |
 | get-all                   |                             |               |          | Prints all current settings. Don't add the "-" before the argument. Example: `get turnAngle`.                                                                                                                                                                                                            |
 | reset-settings            |                             |               |          | Resets all settings to their defaults.                                                                                                                                                                                                                                                                   |

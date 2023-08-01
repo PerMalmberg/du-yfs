@@ -72,7 +72,7 @@ function Settings.New(db)
         pathAlignmentDistanceLimit = { default = flightDefaults.pathAlignmentDistanceLimit },
         setWaypointAlongRoute = { default = false },
         commChannel = { default = "" },
-        gateCloseDelay = { default = 2 }
+        shutdownDelayForGate = { default = 2 }
     }
 
     for k, v in pairs(containerSettings) do

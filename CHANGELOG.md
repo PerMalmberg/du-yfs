@@ -2,12 +2,15 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 0.2.xx - 2023-06-xx
+## 1.0.0 - 2023-08-01
 
 ### Added
 * New setting `setWaypointAlongRoute`, which, if enabled, makes the waypoint to be set for the next point in the route.
-* Support for automatically opening and closing doors/gates when entering travel and hold states, respectively.
-
+* Support to automatically opening and closing doors/gates when activating a route and reaching the final waypoint, respectively.
+* Support for two Manual Switches that follow gate state or the state of the remote controller, depending on their name.
+* New command `route-set-gate-control` to configure route control for a route.
+* New setting `commChannel` for setting the channel to use for gate control
+* New setting `gateCloseDelay` for setting the delay to wait for gates to close after landing.
 
 ### Fixed
 * Formatting of a few log messages
@@ -18,9 +21,10 @@ All notable changes to this project will be documented in this file. The version
 * Sped up fuel gauges so they show quicker, mostly noticeable on constructs with many elements.
 * Extracted the stream code used for communicating with the screen into its own open-source library (https://github.com/PerMalmberg/du-stream) so it can be used to also communicate using emitter/receivers.
 
-## 1.0.0 - 2023-07-25
-
-This version is identical to 0.2.10 and marks the first 'complete' version and the end of free updates. Updates to this version are still free.
+### Other
+* Open Sourced these repositories:
+  * A library to communicate with screens and emitters/receivers: https://github.com/PerMalmberg/du-stream
+  * Code for gate control: https://github.com/PerMalmberg/du-yfs-gate-control
 
 ## 0.2.10 - 2023-06-24
 

@@ -21,6 +21,15 @@ function GateControl.Instance()
     local wantsOpen = false
     local enabled = true
     local timer = Stopwatch.New()
+    local followGate = library.getLinkByName("FollowGate") ---@type any
+
+    if followGate and (type(followGate.activate) ~= "function" or type(followGate.deactivate) ~= "function") then
+        followGate = nil
+    end
+
+    if followGate then
+        log.Info("Found FollowGate switch")
+    end
 
     ---@param topic string
     ---@param data {state:string}
@@ -65,6 +74,14 @@ function GateControl.Instance()
             timer.Restart()
             pub.Publish("SendData",
                 { topic = "GateControl", data = { desiredState = wantsOpen } })
+
+            if followGate then
+                if wantsOpen then
+                    followGate.activate()
+                else
+                    followGate.deactivate()
+                end
+            end
         end
     end)
 
