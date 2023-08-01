@@ -733,7 +733,7 @@ function FlightFSM.New(settings, routeController)
     end
 
     function s.DisablesAllThrust()
-        return currentState and currentState.DisablesAllThrust() or true
+        return currentState and currentState.DisablesAllThrust() or false
     end
 
     function s.PreventNextWp()
