@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file. The version
 * Support for two Manual Switches that follow gate state or the state of the remote controller, depending on their name.
 * New command `route-set-gate-control` to configure route control for a route.
 * New setting `commChannel` for setting the channel to use for gate control
-* New setting `gateCloseDelay` for setting the delay to wait for gates to close after landing.
+* New setting `shutdownDelayForGate` for setting the delay to wait for gates to close after landing.
 
 ### Fixed
 * Formatting of a few log messages
