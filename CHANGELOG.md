@@ -5,7 +5,6 @@ All notable changes to this project will be documented in this file. The version
 ## 1.0.0 - 2023-08-03
 
 ### Added
-* New setting `setWaypointAlongRoute`, which, if enabled, makes the waypoint to be set for the next point in the route.
 * Support to automatically opening and closing doors/gates when activating a route and reaching the final waypoint, respectively. This also works for multi-floor mode.
 * Support for two Manual Switches that follow gate state or the state of the remote controller, depending on their name.
 * New command `route-set-gate-control` to configure route control for a route.
@@ -14,6 +13,7 @@ All notable changes to this project will be documented in this file. The version
   * `shutdownDelayForGate` for setting the delay to wait for gates to close after landing.
   * `openGateWaitDelay` for setting the delay before starting any movement after opening gates.
   * `openGateMaxDistance` for setting the max distance to a gate control enabled point; further distances causes gates not to be opened on route activation.
+  * `setWaypointAlongRoute` which, if enabled, makes the waypoint to be set for the next point in the route.
 
 ### Fixed
 * Formatting of a few log messages
