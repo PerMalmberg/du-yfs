@@ -32,15 +32,21 @@ function Hold.New(fsm)
     local settings = fsm.GetSettings()
 
     local function waitForGatesToClose()
-        timer.Add("WaitForGatesToClose", function()
-                unit.exit()
-            end,
-            settings.Number("shutdownDelayForGate"))
+        if fsm.GetFlightCore().WaitForGate() then
+            timer.Add("WaitForGatesToClose", function()
+                    unit.exit()
+                end,
+                settings.Number("shutdownDelayForGate"))
+        else
+            unit.exit()
+        end
     end
 
     function s.Enter()
         pub.RegisterTable("FloorMonitor", s.floorMonitor)
-        gateControl.Close()
+        if fsm.GetFlightCore().WaitForGate() then
+            gateControl.Close()
+        end
     end
 
     function s.Leave()

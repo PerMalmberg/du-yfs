@@ -169,19 +169,14 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     log.Info("- ", k, ": ", v)
                 end
             end
-
-            local atStart, atEnd = route.GetGateWaitState()
-            log.Info("Wait for open gates")
-            log.Info("- at start: ", atStart)
-            log.Info("- at end: ", atEnd)
         end)
 
         cmd.Accept("route-activate",
             ---@param data {commandValue:string, index:number}
             function(data)
-                local startMargin = settings.Number("routeStartDistanceLimit")
-
-                if rc.ActivateRoute(data.commandValue, data.index, startMargin) then
+                if rc.ActivateRoute(data.commandValue, data.index,
+                        settings.Number("routeStartDistanceLimit"),
+                        settings.Number("openGateMaxDistance")) then
                     gateCtrl.Enable(true)
                     flightCore.StartFlight()
                     pub.Publish("ResetWSAD", true)
@@ -248,7 +243,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                 return
             end
             if route.MovePoint(from, to) then
-                log.Info("Point moved:", from, " -> ", to)
+                log.Info("Point moved:", from, " to ", to)
             else
                 log.Error("Could not move point")
             end
@@ -304,7 +299,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             end).AsNumber().Mandatory()
 
         local cmdSetPosOption = cmd.Accept("route-set-pos-option",
-            ---@param data {ix:number, endIx:number, toggleSkippable:boolean, toggleSelectable:boolean, margin:boolean, finalSpeed:number, maxSpeed:number}
+            ---@param data {ix:number, endIx:number, toggleSkippable:boolean, toggleSelectable:boolean, margin:boolean, finalSpeed:number, maxSpeed:number, toggleGate:boolean}
             function(data)
                 local route = getEditRoute()
                 if route == nil then
@@ -368,6 +363,12 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     if data.maxSpeed then
                         route.SetPointOption(i, PointOptions.MAX_SPEED, calc.Kph2Mps(data.maxSpeed))
                     end
+
+                    if data.toggleGate then
+                        local newValue = not route.GetPointOption(i, PointOptions.GATE, false)
+                        route.SetPointOption(i, PointOptions.GATE, newValue)
+                        log.Info("Set gate option to ", newValue)
+                    end
                 end
             end).AsEmpty()
         cmdSetPosOption.Option("ix").AsNumber().Mandatory()
@@ -377,6 +378,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         cmdSetPosOption.Option("margin").AsNumber()
         cmdSetPosOption.Option("finalSpeed").AsNumber()
         cmdSetPosOption.Option("maxSpeed").AsNumber()
+        cmdSetPosOption.Option("toggleGate").AsEmptyBoolean()
 
         cmd.Accept("route-print-pos-options",
             ---@param data {commandValue:number}
@@ -393,19 +395,6 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     end
                 end
             end).AsNumber()
-
-        local gateCtrl = cmd.Accept("route-set-gate-control",
-            ---@param data {atStart:boolean, atEnd:boolean}
-            function(data)
-                local route = getEditRoute()
-                if route == nil then
-                    return
-                end
-
-                route.SetGateWaitState(data.atStart, data.atEnd)
-            end)
-        gateCtrl.Option("atStart").AsBoolean().Mandatory()
-        gateCtrl.Option("atEnd").AsBoolean().Mandatory()
 
         local saveCurrAs = cmd.Accept("pos-save-current-as",
             ---@param data {name:string, auto:boolean}

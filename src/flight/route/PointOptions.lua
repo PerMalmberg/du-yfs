@@ -60,8 +60,10 @@ PointOptions.FORCE_FINAL_SPEED = "forcefinalspeed"
 PointOptions.SKIPPABLE = "skippable"
 -- Boolean. If true, the point is not shown on the waypoint page
 PointOptions.SELECTABLE = "selectable"
+-- Boolean. If true, the point is considered to have gates that needs opening or closing
+PointOptions.GATE = "gate"
 
 PointOptions.ALL = { PointOptions.LOCK_DIRECTION, PointOptions.MARGIN, PointOptions.FINAL_SPEED, PointOptions.MAX_SPEED,
-    PointOptions.FORCE_FINAL_SPEED, PointOptions.SKIPPABLE, PointOptions.SELECTABLE }
+    PointOptions.FORCE_FINAL_SPEED, PointOptions.SKIPPABLE, PointOptions.SELECTABLE, PointOptions.GATE }
 
 return PointOptions

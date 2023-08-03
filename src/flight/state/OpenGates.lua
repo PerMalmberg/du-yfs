@@ -2,7 +2,7 @@ local gateControl = require("controller/GateControl").Instance()
 local log         = require("debug/Log").Instance()
 local timer       = require("system/Timer").Instance()
 local Waypoint    = require("flight/Waypoint")
-local vehicle     = require("abstraction/Vehicle").New()
+local Stopwatch   = require("system/Stopwatch")
 
 ---@class OpenGates
 ---@field New fun(fsm:FlightFSM, holdPoint:Vec3, holdDir:Vec3):FlightState
@@ -21,13 +21,14 @@ function OpenGates.New(fsm, holdPoint, holdDir)
     local s = {}
     local temporaryWP = nil ---@type Waypoint|nil
     local commEnabled = fsm.GetSettings().String("commChannel") ~= ""
+    local timeToWaitForOpen = fsm.GetSettings().Number("openGateWaitDelay")
+    local waitToOpen = Stopwatch.New()
 
     function s.Enter()
         if commEnabled then
             gateControl.Open()
-            timer.Add("WaitOnGate", function()
-                log.Info("Waiting for gates to open...")
-            end, 2)
+            log.Info("Requesting gates to open.")
+            timer.Add("WaitOnGate", function() log.Info("Waiting on gates to open") end, 2)
         end
     end
 
@@ -52,7 +53,12 @@ function OpenGates.New(fsm, holdPoint, holdDir)
     function s.Update()
         if commEnabled then
             if gateControl.AreInDesiredState() then
-                fsm.SetState(Travel.New(fsm))
+                if waitToOpen.Elapsed() > timeToWaitForOpen then
+                    fsm.SetState(Travel.New(fsm))
+                elseif not waitToOpen.IsRunning() then
+                    waitToOpen.Start()
+                    log.Info("Giving gates ", timeToWaitForOpen, " seconds to be fully open")
+                end
             end
         else
             fsm.SetState(Travel.New(fsm))

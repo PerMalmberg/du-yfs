@@ -1230,6 +1230,14 @@ local layout = {
                     layer = 1,
                     style = "routeEditTableHeader",
                     font = "p14",
+                    pos1 = "(720,170)",
+                    text = "Gate"
+                },
+                {
+                    type = "text",
+                    layer = 1,
+                    style = "routeEditTableHeader",
+                    font = "p14",
                     pos1 = "(770,170)",
                     text = "Skip"
                 },
@@ -1290,6 +1298,54 @@ local layout = {
                         click = {
                             command =
                             "$str(path{editRoute/points/[#]:position}:init{}:format{set-waypoint -notify '%s'})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    },
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(720,180)",
+                    dimensions = "(20,20)",
+                    sub = "(0,180)",
+                    subDimensions = "(20,20)",
+                    style = "icon",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    visible = "$bool(path{editRoute/points/[#]:gate}:init{false})",
+                    mouse = {
+                        click = {
+                            command =
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option -ix %d -toggleGate})"
+                        },
+                        inside = {
+                            set_style = "routeEditHover"
+                        }
+                    },
+                    replicate = {
+                        y_count = 10,
+                        y_step = 30
+                    }
+                },
+                {
+                    type = "image",
+                    layer = 2,
+                    pos1 = "(720,180)",
+                    dimensions = "(20,20)",
+                    sub = "(0,160)",
+                    subDimensions = "(20,20)",
+                    style = "icon",
+                    url = "assets.prod.novaquark.com/94617/4158c26e-9db3-4a28-9468-b84207e44eec.png",
+                    visible = "$bool(path{editRoute/points/[#]:notGate}:init{false})",
+                    mouse = {
+                        click = {
+                            command =
+                            "$num(path{editRoute/points/[#]:index}:init{0}:format{route-set-pos-option -ix %d -toggleGate})"
                         },
                         inside = {
                             set_style = "routeEditHover"

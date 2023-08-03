@@ -198,6 +198,7 @@ function ScreenController.New(flightCore, settings)
 
             for index, p in ipairs(points) do
                 local opt = p.Options()
+                local gate = opt.Get(PointOptions.GATE, false)
                 local skippable = opt.Get(PointOptions.SKIPPABLE, false)
                 local selectable = opt.Get(PointOptions.SELECTABLE, true)
 
@@ -205,6 +206,8 @@ function ScreenController.New(flightCore, settings)
                     visible = true,
                     index = index + (editPointPage - 1) * editRoutePointsPerPage,
                     position = p.Pos(),
+                    gate = gate,
+                    notGate = not gate,
                     skippable = skippable,
                     notSkippable = not skippable,
                     selectable = selectable,
@@ -228,6 +231,8 @@ function ScreenController.New(flightCore, settings)
         for i = pointsShown + 1, editRoutePointsPerPage, 1 do
             editRoute.points[tostring(i)] = {
                 visible = false,
+                gate = false,
+                notGate = false,
                 skippable = false,
                 notSkippable = false,
                 selectable = false,

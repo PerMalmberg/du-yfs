@@ -34,7 +34,7 @@ require("util/Table")
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
 ---@field CurrentEditName fun():string|nil
----@field ActivateRoute fun(name:string, destinationWayPointIndex?:number, startMargin?:number):boolean
+---@field ActivateRoute fun(name:string, destinationWayPointIndex?:number, startMargin?:number, openGateMaxDistance?:number):boolean
 ---@field ActivateTempRoute fun():Route
 ---@field CreateRoute fun(name:string):Route|nil
 ---@field SaveRoute fun():boolean
@@ -246,13 +246,6 @@ function RouteController.Instance(bufferedDB)
             route.AddPoint(p)
         end
 
-        route.UpdateGateControlPoints()
-        -- Values may bot be present so set to true only if they are actually true
-        local gc = data.gateControl
-        if gc then
-            route.SetGateWaitState(gc.waitAtStart == true, gc.waitAtEnd == true)
-        end
-
         log.Info("Route '", name, "' loaded")
 
         return route
@@ -356,15 +349,11 @@ function RouteController.Instance(bufferedDB)
     ---@return boolean
     function s.StoreRoute(name, route)
         local routes = db.Get(RouteController.NAMED_ROUTES) or {}
-        local data = { points = {}, gateControl = {} } ---@type RouteData
+        local data = { points = {} } ---@type RouteData
 
         for _, p in ipairs(route.Points()) do
-            table.insert(data.points, p.Persist())
+            data.points[#data.points + 1] = p.Persist()
         end
-
-        local waitAtStart, waitAtEnd = route.GetGateWaitState()
-        data.gateControl.waitAtStart = waitAtStart
-        data.gateControl.waitAtEnd = waitAtEnd
 
         routes[name] = data
         db.Put(RouteController.NAMED_ROUTES, routes)
@@ -397,6 +386,7 @@ function RouteController.Instance(bufferedDB)
     function s.StoreWaypoint(name, pos)
         local p = universe.ParsePosition(pos)
         if p == nil then return false end
+
         if name == nil or string.len(name) == 0 then
             log.Error("No name provided")
             return false
@@ -523,10 +513,12 @@ function RouteController.Instance(bufferedDB)
     ---Activate the route by the given name
     ---@param name string
     ---@param destinationWayPointIndex? number The index of the waypoint we wish to move to. 0 means the last one in the route. This always counts in the original order of the route.
-    ---@param startMargin number? If true, the route will be activated if within this distance.
+    ---@param startMargin? number The route will only be activated if within this distance.
+    ---@param openGateMaxDistance? number Gate control will only be activated if this close to a controlled point in the route
     ---@return boolean
-    function s.ActivateRoute(name, destinationWayPointIndex, startMargin)
+    function s.ActivateRoute(name, destinationWayPointIndex, startMargin, openGateMaxDistance)
         startMargin = startMargin or 0
+        openGateMaxDistance = openGateMaxDistance or 10
         local candidate = s.doBasicCheckesOnActivation(name, destinationWayPointIndex or 1)
 
         if candidate == nil then
@@ -535,7 +527,7 @@ function RouteController.Instance(bufferedDB)
 
         local currentPos = Current()
         destinationWayPointIndex = destinationWayPointIndex or #candidate.Points()
-        candidate.AdjustRouteBasedOnTarget(currentPos, destinationWayPointIndex)
+        candidate.AdjustRouteBasedOnTarget(currentPos, destinationWayPointIndex, openGateMaxDistance)
 
         -- Check we're close enough to the closest point
         local closestPosInRoute = candidate.FindClosestPositionAlongRoute(currentPos)

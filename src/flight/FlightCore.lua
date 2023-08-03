@@ -29,7 +29,7 @@ require("flight/state/Require")
 ---@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean):Waypoint
 ---@field GoIdle fun()
 ---@field GotoTarget fun(target:Vec3, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean)
-
+---@field WaitForGate fun():boolean
 
 local FlightCore = {}
 FlightCore.__index = FlightCore
@@ -117,6 +117,10 @@ function FlightCore.New(routeController, flightFSM)
         end
     end
 
+    function s.WaitForGate()
+        return route and gateControl.Enabled() and route.WaitForGate(Current(), settings.Number("openGateMaxDistance"))
+    end
+
     ---Starts the flight
     function s.StartFlight()
         route = routeController.CurrentRoute()
@@ -131,7 +135,7 @@ function FlightCore.New(routeController, flightFSM)
         currentWaypoint = createDefaultWP()
         s.NextWP()
 
-        if gateControl.Enabled() and route.WaitForGateToOpen(Current(), 10) then
+        if s.WaitForGate() then
             flightFSM.SetState(OpenGates.New(flightFSM, Current(), plane.Forward()))
         else
             flightFSM.SetState(Travel.New(flightFSM))
