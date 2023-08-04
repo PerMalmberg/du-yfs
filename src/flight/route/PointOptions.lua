@@ -1,3 +1,5 @@
+local _ = require("util/Table")
+
 ---@class PointOptions
 ---@field New fun():PointOptions Creates a new PointOptions
 ---@field Set fun(name:string, value:any) Sets an option value
@@ -13,7 +15,7 @@ PointOptions.__index = PointOptions
 ---@return PointOptions
 function PointOptions.New(optionData)
     local s = {}
-    local options = optionData or {}
+    local options = DeepCopy(optionData or {})
 
     ---@param opt string The name of the option to set
     ---@param value string|number The value of the option
