@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file. The version
 ### Added
 * Support to automatically opening and closing doors/gates when activating a route and reaching the final waypoint, respectively. This also works for multi-floor mode.
 * Support for two Manual Switches that follow gate state or the state of the remote controller, depending on their name.
-* New command `route-set-gate-control` to configure route control for a route.
+* Command `route-set-pos-option` now can toggle gate control for a point in a route.
 * New settings
   * `commChannel` for setting the channel to use for gate control
   * `shutdownDelayForGate` for setting the delay to wait for gates to close after landing.
