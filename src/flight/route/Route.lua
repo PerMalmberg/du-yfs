@@ -112,7 +112,7 @@ function Route.New()
     ---@param point Point
     ---@return Point
     function s.AddPoint(point)
-        table.insert(points, point)
+        points[#points + 1] = point
         return point
     end
 
@@ -248,12 +248,16 @@ function Route.New()
 
     ---Replaces a point in the route, keping options from original point
     ---@param currentPos Vec3 Current position
-    ---@param openGateMaxDistance
+    ---@param openGateMaxDistance number
     local function replaceStartPoint(currentPos, openGateMaxDistance)
         local nearestPos = s.FindClosestPositionAlongRoute(currentPos)
         local opt = points[1].Options().Clone()
         opt.Set(PointOptions.GATE,
             opt.Get(PointOptions.GATE, false) and coordsFromPoint(1):Dist(currentPos) < openGateMaxDistance)
+
+        -- Also take direction of the next point, so that when moving to the path we orient in the direction we're going to travel.
+        opt.Set(PointOptions.LOCK_DIRECTION, points[2].Options().Get(PointOptions.LOCK_DIRECTION))
+
         points[1] = Point.New(universe.CreatePos(nearestPos):AsPosString(), nil, opt)
     end
 
