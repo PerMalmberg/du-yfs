@@ -2,9 +2,11 @@ local calc = require("util/Calc")
 local vehicle = require("abstraction/Vehicle").New()
 local constructRight = vehicle.orientation.Right
 local universe = require("universe/Universe").Instance()
+local plane = require("math/Plane").NewByVertialReference()
 local Ternary = calc.Ternary
 local Current = vehicle.position.Current
 local max = math.max
+local abs = math.abs
 
 ---@enum WPReachMode
 WPReachMode = {
@@ -203,8 +205,11 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
         if yawLockDir then
             dir = yawLockDir
         else
-            -- Point towards the next point. Use the previous point as a reference when we get close to prevent spinning.
-            if s.DistanceTo() > 100 then
+            -- When the next waypoint is nearly above or below us, lock yaw
+            local dirSelf = (s.Destination() - prev.Destination()):NormalizeInPlace()
+            if abs(dirSelf:Dot(plane.Up())) > 0.9 then -- <= calc.AngleToDot(25) then
+                dir = plane.Forward()
+            elseif s.DistanceTo() > 100 then           -- Point towards the next point. Use the previous point as a reference when we get close to prevent spinning.
                 dir = s.DirectionTo()
             else
                 dir = s.Destination() - prev.Destination()
@@ -212,6 +217,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
             end
         end
 
+        dir = dir:ProjectOnPlane(s.GetVerticalUpReference(prev))
         return Current() + dir * directionMargin
     end
 

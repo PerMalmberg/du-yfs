@@ -109,12 +109,6 @@ function FlightCore.New(routeController, flightFSM)
 
         previousWaypoint = currentWaypoint
         currentWaypoint = FlightCore.CreateWPFromPoint(nextPoint, route.LastPointReached())
-
-        -- When the next waypoint is nearly above or below us, lock yaw, but don't override of it already is locked
-        local dir = (currentWaypoint.Destination() - previousWaypoint.Destination()):NormalizeInPlace()
-        if abs(dir:Dot(plane.Up())) > 0.9 then -- <= calc.AngleToDot(25) then
-            currentWaypoint.LockYawTo(plane.Forward(), false)
-        end
     end
 
     function s.WaitForGate()
