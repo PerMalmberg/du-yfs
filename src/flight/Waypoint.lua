@@ -34,6 +34,7 @@ WPReachMode = {
 ---@field SetLastInRoute fun(lastInRoute:boolean)
 ---@field WithinMargin fun(mode:WPReachMode):boolean
 ---@field Yaw fun(prev:Waypoint):Vec3|nil
+---@field LockedYawDirection fun():Vec3|nil
 
 
 local Waypoint = {}
@@ -147,6 +148,10 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
         return yawLockDir ~= nil
     end
 
+    function s.LockedYawDirection()
+        return yawLockDir
+    end
+
     ---Gets the vertical up reference to use
     ---@param prev Waypoint Previous waypoint
     ---@return Vec3
@@ -204,17 +209,12 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
 
         if yawLockDir then
             dir = yawLockDir
+        elseif s.DistanceTo() > 50 then
+            -- Point towards the next point. Use the previous point as a reference when we get close to prevent spinning.
+            dir = s.DirectionTo()
         else
-            -- When the next waypoint is nearly above or below us, lock yaw
-            local dirSelf = (s.Destination() - prev.Destination()):NormalizeInPlace()
-            if abs(dirSelf:Dot(plane.Up())) > 0.9 then -- <= calc.AngleToDot(25) then
-                dir = plane.Forward()
-            elseif s.DistanceTo() > 100 then           -- Point towards the next point. Use the previous point as a reference when we get close to prevent spinning.
-                dir = s.DirectionTo()
-            else
-                dir = s.Destination() - prev.Destination()
-                dir:NormalizeInPlace()
-            end
+            dir = s.Destination() - prev.Destination()
+            dir:NormalizeInPlace()
         end
 
         dir = dir:ProjectOnPlane(s.GetVerticalUpReference(prev))

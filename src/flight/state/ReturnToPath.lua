@@ -1,4 +1,5 @@
 local Waypoint = require("flight/Waypoint")
+local Plane = require("math/Plane")
 
 ---@class ReturnToPath
 ---@field New fun(fsm:FlightFSM, returnPoint:Vec3):FlightState
@@ -35,6 +36,7 @@ function ReturnToPath.New(fsm, returnPoint)
     function s.Flush(deltaTime, next, previous, nearestPointOnPath)
         if not temporaryWP then
             temporaryWP = Waypoint.New(returnPoint, 0, 0, next.Margin())
+            temporaryWP.LockYawTo(next.LockedYawDirection() or Plane.NewByVertialReference().Forward())
             fsm.SetTemporaryWaypoint(temporaryWP)
         end
 
