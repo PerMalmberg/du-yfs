@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file. The version
 ### Changed
 * Command `route-set-pos-option` now takes a range of indexes, which allows setting options on multiple points at the same time. Use `-ix`and `-endIx` to specify start and end index.
 * Major rewrite of alignment handling, splitting pitch and yaw from each other.
-* The minimal HUD got even more minimal; removed max speed reported by which was only a theoretical max speed.
+* The minimal HUD got even more minimal; removed max speed reported by game which was only a theoretical max speed.
 
 
 ### Other
