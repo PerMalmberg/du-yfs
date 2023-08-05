@@ -34,6 +34,7 @@ WPReachMode = {
 ---@field WithinMargin fun(mode:WPReachMode):boolean
 ---@field Yaw fun(prev:Waypoint):Vec3|nil
 ---@field LockedYawDirection fun():Vec3|nil
+---@field ForceUpAlongVerticalRef fun()
 
 
 local Waypoint = {}
@@ -73,6 +74,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
 
     local lastInRoute = false
     local yawLockDir = nil ---@type Vec3|nil
+    local forceUpAlongVerticalRef = false
 
     ---Gets the destination
     ---@return Vec3
@@ -160,7 +162,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
 
         local selectedRef = vertUp
 
-        if pathAlignmentAngleLimit > 0 -- if zero, it means the alignment is disabled
+        if not forceUpAlongVerticalRef and pathAlignmentAngleLimit > 0 -- if zero, it means the alignment is disabled
             and s.DistanceTo() > pathAlignmentDistanceLimit and prev.DistanceTo() > pathAlignmentDistanceLimit then
             local threshold = calc.AngleToDot(pathAlignmentAngleLimit)
 
@@ -174,6 +176,10 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
         end
 
         return selectedRef
+    end
+
+    function s.ForceUpAlongVerticalRef()
+        forceUpAlongVerticalRef = true
     end
 
     ---@param prev Waypoint
