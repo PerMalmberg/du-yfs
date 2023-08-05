@@ -12,8 +12,6 @@ local SignedRotationAngle = calc.SignedRotationAngle
 local setEngineCommand = unit.setEngineCommand
 local PID = require("cpml/pid")
 local pub = require("util/PubSub").Instance()
-local Plane = require("math/Plane")
-local visual = require("debug/Visual").New()
 
 local rad2deg = 180 / math.pi
 local deg2rad = math.pi / 180
@@ -73,22 +71,21 @@ function AxisControl.New(axis)
         offset = 0 -- in degrees
     }
 
-    local plane = Plane.NewByVertialReference()
     local o = vehicle.orientation
 
     if axis == ControlledAxis.Pitch then
         reference = o.Forward
-        normal = plane.Right
+        normal = o.Right
         localNormal = vehicle.orientation.localized.Right
         pubTopic = "PitchData"
     elseif axis == ControlledAxis.Roll then
         reference = o.Up
-        normal = plane.Forward
+        normal = o.Forward
         localNormal = vehicle.orientation.localized.Forward
         pubTopic = "RollData"
     elseif axis == ControlledAxis.Yaw then
         reference = o.Forward
-        normal = plane.Up
+        normal = o.Up
         localNormal = vehicle.orientation.localized.Up
         pubTopic = "YawData"
     end

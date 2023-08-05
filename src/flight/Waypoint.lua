@@ -1,8 +1,7 @@
 local calc = require("util/Calc")
 local vehicle = require("abstraction/Vehicle").New()
-local constructRight = vehicle.orientation.Right
+local constructForward = vehicle.orientation.Forward
 local universe = require("universe/Universe").Instance()
-local plane = require("math/Plane").NewByVertialReference()
 local Ternary = calc.Ternary
 local Current = vehicle.position.Current
 local max = math.max
@@ -185,9 +184,8 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
 
     ---@param prev Waypoint
     local function pitchKeepOrtogonalToVerticalRef(prev)
-        local forward = s.GetVerticalUpReference(prev):Cross(constructRight())
-
-        return Current() + forward * directionMargin
+        local target = Current() + constructForward() * directionMargin
+        return calc.ProjectPointOnPlane(s.GetVerticalUpReference(prev), Current(), target)
     end
 
     ---@param prev Waypoint
@@ -217,8 +215,15 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
             dir:NormalizeInPlace()
         end
 
-        dir = dir:ProjectOnPlane(s.GetVerticalUpReference(prev))
-        return Current() + dir * directionMargin
+        local vertUp = s.GetVerticalUpReference(prev)
+
+        -- To prevent spinning, lock yaw if we're aligning to vertical up
+        if not yawLockDir and abs(dir:Dot(vertUp)) > 0.9 then
+            s.LockYawTo(constructForward(), false)
+            dir = constructForward()
+        end
+
+        return Current() + dir:ProjectOnPlane(vertUp) * directionMargin
     end
 
     return setmetatable(s, Waypoint)
