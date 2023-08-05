@@ -42,8 +42,6 @@ function Hud.New()
         while true do
             if lastData then
                 local html = tpl({
-                    targetSpeed = Round(Mps2Kph(lastData.targetSpeed), 1),
-                    maxSpeed = Round(Mps2Kph(MaxSpeed()), 1),
                     throttleValue = throttleValue
                 })
                 system.setScreen(html)
