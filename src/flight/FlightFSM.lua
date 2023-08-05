@@ -37,8 +37,6 @@ local MAX_INT                       = math.maxinteger
 local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
 local brakeDegradeSpeed             = calc.Kph2Mps(360)
 
-local airfoil                       = "airfoil"
-local thrustTag                     = "thrust"
 local Up                            = vehicle.orientation.Up
 local Forward                       = vehicle.orientation.Forward
 local Right                         = vehicle.orientation.Right
@@ -70,14 +68,6 @@ FlightFSM.__index                   = FlightFSM
 ---@param routeController RouteController
 ---@return FlightFSM
 function FlightFSM.New(settings, routeController)
-    local function antiG()
-        return -universe:VerticalReferenceVector() * G()
-    end
-
-    local function noAntiG()
-        return nullVec
-    end
-
     local minimumPathCheckOffset = yfsConstants.flight.minimumPathCheckOffset
     settings.RegisterCallback("minimumPathCheckOffset", function(number)
         minimumPathCheckOffset = number
@@ -86,28 +76,30 @@ function FlightFSM.New(settings, routeController)
     settings.RegisterCallback("pathAlignmentAngleLimit", Waypoint.SetAlignmentAngleLimit)
     settings.RegisterCallback("pathAlignmentDistanceLimit", Waypoint.SetAlignmentDistanceLimit)
 
-    local normalModeGroup = {
+    local airfoil                   = "airfoil"
+    local normalModeGroup           = {
         thrust = {
-            engines = EngineGroup.New(thrustTag, airfoil),
+            engines = EngineGroup.New("atmospheric_engine", "space_engine", airfoil),
             prio1Tag = airfoil,
-            prio2Tag = thrustTag,
+            prio2Tag = "",
             prio3Tag = "",
-            antiG = antiG
-        },
-        adjust = { engines = EngineGroup.New(), prio1Tag = "", prio2Tag = "", prio3Tag = "", antiG = noAntiG }
+            antiG = function()
+                return -universe:VerticalReferenceVector() * G()
+            end
+        }
     }
 
-    local warmupTime = 1
-    local lastReadMass = TotalMass()
-    local yaw = AxisManager.Instance().Yaw()
+    local warmupTime                = 1
+    local lastReadMass              = TotalMass()
+    local yaw                       = AxisManager.Instance().Yaw()
     local yawAlignmentThrustLimiter = 1
 
-    local longAdjData = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
-    local latAdjData = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
-    local vertAdjData = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
+    local longAdjData               = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
+    local latAdjData                = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
+    local vertAdjData               = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
 
     ---@type FlightData
-    local flightData = {
+    local flightData                = {
         targetSpeed = 0,
         targetSpeedReason = "",
         finalSpeed = 0,
@@ -125,7 +117,7 @@ function FlightFSM.New(settings, routeController)
         absSpeed = 0
     }
 
-    local adjustData = {
+    local adjustData                = {
         long = 0,
         lat = 0,
         ver = 0
@@ -509,12 +501,11 @@ function FlightFSM.New(settings, routeController)
     ---@param adjustmentAcc Vec3
     local function applyAcceleration(acceleration, adjustmentAcc)
         if acceleration == nil then
-            unit.setEngineCommand(thrustTag, { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
+            unit.setEngineCommand("thrust", { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
             return
         end
 
         local t = normalModeGroup.thrust
-        local adj = normalModeGroup.adjust
 
         -- Subtract (which adds it since it works against us) the air friction acceleration for thrust.
         local thrustAcc = t.antiG() - AirFrictionAcceleration()
@@ -523,9 +514,7 @@ function FlightFSM.New(settings, routeController)
             thrustAcc = thrustAcc + acceleration
         end
 
-        local adjustAcc = adjustmentAcc + adj.antiG()
-
-        local finalAcc = thrustAcc + adjustAcc
+        local finalAcc = thrustAcc + adjustmentAcc
         unit.setEngineCommand(t.engines.Union(), { finalAcc:Unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag, t.prio2Tag,
             t.prio3Tag, 1)
     end
