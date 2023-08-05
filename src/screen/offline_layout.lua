@@ -37,7 +37,7 @@ local layout = {
                 {
                     type = "text",
                     layer = 1,
-                    pos1 = "(512,300)",
+                    pos1 = "(512,500)",
                     text = "YFS - Offline",
                     font = "offline",
                     style = "offline"
@@ -45,23 +45,23 @@ local layout = {
                 {
                     type = "image",
                     layer = 2,
-                    pos1 = "(332,100)",
-                    dimensions = "(80,93.4)",
+                    pos1 = "(260,180)",
+                    dimensions = "(180,210)",
                     url = "assets.prod.novaquark.com/94617/dcf01ca2-4e9d-410c-ac90-f806634671d9.png",
                     style = "bkgDark"
                 },
                 {
                     type = "image",
                     layer = 2,
-                    pos1 = "(612,100)",
-                    dimensions = "(80,80)",
+                    pos1 = "(640,180)",
+                    dimensions = "(180,180)",
                     url = "assets.prod.novaquark.com/70604/92eeafe5-527f-49f5-af7a-cb0c4a771f5b.png",
                     style = "bkgDark"
                 },
                 {
                     type = "text",
                     pos1 = "(1004,593)",
-                    text = "Screen code version: " .. ver.APP_VERSION,
+                    text = ver.APP_VERSION,
                     layer = 1,
                     font = "version",
                     style = "version"
