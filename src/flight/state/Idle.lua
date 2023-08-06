@@ -65,7 +65,7 @@ function Idle.New(fsm)
     function s.floorMonitor(topic, hit)
         if not hit.Hit or hit.Distance > settings.Get("autoShutdownFloorDistance") then
             log.Info("Floor not detected, holding position.")
-            fsm.GetRouteController().ActivateHoldRoute(enterPos, enterForward)
+            fsm.GetRouteController().ActivateHoldRoute()
             fsm.GetFlightCore().StartFlight()
         end
     end

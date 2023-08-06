@@ -64,8 +64,11 @@ PointOptions.SKIPPABLE = "skippable"
 PointOptions.SELECTABLE = "selectable"
 -- Boolean. If true, the point is considered to have gates that needs opening or closing
 PointOptions.GATE = "gate"
+-- Boolean. If true, forces alignment along vertical up
+PointOptions.FORCE_VERT = "forceVert"
 
 PointOptions.ALL = { PointOptions.LOCK_DIRECTION, PointOptions.MARGIN, PointOptions.FINAL_SPEED, PointOptions.MAX_SPEED,
-    PointOptions.FORCE_FINAL_SPEED, PointOptions.SKIPPABLE, PointOptions.SELECTABLE, PointOptions.GATE }
+    PointOptions.FORCE_FINAL_SPEED, PointOptions.SKIPPABLE, PointOptions.SELECTABLE, PointOptions.GATE,
+    PointOptions.FORCE_VERT }
 
 return PointOptions

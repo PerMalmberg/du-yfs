@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 1.0.0 - 2023-08-03
+## 1.0.0-rc.X - 2023-08-06
 
 ### Added
 * Support to automatically opening and closing doors/gates when activating a route and reaching the final waypoint, respectively. This also works for multi-floor mode.
@@ -14,10 +14,12 @@ All notable changes to this project will be documented in this file. The version
   * `openGateWaitDelay` for setting the delay before starting any movement after opening gates.
   * `openGateMaxDistance` for setting the max distance to a gate control enabled point; further distances causes gates not to be opened on route activation.
   * `setWaypointAlongRoute` which, if enabled, makes the waypoint to be set for the next point in the route.
+* Commands `move` and `goto` now have a new option `-forceVerticalUp` (default true) that allows you to opt in to aligning to the path by setting this to true.
 
 ### Fixed
 * Formatting of a few log messages
 * Sped up fuel gauges so they show quicker, mostly noticeable on constructs with many elements.
+* When holding position, always align up-side along vertical up, i.e. away from the gravity well.
 
 ### Changed
 * Command `route-set-pos-option` now takes a range of indexes, which allows setting options on multiple points at the same time. Use `-ix`and `-endIx` to specify start and end index.

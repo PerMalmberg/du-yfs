@@ -180,14 +180,14 @@ function Wsad.New(flightCore, settings)
 
                         local throttleSpeed = getThrottleSpeed()
                         local target = movement(body, t)
-                        flightCore.GotoTarget(target, pointDir, defaultMargin, throttleSpeed, throttleSpeed, true)
+                        flightCore.GotoTarget(target, pointDir, defaultMargin, throttleSpeed, throttleSpeed, true, true)
                     end
                 else
                     if newMovement then
-                        flightCore.GotoTarget(stopPos, pointDir, defaultMargin, 0, construct.getMaxSpeed(), true)
+                        flightCore.GotoTarget(stopPos, pointDir, defaultMargin, 0, construct.getMaxSpeed(), true, true)
                     elseif not stopPos:IsZero() and Velocity():Normalize():Dot(stopPos - curr) >= 0 then
                         local holdMargin = defaultMargin
-                        flightCore.GotoTarget(Current(), pointDir, holdMargin, calc.Kph2Mps(2), 0, false)
+                        flightCore.GotoTarget(Current(), pointDir, holdMargin, calc.Kph2Mps(2), 0, false, true)
                         stopPos = Vec3.zero
                     end
                 end

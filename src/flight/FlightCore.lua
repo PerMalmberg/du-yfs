@@ -28,7 +28,7 @@ require("flight/state/Require")
 ---@field StopEvents fun()
 ---@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean):Waypoint
 ---@field GoIdle fun()
----@field GotoTarget fun(target:Vec3, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean)
+---@field GotoTarget fun(target:Vec3, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean, forceVerticalUp:boolean)
 ---@field WaitForGate fun():boolean
 
 local FlightCore = {}
@@ -61,6 +61,10 @@ function FlightCore.CreateWPFromPoint(point, lastInRoute)
 
     if lockDir ~= Vec3.zero then
         wp.LockYawTo(lockDir, true)
+    end
+
+    if opt.Get(PointOptions.FORCE_VERT, false) then
+        wp.ForceUpAlongVerticalRef()
     end
 
     return wp
@@ -199,7 +203,8 @@ function FlightCore.New(routeController, flightFSM)
     ---@param maxSpeed number m/s
     ---@param finalSpeed number m/s
     ---@param forceFinalSpeed boolean If true, the construct will not slow down to come to a stop if the point is last in the route (used for manual control)
-    function s.GotoTarget(target, lockDir, margin, maxSpeed, finalSpeed, forceFinalSpeed)
+    ---@param forceVerticalUp boolean If true, forces up to align to vertical up
+    function s.GotoTarget(target, lockDir, margin, maxSpeed, finalSpeed, forceFinalSpeed, forceVerticalUp)
         local temp = routeController.ActivateTempRoute()
         local targetPoint = temp.AddCoordinate(target)
         local opt = targetPoint.Options()
@@ -207,6 +212,7 @@ function FlightCore.New(routeController, flightFSM)
         opt.Set(PointOptions.MARGIN, margin)
         opt.Set(PointOptions.FINAL_SPEED, finalSpeed)
         opt.Set(PointOptions.FORCE_FINAL_SPEED, forceFinalSpeed)
+        opt.Set(PointOptions.FORCE_VERT, forceVerticalUp)
 
         if not lockDir:IsZero() then
             opt.Set(PointOptions.LOCK_DIRECTION, { lockDir:Unpack() })

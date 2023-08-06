@@ -54,6 +54,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         c.Option("-lockdir").AsEmptyBoolean().Default(false)
         c.Option("-maxspeed").AsNumber().Default(0)
         c.Option("-margin").AsNumber().Default(0.1)
+        c.Option("-forceVerticalUp").AsBoolean().Default(true)
     end
 
     ---@param data PointOptionArguments
@@ -671,9 +672,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
     ---@param lockDir boolean
     ---@param maxSpeed number
     ---@param margin number
-    ---@param finalSpeed number
-    ---@param ignoreLastInRoute boolean
-    local function executeMove(target, lockDir, maxSpeed, margin, finalSpeed, ignoreLastInRoute)
+    ---@param forceVerticalUp boolean
+    local function executeMove(target, lockDir, maxSpeed, margin, forceVerticalUp)
         if maxSpeed ~= 0 then
             maxSpeed = calc.Kph2Mps(maxSpeed)
         end
@@ -684,18 +684,18 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         end
 
         gateCtrl.Enable(false)
-        flightCore.GotoTarget(target, lockToDir, margin, maxSpeed, 0, false)
+        flightCore.GotoTarget(target, lockToDir, margin, maxSpeed, 0, false, forceVerticalUp)
         pub.Publish("ResetWSAD", true)
         log.Info("Moving to ", universe.CreatePos(target).AsPosString())
     end
 
     function s.RegisterMoveCommands()
-        ---@param data {commandValue:string, lockdir:boolean, maxspeed:number, margin:number, u:number, r:number, f:number}
+        ---@param data {commandValue:string, lockdir:boolean, maxspeed:number, margin:number, u:number, r:number, f:number, forceVerticalUp:boolean}
         local moveFunc = function(data)
             local target = Current() + vehicle.orientation.Forward() * data.f + vehicle.orientation.Right() * data.r -
                 universe.VerticalReferenceVector() * data.u
 
-            executeMove(target, data.lockdir, data.maxspeed, data.margin, 0, false)
+            executeMove(target, data.lockdir, data.maxspeed, data.margin, data.forceVerticalUp)
         end
 
         local moveCmd = cmd.Accept("move", moveFunc)
@@ -705,7 +705,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         addPointOptions(moveCmd)
 
         local gotoCmd = cmd.Accept("goto",
-            ---@param data {commandValue:string, lockdir:boolean, maxspeed:number, margin:number, offset:number}
+            ---@param data {commandValue:string, lockdir:boolean, maxspeed:number, margin:number, offset:number, forceVerticalUp:boolean}
             function(data)
                 local target = getPos(data.commandValue)
 
@@ -715,7 +715,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
                     local remaining = distance - data.offset
 
                     if remaining > 0 then
-                        executeMove(Current() + direction * remaining, data.lockdir, data.maxspeed, data.margin, 0, false)
+                        executeMove(Current() + direction * remaining, data.lockdir, data.maxspeed, data.margin,
+                            data.forceVerticalUp)
                     else
                         log.Error("Offset larger than distance to target")
                     end

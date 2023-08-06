@@ -41,7 +41,7 @@ require("util/Table")
 ---@field Discard fun()
 ---@field Count fun():integer
 ---@field ActiveRouteName fun():string|nil
----@field ActivateHoldRoute fun(pos:Vec3?, holdDirection:Vec3?)
+---@field ActivateHoldRoute fun()
 ---@field GetWaypointPage fun(page:integer, perPage:integer):NamedWaypoint[]
 ---@field GetWaypointPages fun(perPage:integer):integer
 ---@field FloorRoute fun():Route
@@ -619,18 +619,12 @@ function RouteController.Instance(bufferedDB)
     end
 
     ---Activates a route to hold position
-    ---@param pos Vec3?
-    ---@param holdDirection Vec3?
-    function s.ActivateHoldRoute(pos, holdDirection)
+    function s.ActivateHoldRoute()
         local route = s.ActivateTempRoute()
-        local p
-        if pos ~= nil and holdDirection ~= nil then
-            p = route.AddCoordinate(pos)
-            p.Options().Set(PointOptions.LOCK_DIRECTION, { holdDirection:Unpack() })
-        else
-            p = route.AddCurrentPos()
-            p.Options().Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
-        end
+        local p = route.AddCurrentPos()
+        local opt = p.Options()
+        opt.Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
+        opt.Set(PointOptions.FORCE_VERT, true)
     end
 
     ---Returns a list of point distances
