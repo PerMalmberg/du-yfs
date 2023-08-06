@@ -119,21 +119,20 @@ Elements needed on the space/static construct:
 * 2x Manual Switch
 * Any number of gates/doors
 
-Link the following elements on the ground/space construct as follows. You can link the elements in any order, with the exception of the first step which *must* be the first link on the programming board. Also name elements as stated in parenthesis.
+Link the following elements on the ground/space construct as follows. You *must* link the element in the order below. Names in [square brackets] identify different elements of the same type, make sure to link to/from the correct one.
 
 1. PB -> Receiver (green link)
 2. PB -> Emitter (green link)
-3. PB -> Core (green link)
-4. PB -> Manual Switch (name: hold) (blue link)
-5. PB -> Manual Switch (name: gates) (blue link)
-6. Manual Switch (hold) -> OR (blue link)
-7. Receiver -> Relay (blue link)
-8. Relay -> 2-counter (blue link)
-9. Relay -> XOR (blue link)
-10. 2-counter -> XOR (blue link)
-11. XOR -> OR (blue link)
-12. OR -> PB (blue link)
-13. Manual Switch (name: gates) -> Relay and/or gates/doors
+3. PB -> Manual Switch [hold] (green link)
+4. PB -> Manual Switch [gates] (green link)
+5. Manual Switch [hold] -> OR (blue link)
+6. Receiver -> Relay (blue link)
+7. Relay -> 2-counter (blue link)
+8. Relay -> XOR (blue link)
+9. 2-counter -> XOR (blue link)
+10. XOR -> OR (blue link)
+11. OR -> PB (blue link)
+12. Manual Switch [gates] -> Relay and/or gates/doors
 
 *PB = Programming Board
 
