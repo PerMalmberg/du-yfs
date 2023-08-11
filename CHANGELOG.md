@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file. The version
   * `setWaypointAlongRoute` which, if enabled, makes the waypoint to be set for the next point in the route.
   * `dockingMode` to control how the construct docks to other constructs of larger core size.
 * Commands `move` and `goto` now have a new option `-forceVerticalUp` (default true) that allows you to opt in to aligning to the path by setting this to true.
-* New command `closest-on-line`, that calculates the closest point on the line that passes through two given position.
+* New command `closest-on-line`, that calculates the closest point on the line that passes through two given positions.
 
 ### Fixed
 * Formatting of a few log messages
