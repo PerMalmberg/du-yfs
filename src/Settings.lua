@@ -74,7 +74,8 @@ function Settings.New(db)
         commChannel = { default = "" },
         shutdownDelayForGate = { default = 2 },
         openGateWaitDelay = { default = 3 },
-        openGateMaxDistance = { default = 10 }
+        openGateMaxDistance = { default = 10 },
+        dockingMode = { default = 1 } -- 1 = Manual, 2 = Automatic, 3 = Only own constructs
     }
 
     for k, v in pairs(containerSettings) do

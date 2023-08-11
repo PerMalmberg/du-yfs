@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file. The version
   * `openGateWaitDelay` for setting the delay before starting any movement after opening gates.
   * `openGateMaxDistance` for setting the max distance to a gate control enabled point; further distances causes gates not to be opened on route activation.
   * `setWaypointAlongRoute` which, if enabled, makes the waypoint to be set for the next point in the route.
+  * `dockingMode` to control how the construct docks to other constructs of larger core size.
 * Commands `move` and `goto` now have a new option `-forceVerticalUp` (default true) that allows you to opt in to aligning to the path by setting this to true.
 
 ### Fixed

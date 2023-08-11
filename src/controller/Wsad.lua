@@ -53,6 +53,13 @@ function Wsad.New(flightCore, settings)
         input.SetThrottleStep(step / 100)
     end)
 
+    settings.RegisterCallback("dockingMode",
+        ---@param mode number
+        function(mode)
+            mode = calc.Clamp(mode, 1, 3)
+            construct.setDockingMode(mode)
+        end)
+
     local function checkControlMode()
         if unit.isMouseControlActivated() or unit.isMouseDirectControlActivated() or unit.isMouseVirtualJoystickActivated() then
             log.Error("Must use control scheme 'Keyboard'")
