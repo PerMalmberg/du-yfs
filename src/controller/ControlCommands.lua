@@ -618,6 +618,24 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
             end).AsString().Mandatory()
         sub.Option("-sub").AsString()
 
+        local closestOnLine = cmd.Accept("closest-on-line",
+            ---@param data {a:string, b:string}
+            function(data)
+                local p1 = universe.ParsePosition(data.a)
+                local p2 = universe.ParsePosition(data.b)
+
+                if not (p1 and p2) then
+                    return
+                end
+
+                local p = calc.NearestPointOnLine(p1.Coordinates(),
+                    (p1.Coordinates() - p2:Coordinates()):NormalizeInPlace(), Current())
+                local closest = universe.CreatePos(p)
+                log.Info("Closest point on the line passing through a and b is at ", closest.AsPosString())
+            end)
+        closestOnLine.Option("a").AsString().Mandatory()
+        closestOnLine.Option("b").AsString().Mandatory()
+
         cmd.Accept("get-parallel-from-route",
             ---@param data {commandValue:string}
             function(data)
