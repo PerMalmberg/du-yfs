@@ -256,19 +256,19 @@ function Wsad.New(flightCore, settings)
         changeLongitudal(1)
     end)
 
-    input.Register(keys.strafeleft, Criteria.New().OnPress(), function()
+    input.RegisterMany({ keys.strafeleft, keys.left }, Criteria.New().OnPress(), function()
         changeLateral(-1)
     end)
 
-    input.Register(keys.strafeleft, Criteria.New().OnRelease(), function()
+    input.RegisterMany({ keys.strafeleft, keys.left }, Criteria.New().OnRelease(), function()
         changeLateral(1)
     end)
 
-    input.Register(keys.straferight, Criteria.New().OnPress(), function()
+    input.RegisterMany({ keys.straferight, keys.right }, Criteria.New().OnPress(), function()
         changeLateral(1)
     end)
 
-    input.Register(keys.straferight, Criteria.New().OnRelease(), function()
+    input.RegisterMany({ keys.straferight, keys.right }, Criteria.New().OnRelease(), function()
         changeLateral(-1)
     end)
 

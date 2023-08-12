@@ -446,8 +446,9 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         cmd.Accept("pos-delete",
             ---@param data {commandValue:string}
             function(data)
-                if rc.DeleteWaypoint(data.commandValue) then
-                    log.Info("Waypoint deleted")
+                local deleted = rc.DeleteWaypoint(data.commandValue)
+                if deleted then
+                    log.Info("Deleted waypoint: '", data.commandValue, "', position was ", deleted.pos)
                 end
             end).AsString().Mandatory()
 

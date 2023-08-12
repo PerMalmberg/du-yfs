@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file. The version
   * `dockingMode` to control how the construct docks to other constructs of larger core size.
 * Commands `move` and `goto` now have a new option `-forceVerticalUp` (default true) that allows you to opt in to aligning to the path by setting this to true.
 * New command `closest-on-line`, that calculates the closest point on the line that passes through two given positions.
+* Manual control now also accepts Q and E keys for strafing left/right, in addition to the existing ALT+A and ALT+E. (Assuming default key bindings)
 
 ### Fixed
 * Formatting of a few log messages
@@ -27,6 +28,7 @@ All notable changes to this project will be documented in this file. The version
 * Command `route-set-pos-option` now takes a range of indexes, which allows setting options on multiple points at the same time. Use `-ix`and `-endIx` to specify start and end index.
 * Major rewrite of alignment handling, splitting pitch and yaw from each other.
 * The minimal HUD got even more minimal; removed max speed reported by game which was only a theoretical max speed.
+* When deleting a waypoint it now prints the position it held so that you can re-create it if you want to undo the operation.
 
 
 ### Other

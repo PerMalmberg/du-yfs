@@ -13,7 +13,7 @@ local Forward        = vehicle.orientation.Forward
 require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}
----@alias WaypointMap table<string,Point>
+---@alias WaypointMap table<string,PointPOD>
 ---@alias RouteData {points:PointPOD[], gateControl:{waitAtStart:boolean, waitAtEnd:boolean}}
 ---@alias SelectablePoint {visible:boolean, name:string, activate:string, index:number}
 ---@module "storage/BufferedDB"
@@ -30,7 +30,7 @@ require("util/Table")
 ---@field StoreWaypoint fun(name:string, pos:string):boolean
 ---@field GetWaypoints fun():NamedWaypoint[]
 ---@field LoadWaypoint fun(name:string, waypoints?:table<string,Point>):Point|nil
----@field DeleteWaypoint fun(name:string):boolean
+---@field DeleteWaypoint fun(name:string):PointPOD|nil
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
 ---@field CurrentEditName fun():string|nil
@@ -162,7 +162,7 @@ function RouteController.Instance(bufferedDB)
 
         Task.New("RenameWaypoint", function()
             if edit ~= nil then
-                log.Error("Can't rename a waypoint when a route is open")
+                log.Error("Can't rename a waypoint when a route is being edited")
                 return
             end
 
@@ -448,9 +448,10 @@ function RouteController.Instance(bufferedDB)
 
     ---Deletes a waypoint
     ---@param name string
+    ---@return PointPOD|nil #The removed point
     function s.DeleteWaypoint(name)
         local waypoints = getNamedPoints()
-        local found = waypoints[name] ~= nil
+        local found = waypoints[name]
         if found then
             waypoints[name] = nil
             db.Put(RouteController.NAMED_POINTS, waypoints)

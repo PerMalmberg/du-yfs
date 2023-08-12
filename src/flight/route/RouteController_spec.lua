@@ -114,7 +114,7 @@ describe("RouteController #flight", function()
         local count = TableLen(c.GetWaypoints())
         c.StoreWaypoint("todelete", "::pos{0,2,2.9093,65.4697,34.7073}")
         assert.are_equal(count + 1, TableLen(c.GetWaypoints()))
-        assert.is_true(c.DeleteWaypoint("todelete"))
+        assert.is_not_nil(c.DeleteWaypoint("todelete"))
         assert.are_equal(count, TableLen(c.GetWaypoints()))
     end)
 
