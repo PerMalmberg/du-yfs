@@ -4,6 +4,7 @@ local universe = require("universe/Universe").Instance()
 local nullVec = require("math/Vec3").New()
 local PID = require("cpml/pid")
 local IsInAtmo = vehicle.world.IsInAtmo
+local AtmoDensity = vehicle.world.AtmoDensity
 local TotalMass = vehicle.mass.Total
 local Velocity = vehicle.velocity.Movement
 local GravityDirection = vehicle.world.GravityDirection
@@ -28,6 +29,7 @@ local spaceEfficiencyFactor = 0.9              -- Reduced from one to counter br
 ---@field MaxSeenGravityInfluencedAvailableAtmoDeceleration fun():number
 ---@field AvailableDeceleration fun():number
 ---@field BrakeEfficiency fun(inAtmo:boolean, speed:number):number
+---@field EffectiveBrakeDeceleration fun():number
 ---@field Feed fun(targetSpeed:number, currentSpeed:number):Vec3
 
 local Brake = {}
@@ -175,6 +177,29 @@ function Brake.Instance()
         else
             return atmoBrakeEfficiencyFactor
         end
+    end
+
+    --- Returns the current effective brake deceleration
+    ---@return number
+    function s.EffectiveBrakeDeceleration()
+        local currentSpeed = Velocity():Len()
+        local inAtmo = IsInAtmo()
+        local brakeEfficiency = s.BrakeEfficiency(inAtmo, currentSpeed)
+
+        local atmoDensity = AtmoDensity()
+        if atmoDensity > 0 then
+            brakeEfficiency = brakeEfficiency * atmoDensity
+        end
+
+        local availableBrakeDeceleration = -s.GravityInfluencedAvailableDeceleration() * brakeEfficiency
+
+        if inAtmo and currentSpeed < calc.Kph2Mps(3) then
+            -- When standing (nearly) still in atmo, assume brakes gives current g of brake acceleration (brake API gives a 0 as response in this case)
+            local maxSeen = s.MaxSeenGravityInfluencedAvailableAtmoDeceleration()
+            availableBrakeDeceleration = -max(maxSeen, G())
+        end
+
+        return availableBrakeDeceleration
     end
 
     ---Gets the max brake acceleration

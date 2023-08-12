@@ -110,7 +110,6 @@ function FlightFSM.New(settings, routeController)
         finalSpeed = 0,
         finalSpeedDistance = 0,
         distanceToAtmo = -1,
-        dzSpeedInc = 0,
         atmoDistance = 0,
         brakeMaxSpeed = 0,
         waypointDist = 0,
@@ -184,6 +183,7 @@ function FlightFSM.New(settings, routeController)
     end
 
     ---Determines if the construct will enter atmo if continuing on the current path
+    ---If already in atmo it returns false
     ---@param waypoint Waypoint
     ---@param body Body
     ---@return boolean, Vec3, number
@@ -194,15 +194,6 @@ function FlightFSM.New(settings, routeController)
             body.Atmosphere.Radius)
         intersects = intersects and not body:IsInAtmo(pos)
         return intersects, point, dist
-    end
-
-    ---Calculates the speed increase while falling through the dead zone
-    ---@param body Body
-    local function speedIncreaseInDeadZone(body)
-        -- V^2 = V0^2 + 2ad, we only want the speed increase so v = sqrt(2ad) for the thickness of the dead zone.
-        local d = deadZoneThickness(body)
-        return Ternary(body.Atmosphere.Present,
-            (2 * body.Physics.Gravity * d) ^ 0.5, 0)
     end
 
     ---Evaluates the new speed limit and sets that, if lower than the current one
@@ -271,6 +262,10 @@ function FlightFSM.New(settings, routeController)
             or vertAdjData.LastDistance() > margin
     end
 
+    local function getAdjustedFrictionSpeed()
+        return construct.getFrictionBurnSpeed() * 0.98
+    end
+
     ---Gets the maximum speed we may have and still be able to stop
     ---@param deltaTime number Time since last tick, seconds
     ---@param velocity Vec3 Current velocity
@@ -294,10 +289,8 @@ function FlightFSM.New(settings, routeController)
         flightData.finalSpeed = waypoint.FinalSpeed()
         flightData.finalSpeedDistance = remainingDistance
 
-        local atmosphericEntrySpeed = 0
         local willHitAtmo = false
         local distanceToAtmo = -1
-        local dzSpeedIncrease = 0
 
         local targetSpeed = evaluateNewLimit(MAX_INT, construct.getMaxSpeed(), "Construct max")
 
@@ -305,8 +298,6 @@ function FlightFSM.New(settings, routeController)
             willHitAtmo, _, distanceToAtmo = willEnterAtmo(waypoint, firstBody)
             inAtmo = firstBody:IsInAtmo(pos)
             willLeaveAtmo = inAtmo and not firstBody:IsInAtmo(waypoint.Destination())
-            dzSpeedIncrease = speedIncreaseInDeadZone(firstBody)
-            flightData.dzSpeedInc = dzSpeedIncrease
             flightData.distanceToAtmo = distanceToAtmo
         end
 
@@ -316,40 +307,31 @@ function FlightFSM.New(settings, routeController)
 
         --- Don't allow us to burn
         if atmoDensity > 0 then
-            targetSpeed = evaluateNewLimit(targetSpeed, construct.getFrictionBurnSpeed() * 0.98, "Burn speed")
+            targetSpeed = evaluateNewLimit(targetSpeed, getAdjustedFrictionSpeed(), "Burn speed")
         end
 
-        if firstBody and isWithinDeadZone(pos, firstBody) and waypoint.DirectionTo():Dot(GravityDirection()) > 0.7 then
+        local inDeadZone = firstBody and isWithinDeadZone(pos, firstBody)
+        local fallingInDeadZone = inDeadZone and waypoint.DirectionTo():Dot(GravityDirection()) > 0.7
+        if fallingInDeadZone then
             remainingDistance = max(remainingDistance, remainingDistance - deadZoneThickness(firstBody))
         end
 
-        local brakeEfficiency = brakes.BrakeEfficiency(inAtmo, currentSpeed)
-
-        if atmoDensity > 0 then
-            brakeEfficiency = brakeEfficiency * atmoDensity
-        end
-
-        local availableBrakeDeceleration = -brakes.GravityInfluencedAvailableDeceleration() * brakeEfficiency
-
-        if inAtmo and currentSpeed < ignoreAtmoBrakeLimitThreshold then
-            -- When standing still in atmo, assume brakes gives current g of brake acceleration (brake API gives a 0 as response in this case)
-            local maxSeen = brakes.MaxSeenGravityInfluencedAvailableAtmoDeceleration()
-            availableBrakeDeceleration = -max(maxSeen, G())
-        end
+        local availableBrakeDeceleration = brakes.EffectiveBrakeDeceleration()
 
         -- Ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
-        if willHitAtmo and remainingDistance > distanceToAtmo then -- Waypoint may be closer than atmo
-            atmosphericEntrySpeed = max(dzSpeedIncrease, construct.getFrictionBurnSpeed() - dzSpeedIncrease)
+        local atmosphericEntrySpeed = getAdjustedFrictionSpeed()
+        if willHitAtmo then
             flightData.finalSpeed = atmosphericEntrySpeed
             flightData.finalSpeedDistance = distanceToAtmo
 
-            -- When we're moving towards the atmosphere, but not actually intending to enter it, such as when changing direction
-            -- of the route (up->down) and doing the 'return to path' procedure, brake calculations must not use the atmo distance as the input.
+            -- Are actually intending to enter atmo?
             if distanceToAtmo <= waypoint.DistanceTo() then
                 local entrySpeed = calcMaxAllowedSpeed(availableBrakeDeceleration,
                     distanceToAtmo, atmosphericEntrySpeed)
                 targetSpeed = evaluateNewLimit(targetSpeed, entrySpeed, "Atmo entry")
             end
+        elseif fallingInDeadZone then
+            targetSpeed = evaluateNewLimit(targetSpeed, atmosphericEntrySpeed, "Dead Zone")
         end
 
         -- Ensure that we have a speed at which we can come to a stop with 10% of the brake force when we hit 360km/h, which is the speed at which brakes start to degrade down to 10% at 36km/h.

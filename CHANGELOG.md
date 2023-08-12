@@ -30,6 +30,7 @@ All notable changes to this project will be documented in this file. The version
 * Major rewrite of alignment handling, splitting pitch and yaw from each other.
 * The minimal HUD got even more minimal; removed max speed reported by game which was only a theoretical max speed.
 * When deleting a waypoint it now prints the position it held so that you can re-create it if you want to undo the operation.
+* Changed speed evaluation for atmospheric entry resulting in a smoother and faster descent.
 
 
 ### Other

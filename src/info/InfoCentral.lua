@@ -33,7 +33,6 @@ function InfoCentral.Instance()
         wCtrlAcceleration = nil,
         wTargetSpeed = nil,
         wFinalSpeed = nil,
-        wDZSpeedInc = nil,
         wSpeedDiff = nil,
         wBrakeMaxSpeed = nil,
         wPid = nil,
@@ -122,7 +121,6 @@ function InfoCentral.Instance()
             flightInfo.wCtrlAcceleration = p.CreateValue("Ctrl. acc.", "m/s2")
             flightInfo.wTargetSpeed = p.CreateValue("Target speed")
             flightInfo.wFinalSpeed = p.CreateValue("Final speed")
-            flightInfo.wDZSpeedInc = p.CreateValue("DZ spd. inc.", "km/h")
             flightInfo.wSpeedDiff = p.CreateValue("Speed diff", "km/h")
             flightInfo.wBrakeMaxSpeed = p.CreateValue("Brake Max Speed", "km/h")
             flightInfo.wPid = p.CreateValue("Pid")
@@ -141,7 +139,6 @@ function InfoCentral.Instance()
             flightInfo.wTargetSpeed.Set(format("%.1f (%s)", calc.Mps2Kph(value.targetSpeed), value.targetSpeedReason))
             flightInfo.wFinalSpeed.Set(format("%.1f km/h in %.1f m", calc.Mps2Kph(value.finalSpeed),
                 value.finalSpeedDistance))
-            flightInfo.wDZSpeedInc.Set(calc.Round(calc.Mps2Kph(value.dzSpeedInc)))
             flightInfo.wSpeedDiff.Set(calc.Round(calc.Mps2Kph(value.speedDiff), 1))
             flightInfo.wBrakeMaxSpeed.Set(calc.Round(calc.Mps2Kph(value.brakeMaxSpeed)))
             flightInfo.wPid.Set(calc.Round(value.pid, 4))
