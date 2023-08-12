@@ -75,7 +75,8 @@ function Settings.New(db)
         shutdownDelayForGate = { default = 2 },
         openGateWaitDelay = { default = 3 },
         openGateMaxDistance = { default = 10 },
-        dockingMode = { default = 1 } -- 1 = Manual, 2 = Automatic, 3 = Only own constructs
+        dockingMode = { default = 1 }, -- 1 = Manual, 2 = Automatic, 3 = Only own constructs,
+        globalMaxSpeed = { default = 0 }
     }
 
     for k, v in pairs(containerSettings) do

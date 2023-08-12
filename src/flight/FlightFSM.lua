@@ -68,9 +68,14 @@ FlightFSM.__index                   = FlightFSM
 ---@param routeController RouteController
 ---@return FlightFSM
 function FlightFSM.New(settings, routeController)
-    local minimumPathCheckOffset = yfsConstants.flight.minimumPathCheckOffset
+    local minimumPathCheckOffset = settings.Number("minimumPathCheckOffset")
     settings.RegisterCallback("minimumPathCheckOffset", function(number)
         minimumPathCheckOffset = number
+    end)
+
+    local globalMaxSpeed = calc.Kph2Mps(settings.Number("globalMaxSpeed"))
+    settings.RegisterCallback("globalMaxSpeed", function(gMax)
+        globalMaxSpeed = calc.Kph2Mps(gMax)
     end)
 
     settings.RegisterCallback("pathAlignmentAngleLimit", Waypoint.SetAlignmentAngleLimit)
@@ -418,6 +423,10 @@ function FlightFSM.New(settings, routeController)
                 and remainingDistance < 400 then
                 targetSpeed = evaluateNewLimit(targetSpeed, targetSpeed * 0.5, "Adj. apr.")
             end
+        end
+
+        if globalMaxSpeed > 0 then
+            targetSpeed = evaluateNewLimit(targetSpeed, globalMaxSpeed, "Global max")
         end
 
         return targetSpeed

@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file. The version
   * `openGateMaxDistance` for setting the max distance to a gate control enabled point; further distances causes gates not to be opened on route activation.
   * `setWaypointAlongRoute` which, if enabled, makes the waypoint to be set for the next point in the route.
   * `dockingMode` to control how the construct docks to other constructs of larger core size.
+  * `globalMaxSpeed` to set a global max speed. This overrides any route-specific settings and also applies to manual mode.
 * Commands `move` and `goto` now have a new option `-forceVerticalUp` (default true) that allows you to opt in to aligning to the path by setting this to true.
 * New command `closest-on-line`, that calculates the closest point on the line that passes through two given positions.
 * Manual control now also accepts Q and E keys for strafing left/right, in addition to the existing ALT+A and ALT+E. (Assuming default key bindings)
