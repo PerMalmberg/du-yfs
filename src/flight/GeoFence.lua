@@ -4,6 +4,8 @@ local universe   = require("universe/Universe").Instance()
 local vehicle    = require("abstraction/Vehicle").New()
 local Current    = vehicle.position.Current
 
+---@alias GeoFenceData {centerPos:string, boundary:number, enabled:boolean}
+
 ---@class GeoFence
 ---@field Limited fun(travelDir:Vec3):boolean
 
@@ -18,8 +20,9 @@ function GeoFence.New(db, cmdLine)
 
     local center = Vec3.zero
 
-    ---@type {centerPos:string, boundary:number, limit:number}
+    ---@type GeoFenceData
     local cfg = {
+        enabled = false,
         centerPos = "",
         boundary = 0, ---@type number
     }
@@ -28,9 +31,11 @@ function GeoFence.New(db, cmdLine)
 
     local function load()
         local c = db.Get(KEY)
-        ---@cast c table
+        ---@cast c GeoFenceData
         if c then
-            cfg = c
+            cfg.boundary = c.boundary
+            cfg.centerPos = c.centerPos
+            cfg.enabled = c.enabled
 
             if cfg.centerPos ~= nil and cfg.centerPos ~= "" then
                 center = universe.ParsePosition(cfg.centerPos).Coordinates()
@@ -60,6 +65,7 @@ function GeoFence.New(db, cmdLine)
             if c then
                 cfg.centerPos = c.AsPosString()
                 cfg.boundary = data.boundary
+                cfg.enabled = true
                 save()
 
                 center = c.Coordinates()
@@ -68,7 +74,7 @@ function GeoFence.New(db, cmdLine)
     geo.Option("boundary").AsNumber().Mandatory()
 
     cmdLine.Accept("disable-geofence", function()
-        cfg.centerPos = ""
+        cfg.enabled = false
         save()
     end)
 
@@ -79,7 +85,7 @@ function GeoFence.New(db, cmdLine)
     ---@param travelDir Vec3
     ---@return boolean #True if limited
     function s.Limited(travelDir)
-        if cfg.centerPos ~= nil and cfg.centerPos ~= "" then
+        if cfg.enabled and cfg.centerPos ~= nil and cfg.centerPos ~= "" then
             local pos = Current()
             local dir, dist = (center - pos):NormalizeLen()
 
