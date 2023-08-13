@@ -38,7 +38,6 @@ All notable changes to this project will be documented in this file. The version
 * When deleting a waypoint it now prints the position it held so that you can re-create it if you want to undo the operation.
 * Changed speed evaluation for atmospheric entry resulting in a smoother and faster descent.
 
-
 ### Other
 * Open Sourced these repositories:
   * A library to communicate with screens and emitters/receivers: https://github.com/PerMalmberg/du-stream

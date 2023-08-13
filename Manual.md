@@ -441,6 +441,14 @@ Please note that deleting named waypoints do not update routes that reference th
 
 By default, only the owner (a single player or all members of the owning organization) has rights to configure, start routes and take manual control of the construct. If you wish for non-owners to be allowed to activate or take manual control of the construct, you can do so using the following commands in Lua chat. Non-owners cannot be allowed to reconfigure anything.
 
+| Command                 | Parameters/options | Unit/type | Parameter Optional | Description                                                                                 |
+| ----------------------- | ------------------ | --------- | ------------------ | ------------------------------------------------------------------------------------------- |
+| allow-route             |                    | string    | N                  | Given the name of a route, adds it to the list of allowed routes non-owners may start.      |
+| disallow-route          |                    | string    | N                  | Given the name of a route, removes it from the list of allowed routes non-owners may start. |
+| allowed-routes          |                    |           |                    | Prints the list of allowed routes non-owners may start.                                     |
+| allow-manual-control    |                    |           |                    | Enables manual control for non-owners                                                       |
+| disallow-manual-control |                    |           |                    | Disables manual control for non-owners                                                      |
+
 ## Geofence
 
 By enabling a geofence you can prevent the construct from being flown further away than the limit you specify, centered around a position of your choice. To enable the function, run the command like in this example
@@ -453,23 +461,14 @@ To disable the geofence, run the command `disable-geofence`
 
 > Note the boundary applies also when running a route.
 
-| Command                 | Parameters/options | Unit/type | Parameter Optional | Description                                                                                 |
-| ----------------------- | ------------------ | --------- | ------------------ | ------------------------------------------------------------------------------------------- |
-| allow-route             |                    | string    | N                  | Given the name of a route, adds it to the list of allowed routes non-owners may start.      |
-| disallow-route          |                    | string    | N                  | Given the name of a route, removes it from the list of allowed routes non-owners may start. |
-| allowed-routes          |                    |           |                    | Prints the list of allowed routes non-owners may start.                                     |
-| allow-manual-control    |                    |           |                    | Enables manual control for non-owners                                                       |
-| disallow-manual-control |                    |           |                    | Disables manual control for non-owners                                                      |
-
-
 ## Mass Overload
 
 Each construct has a max cargo mass it is rated for. If you load the construct with more then one or more of the following may happen:
 
-| Event                                                                      | Possible reasons                                                                                                      |
-| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| When taking off from planet, it will start, brake, start repeatedly.       | Too little brake force to counter gravity for the current mass, which causes the math to say max speed of 0 km/h.     |
-| When reaching higher atmosphere it may slow down, stop, and start falling. | Engines not being powerful enough, and/or the thin atmosphere causing too much reduction in power, or too heavy load. |
+| Event                                                                                            | Possible reasons                                                                                                      |
+| ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| When taking off from planet, it will start, brake, start repeatedly.                             | Too little brake force to counter gravity for the current mass, which causes the math to say max speed of 0 km/h.     |
+| When reaching higher atmosphere it may slow down, stop, and start falling or just hold position. | Engines not being powerful enough, and/or the thin atmosphere causing too much reduction in power, or too heavy load. |
 
 Should you end up in these situations, it is easiest to just disable the controller (and the ECU), and let it fall back down a bit then activate it again. It will then attempt to hold the position it was at when it was started, i.e. brake and activate engines to counter the fall. You can repeat this until you're at an height the engines work again. Having said that, an overloaded ship is still overloaded and bad things are likely to happen.
 
