@@ -21,6 +21,7 @@ local Stopwatch                   = require("system/Stopwatch")
 local PID                         = require("cpml/pid")
 local Ray                         = require("util/Ray")
 local pub                         = require("util/PubSub").Instance()
+local log                         = require("debug/Log").Instance()
 require("flight/state/Require")
 local CurrentPos                    = vehicle.position.Current
 local Velocity                      = vehicle.velocity.Movement
@@ -66,8 +67,9 @@ FlightFSM.__index                   = FlightFSM
 ---Creates a new FligtFSM
 ---@param settings Settings
 ---@param routeController RouteController
+--- @param geo GeoFence
 ---@return FlightFSM
-function FlightFSM.New(settings, routeController)
+function FlightFSM.New(settings, routeController, geo)
     local minimumPathCheckOffset = settings.Number("minimumPathCheckOffset")
     settings.RegisterCallback("minimumPathCheckOffset", function(number)
         minimumPathCheckOffset = number
@@ -407,8 +409,13 @@ function FlightFSM.New(settings, routeController)
             end
         end
 
+
         if globalMaxSpeed > 0 then
             targetSpeed = evaluateNewLimit(targetSpeed, globalMaxSpeed, "Global max")
+        end
+
+        if geo.Limited(waypoint.DirectionTo()) then
+            targetSpeed = evaluateNewLimit(targetSpeed, 0, "Geofence")
         end
 
         return targetSpeed

@@ -29,6 +29,7 @@ Please read the entire manual before attempting to perform an installation, ther
   - [Manual Controls (when user is locked in place)](#manual-controls-when-user-is-locked-in-place)
   - [Lua console commands](#lua-console-commands)
   - [Access Control](#access-control)
+  - [Geofence](#geofence)
   - [Mass Overload](#mass-overload)
   - [Accuracy](#accuracy)
     - [Custom / non-gravity aligned travel vectors](#custom--non-gravity-aligned-travel-vectors)
@@ -400,6 +401,9 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 | closest-on-line           |                             |               | N                  | Calculates the closest point on the line that passes through point a and b.                                                                                                                                                                                                                              |
 |                           | -a                          | `::pos{}`     | N                  | Point a                                                                                                                                                                                                                                                                                                  |
 |                           | -a                          | `::pos{}`     | N                  | Point b                                                                                                                                                                                                                                                                                                  |
+| geofence                  | A `::pos{}` string          | `::pos{}`     | N                  | Activates a geofence around the given position.                                                                                                                                                                                                                                                          |
+|                           | -boundary                   |               | N                  | The boundary distance.                                                                                                                                                                                                                                                                                   |
+| disable-geofence          |                             |               |                    | Disables the geofence.                                                                                                                                                                                                                                                                                   |
 | set                       |                             |               |                    | Sets the specified setting to the specified value                                                                                                                                                                                                                                                        |
 |                           | -engineWarmup               | seconds       | Y                  | Sets the engine warmup time (T50). Set this to that of the engine with longes warmup.                                                                                                                                                                                                                    |
 |                           | -containerProficiency       | integer       | Y                  | Sets the container proficiency talent level, 1-5                                                                                                                                                                                                                                                         |
@@ -437,6 +441,17 @@ Please note that deleting named waypoints do not update routes that reference th
 
 By default, only the owner (a single player or all members of the owning organization) has rights to configure, start routes and take manual control of the construct. If you wish for non-owners to be allowed to activate or take manual control of the construct, you can do so using the following commands in Lua chat. Non-owners cannot be allowed to reconfigure anything.
 
+## Geofence
+
+By enabling a geofence you can prevent the construct from being flown further away than the limit you specify, centered around a position of your choice. To enable the function, run the command like in this example
+
+`geofence ::pos{0,2,49.9273,160.4051,39.0299} -boundary 1000`
+
+This sets a boundary at 1000m from the given position. When the construct reaches the boundary, it will break and not allow acceleration unless the desired travel direction is within 90 degrees of the center position.
+
+To disable the geofence, run the command `disable-geofence`
+
+> Note the boundary applies also when running a route.
 
 | Command                 | Parameters/options | Unit/type | Parameter Optional | Description                                                                                 |
 | ----------------------- | ------------------ | --------- | ------------------ | ------------------------------------------------------------------------------------------- |

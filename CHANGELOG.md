@@ -5,8 +5,14 @@ All notable changes to this project will be documented in this file. The version
 ## 1.0.0-rc.X - 2023-08-06
 
 ### Added
+
+### New features
+* Added access control that allows the owner of the construct to configure if non-owners are allowed to run certain routes or control the construct manually.
+* Added support for a geofence, to prevent the construct from being flown too far away.
 * Support to automatically opening and closing doors/gates when activating a route and reaching the final waypoint, respectively. This also works for multi-floor mode.
 * Support for two Manual Switches that follow gate state or the state of the remote controller, depending on their name.
+
+### Other additions
 * Command `route-set-pos-option` now can toggle gate control for a point in a route.
 * New settings
   * `commChannel` for setting the channel to use for gate control
@@ -16,10 +22,9 @@ All notable changes to this project will be documented in this file. The version
   * `setWaypointAlongRoute` which, if enabled, makes the waypoint to be set for the next point in the route.
   * `dockingMode` to control how the construct docks to other constructs of larger core size.
   * `globalMaxSpeed` to set a global max speed. This overrides any route-specific settings and also applies to manual mode.
-* Commands `move` and `goto` now have a new option `-forceVerticalUp` (default true) that allows you to opt in to aligning to the path by setting this to true.
+* Commands `move` and `goto` now have a new option `-forceVerticalUp` (default true) that allows you to opt in to aligning to the path by setting this to false.
 * New command `closest-on-line`, that calculates the closest point on the line that passes through two given positions.
 * Manual control now also accepts Q and E keys for strafing left/right, in addition to the existing ALT+A and ALT+E. (Assuming default key bindings)
-* Added access control that allows the owner of the construct to configure if non-owners are allowed to run certain routes or control the construct manually.
 
 ### Fixed
 * Formatting of a few log messages

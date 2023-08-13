@@ -18,6 +18,7 @@ local commandLine      = require("commandline/CommandLine").Instance()
 local pub              = require("util/PubSub").Instance()
 local input            = require("input/Input").Instance()
 local Access           = require("Access")
+local GeoFence         = require("flight/GeoFence")
 
 ---Main routine that starts the system
 ---@param isECU boolean
@@ -81,7 +82,7 @@ local function Start(isECU)
         commandLine.SetAccess(access.CanExecute)
 
         local rc = RouteController.Instance(routeDb)
-        local fsm = FlightFSM.New(settings, rc)
+        local fsm = FlightFSM.New(settings, rc, GeoFence.New(settingsDb, commandLine))
         local fc = FlightCore.New(rc, fsm)
         fsm.SetFlightCore(fc)
 
