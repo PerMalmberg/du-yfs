@@ -29,8 +29,9 @@ Wsad.__index                  = Wsad
 
 ---@param flightCore FlightCore
 ---@param settings Settings
+---@param access Access
 ---@return Wsad
-function Wsad.New(flightCore, settings)
+function Wsad.New(flightCore, settings, access)
     local s = {}
     local turnAngle = settings.Number("turnAngle")
     local desiredAltitude = 0
@@ -70,14 +71,19 @@ function Wsad.New(flightCore, settings)
     checkControlMode()
 
     local function lockUser()
+        if not access.AllowsManualControl() then
+            log.Error("Manual control not authorized")
+            return
+        end
+
         player.freeze(true)
-        log.Info("Player locked and auto shutdown disabled.")
+        log.Info("Manual control enabled, auto shutdown disabled.")
     end
 
     local function toggleUserLock()
         if IsFrozen() then
             player.freeze(false)
-            log.Info("Player released and auto shutdown enabled.")
+            log.Info("Manual control disabled, auto shutdown enabled.")
         else
             lockUser()
         end

@@ -37,8 +37,9 @@ ControlCommands.__index       = ControlCommands
 ---@param flightCore FlightCore
 ---@param settings Settings
 ---@param screenCtrl ScreenController
+---@param access Access
 ---@return ControlCommands
-function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
+function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, access)
     local s = {}
 
     local rc = flightCore.GetRouteController()
@@ -175,6 +176,10 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl)
         cmd.Accept("route-activate",
             ---@param data {commandValue:string, index:number}
             function(data)
+                if not access.MayStartRoute(data.commandValue) then
+                    return
+                end
+
                 if rc.ActivateRoute(data.commandValue, data.index,
                         settings.Number("routeStartDistanceLimit"),
                         settings.Number("openGateMaxDistance")) then

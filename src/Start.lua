@@ -17,6 +17,7 @@ local floorDetector    = require("controller/FloorDetector").Instance()
 local commandLine      = require("commandline/CommandLine").Instance()
 local pub              = require("util/PubSub").Instance()
 local input            = require("input/Input").Instance()
+local Access           = require("Access")
 
 ---Main routine that starts the system
 ---@param isECU boolean
@@ -76,6 +77,9 @@ local function Start(isECU)
             coroutine.yield()
         end
 
+        local access = Access.New(settingsDb, commandLine)
+        commandLine.SetAccess(access.CanExecute)
+
         local rc = RouteController.Instance(routeDb)
         local fsm = FlightFSM.New(settings, rc)
         local fc = FlightCore.New(rc, fsm)
@@ -98,11 +102,11 @@ local function Start(isECU)
 
         if not isECU then
             screen = ScreenController.New(fc, settings)
-            wsad = Wsad.New(fc, settings)
+            wsad = Wsad.New(fc, settings, access)
             fuel = Fuel.New(settings)
         end
 
-        commands = ControlCommands.New(input, commandLine, fc, settings, screen)
+        commands = ControlCommands.New(input, commandLine, fc, settings, screen, access)
 
         info = InfoCentral.Instance()
         hud = Hud.New()

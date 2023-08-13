@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file. The version
 * Commands `move` and `goto` now have a new option `-forceVerticalUp` (default true) that allows you to opt in to aligning to the path by setting this to true.
 * New command `closest-on-line`, that calculates the closest point on the line that passes through two given positions.
 * Manual control now also accepts Q and E keys for strafing left/right, in addition to the existing ALT+A and ALT+E. (Assuming default key bindings)
+* Added access control that allows the owner of the construct to configure if non-owners are allowed to run certain routes or control the construct manually.
 
 ### Fixed
 * Formatting of a few log messages
