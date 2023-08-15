@@ -1,21 +1,18 @@
-local Template = require("Template")
-local Task = require("system/Task")
+local Template    = require("Template")
+local Task        = require("system/Task")
 local standardHud = library.embedFile("hud.html")
-local ecuHud = library.embedFile("ecu.html")
-local log = require("debug/Log").Instance()
-local pub = require("util/PubSub").Instance()
-local MaxSpeed = require("abstraction/Vehicle").New().speed.MaxSpeed
-local calc = require("util/Calc")
-local Mps2Kph = calc.Mps2Kph
-local Round = calc.Round
+local ecuHud      = library.embedFile("ecu.html")
+local log         = require("debug/Log").Instance()
+local pub         = require("util/PubSub").Instance()
+local input       = require("input/Input").Instance()
 
 ---@alias HudData {speed:number, maxSpeed:number}
 
 ---@class Hud
 ---@field New fun():Hud
 
-local Hud = {}
-Hud.__index = Hud
+local Hud         = {}
+Hud.__index       = Hud
 
 
 ---@return Hud
@@ -42,7 +39,7 @@ function Hud.New()
         while true do
             if lastData then
                 local html = tpl({
-                    throttleValue = throttleValue
+                    throttleValue = input.Throttle() * 100
                 })
                 system.setScreen(html)
             end
@@ -58,11 +55,6 @@ function Hud.New()
         ---@param data FlightData
         function(_, data)
             lastData = data
-        end)
-
-    pub.RegisterNumber("ThrottleValue",
-        function(_, value)
-            throttleValue = value
         end)
 
     return setmetatable(s, Hud)

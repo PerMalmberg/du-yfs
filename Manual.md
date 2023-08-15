@@ -286,17 +286,17 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 
 ## Manual Controls (when user is locked in place)
 
-| Key (default key binding) | Description                 |
-| ------------------------- | --------------------------- |
-| A                         | Turn left                   |
-| S                         | Move backwards              |
-| W                         | Move forward                |
-| D                         | Turn right                  |
-| C                         | Move down                   |
-| Space                     | Move  up                    |
-| Alt+A / Q                 | Strafe left                 |
-| Alt+D / E                 | Strafe right                |
-| Mouse scroll wheel        | Increase/decrease max speed |
+| Key (default key binding) | Description                             |
+| ------------------------- | --------------------------------------- |
+| A                         | Turn left                               |
+| S                         | Move backwards                          |
+| W                         | Move forward                            |
+| D                         | Turn right                              |
+| C                         | Move down                               |
+| Space                     | Move  up                                |
+| Alt+A / Q                 | Strafe left                             |
+| Alt+D / E                 | Strafe right                            |
+| Mouse scroll wheel        | Increase/decrease throttle/acceleration |
 
 > Note: Manual control of heavy constructs are much less accurate (especially during vertical movements). Don't expect the same maneuverability as a tiny 1.5t construct.
 

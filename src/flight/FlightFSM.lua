@@ -21,7 +21,8 @@ local Stopwatch                   = require("system/Stopwatch")
 local PID                         = require("cpml/pid")
 local Ray                         = require("util/Ray")
 local pub                         = require("util/PubSub").Instance()
-local log                         = require("debug/Log").Instance()
+local input                       = require("input/Input").Instance()
+
 require("flight/state/Require")
 local CurrentPos                    = vehicle.position.Current
 local Velocity                      = vehicle.velocity.Movement
@@ -509,7 +510,8 @@ function FlightFSM.New(settings, routeController, geo)
         local thrustAcc = t.antiG() - AirFrictionAcceleration()
 
         if abs(yaw.OffsetDegrees()) < yawAlignmentThrustLimiter then
-            thrustAcc = thrustAcc + acceleration
+            thrustAcc = thrustAcc +
+                acceleration * input.Throttle() -- throttle also affects brake acceleration using engines
         end
 
         local finalAcc = thrustAcc + adjustmentAcc

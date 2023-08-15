@@ -204,8 +204,9 @@ function Wsad.New(flightCore, settings, access)
                         stopPos = Vec3.zero
                     end
                 end
-
-                pub.Publish("ThrottleValue", input.Throttle() * 100)
+            else
+                -- Ensure we keep throttle at max when not in manual control.
+                input.SetThrottle(1)
             end
 
             -- Reset this only if it was active at the start of the loop.

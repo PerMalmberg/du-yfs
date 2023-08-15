@@ -30,6 +30,7 @@ All notable changes to this project will be documented in this file. The version
 * Formatting of a few log messages
 * Sped up fuel gauges so they show quicker, mostly noticeable on constructs with many elements.
 * When holding position, always align up-side along vertical up, i.e. away from the gravity well.
+* In manual mode, the throttle now properly adjusts the applied acceleration.
 
 ### Changed
 * Command `route-set-pos-option` now takes a range of indexes, which allows setting options on multiple points at the same time. Use `-ix`and `-endIx` to specify start and end index.
