@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file. The version
 * Added support for a geofence, to prevent the construct from being flown too far away.
 * Support to automatically opening and closing doors/gates when activating a route and reaching the final waypoint, respectively. This also works for multi-floor mode.
 * Support for two Manual Switches that follow gate state or the state of the remote controller, depending on their name.
+* Now supports hover engines and vertical boosters.
 
 ### Other additions
 * Command `route-set-pos-option` now can toggle gate control for a point in a route.

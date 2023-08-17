@@ -84,19 +84,6 @@ function FlightFSM.New(settings, routeController, geo)
     settings.RegisterCallback("pathAlignmentAngleLimit", Waypoint.SetAlignmentAngleLimit)
     settings.RegisterCallback("pathAlignmentDistanceLimit", Waypoint.SetAlignmentDistanceLimit)
 
-    local airfoil                   = "airfoil"
-    local normalModeGroup           = {
-        thrust = {
-            engines = EngineGroup.New("atmospheric_engine", "space_engine", airfoil),
-            prio1Tag = airfoil,
-            prio2Tag = "",
-            prio3Tag = "",
-            antiG = function()
-                return -universe:VerticalReferenceVector() * G()
-            end
-        }
-    }
-
     local warmupTime                = 1
     local lastReadMass              = TotalMass()
     local yaw                       = AxisManager.Instance().Yaw()
@@ -504,10 +491,8 @@ function FlightFSM.New(settings, routeController, geo)
             return
         end
 
-        local t = normalModeGroup.thrust
-
         -- Subtract (which adds it since it works against us) the air friction acceleration for thrust.
-        local thrustAcc = t.antiG() - AirFrictionAcceleration()
+        local thrustAcc = -universe:VerticalReferenceVector() * G() - AirFrictionAcceleration()
 
         if abs(yaw.OffsetDegrees()) < yawAlignmentThrustLimiter then
             thrustAcc = thrustAcc +
@@ -515,8 +500,10 @@ function FlightFSM.New(settings, routeController, geo)
         end
 
         local finalAcc = thrustAcc + adjustmentAcc
-        unit.setEngineCommand(t.engines.Union(), { finalAcc:Unpack() }, { 0, 0, 0 }, true, true, t.prio1Tag, t.prio2Tag,
-            t.prio3Tag, 1)
+        unit.setEngineCommand("thrust, ground, airfoil", { finalAcc:Unpack() }, { 0, 0, 0 }, true, true,
+            "airfoil",
+            "ground",
+            "thrust", 0.1)
     end
 
     ---@param deltaTime number The time since last Flush
