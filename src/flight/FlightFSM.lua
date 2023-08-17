@@ -500,10 +500,19 @@ function FlightFSM.New(settings, routeController, geo)
         end
 
         local finalAcc = thrustAcc + adjustmentAcc
-        unit.setEngineCommand("thrust, ground, airfoil", { finalAcc:Unpack() }, { 0, 0, 0 }, true, true,
+
+        local up = finalAcc:ProjectOn(vehicle.orientation.Up())
+        unit.setEngineCommand("vertical", { up:Unpack() }, { 0, 0, 0 }, true, true,
             "airfoil",
             "ground",
             "thrust", 0.1)
+
+        local forward = finalAcc:ProjectOn(vehicle.orientation.Forward())
+        local right = finalAcc:ProjectOn(vehicle.orientation.Right())
+
+        unit.setEngineCommand("lateral, longitudinal", { (forward + right):Unpack() }, { 0, 0, 0 }, true, true, "", "",
+            "",
+            0.1)
     end
 
     ---@param deltaTime number The time since last Flush
