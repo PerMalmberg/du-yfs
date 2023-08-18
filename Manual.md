@@ -439,15 +439,20 @@ Please note that deleting named waypoints do not update routes that reference th
 
 ## Access Control
 
-By default, only the owner (a single player or all members of the owning organization) has rights to configure, start routes and take manual control of the construct. If you wish for non-owners to be allowed to activate or take manual control of the construct, you can do so using the following commands in Lua chat. Non-owners cannot be allowed to reconfigure anything.
+By default, the owner (a single player or all members of the owning organization) has administrative rights and can configure, start routes and take manual control of the construct. If you wish for non-owners to do the same, you can do so using the following commands in Lua chat. You can also disallow members of the owning organization administrator rights. If the construct is owned by a player, that player is always an administrator.
 
 | Command                 | Parameters/options | Unit/type | Parameter Optional | Description                                                                                 |
 | ----------------------- | ------------------ | --------- | ------------------ | ------------------------------------------------------------------------------------------- |
-| allow-route             |                    | string    | N                  | Given the name of a route, adds it to the list of allowed routes non-owners may start.      |
-| disallow-route          |                    | string    | N                  | Given the name of a route, removes it from the list of allowed routes non-owners may start. |
-| allowed-routes          |                    |           |                    | Prints the list of allowed routes non-owners may start.                                     |
-| allow-manual-control    |                    |           |                    | Enables manual control for non-owners                                                       |
-| disallow-manual-control |                    |           |                    | Disables manual control for non-owners                                                      |
+| allow-route             | route name         | string    | N                  | Given the name of a route, adds it to the list of allowed routes non-owners may start.      |
+| disallow-route          | route name         | string    | N                  | Given the name of a route, removes it from the list of allowed routes non-owners may start. |
+| print-allowed-routes    |                    |           |                    | Prints the list of allowed routes non-owners may start.                                     |
+| allow-manual-control    |                    |           |                    | Enables manual control for non-owners.                                                      |
+| disallow-manual-control |                    |           |                    | Disables manual control for non-owners.                                                     |
+| add-admin               | player name        | string    | N                  | Adds the named player to the admin list.                                                    |
+| remove-admin            | player name        | string    | N                  | Removes the named player from the admin list.                                               |
+| allow-org-admin         |                    |           |                    | Makes all players of the owning organization an admin, this is the default.                 |
+| disallow-admin-org      |                    |           |                    | Makes all players of the owning organization no longer be an admin.                         |
+| print-admins            |                    |           |                    | Prints the current administrators.                                                          |
 
 ## Geofence
 

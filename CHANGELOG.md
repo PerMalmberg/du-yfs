@@ -24,8 +24,20 @@ All notable changes to this project will be documented in this file. The version
   * `dockingMode` to control how the construct docks to other constructs of larger core size.
   * `globalMaxSpeed` to set a global max speed. This overrides any route-specific settings and also applies to manual mode.
 * Commands `move` and `goto` now have a new option `-forceVerticalUp` (default true) that allows you to opt in to aligning to the path by setting this to false.
-* New command `closest-on-line`, that calculates the closest point on the line that passes through two given positions.
 * Manual control now also accepts Q and E keys for strafing left/right, in addition to the existing ALT+A and ALT+E. (Assuming default key bindings)
+* New commands
+  * `closest-on-line`, that calculates the closest point on the line that passes through two given positions.
+  * For access control
+    * `allow-route`
+    * `disallow-route`
+    * `allowed-routes`
+    * `allow-manual-control`
+    * `disallow-manual-control`
+    * `add-admin`
+    * `remove-admin`
+    * `add-admin-org`
+    * `remove-admin-org`
+    * `print-admins`
 
 ### Fixed
 * Formatting of a few log messages
