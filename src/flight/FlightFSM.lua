@@ -16,12 +16,12 @@ local Ternary                     = calc.Ternary
 local AngleToDot                  = calc.AngleToDot
 local nullVec                     = Vec3.zero
 local engine                      = require("abstraction/Engine").Instance()
-local EngineGroup                 = require("abstraction/EngineGroup")
 local Stopwatch                   = require("system/Stopwatch")
 local PID                         = require("cpml/pid")
 local Ray                         = require("util/Ray")
 local pub                         = require("util/PubSub").Instance()
 local input                       = require("input/Input").Instance()
+local SetEngineCommand            = unit.setEngineCommand
 
 require("flight/state/Require")
 local CurrentPos                    = vehicle.position.Current
@@ -487,7 +487,7 @@ function FlightFSM.New(settings, routeController, geo)
     ---@param adjustmentAcc Vec3
     local function applyAcceleration(acceleration, adjustmentAcc)
         if acceleration == nil then
-            unit.setEngineCommand("thrust", { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
+            SetEngineCommand("thrust", { 0, 0, 0 }, { 0, 0, 0 }, true, true, "", "", "", 1)
             return
         end
 
@@ -502,7 +502,7 @@ function FlightFSM.New(settings, routeController, geo)
         local finalAcc = thrustAcc + adjustmentAcc
 
         local up = finalAcc:ProjectOn(vehicle.orientation.Up())
-        unit.setEngineCommand("vertical", { up:Unpack() }, { 0, 0, 0 }, true, true,
+        SetEngineCommand("vertical", { up:Unpack() }, { 0, 0, 0 }, true, true,
             "airfoil",
             "ground",
             "thrust", 0.1)
@@ -510,7 +510,7 @@ function FlightFSM.New(settings, routeController, geo)
         local forward = finalAcc:ProjectOn(vehicle.orientation.Forward())
         local right = finalAcc:ProjectOn(vehicle.orientation.Right())
 
-        unit.setEngineCommand("lateral, longitudinal", { (forward + right):Unpack() }, { 0, 0, 0 }, true, true, "", "",
+        SetEngineCommand("lateral, longitudinal", { (forward + right):Unpack() }, { 0, 0, 0 }, true, true, "", "",
             "",
             0.1)
     end
