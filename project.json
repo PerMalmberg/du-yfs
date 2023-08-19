@@ -34,16 +34,6 @@
         }
       }
     },
-    "variants/Y-Lift M3 0T XS The Bug v1.0": {
-      "name": "variants/Y-Lift M3 0T XS The Bug v1.0",
-      "type": "control",
-      "slots": {
-        "receiver": {
-          "name": "receiver",
-          "type": "receiver"
-        }
-      }
-    },
     "variants/Y-Lift M5 0T XS Planck v1.0": {
       "name": "variants/Y-Lift M5 0T XS Planck v1.0",
       "type": "control",
