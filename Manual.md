@@ -451,7 +451,7 @@ By default, the owner (a single player or all members of the owning organization
 | add-admin               | player name        | string    | N                  | Adds the named player to the admin list.                                                    |
 | remove-admin            | player name        | string    | N                  | Removes the named player from the admin list.                                               |
 | allow-org-admin         |                    |           |                    | Makes all players of the owning organization an admin, this is the default.                 |
-| disallow-admin-org      |                    |           |                    | Makes all players of the owning organization no longer be an admin.                         |
+| disallow-org-admin      |                    |           |                    | Makes all players of the owning organization no longer be an admin.                         |
 | print-admins            |                    |           |                    | Prints the current administrators.                                                          |
 
 ## Geofence

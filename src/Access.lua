@@ -29,19 +29,36 @@ function Access.New(db, cmdLine)
     local ORG_ADMIN = "orgAdmin"
     local ADMIN = "adminList"
 
-    ---@param constructOwner integer
-    ---@return boolean
-    local function isOrgAdmin(constructOwner)
-        -- Members of the owning organization are admins by default
-        if db.Boolean(ORG_ADMIN, true) then
+    ---@return ConstructOwner
+    local function getOwner()
+        ---@type {id:integer, isOrganization:boolean}
+        return construct.getOwner()
+    end
+
+    local function isOwnedByAnOrg()
+        return getOwner().isOrganization
+    end
+
+    local function isOrgAnAdmin()
+        -- By default owning org is an admin
+        return isOwnedByAnOrg() and db.Boolean(ORG_ADMIN, true)
+    end
+
+    local function isMemberOfOwningOrg()
+        local owner = getOwner()
+        if owner.isOrganization then
             for _, v in ipairs(player.getOrgIds()) do
-                if v == constructOwner then
+                if v == owner.id then
                     return true
                 end
             end
         end
-
         return false
+    end
+
+    local function isSingleOwner()
+        local owner = getOwner()
+        return (not owner.isOrganization) and owner.id == player.getId()
     end
 
     local function isInAdminList()
@@ -57,24 +74,14 @@ function Access.New(db, cmdLine)
         return false
     end
 
-    ---@return ConstructOwner
-    local function getOwner()
-        ---@type {id:integer, isOrganization:boolean}
-        return construct.getOwner()
-    end
-
-    ---@return boolean
-    local function isConstructOwner()
-        local owner = getOwner()
-        return owner.isOrganization and isOrgAdmin(owner.id) or owner.id == player.getId()
-    end
-
     local function isAdmin()
-        return isConstructOwner() or isInAdminList()
+        return isSingleOwner() or
+            (isOwnedByAnOrg() and isMemberOfOwningOrg() and isOrgAnAdmin()) or
+            isInAdminList()
     end
 
     if isAdmin() then
-        log.Info(player.getName(), " is an administrator")
+        log.Info(player.getName(), " is an admin")
     end
 
     ---@param command string
@@ -106,7 +113,6 @@ function Access.New(db, cmdLine)
     ---@param routeName string
     function s.MayStartRoute(routeName)
         local routes = db.Get(ROUTES, {})
-        log.Info(routes)
         local mayStart = (routes and routes[routeName] ~= nil) or isAdmin()
 
         if not mayStart then
@@ -165,7 +171,7 @@ function Access.New(db, cmdLine)
     cmdLine.Accept("allow-org-admin", function(data)
         if checkOrgOwner() then
             db.Put(ORG_ADMIN, true)
-            log.Info("Owning organization is now considered an administrator")
+            log.Info("Owning organization is now considered an admin")
         end
     end)
 
@@ -176,12 +182,12 @@ function Access.New(db, cmdLine)
 
         if not isInAdminList() then
             log.Error(
-                "Removing the orginaization as an admin would lock you out since you're not in the administrator list!")
+                "Removing the orginaization as an admin would lock yourself out since you're not in the admin list, aborting!")
             return
         end
 
         db.Put(ORG_ADMIN, false)
-        log.Info("Owning organization is no longer considered an administrator")
+        log.Info("Owning organization is no longer considered an admin")
     end)
 
     ---@param name string
@@ -200,7 +206,7 @@ function Access.New(db, cmdLine)
         elseif existed then
             log.Info(name, " removed from admin list")
         else
-            log.Error(name, " not in the admin list")
+            log.Error(name, " is not in the admin list")
         end
     end
 
@@ -213,6 +219,18 @@ function Access.New(db, cmdLine)
     cmdLine.Accept("remove-admin",
         ---@param data {commandValue:string}
         function(data)
+            -- Can't remove yourself if org owned and org is not an admin, that would lock you out
+            local isAdminViaOrg = isMemberOfOwningOrg() and isOrgAnAdmin()
+            local isAssignedAdmin = isInAdminList()
+
+            if data.commandValue == player.getName() then
+                if not (isAdminViaOrg and isAssignedAdmin) then
+                    log.Error(
+                        "Removing yourself as an admin would lock yourself out, aborting!")
+                    return
+                end
+            end
+
             setAdmin(data.commandValue)
         end).AsString().Mandatory()
 
@@ -220,15 +238,15 @@ function Access.New(db, cmdLine)
         local admins = db.Get(ADMIN, {})
         ---@cast admins AdminData
         if TableLen(admins) > 0 then
-            log.Info("Administrators:")
+            log.Info("Admins:")
             for k, v in pairs(admins) do
                 log.Info(k)
             end
         else
-            log.Info("No named administrators")
+            log.Info("No named admins")
         end
-        if db.Boolean(ORG_ADMIN, false) then
-            log.Info("Members of owning orgs are all administrators")
+        if isOrgAnAdmin() then
+            log.Info("Members of owning orgs are all admins")
         end
     end)
 
