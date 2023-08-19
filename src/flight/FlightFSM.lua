@@ -12,7 +12,6 @@ local brakes                      = require("flight/Brakes"):Instance()
 local G                           = vehicle.world.G
 local AirFrictionAcceleration     = vehicle.world.AirFrictionAcceleration
 local Sign                        = calc.Sign
-local Ternary                     = calc.Ternary
 local AngleToDot                  = calc.AngleToDot
 local nullVec                     = Vec3.zero
 local engine                      = require("abstraction/Engine").Instance()
@@ -153,7 +152,7 @@ function FlightFSM.New(settings, routeController, geo)
     ---@param body Body
     local function deadZoneThickness(body)
         local atmo = body.Atmosphere
-        local thickness = Ternary(atmo.Present, atmo.Thickness * (1 - deadZoneFactor), 0)
+        local thickness = atmo.Present and (atmo.Thickness * (1 - deadZoneFactor)) or 0
         return thickness
     end
 
@@ -527,8 +526,10 @@ function FlightFSM.New(settings, routeController, geo)
 
         local speedLimit = getSpeedLimit(deltaTime, velocity, waypoint, previousWaypoint)
 
-        local wrongDir = direction:Dot(motionDirection) < 0.7
-        local brakeCounter = brakes.Feed(Ternary(wrongDir, 0, speedLimit), currentSpeed)
+        local alignmentToDir = direction:Dot(motionDirection)
+        local wrongDir = Sign(alignmentToDir) < 1 or abs(alignmentToDir) < adjustAngleThreshold
+
+        local brakeCounter = brakes.Feed(wrongDir and 0 or speedLimit, currentSpeed)
 
         local diff = speedLimit - currentSpeed
         flightData.speedDiff = diff
