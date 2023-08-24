@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 1.0.0-rc.X - 2023-08-06
+## 1.0.0 - 2023-08-24
 
 ### Added
 
