@@ -7,17 +7,58 @@
             position: fixed;
             top: 2%;
             left: 0.5%;
-            /* transform: translateX(-10%); */
         }
 
-        .speed {
+        .ecu {
             position: fixed;
             top: 1%;
             left: 2%;
-            color: white;
+            color: rgb(255, 0, 0);
             font-size: 1em;
             font-family: Oxanium;
             text-shadow: 2px 2px black;
+        }
+
+        .throttle {
+            position: fixed;
+            top: 2%;
+            left: 2%;
+            color: white;
+            font: 1em Oxanium;
+            text-shadow: 2px 2px black;
+        }
+
+        .progress-container {
+            width: 320px;
+            text-align: center;
+            top: 3%;
+        }
+
+        .progress-border {
+            position: relative;
+            height: 22px;
+            margin: 5px 0;
+            border: 1px solid white;
+            color: #fff;
+            background-color: black;
+        }
+
+        .progress-bar {
+            position: relative;
+            height: 20px;
+            margin: 0px 0;
+            border: 1px solid white;
+            color: #fff;
+            text-shadow: inherit;
+        }
+
+        .progress-label {
+            position: absolute;
+            top: 1px;
+            width: 100%;
+            font: 0.8em Oxanium;
+            color: white;
+            text-shadow: inherit;
         }
     </style>
 </head>
@@ -30,12 +71,36 @@
             </g>
         </svg>
     </div>
-    <div class="speed">
-        <table>
-            <tr>
-                <td style="text-align: right;">Throttle: {{throttleValue}}%</td>
-            </tr>
-        </table>
+    {% if isECU then %}
+    <div class="ecu">ECU Active</div>
+    {% else %}
+    <div class="throttle">Throttle: {{throttleValue}}%</div>
+    {% end %}
+    <div class="progress-container">
+        {%
+        for _, t in ipairs({ { t = "atmo", c = "#022966ff"}, { t = "space", c = "#616102ff"}, { t = "rocket", c =
+        "#02A9BF"}
+        })
+        do
+
+        local color = t.c
+        local byType = fuelByType[t.t]
+
+        if byType then
+        for _, curr in ipairs(byType) do
+        local percent = round(curr.percent, 1)
+        %}
+        <div class="progress-border">
+            <div class="progress-bar" style="width: {{percent}}%; background-color: {{t.c}};"></div>
+            <div class="progress-label">
+                <span style="float: left; margin-left: 2px;">{{curr.name}}</span>
+                <span style="float: right; margin-right: 2px;">{{percent}}%</span>
+            </div>
+        </div>
+        {%
+        end
+        end
+        end %}
     </div>
 </body>
 

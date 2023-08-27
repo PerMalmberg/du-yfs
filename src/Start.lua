@@ -104,9 +104,9 @@ local function Start(isECU)
         if not isECU then
             screen = ScreenController.New(fc, settings)
             wsad = Wsad.New(fc, settings, access)
-            fuel = Fuel.New(settings)
         end
 
+        fuel = Fuel.New(settings)
         commands = ControlCommands.New(input, commandLine, fc, settings, screen, access)
 
         info = InfoCentral.Instance()

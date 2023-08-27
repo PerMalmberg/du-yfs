@@ -6,7 +6,7 @@ local Vec2             = require("native/Vec2")
 local log              = require("debug/Log").Instance()
 local pub              = require("util/PubSub").Instance()
 
----@alias FuelTankInfo {name:string, factorBar:Vec2, percent:number, visible:boolean}
+---@alias FuelTankInfo {name:string, factorBar:Vec2, percent:number, visible:boolean, type:string}
 
 ---@class Fuel
 ---@field Instance fun():Fuel
@@ -30,7 +30,7 @@ function Fuel.New(settings)
         local sw = Stopwatch.New()
         sw.Start()
 
-        local tanks = {
+        local fuelTanks = {
             atmo = Container.GetAllCo(ContainerType.Atmospheric),
             space = Container.GetAllCo(ContainerType.Space),
             rocket = Container.GetAllCo(ContainerType.Rocket)
@@ -40,34 +40,47 @@ function Fuel.New(settings)
             if sw.IsRunning() and sw.Elapsed() < 2 then
                 coroutine.yield()
             else
-                for fuelType, containers in pairs(tanks) do
-                    local fillFactors = {} ---@type FuelTankInfo[]
-                    for _, tank in ipairs(containers) do
+                local fillFactors = {} ---@type FuelTankInfo[]
+                local fuelForScreen = {} ---@type {path:string, tank:FuelTankInfo}[]
+                local byType = {} ---@type table<string,FuelTankInfo[]>
+
+                for fuelType, tanks in pairs(fuelTanks) do
+                    for i, tank in ipairs(tanks) do
                         local factor = tank.FuelFillFactor(talents)
-                        table.insert(fillFactors,
-                            {
-                                name = tank.Name(),
-                                factorBar = Vec2.New(1, factor),
-                                percent = factor * 100,
-                                visible = true
-                            })
-                        coroutine.yield()
+                        local curr = {
+                            name = tank.Name(),
+                            factorBar = Vec2.New(1, factor),
+                            percent = factor * 100,
+                            visible = true,
+                            type = fuelType
+                        }
+
+                        table.insert(fillFactors, curr)
+
+                        local bt = byType[fuelType] or {}
+                        bt[#bt + 1] = curr
+                        byType[fuelType] = bt
+
+                        fuelForScreen[#fuelForScreen + 1] = {
+                            path = string.format("fuel/%s/%d", fuelType, i),
+                            tank = curr
+                        }
                     end
-
-                    -- Sort tanks in acending fuel levels
-                    table.sort(fillFactors,
-                        function(a, b) return a.percent < b.percent end)
-
-                    local fuelData = {}
-
-                    for i, tankInfo in ipairs(fillFactors) do
-                        fuelData[#fuelData + 1] = { path = string.format("fuel/%s/%d", fuelType, i), tank = tankInfo }
-                    end
-
-                    pub.Publish("FuelData", fuelData)
-
-                    coroutine.yield()
                 end
+
+                -- Sort tanks for screen based on acending fuel levels
+                table.sort(fillFactors,
+                    function(a, b) return a.percent < b.percent end)
+
+                -- Sort tanks for HUD in alphabetical order
+                for _, bt in pairs(byType) do
+                    table.sort(bt, function(a, b)
+                        return a.name < b.name
+                    end)
+                end
+
+                pub.Publish("FuelData", fuelForScreen)
+                pub.Publish("FuelByType", byType)
 
                 sw.Restart()
             end
