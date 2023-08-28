@@ -54,9 +54,9 @@
         .progress-label {
             position: absolute;
             top: 50%;
+            transform: translateY(-50%);
             width: 100%;
             font: 0.7em Montserrat;
-            transform: translateY(-50%);
             color: white;
             text-shadow: inherit;
         }
@@ -91,7 +91,7 @@
         for _, curr in ipairs(byType) do
         local percent = round(curr.percent, 1)
         %}
-        <div class="progress-border" style="margin-top: {{topMargin - 1}}px;">
+        <div class="progress-border" style="margin-top: {{topMargin - 2}}px;">
             <div class="progress-bar" style="width: {{percent}}%; background-color: {{t.c}};">
             </div>
             <div class="progress-label">
