@@ -24,39 +24,39 @@
             top: 2%;
             left: 2%;
             color: white;
-            font: 1em Oxanium;
+            font: 1em Montserrat;
             text-shadow: 2px 2px black;
         }
 
         .progress-container {
-            width: 320px;
+            width: 330px;
             text-align: center;
             top: 3%;
         }
 
         .progress-border {
             position: relative;
-            height: 22px;
-            margin: 5px 0;
-            border: 1px solid white;
+            height: 26px;
+            margin: 0px;
+            border: 2px solid white;
             color: #fff;
             background-color: black;
+            border-radius: 10px;
+            overflow: hidden;
         }
 
         .progress-bar {
             position: relative;
-            height: 20px;
-            margin: 0px 0;
-            border: 1px solid white;
+            height: 26px;
             color: #fff;
-            text-shadow: inherit;
         }
 
         .progress-label {
             position: absolute;
-            top: 1px;
+            top: 50%;
             width: 100%;
-            font: 0.8em Oxanium;
+            font: 0.7em Montserrat;
+            transform: translateY(-50%);
             color: white;
             text-shadow: inherit;
         }
@@ -87,17 +87,20 @@
         local byType = fuelByType[t.t]
 
         if byType then
+        local topMargin = 15
         for _, curr in ipairs(byType) do
         local percent = round(curr.percent, 1)
         %}
-        <div class="progress-border">
-            <div class="progress-bar" style="width: {{percent}}%; background-color: {{t.c}};"></div>
+        <div class="progress-border" style="margin-top: {{topMargin - 1}}px;">
+            <div class="progress-bar" style="width: {{percent}}%; background-color: {{t.c}};">
+            </div>
             <div class="progress-label">
-                <span style="float: left; margin-left: 2px;">{{curr.name}}</span>
-                <span style="float: right; margin-right: 2px;">{{percent}}%</span>
+                <span style="float: left; margin-left: 4px;">{{curr.name}}</span>
+                <span style="float: right; margin-right: 4px;">{{percent}}%</span>
             </div>
         </div>
         {%
+        topMargin = 0
         end
         end
         end %}
