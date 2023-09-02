@@ -5,6 +5,7 @@ local Task             = require("system/Task")
 local Vec2             = require("native/Vec2")
 local log              = require("debug/Log").Instance()
 local pub              = require("util/PubSub").Instance()
+local _                = require("util/Table")
 
 ---@alias FuelTankInfo {name:string, factorBar:Vec2, percent:number, visible:boolean, type:string}
 
@@ -40,12 +41,10 @@ function Fuel.New(settings)
             if sw.IsRunning() and sw.Elapsed() < 2 then
                 coroutine.yield()
             else
-                local fillFactors = {} ---@type FuelTankInfo[]
-                local fuelForScreen = {} ---@type {path:string, tank:FuelTankInfo}[]
                 local byType = {} ---@type table<string,FuelTankInfo[]>
 
                 for fuelType, tanks in pairs(fuelTanks) do
-                    for i, tank in ipairs(tanks) do
+                    for _, tank in ipairs(tanks) do
                         local factor = tank.FuelFillFactor(talents)
                         local curr = {
                             name = tank.Name(),
@@ -55,12 +54,29 @@ function Fuel.New(settings)
                             type = fuelType
                         }
 
-                        table.insert(fillFactors, curr)
-
                         local bt = byType[fuelType] or {}
                         bt[#bt + 1] = curr
                         byType[fuelType] = bt
+                    end
 
+                    -- Sort tanks for HUD in alphabetical order
+                    if byType[fuelType] then
+                        table.sort(byType[fuelType], function(a, b)
+                            return a.name < b.name
+                        end)
+                    end
+                end
+
+                pub.Publish("FuelByType", DeepCopy(byType))
+
+                -- Now populate for the screen
+                local fuelForScreen = {} ---@type {path:string, tank:FuelTankInfo}[]
+
+                -- Sort tanks for screen based on acending fuel levels
+                for fuelType, tanks in pairs(byType) do
+                    table.sort(tanks, function(a, b) return a.percent < b.percent end)
+
+                    for i, curr in ipairs(tanks) do
                         fuelForScreen[#fuelForScreen + 1] = {
                             path = string.format("fuel/%s/%d", fuelType, i),
                             tank = curr
@@ -68,19 +84,7 @@ function Fuel.New(settings)
                     end
                 end
 
-                -- Sort tanks for screen based on acending fuel levels
-                table.sort(fillFactors,
-                    function(a, b) return a.percent < b.percent end)
-
-                -- Sort tanks for HUD in alphabetical order
-                for _, bt in pairs(byType) do
-                    table.sort(bt, function(a, b)
-                        return a.name < b.name
-                    end)
-                end
-
                 pub.Publish("FuelData", fuelForScreen)
-                pub.Publish("FuelByType", byType)
 
                 sw.Restart()
             end
