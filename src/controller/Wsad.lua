@@ -27,11 +27,12 @@ local IsFrozen                = vehicle.player.IsFrozen
 local Wsad                    = {}
 Wsad.__index                  = Wsad
 
+---@param fsm FlightFSM
 ---@param flightCore FlightCore
 ---@param settings Settings
 ---@param access Access
 ---@return Wsad
-function Wsad.New(flightCore, settings, access)
+function Wsad.New(fsm, flightCore, settings, access)
     local s = {}
     local turnAngle = settings.Number("turnAngle")
     local desiredAltitude = 0
@@ -44,6 +45,7 @@ function Wsad.New(flightCore, settings, access)
     local yawSmoothStop = false
     local yawStopSign = 0
     local plane = Plane.NewByVertialReference()
+
 
     input.SetThrottle(1) -- Start at max speed
     local throttleStep = settings.Get("throttleStep", constants.flight.throttleStep) / 100
@@ -313,6 +315,16 @@ function Wsad.New(flightCore, settings, access)
     input.Register(keys.yawright, Criteria.New().OnRelease(), function()
         if not IsFrozen() then return end
         yawSmoothStop = true
+    end)
+
+    input.Register(keys.booster, Criteria.New().OnPress(), function()
+        if not IsFrozen() then return end
+        fsm.SetBooster(true)
+    end)
+
+    input.Register(keys.booster, Criteria.New().OnRelease(), function()
+        if not IsFrozen() then return end
+        fsm.SetBooster(false)
     end)
 
     -- shift + alt + Option9 to switch modes

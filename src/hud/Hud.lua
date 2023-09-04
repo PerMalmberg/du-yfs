@@ -1,18 +1,21 @@
-local Template    = require("Template")
-local Task        = require("system/Task")
-local calc        = require("util/Calc")
-local hudTemplate = library.embedFile("hud.html")
-local log         = require("debug/Log").Instance()
-local pub         = require("util/PubSub").Instance()
-local input       = require("input/Input").Instance()
+local Template       = require("Template")
+local Task           = require("system/Task")
+local calc           = require("util/Calc")
+local hudTemplate    = library.embedFile("hud.html")
+local log            = require("debug/Log").Instance()
+local pub            = require("util/PubSub").Instance()
+local input          = require("input/Input").Instance()
+local Stopwatch      = require("system/Stopwatch")
+
+local updateInterval = 1
 
 ---@alias HudData {speed:number, maxSpeed:number}
 
 ---@class Hud
 ---@field New fun():Hud
 
-local Hud         = {}
-Hud.__index       = Hud
+local Hud            = {}
+Hud.__index          = Hud
 
 
 ---@return Hud
@@ -30,14 +33,21 @@ function Hud.New()
             log.Error("Error compiling template: ", err)
         end)
 
-        while true do
-            local html = tpl({
-                throttleValue = input.Throttle() * 100,
-                fuelByType = fuelByType,
-                isECU = isECU
-            })
-            system.setScreen(html)
+        local sw = Stopwatch.New()
+        sw.Start()
 
+        while true do
+            if sw.Elapsed() > updateInterval then
+                sw.Restart()
+
+                local html = tpl({
+                    throttleValue = input.Throttle() * 100,
+                    fuelByType = fuelByType,
+                    isECU = isECU
+                })
+
+                system.setScreen(html)
+            end
             coroutine.yield()
         end
     end).Catch(function(t)

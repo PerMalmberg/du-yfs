@@ -103,7 +103,7 @@ local function Start(isECU)
 
         if not isECU then
             screen = ScreenController.New(fc, settings)
-            wsad = Wsad.New(fc, settings, access)
+            wsad = Wsad.New(fsm, fc, settings, access)
         end
 
         fuel = Fuel.New(settings)

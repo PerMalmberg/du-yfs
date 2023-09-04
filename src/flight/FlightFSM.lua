@@ -1,3 +1,4 @@
+local log                         = require("debug/Log").Instance()
 local Vec3                        = require("math/Vec3")
 local vehicle                     = require("abstraction/Vehicle").New()
 local universe                    = require("universe/Universe").Instance()
@@ -21,6 +22,7 @@ local Ray                         = require("util/Ray")
 local pub                         = require("util/PubSub").Instance()
 local input                       = require("input/Input").Instance()
 local SetEngineCommand            = unit.setEngineCommand
+local SetEngineThrust             = unit.setEngineThrust
 
 require("flight/state/Require")
 local CurrentPos                    = vehicle.position.Current
@@ -60,6 +62,8 @@ local adjustAngleThreshold          = calc.AngleToDot(45)
 ---@field DisablesAllThrust fun():boolean
 ---@field PreventNextWp fun():boolean
 ---@field SelectWP fun():Waypoint
+---@field ToggleBoster fun()
+---@field SetBooster fun(activate:boolean)
 
 local FlightFSM                     = {}
 FlightFSM.__index                   = FlightFSM
@@ -87,6 +91,8 @@ function FlightFSM.New(settings, routeController, geo)
     local lastReadMass              = TotalMass()
     local yaw                       = AxisManager.Instance().Yaw()
     local yawAlignmentThrustLimiter = 1
+    local boosterActive             = false
+    local boosterStateChanged       = false
 
     local longAdjData               = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
     local latAdjData                = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
@@ -141,6 +147,15 @@ function FlightFSM.New(settings, routeController, geo)
     local speedPid = PID(pidValues.p, pidValues.i, pidValues.d, pidValues.a)
 
     local s = {}
+
+    ---@param active boolean
+    function s.SetBooster(active)
+        if active ~= boosterActive then
+            boosterActive = active
+            boosterStateChanged = true
+            log.Info("Boosters ", boosterActive and "activated" or "deactivated")
+        end
+    end
 
     ---Selects the waypoint to go to
     ---@return Waypoint
@@ -500,18 +515,31 @@ function FlightFSM.New(settings, routeController, geo)
 
         local finalAcc = thrustAcc + adjustmentAcc
 
+        -- Make sure that engine tags only include the absolute minimum number of engines as it
+        -- is the first command to and engine that takes effect, not the last one. For example,
+        -- lateral engines must be adressed with 'lateran AND analog' or a lateral rocket engine
+        -- also gets the command.
+
         local up = finalAcc:ProjectOn(vehicle.orientation.Up())
-        SetEngineCommand("vertical", { up:Unpack() }, { 0, 0, 0 }, true, true,
+        -- Vertical AND analog
+        SetEngineCommand("vertical analog", { up:Unpack() }, { 0, 0, 0 }, true, true,
             "airfoil",
             "ground",
-            "thrust", 0.1)
+            "analog", 0.1)
 
         local forward = finalAcc:ProjectOn(vehicle.orientation.Forward())
         local right = finalAcc:ProjectOn(vehicle.orientation.Right())
 
-        SetEngineCommand("lateral, longitudinal", { (forward + right):Unpack() }, { 0, 0, 0 }, true, true, "", "",
-            "",
-            0.1)
+        -- longitudinal AND analog
+        SetEngineCommand("longitudinal analog", { forward:Unpack() }, { 0, 0, 0 }, true, true, "", "", "", 0.1)
+
+        -- Lateral AND analog
+        SetEngineCommand("lateral analog", { right:Unpack() }, { 0, 0, 0 }, true, true, "", "", "", 0.1)
+
+        if boosterStateChanged then
+            boosterStateChanged = false
+            SetEngineThrust("rocket_engine", boosterActive and 1 or 0)
+        end
     end
 
     ---@param deltaTime number The time since last Flush
@@ -590,6 +618,10 @@ function FlightFSM.New(settings, routeController, geo)
             local nearest = calc.NearestOnLineBetweenPoints(previous.Destination(), selectedWP.Destination(), pos)
 
             currentState.Flush(deltaTime, selectedWP, previous, nearest)
+
+            if brakes.Active() then
+                s.SetBooster(false)
+            end
 
             local acceleration = move(deltaTime, selectedWP, previous)
             local adjustmentAcc = adjustForDeviation(pos, selectedWP, previous)
