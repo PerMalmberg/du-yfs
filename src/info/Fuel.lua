@@ -23,7 +23,13 @@ function Fuel.New(settings)
         return instance
     end
 
-    local talents = ContainerTalents.New(0, 0, 0, 0, 0, 0)
+    local talents = ContainerTalents.New(
+        settings.Number("containerProficiency", 0),
+        settings.Number("fuelTankOptimization", 0),
+        settings.Number("containerOptimization", 0),
+        settings.Number("atmoFuelTankHandling", 0),
+        settings.Number("spaceFuelTankHandling", 0),
+        settings.Number("rocketFuelTankHandling", 0))
 
     local s = {}
 
