@@ -7,7 +7,7 @@ local pub            = require("util/PubSub").Instance()
 local input          = require("input/Input").Instance()
 local Stopwatch      = require("system/Stopwatch")
 
-local updateInterval = 1
+local updateInterval = 0.3
 
 ---@alias HudData {speed:number, maxSpeed:number}
 
@@ -41,9 +41,10 @@ function Hud.New()
                 sw.Restart()
 
                 local html = tpl({
-                    throttleValue = input.Throttle() * 100,
+                    throttle = player.isFrozen() and
+                        string.format("Throttle: %0.1f (manual control active)", input.Throttle() * 100) or "",
                     fuelByType = fuelByType,
-                    isECU = isECU
+                    isECU = isECU,
                 })
 
                 system.setScreen(html)
