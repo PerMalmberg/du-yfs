@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file. The version
 * HUD with fuel gauges.
 * Support for rocket boosters.
 
+### Changed
+* Command `show-widgets` replaced with short-cut `ALT-SHIFT-8`
+
 ## 1.0.0 - 2023-08-24
 
 ### Added

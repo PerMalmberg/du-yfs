@@ -279,9 +279,10 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 
 ## Key bindings
 
-| Key         | Description                                                      |
-| ----------- | ---------------------------------------------------------------- |
-| Alt-Shift-9 | (Un)locks player / enters/exists manual control (WSAD etc.) mode |
+| Key         | Description                                                         |
+| ----------- | ------------------------------------------------------------------- |
+| Alt-Shift-8 | Show/hides widgets with diagnostic info as well as the build helper |
+| Alt-Shift-9 | (Un)locks player / enters/exists manual control (WSAD etc.) mode    |
 
 
 ## Manual Controls (when user is locked in place)
@@ -436,7 +437,6 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 | get-all                   |                             |               |                    | Prints all current settings. Don't add the "-" before the argument. Example: `get turnAngle`.                                                                                                                                                                                                            |
 | reset-settings            |                             |               |                    | Resets all settings to their defaults.                                                                                                                                                                                                                                                                   |
 | set-full-container-boosts |                             |               |                    | Sets all related talents for containers, atmospheric, space and rocket fuel tanks to level 5                                                                                                                                                                                                             |
-| show-widgets              |                             | boolean       | Y                  | Show/hides widgets with diagnostic info                                                                                                                                                                                                                                                                  |
 
 Please note that deleting named waypoints do not update routes that reference them. You can create a new one with the same name as the one deleted, but until you do, any route that referenced it will not be usable.
 
