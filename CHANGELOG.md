@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file. The version
 ### Changed
 * Command `show-widgets` replaced with short-cut `ALT-SHIFT-8`
 
+### Fixed
+* When starting a route with skippable points, route legs containing skippable points are now taken into account when starting a route. In other words, you can now start a route while near a skippable point.
+
 ## 1.0.0 - 2023-08-24
 
 ### Added

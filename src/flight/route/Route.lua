@@ -231,14 +231,20 @@ function Route.New()
         return calc.NearestOnLineBetweenPoints(coordsFromPoint(startIx), coordsFromPoint(endIx), coord)
     end
 
-    ---@param startIx number
-    ---@param endIx number
-    local function keep(startIx, endIx)
+    ---@param startIx number First index to keep
+    ---@param endIx number Last index to keep
+    ---@param currentLegStartIx number Start index of leg we're currently on
+    ---@param currentLegEndIx number End index of the leg we're currently on
+    local function keep(startIx, endIx, currentLegStartIx, currentLegEndIx)
         local toKeep = {}
 
         for i = startIx, endIx do
             local skippable = points[i].Options().Get(PointOptions.SKIPPABLE, false)
-            if i == startIx or i == endIx or not skippable then
+            if i == startIx
+                or i == endIx
+                or i == currentLegStartIx
+                or i == currentLegEndIx
+                or not skippable then
                 toKeep[#toKeep + 1] = points[i]
             end
         end
@@ -275,11 +281,11 @@ function Route.New()
         if legEndIx <= targetIndex then
             -- Our current pos is on an earlier or same leg as the one that has the target index
             adjChar = "A"
-            keep(legStartIx, targetIndex)
+            keep(legStartIx, targetIndex, legStartIx, legEndIx)
         else
             -- We're currently on a leg after the target index
             adjChar = "B"
-            keep(targetIndex, legEndIx)
+            keep(targetIndex, legEndIx, legStartIx, legEndIx)
             reverse()
         end
 
