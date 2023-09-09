@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file. The version
 ### Added
 * HUD with fuel gauges.
 * Support for rocket boosters.
+* New setting `pathAlignmentDistanceLimitFromSurface` that allows you to set a distance from the closest planet/moon surface at which the construct will align topside along path to use main engines for propulsion.
 
 ### Changed
 * Command `show-widgets` replaced with short-cut `ALT-SHIFT-8`

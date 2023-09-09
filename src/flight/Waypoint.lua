@@ -62,14 +62,15 @@ end
 ---@param finalSpeed number The final speed to reach when at the waypoint (0 if stopping is intended).
 ---@param maxSpeed number The maximum speed to to travel at. Less than or equal to finalSpeed.
 ---@param margin number The number of meters to be within for the waypoint to be considered reached
+---@param pathAlignmentDistanceLimitFromSurface number The minimum distance to the closest body where the construct will align topside along the path
 ---@return Waypoint
-function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
+function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDistanceLimitFromSurface)
     local s = {
         destination = destination,
         finalSpeed = finalSpeed,
         maxSpeed = Ternary(finalSpeed > maxSpeed and maxSpeed > 0, finalSpeed, maxSpeed), ---@type number -- Guard against bad settings.
         margin = margin,
-        lastPointInRoute = false
+        lastPointInRoute = false,
     }
 
     local lastInRoute = false
@@ -162,16 +163,30 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin)
 
         local selectedRef = vertUp
 
-        if not forceUpAlongVerticalRef and pathAlignmentAngleLimit > 0 -- if zero, it means the alignment is disabled
-            and s.DistanceTo() > pathAlignmentDistanceLimit and prev.DistanceTo() > pathAlignmentDistanceLimit then
-            local threshold = calc.AngleToDot(pathAlignmentAngleLimit)
+        if not forceUpAlongVerticalRef then
+            local dest = s.Destination()
+            local pathDirection = (dest - prev.Destination()):Normalize()
+            local body = universe.ClosestBody(Current())
+            local distanceToSurface = body.DistanceToHighestPossibleSurface(Current())
+            local awayFromWaypoints = s.DistanceTo() > pathAlignmentDistanceLimit and
+                prev.DistanceTo() > pathAlignmentDistanceLimit
 
-            local pathDirection = (s.Destination() - prev.Destination()):Normalize()
-            -- If we're more aligned to the path than the threshold, then align to the path
-            if vertUp:Dot(pathDirection) > threshold then
-                selectedRef = pathDirection
-            elseif vertUp:Dot(pathDirection) < -threshold then -- Don't flip upside down
-                selectedRef = -pathDirection
+            if awayFromWaypoints then
+                if pathAlignmentDistanceLimitFromSurface > 0
+                    and distanceToSurface > pathAlignmentDistanceLimitFromSurface
+                then
+                    -- We're far out from the nearest body, allow aligning topside along path
+                    selectedRef = pathDirection
+                elseif pathAlignmentAngleLimit > 0 then -- if zero, it means the alignment is disabled
+                    local threshold = calc.AngleToDot(pathAlignmentAngleLimit)
+
+                    local vertDotPath = vertUp:Dot(pathDirection)
+                    if vertDotPath > threshold then      -- If we're more aligned to the path than the threshold, then align to the path
+                        selectedRef = pathDirection
+                    elseif vertDotPath < -threshold then -- Don't flip upside down
+                        selectedRef = -pathDirection
+                    end
+                end
             end
         end
 

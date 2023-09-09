@@ -11,8 +11,6 @@ local AxisControl = require("flight/AxisControl")
 ---@field SetPitchTarget fun(target:Vec3?)
 ---@field SetRollTarget fun(target:Vec3?)
 
-local abs = math.abs
-
 local AxisManager = {}
 AxisManager.__index = AxisManager
 local instance ---@type AxisManager

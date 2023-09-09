@@ -44,7 +44,7 @@ function OpenGates.New(fsm, holdPoint, holdDir)
     ---@param nearestPointOnPath Vec3
     function s.Flush(deltaTime, next, previous, nearestPointOnPath)
         if not temporaryWP then
-            temporaryWP = Waypoint.New(holdPoint, 0, 0, next.Margin())
+            temporaryWP = Waypoint.New(holdPoint, 0, 0, next.Margin(), 0)
             temporaryWP.LockYawTo(holdDir)
             fsm.SetTemporaryWaypoint(temporaryWP)
         end
