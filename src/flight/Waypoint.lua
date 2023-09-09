@@ -175,7 +175,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
                 if pathAlignmentDistanceLimitFromSurface > 0
                     and distanceToSurface > pathAlignmentDistanceLimitFromSurface
                 then
-                    -- We're far out from the nearest body, allow aligning topside along path
+                    -- We're far out from the nearest body, allow aligning topside along path, even upside down
                     selectedRef = pathDirection
                 elseif pathAlignmentAngleLimit > 0 then -- if zero, it means the alignment is disabled
                     local threshold = calc.AngleToDot(pathAlignmentAngleLimit)
