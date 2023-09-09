@@ -31,6 +31,7 @@ local spaceEfficiencyFactor = 0.9              -- Reduced from one to counter br
 ---@field BrakeEfficiency fun(inAtmo:boolean, speed:number):number
 ---@field EffectiveBrakeDeceleration fun():number
 ---@field Feed fun(targetSpeed:number, currentSpeed:number):Vec3
+---@field Active fun():boolean
 
 local Brake = {}
 Brake.__index = Brake
@@ -161,6 +162,10 @@ function Brake.Instance()
         deceleration = brakeValue * rawAvailableDeceleration()
 
         return brakeCounter()
+    end
+
+    function s.Active()
+        return brakeData.pid > 0
     end
 
     ---Gets the brake efficiency to use

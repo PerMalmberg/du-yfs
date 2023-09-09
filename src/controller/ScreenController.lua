@@ -356,7 +356,7 @@ function ScreenController.New(flightCore, settings)
             ---@param _ string
             ---@param value {path:string, tank:FuelTankInfo}[]
             function(_, value)
-                for i, fuelInfo in ipairs(value) do
+                for _, fuelInfo in ipairs(value) do
                     dataToScreen.Set(fuelInfo.path, fuelInfo.tank)
                 end
             end)

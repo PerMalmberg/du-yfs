@@ -944,7 +944,7 @@ local layout = {
                     mouse = {
                         click = {
                             command =
-                            "$str(path{availableWaypoints/wayPoints/[#]:pos}:init{}:format{set-waypoint -notify '%s'})"
+                            "$str(path{availableWaypoints/wayPoints/[#]:pos}:init{}:format{set-waypoint -notify %s})"
                         },
                         inside = {
                             set_style = "routeEditHover"
@@ -1297,7 +1297,7 @@ local layout = {
                     mouse = {
                         click = {
                             command =
-                            "$str(path{editRoute/points/[#]:position}:init{}:format{set-waypoint -notify '%s'})"
+                            "$str(path{editRoute/points/[#]:position}:init{}:format{set-waypoint -notify %s})"
                         },
                         inside = {
                             set_style = "routeEditHover"

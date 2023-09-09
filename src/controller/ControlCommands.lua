@@ -94,11 +94,13 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                 universe.CreatePos(Current() + vehicle.orientation.Forward() * Waypoint.DirectionMargin):AsPosString())
         end)
 
-        cmd.Accept("show-widgets",
-            ---@param data {commandValue:boolean}
-            function(data)
-                pub.Publish("ShowInfoWidgets", data.commandValue)
-            end).AsBoolean().Mandatory()
+
+        local lastWidget = settings.Boolean("showWidgetsOnStart", false)
+
+        input.Register(keys.option8, Criteria.New().OnPress(), function()
+            lastWidget = not lastWidget
+            pub.Publish("ShowInfoWidgets", lastWidget)
+        end)
     end
 
     ---Get the route being edited

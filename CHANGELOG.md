@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 1.1.0 - 2023-09-09
+
+### Added
+* HUD with fuel gauges.
+* Support for rocket boosters.
+* New setting `pathAlignmentDistanceLimitFromSurface` that allows you to set a distance from the closest planet/moon surface at which the construct will align topside along path to use main engines for propulsion.
+
+### Changed
+* Command `show-widgets` replaced with short-cut `ALT-SHIFT-8`
+
+### Fixed
+* When starting a route with skippable points, route legs containing skippable points are now taken into account when starting a route. In other words, you can now start a route while near a skippable point.
+
 ## 1.0.0 - 2023-08-24
 
 ### Added
