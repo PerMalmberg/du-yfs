@@ -42,7 +42,8 @@ function Hud.New()
 
                 local html = tpl({
                     throttle = player.isFrozen() and
-                        string.format("Throttle: %0.0f%% (manual control active)", input.Throttle() * 100) or "",
+                        string.format("Throttle: %0.0f%% (Manual Control)", input.Throttle() * 100) or
+                        "Automatic Control",
                     fuelByType = fuelByType,
                     isECU = isECU,
                 })
