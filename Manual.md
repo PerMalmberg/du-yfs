@@ -72,7 +72,7 @@ The construct will align towards the next point in the route (see setting `yawAl
 
 ### Skippable waypoints
 
-You can mark a waypoint in the route as skippable. Doing so makes the system ignore that point when calculating the path to travel to the selected waypoint. However, even if a waypoint is marked as such, it is still used to find the closest point on the complete path when a route is activated. In other words, a skippable point is only considered as such while traveling, not when determining what point to first move to to get back onto the path. This may result in that when activating a route while you're currently traveling between two points, the system may tell you you are too far from the route. A shorter description of this behavior is that _paths resulting from skipped points are not used for evaluating distance to the route on activation_.
+You can mark a waypoint in the route as skippable. Doing so makes the system ignore that point when calculating the path to travel to the selected waypoint. However, even if a waypoint is marked as such, it is still used to find the closest point on the complete path when a route is activated.
 
 ### Enclosures
 
@@ -166,7 +166,7 @@ If linked to the remote controller, the script can control two Manual Switches, 
 
 ## Fuel gauges
 
-The screen shows up to four fuel tanks of each of the atmospheric and space types. It chooses the ones to display based on the lowest percentage and as such you can always see how close you are to run out of fuel, regardless of how many fuel tanks you have.
+The screen shows up to four fuel tanks of each of the atmospheric and space types. It chooses the ones to display based on the lowest percentage and as such you can always see how close you are to run out of fuel, regardless of how many fuel tanks you have. The HUD shows a gauge for each fuel tank and type.
 
 ## Installation as an elevator (ground to space)
 
@@ -509,7 +509,7 @@ While it is possible to make routes that are not gravity aligned work, they may 
 
 ## Shifting gravity wells
 
-As described in [Accuracy](#accuracy), the script aligns either to gravity or the travel path. When gravity direction changes, such as near Thades' moonlets (where they appear to be the sum of the different gravity wells depending on the location of the construct), the script will adjust its alignment accordingly. Another case where this will happen (theoretically, not actually tested at the time of writing this) is when traveling between planets such as Alioth and Haven/Sanctuary; at the midpoint the script should flip over 180 degrees.
+As described in [Accuracy](#accuracy), the script aligns either to gravity or the travel path. When gravity direction changes, such as near Thades' moonlets (where they appear to be the sum of the different gravity wells depending on the location of the construct), the script will adjust its alignment accordingly. The script keeps the main engines pointing against gravity, unless `pathAlignmentDistanceLimitFromSurface` has been configured to tell it to do otherwise.
 
 This means that a route starting at the surface of Thades and ending among the moonlets will have different alignment directions along the travel path. As such, a space construct placed based on the elevator's alignment in space will not point exactly away from Thades, but clearly be at an angle to the planet. Please keep all this in mind when building your space construct.
 
