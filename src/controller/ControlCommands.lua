@@ -103,11 +103,11 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             pub.Publish("ShowInfoWidgets", lastWidget)
         end)
 
-        input.Register(keys.option7, Criteria.New().LShift().OnPress(), function()
+        input.Register(keys.option0, Criteria.New().LShift().OnPress(), function()
             radar.Show(not radar.IsVisible())
         end)
 
-        input.Register(keys.option7, Criteria.New().OnPress(), function()
+        input.Register(keys.option0, Criteria.New().OnPress(), function()
             radar.NextMethod()
         end)
     end

@@ -6,6 +6,7 @@ Please read the entire manual before attempting to perform an installation, ther
   - [Overview](#overview)
     - [Required elements (for Do-It-Yourself kits)](#required-elements-for-do-it-yourself-kits)
       - [Optional parts](#optional-parts)
+      - [Link order](#link-order)
     - [Routes and Waypoints](#routes-and-waypoints)
       - [Route vs Floor mode](#route-vs-floor-mode)
       - [Waypoint alignment](#waypoint-alignment)
@@ -57,6 +58,17 @@ The goal of this project was initially to write a flight system capable of worki
 #### Optional parts
 * Emitter
 * Receiver
+* Atmospheric Radar
+* Space Radar
+
+#### Link order
+
+These elements *must* be linked first, in the following order for things to work as expected and to be reasonably future proofed for later versions of the script when/if support for radar events are introduced.
+
+* Receiver
+* Space Radar
+* Atmospheric Radar
+
 
 ### Routes and Waypoints
 
@@ -151,7 +163,7 @@ Now activate the programming board to complete the setup of the worker side, loo
 
 #### Elevator side
 
-The receiver *must* be linked on the first slot of the remote controller. If your construct didn't come with this pre-linked, you do this easiest by removing all links, then linking from the Remote Controller to the Receiver, followed by linking the Core, Telemeter, Screen, Databank(s) and Emitter.
+The receiver *must* be linked on the first slot of the remote controller. If your construct didn't come with this pre-linked, you do this easiest by removing all links, then linking from the Remote Controller to the Receiver, followed by linking the space radar, atmospheric radar, Core, Telemeter, Screen, Databank(s) and Emitter.
 
 In Lua chat, you must run the command `set -commChannel CHANNEL`, replacing `CHANNEL` with the same channel name you used on the programming board on the space/static construct so that they can communicate with each other. Now restart the elevator so that the channel can be applied.  Next, for each point in the route you want the elevator to control the gates, open the route for editing then click to enable gate control using the on-screen UI for the points you want to control gates at. Finish by saving the route.
 
@@ -281,8 +293,8 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 
 | Key              | Description                                                         |
 | ---------------- | ------------------------------------------------------------------- |
-| Option 7         | Cycles radar sorting methods                                        |
-| Option 7 + Shift | Show/hides radar widget                                             |
+| Option 0         | Cycles radar sorting methods (see Lua chat for details)             |
+| Option 0 + Shift | Show/hides radar widget                                             |
 | Option 8 + Shift | Show/hides widgets with diagnostic info as well as the build helper |
 | Option 9 + Shift | Locks/unlocks player movement / enters/exists manual control mode   |
 
