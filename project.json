@@ -21,6 +21,14 @@
         "receiver": {
           "name": "receiver",
           "type": "receiver"
+        },
+        "spaceRadar": {
+          "name": "spaceRadar",
+          "type": "radar"
+        },
+        "atmoRadar": {
+          "name": "atmoRadar",
+          "type": "radar"
         }
       }
     },
@@ -31,6 +39,14 @@
         "receiver": {
           "name": "receiver",
           "type": "receiver"
+        },
+        "spaceRadar": {
+          "name": "spaceRadar",
+          "type": "radar"
+        },
+        "atmoRadar": {
+          "name": "atmoRadar",
+          "type": "radar"
         }
       }
     },
@@ -41,6 +57,14 @@
         "receiver": {
           "name": "receiver",
           "type": "receiver"
+        },
+        "spaceRadar": {
+          "name": "spaceRadar",
+          "type": "radar"
+        },
+        "atmoRadar": {
+          "name": "atmoRadar",
+          "type": "radar"
         }
       }
     },
@@ -51,6 +75,14 @@
         "receiver": {
           "name": "receiver",
           "type": "receiver"
+        },
+        "spaceRadar": {
+          "name": "spaceRadar",
+          "type": "radar"
+        },
+        "atmoRadar": {
+          "name": "atmoRadar",
+          "type": "radar"
         }
       }
     },

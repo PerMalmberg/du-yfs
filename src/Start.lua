@@ -19,6 +19,7 @@ local pub              = require("util/PubSub").Instance()
 local input            = require("input/Input").Instance()
 local Access           = require("Access")
 local GeoFence         = require("flight/GeoFence")
+local Radar            = require("element/Radar")
 
 ---Main routine that starts the system
 ---@param isECU boolean
@@ -54,6 +55,7 @@ local function Start(isECU)
     local screen ---@type ScreenController
     local fuel ---@type Fuel
     local info ---@type InfoCentral
+    local radar = Radar.Instance()
 
     local followRemote = library.getLinkByName("FollowRemote") ---@type any
 
@@ -111,10 +113,17 @@ local function Start(isECU)
 
         info = InfoCentral.Instance()
         hud = Hud.New()
+
         commands.RegisterMoveCommands()
         commands.RegisterCommonCommands(isECU)
         if not isECU then
             commands.RegisterRouteCommands()
+            radar.Show(settings.Boolean("showRadarOnStart"))
+            radar.Sort(settings.Number("defaultRadarMode"))
+
+            settings.RegisterCallback("defaultRadarMode", function(value)
+                radar.Sort(value)
+            end)
         end
 
         pub.Publish("ShowInfoWidgets", settings.Boolean("showWidgetsOnStart", false))

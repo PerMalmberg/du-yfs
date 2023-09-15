@@ -14,6 +14,7 @@ local keys                    = require("input/Keys")
 local pub                     = require("util/PubSub").Instance()
 local constants               = require("YFSConstants")
 local gateCtrl                = require("controller/GateControl").Instance()
+local radar                   = require("element/Radar").Instance()
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local Current                 = vehicle.position.Current
 local Forward                 = vehicle.orientation.Forward
@@ -97,9 +98,17 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
 
         local lastWidget = settings.Boolean("showWidgetsOnStart", false)
 
-        input.Register(keys.option8, Criteria.New().OnPress(), function()
+        input.Register(keys.option8, Criteria.New().LShift().OnPress(), function()
             lastWidget = not lastWidget
             pub.Publish("ShowInfoWidgets", lastWidget)
+        end)
+
+        input.Register(keys.option7, Criteria.New().LShift().OnPress(), function()
+            radar.Show(not radar.IsVisible())
+        end)
+
+        input.Register(keys.option7, Criteria.New().OnPress(), function()
+            radar.NextMethod()
         end)
     end
 

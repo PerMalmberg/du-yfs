@@ -26,7 +26,7 @@ Please read the entire manual before attempting to perform an installation, ther
     - [Custom travel vector for additional elevators](#custom-travel-vector-for-additional-elevators)
   - [Space core placement](#space-core-placement)
   - [Key bindings](#key-bindings)
-  - [Manual Controls (when user is locked in place)](#manual-controls-when-user-is-locked-in-place)
+  - [Manual Controls (when player movement is locked)](#manual-controls-when-player-movement-is-locked)
   - [Lua console commands](#lua-console-commands)
   - [Access Control](#access-control)
   - [Geofence](#geofence)
@@ -279,26 +279,29 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 
 ## Key bindings
 
-| Key         | Description                                                         |
-| ----------- | ------------------------------------------------------------------- |
-| Alt-Shift-8 | Show/hides widgets with diagnostic info as well as the build helper |
-| Alt-Shift-9 | (Un)locks player / enters/exists manual control (WSAD etc.) mode    |
+| Key              | Description                                                         |
+| ---------------- | ------------------------------------------------------------------- |
+| Option 7         | Cycles radar sorting methods                                        |
+| Option 7 + Shift | Show/hides radar widget                                             |
+| Option 8 + Shift | Show/hides widgets with diagnostic info as well as the build helper |
+| Option 9 + Shift | Locks/unlocks player movement / enters/exists manual control mode   |
 
+By default option 1..9 means ALT-key plus keys 1 through 9, configured in the the game settings.
 
-## Manual Controls (when user is locked in place)
+## Manual Controls (when player movement is locked)
 
-| Key (default key binding) | Description                                                               |
-| ------------------------- | ------------------------------------------------------------------------- |
-| A                         | Turn left                                                                 |
-| S                         | Move backwards                                                            |
-| W                         | Move forward                                                              |
-| D                         | Turn right                                                                |
-| C                         | Move down                                                                 |
-| B                         | While held down, activates rocket boosters (only while in manual control) |
-| Space                     | Move  up                                                                  |
-| Alt+A / Q                 | Strafe left                                                               |
-| Alt+D / E                 | Strafe right                                                              |
-| Mouse scroll wheel        | Increase/decrease throttle/acceleration                                   |
+| Key (key binding)  | Description                                                               |
+| ------------------ | ------------------------------------------------------------------------- |
+| A (yaw left)       | Turn left                                                                 |
+| S (yaw right)      | Move backwards                                                            |
+| W (pitch down)     | Move forward                                                              |
+| D (pitch up)       | Turn right                                                                |
+| C (descend)        | Move down                                                                 |
+| B (boosters)       | While held down, activates rocket boosters (only while in manual control) |
+| Space (ascend)     | Move  up                                                                  |
+| Alt+A / Q          | Strafe left                                                               |
+| Alt+D / E          | Strafe right                                                              |
+| Mouse scroll wheel | Increase/decrease throttle/acceleration                                   |
 
 > Note:
 > Manual control of heavy constructs are much less accurate (especially during vertical movements). Don't expect the same maneuverability as a tiny 1.5t construct.

@@ -328,7 +328,7 @@ function Wsad.New(fsm, flightCore, settings, access)
     end)
 
     -- shift + alt + Option9 to switch modes
-    input.Register(keys.option9, Criteria.New().LAlt().LShift().OnPress(), toggleUserLock)
+    input.Register(keys.option9, Criteria.New().LShift().OnPress(), toggleUserLock)
 
     if settings.Get("manualControlOnStartup", false) then
         log.Info("Manual control on startup active.")

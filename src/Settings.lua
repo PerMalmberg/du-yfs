@@ -77,7 +77,9 @@ function Settings.New(db)
         openGateWaitDelay = { default = 3 },
         openGateMaxDistance = { default = 10 },
         dockingMode = { default = 1 }, -- 1 = Manual, 2 = Automatic, 3 = Only own constructs,
-        globalMaxSpeed = { default = 0 }
+        globalMaxSpeed = { default = 0 },
+        showRadarOnStart = { default = false },
+        defaultRadarMode = { default = 1 }
     }
 
     for k, v in pairs(containerSettings) do
