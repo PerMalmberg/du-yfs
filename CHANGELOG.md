@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 1.3.0 - 2023-09-15
+## 1.2.0 - 2023-09-15
 
 ### Added
 * Support for using only vertical hover or booster engines (no downward facing regular engines)
