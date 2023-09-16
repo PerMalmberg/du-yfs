@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 1.2.1 - 2023-09-16
+
+### Fixed
+* Modifier keys (shift/alt/ctrl) no longer interfere with manual controls. (bug introduced in 1.2.0)
+* HUD layout fixed for different screen resolutions
+
 ## 1.2.0 - 2023-09-15
 
 ### Added

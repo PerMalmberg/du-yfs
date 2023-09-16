@@ -249,80 +249,83 @@ function Wsad.New(fsm, flightCore, settings, access)
         newMovement = true
     end
 
-    input.Register(keys.forward, Criteria.New().OnPress(), function()
+    input.Register(keys.forward, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
         changeLongitudal(1)
     end)
 
-    input.Register(keys.forward, Criteria.New().OnRelease(), function()
+    input.Register(keys.forward, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
         changeLongitudal(-1)
     end)
 
-    input.Register(keys.backward, Criteria.New().OnPress(), function()
+    input.Register(keys.backward, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
         changeLongitudal(-1)
     end)
 
-    input.Register(keys.backward, Criteria.New().OnRelease(), function()
+    input.Register(keys.backward, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
         changeLongitudal(1)
     end)
 
-    input.RegisterMany({ keys.strafeleft, keys.left }, Criteria.New().OnPress(), function()
+    input.RegisterMany({ keys.strafeleft, keys.left }, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
         changeLateral(-1)
     end)
 
-    input.RegisterMany({ keys.strafeleft, keys.left }, Criteria.New().OnRelease(), function()
-        changeLateral(1)
-    end)
+    input.RegisterMany({ keys.strafeleft, keys.left }, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(),
+        function()
+            changeLateral(1)
+        end)
 
-    input.RegisterMany({ keys.straferight, keys.right }, Criteria.New().OnPress(), function()
-        changeLateral(1)
-    end)
+    input.RegisterMany({ keys.straferight, keys.right }, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(),
+        function()
+            changeLateral(1)
+        end)
 
-    input.RegisterMany({ keys.straferight, keys.right }, Criteria.New().OnRelease(), function()
-        changeLateral(-1)
-    end)
+    input.RegisterMany({ keys.straferight, keys.right }, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(),
+        function()
+            changeLateral(-1)
+        end)
 
-    input.Register(keys.up, Criteria.New().OnPress(), function()
+    input.Register(keys.up, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
         changeVertical(1)
     end)
 
-    input.Register(keys.up, Criteria.New().OnRelease(), function()
+    input.Register(keys.up, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
         changeVertical(-1)
     end)
 
-    input.Register(keys.down, Criteria.New().OnPress(), function()
+    input.Register(keys.down, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
         changeVertical(-1)
     end)
 
-    input.Register(keys.down, Criteria.New().OnRelease(), function()
+    input.Register(keys.down, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
         changeVertical(1)
     end)
 
-    input.Register(keys.yawleft, Criteria.New().OnRepeat(), function()
+    input.Register(keys.yawleft, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRepeat(), function()
         if not IsFrozen() then return end
         pointDir = flightCore.Turn(turnAngle, plane.Up())
     end)
 
-    input.Register(keys.yawright, Criteria.New().OnRepeat(), function()
+    input.Register(keys.yawright, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRepeat(), function()
         if not IsFrozen() then return end
         pointDir = flightCore.Turn(-turnAngle, plane.Up())
     end)
 
-    input.Register(keys.yawleft, Criteria.New().OnRelease(), function()
+    input.Register(keys.yawleft, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
         if not IsFrozen() then return end
         yawSmoothStop = true
     end)
 
-    input.Register(keys.yawright, Criteria.New().OnRelease(), function()
+    input.Register(keys.yawright, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
         if not IsFrozen() then return end
         yawSmoothStop = true
     end)
 
-    input.Register(keys.booster, Criteria.New().OnPress(), function()
+    input.Register(keys.booster, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
         if not IsFrozen() then return end
         fsm.SetBooster(true)
     end)
 
-    input.Register(keys.booster, Criteria.New().OnRelease(), function()
+    input.Register(keys.booster, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
         if not IsFrozen() then return end
         fsm.SetBooster(false)
     end)

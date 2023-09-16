@@ -5,8 +5,8 @@
     <style>
         .logo {
             position: fixed;
-            top: 2%;
-            left: 0.5%;
+            top: 20px;
+            left: 20px;
         }
 
         .ecuColor {
@@ -19,16 +19,15 @@
 
         .throttle {
             position: fixed;
-            top: 2%;
-            left: 2%;
-            font: 1em Montserrat;
+            top: 20px;
+            left: 60px;
+            font: 18px Montserrat;
             text-shadow: 2px 2px black;
         }
 
         .progress-container {
             width: 335px;
             text-align: center;
-            top: 3%;
         }
 
         .progress-border {
@@ -53,7 +52,7 @@
             top: 50%;
             transform: translateY(-50%);
             width: 100%;
-            font: 0.7em Montserrat;
+            font: 12px Montserrat;
             color: white;
             text-shadow: inherit;
         }
@@ -93,7 +92,7 @@
             </div>
             <div class="progress-label">
                 <span style="float: left; margin-left: 10px;">{{curr.name}}</span>
-                <span style="float: right; margin-right: 10px;">{{percent}}%</span>
+                <span style="float: right; margin-right: 10px;">{{percent}} %</span>
             </div>
         </div>
         {%
