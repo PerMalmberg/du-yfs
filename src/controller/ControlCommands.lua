@@ -860,7 +860,6 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         posAbove.Option("fz").AsNumber().Mandatory()
     end
 
-    -- position-above -cx -76460.67023087930284 -cy 27598.06938575139793 -cz -29882.06203116476536 -fx -76457.75264382592286 -fy 27597.32581734302221 -fz -29879.42718574009268
     return setmetatable(s, ControlCommands)
 end
 
