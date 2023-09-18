@@ -820,8 +820,47 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                 system.setWaypoint(data.commandValue, data.notify)
             end).AsString()
             .Option("notify").AsEmptyBoolean()
+
+        local posAbove = cmd.Accept("position-above",
+            ---@param data {cx:number, cy:number, cz:number, fx:number, fy:number, fz:number, heightMargin:number}
+            function(data)
+                local center = Vec3.New(data.cx, data.cy, data.cz)
+                local forward = Vec3.New(data.fx, data.fy, data.fz)
+                log.Info("Positioning above ", universe.CreatePos(center).AsPosString(), ", with forward direction to ",
+                    universe.CreatePos(forward).AsPosString())
+
+                --[[
+
+                Create a route:
+                - From current position
+                - 5m up
+                - 5m above center, aligned towards the forward element
+                - On center-element, plus half vertical size of construct
+
+                ]]
+
+                local r = rc.ActivateTempRoute()
+                r.AddCurrentPos()
+                r.AddCoordinate(Current() - VerticalReferenceVector() * data.heightMargin)
+                local upAtCenter = (center - universe.ClosestBody(center).Geography.Center):Normalize()
+                forward = calc.ProjectPointOnPlane(upAtCenter, center, forward) -- Project on same plane as center
+                local dir = (forward - center):Normalize()
+                r.AddCoordinate(center + upAtCenter * data.heightMargin).Options().Set(PointOptions.LOCK_DIRECTION, dir)
+
+                r.AddCoordinate(center).Options().Set(PointOptions.LOCK_DIRECTION, dir)
+
+                flightCore.StartFlight()
+            end).AsEmpty()
+        posAbove.Option("heightMargin").AsNumber().Mandatory()
+        posAbove.Option("cx").AsNumber().Mandatory()
+        posAbove.Option("cy").AsNumber().Mandatory()
+        posAbove.Option("cz").AsNumber().Mandatory()
+        posAbove.Option("fx").AsNumber().Mandatory()
+        posAbove.Option("fy").AsNumber().Mandatory()
+        posAbove.Option("fz").AsNumber().Mandatory()
     end
 
+    -- position-above -cx -76460.67023087930284 -cy 27598.06938575139793 -cz -29882.06203116476536 -fx -76457.75264382592286 -fy 27597.32581734302221 -fz -29879.42718574009268
     return setmetatable(s, ControlCommands)
 end
 

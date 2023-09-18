@@ -21,6 +21,7 @@ Please read the entire manual before attempting to perform an installation, ther
     - [Manual switches](#manual-switches)
   - [Fuel gauges](#fuel-gauges)
   - [Installation as an elevator (ground to space)](#installation-as-an-elevator-ground-to-space)
+    - [Automatically aligning and positioning using two elements.](#automatically-aligning-and-positioning-using-two-elements)
     - [Aligning the elevator to your ground construct](#aligning-the-elevator-to-your-ground-construct)
     - [Creating a route](#creating-a-route)
     - [Route editor](#route-editor)
@@ -181,6 +182,62 @@ If linked to the remote controller, the script can control two Manual Switches, 
 The screen shows up to four fuel tanks of each of the atmospheric and space types. It chooses the ones to display based on the lowest percentage and as such you can always see how close you are to run out of fuel, regardless of how many fuel tanks you have. The HUD shows a gauge for each fuel tank and type.
 
 ## Installation as an elevator (ground to space)
+
+### Automatically aligning and positioning using two elements.
+
+The easiest way to position and align the elevator to a static construct is to let it do it itself. All it needs are some coordinates for the center position and the forward direction. To get these numbers, follow these steps:
+
+1. Place an Adjustor XS at the position you want the elevator to be. Name this element `center`.  Note, this is relative to the center of build area, where the "blue icon" is displayed, not the visual center.
+2. Place a second Adjustor XS beside the first one, in the direction you want to the elevator to align to. Name this element `forward`.
+3. Place a Programming Board on the static construct that will contain the dock/cradle/landing pad of the elevator.
+2. Link the programming board to the core.
+3. Link the programming board to a screen.
+4. Paste the code below into `unit -> start`
+5. Start the Programming Board and copy the command from the screen (CTRL-L to to open editor while pointing to the screen).
+   * The command is the part in the `text = ....` line of the screen code. Do not copy the quotation marks.
+6. Start the elevator, enter manual control mode to prevent it to shutdown automatically when near ground.
+   * You may want to adjust the `heightMargin` argument to fit your need. It controls how much it will move up from its start point before moving over to the center position.
+7. Paste the command into Lua-chat and press enter to perform the operation. The elevator will never each the final position as it will be below, but it will come to rest on the static construct.
+8. Once in place, either turn turn off the elevator or edit routes as needed. The position the elevator is in should work well as a starting point for a route.
+
+```lua
+local Vec3 = require("cpml/vec3")
+
+function localToWorld(localCoord)
+    local xOffset = localCoord.x * Vec3(construct.getWorldOrientationRight())
+    local yOffset = localCoord.y * Vec3(construct.getWorldOrientationForward())
+    local zOffset = localCoord.z * Vec3(construct.getWorldOrientationUp())
+    return xOffset + yOffset + zOffset + Vec3(construct.getWorldPosition())
+end
+
+function getCoordsOfElement(name)
+    for _, id in ipairs(core.getElementIdList()) do
+        if core.getElementNameById(id) == name then
+            return localToWorld(Vec3(core.getElementPositionById(id)))
+        end
+    end
+    return nil
+end
+
+local center = getCoordsOfElement("center")
+local forward = getCoordsOfElement("forward")
+
+if not (center and forward) then
+    system.print("Missing center or forward element")
+    unit.exit()
+    return
+end
+
+local cmd = string.format("position-above -heightMargin 15 -cx %0.14f -cy %0.14f -cz %0.14f -fx %0.14f -fy %0.14f -fz %0.14f",
+    center.x, center.y, center.z,
+    forward.x, forward.y, forward.z)
+
+slot2.setCenteredText(cmd)
+
+
+unit.exit()
+
+```
 
 ### Aligning the elevator to your ground construct
 
