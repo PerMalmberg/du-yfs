@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 1.3.0 - 2023-09-20
+
+### Added
+* New command `position-above` to tell the construct to center and align its position based on two elements.
+
 ## 1.2.1 - 2023-09-16
 
 ### Fixed
