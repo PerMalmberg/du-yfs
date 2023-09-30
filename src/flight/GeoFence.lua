@@ -70,8 +70,8 @@ function GeoFence.New(db, cmdLine)
 
                 center = c.Coordinates()
             end
-        end).AsString().Mandatory()
-    geo.Option("boundary").AsNumber().Mandatory()
+        end).AsString().Must()
+    geo.Option("boundary").AsNumber().Must()
 
     cmdLine.Accept("disable-geofence", function()
         cfg.enabled = false

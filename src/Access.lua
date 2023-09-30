@@ -128,13 +128,13 @@ function Access.New(db, cmdLine)
         ---@param data {commandValue:string}
         function(data)
             s.AllowRoute(data.commandValue)
-        end).AsString().Mandatory()
+        end).AsString().Must()
 
     cmdLine.Accept("disallow-route",
         ---@param data {commandValue:string}
         function(data)
             s.DisallowRoute(data.commandValue)
-        end).AsString().Mandatory()
+        end).AsString().Must()
 
     cmdLine.Accept("print-allowed-routes",
         ---@param _ {commandValue:string}
@@ -214,7 +214,7 @@ function Access.New(db, cmdLine)
         ---@param data {commandValue:string}
         function(data)
             setAdmin(data.commandValue, true)
-        end).AsString().Mandatory()
+        end).AsString().Must()
 
     cmdLine.Accept("remove-admin",
         ---@param data {commandValue:string}
@@ -232,7 +232,7 @@ function Access.New(db, cmdLine)
             end
 
             setAdmin(data.commandValue)
-        end).AsString().Mandatory()
+        end).AsString().Must()
 
     cmdLine.Accept("print-admins", function(_)
         local admins = db.Get(ADMIN, {})

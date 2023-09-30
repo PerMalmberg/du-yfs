@@ -131,7 +131,7 @@ function Settings.New(db)
 
 
             log.Info(data.commandValue, ": ", s.Get(data.commandValue, setting.default))
-        end).AsString().Mandatory()
+        end).AsString().Must()
 
     cmd.Accept("get-all", function(_)
         for key, v in pairs(settings) do

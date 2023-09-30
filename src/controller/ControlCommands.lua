@@ -144,7 +144,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             ---@param data {commandValue:string}
             function(data)
                 rc.CreateRoute(data.commandValue)
-            end).AsString().Mandatory()
+            end).AsString().Must()
 
         cmd.Accept("route-save", function(data)
             rc.SaveRoute()
@@ -158,15 +158,15 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             ---@param data {commandValue:string}
             function(data)
                 rc.DeleteRoute(data.commandValue)
-            end).AsString().Mandatory()
+            end).AsString().Must()
 
         local renameRoute = cmd.Accept("route-rename",
             ---@param data {from:string, to:string}
             function(data)
                 rc.RenameRoute(data.from, data.to)
             end).AsEmpty()
-        renameRoute.Option("from").AsString().Mandatory()
-        renameRoute.Option("to").AsString().Mandatory()
+        renameRoute.Option("from").AsString().Must()
+        renameRoute.Option("to").AsString().Must()
 
         cmd.Accept("route-print", function(data)
             local route = getEditRoute()
@@ -199,7 +199,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                     pub.Publish("ResetWSAD", true)
                     log.Info("Flight started")
                 end
-            end).AsString().Mandatory()
+            end).AsString().Must()
             .Option("index").AsNumber()
 
         local addCurrentToRoute = cmd.Accept("route-add-current-pos",
@@ -250,7 +250,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                 else
                     log.Error("Could not remove point")
                 end
-            end).AsNumber().Mandatory()
+            end).AsNumber().Must()
 
         ---@param from integer
         ---@param to integer
@@ -271,22 +271,22 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             function(data)
                 movePoint(data.from, data.to)
             end)
-        movePos.Option("from").AsNumber().Mandatory()
-        movePos.Option("to").AsNumber().Mandatory()
+        movePos.Option("from").AsNumber().Must()
+        movePos.Option("to").AsNumber().Must()
 
         cmd.Accept("route-move-pos-forward",
             ---@param data {commandValue:number}
             function(data)
                 local ix = data.commandValue
                 movePoint(ix, ix + 1)
-            end).AsNumber().Mandatory()
+            end).AsNumber().Must()
 
         cmd.Accept("route-move-pos-back",
             ---@param data {commandValue:number}
             function(data)
                 local ix = data.commandValue
                 movePoint(ix, ix - 1)
-            end).AsNumber().Mandatory()
+            end).AsNumber().Must()
 
         cmd.Accept("route-set-all-margins",
             ---@param data {commandValue:number}
@@ -299,7 +299,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                     value.Options().Set(PointOptions.MARGIN, data.commandValue)
                 end
                 log.Info("Margins on all points in route set to ", data.commandValue)
-            end).AsNumber().Mandatory()
+            end).AsNumber().Must()
 
         cmd.Accept("route-set-all-max-speeds",
             ---@param data {commandValue:number}
@@ -313,7 +313,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                     value.Options().Set(PointOptions.MAX_SPEED, newSpeed)
                 end
                 log.Info("Max speeds on all points in route set to ", data.commandValue, "km/h")
-            end).AsNumber().Mandatory()
+            end).AsNumber().Must()
 
         local cmdSetPosOption = cmd.Accept("route-set-pos-option",
             ---@param data {ix:number, endIx:number, toggleSkippable:boolean, toggleSelectable:boolean, margin:boolean, finalSpeed:number, maxSpeed:number, toggleGate:boolean}
@@ -388,7 +388,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                     end
                 end
             end).AsEmpty()
-        cmdSetPosOption.Option("ix").AsNumber().Mandatory()
+        cmdSetPosOption.Option("ix").AsNumber().Must()
         cmdSetPosOption.Option("endIx").AsNumber()
         cmdSetPosOption.Option("toggleSkippable").AsEmptyBoolean()
         cmdSetPosOption.Option("toggleSelectable").AsEmptyBoolean()
@@ -443,7 +443,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                         log.Info("Current position saved as ", data.commandValue)
                     end
                 end
-            end).AsString().Mandatory().Option("pos").AsString().Mandatory()
+            end).AsString().Must().Option("pos").AsString().Must()
 
         cmd.Accept("pos-list", function(_)
             for _, data in ipairs(rc.GetWaypoints()) do
@@ -456,8 +456,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             function(data)
                 rc.RenameWaypoint(data.old, data.new)
             end)
-        rename.Option("old").Mandatory().AsString()
-        rename.Option("new").Mandatory().AsString()
+        rename.Option("old").Must().AsString()
+        rename.Option("new").Must().AsString()
 
         cmd.Accept("pos-delete",
             ---@param data {commandValue:string}
@@ -466,7 +466,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                 if deleted then
                     log.Info("Deleted waypoint: '", data.commandValue, "', position was ", deleted.pos)
                 end
-            end).AsString().Mandatory()
+            end).AsString().Must()
 
         local alongGrav = cmd.Accept("pos-create-along-gravity",
             ---@param data {commandValue:string, u:number}
@@ -476,8 +476,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                 if rc.StoreWaypoint(data.commandValue, posStr) then
                     log.Info("Stored postion ", posStr, " as ", data.commandValue)
                 end
-            end).AsString().Mandatory()
-        alongGrav.Option("-u").AsNumber().Mandatory()
+            end).AsString().Must()
+        alongGrav.Option("-u").AsNumber().Must()
 
         local relative = cmd.Accept("pos-create-relative",
             ---@param data {commandValue:string, u:number, f:number, r:number}
@@ -494,7 +494,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                         log.Info("Stored postion ", posStr, " as ", data.commandValue)
                     end
                 end
-            end).AsString().Mandatory()
+            end).AsString().Must()
         relative.Option("u").AsNumber()
         relative.Option("f").AsNumber()
         relative.Option("r").AsNumber()
@@ -593,8 +593,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                         log.Error("Could not create the route")
                     end
                 end
-            end).AsString().Mandatory()
-        createVertRoute.Option("distance").AsNumber().Mandatory()
+            end).AsString().Must()
+        createVertRoute.Option("distance").AsNumber().Must()
         createVertRoute.Option("followGravInAtmo").AsEmptyBoolean()
         createVertRoute.Option("extraPointMargin").AsNumber().Default(5)
         createVertRoute.Option("x").AsNumber()
@@ -632,7 +632,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                     local dir, dist = diff:NormalizeLen()
                     log.Info("-distance ", dist, " ", formatVecParts(dir))
                 end
-            end).AsString().Mandatory()
+            end).AsString().Must()
         sub.Option("-sub").AsString()
 
         local closestOnLine = cmd.Accept("closest-on-line",
@@ -650,8 +650,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                 local closest = universe.CreatePos(p)
                 log.Info("Closest point on the line passing through a and b is at ", closest.AsPosString())
             end)
-        closestOnLine.Option("a").AsString().Mandatory()
-        closestOnLine.Option("b").AsString().Mandatory()
+        closestOnLine.Option("a").AsString().Must()
+        closestOnLine.Option("b").AsString().Must()
 
         cmd.Accept("get-parallel-from-route",
             ---@param data {commandValue:string}
@@ -672,14 +672,14 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
 
                 local dir, dist = diff:NormalizeLen()
                 log.Info("-distance ", dist, " ", formatVecParts(dir))
-            end).AsString().Mandatory()
+            end).AsString().Must()
 
 
         cmd.Accept("floor",
             ---@param data {commandValue:string}
             function(data)
                 screenCtrl.ActivateFloorMode(data.commandValue)
-            end).AsString().Mandatory()
+            end).AsString().Must()
     end
 
     ---@param userInput string
@@ -734,9 +734,9 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         end
 
         local moveCmd = cmd.Accept("move", moveFunc)
-        moveCmd.Option("-u").AsNumber().Mandatory().Default(0)
-        moveCmd.Option("-r").AsNumber().Mandatory().Default(0)
-        moveCmd.Option("-f").AsNumber().Mandatory().Default(0)
+        moveCmd.Option("-u").AsNumber().Must().Default(0)
+        moveCmd.Option("-r").AsNumber().Must().Default(0)
+        moveCmd.Option("-f").AsNumber().Must().Default(0)
         addPointOptions(moveCmd)
 
         local gotoCmd = cmd.Accept("goto",
@@ -756,7 +756,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                         log.Error("Offset larger than distance to target")
                     end
                 end
-            end).AsString().Mandatory()
+            end).AsString().Must()
         addPointOptions(gotoCmd)
         gotoCmd.Option("offset").AsNumber().Default(0)
 
@@ -801,7 +801,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                     local pos = universe.ParsePosition(target.pos)
                     alignTo(pos)
                 end
-            end).AsString().Mandatory()
+            end).AsString().Must()
 
         local alignToVector = cmd.Accept("align-to-vector",
             ---@param data {x:number, y:number, z:number}
@@ -810,9 +810,9 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                 alignTo(pos)
             end)
 
-        alignToVector.Option("x").AsNumber().Mandatory()
-        alignToVector.Option("y").AsNumber().Mandatory()
-        alignToVector.Option("z").AsNumber().Mandatory()
+        alignToVector.Option("x").AsNumber().Must()
+        alignToVector.Option("y").AsNumber().Must()
+        alignToVector.Option("z").AsNumber().Must()
 
         cmd.Accept("set-waypoint",
             ---@param data {commandValue:string, notify:boolean}
@@ -851,13 +851,13 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
 
                 flightCore.StartFlight()
             end).AsEmpty()
-        posAbove.Option("heightMargin").AsNumber().Mandatory()
-        posAbove.Option("cx").AsNumber().Mandatory()
-        posAbove.Option("cy").AsNumber().Mandatory()
-        posAbove.Option("cz").AsNumber().Mandatory()
-        posAbove.Option("fx").AsNumber().Mandatory()
-        posAbove.Option("fy").AsNumber().Mandatory()
-        posAbove.Option("fz").AsNumber().Mandatory()
+        posAbove.Option("heightMargin").AsNumber().Must()
+        posAbove.Option("cx").AsNumber().Must()
+        posAbove.Option("cy").AsNumber().Must()
+        posAbove.Option("cz").AsNumber().Must()
+        posAbove.Option("fx").AsNumber().Must()
+        posAbove.Option("fy").AsNumber().Must()
+        posAbove.Option("fz").AsNumber().Must()
     end
 
     return setmetatable(s, ControlCommands)
