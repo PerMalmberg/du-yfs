@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file. The version
 ### Added
 * Support for not having engines in all directions.
 
+### Removed
+* Fuel gauges on the screen element have been removed to save code space (still available on the HUD).
+
 ## 1.3.0 - 2023-09-20
 
 ### Added

@@ -75,23 +75,6 @@ function Fuel.New(settings)
 
                 pub.Publish("FuelByType", DeepCopy(byType))
 
-                -- Now populate for the screen
-                local fuelForScreen = {} ---@type {path:string, tank:FuelTankInfo}[]
-
-                -- Sort tanks for screen based on acending fuel levels
-                for fuelType, tanks in pairs(byType) do
-                    table.sort(tanks, function(a, b) return a.percent < b.percent end)
-
-                    for i, curr in ipairs(tanks) do
-                        fuelForScreen[#fuelForScreen + 1] = {
-                            path = string.format("fuel/%s/%d", fuelType, i),
-                            tank = curr
-                        }
-                    end
-                end
-
-                pub.Publish("FuelData", fuelForScreen)
-
                 sw.Restart()
             end
         end

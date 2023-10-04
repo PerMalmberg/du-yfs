@@ -179,7 +179,7 @@ If linked to the remote controller, the script can control two Manual Switches, 
 
 ## Fuel gauges
 
-The screen shows up to four fuel tanks of each of the atmospheric and space types. It chooses the ones to display based on the lowest percentage and as such you can always see how close you are to run out of fuel, regardless of how many fuel tanks you have. The HUD shows a gauge for each fuel tank and type.
+Fuel gauges on the HUD are sorted in alphabetical order so rename them if you want them in a certain order.
 
 ## Installation as an elevator (ground to space)
 

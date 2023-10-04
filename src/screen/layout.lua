@@ -43,19 +43,6 @@ local layout = {
             fill = "#ffffffff",
             align = "h2,v3"
         },
-        fuelBack = {
-            fill = "#111111ff"
-        },
-        fuelAtmo = {
-            fill = "#022966ff"
-        },
-        fuelSpace = {
-            fill = "#616102ff"
-        },
-        fuelPercent = {
-            fill = "#ffffffff",
-            align = "h1,v2"
-        },
         routeButton = {
             align = "h1,v2",
             fill = "#546263ff",
@@ -311,81 +298,7 @@ local layout = {
                     pos1 = "(620,190)",
                     font = "p14",
                     text = "m"
-                },
-                {
-                    type = "box",
-                    layer = 1,
-                    style = "fuelBack",
-                    visible = "$bool(path{fuel/atmo/[#]:visible}:init{false})",
-                    pos1 = "(680,20)",
-                    pos2 = "(720,220)",
-                    replicate = {
-                        x_count = 4,
-                        x_step = 40
-                    }
-                },
-                {
-                    type = "box",
-                    layer = 1,
-                    style = "fuelAtmo",
-                    visible = "$bool(path{fuel/atmo/[#]:visible}:init{false})",
-                    pos1 = "$vec2(path{fuel/atmo/[#]:factorBar}:init{(680,220)}:percent{(680,20)})",
-                    pos2 = "(720,220)",
-                    replicate = {
-                        x_count = 4,
-                        x_step = 40
-                    }
-                },
-                {
-                    type = "text",
-                    layer = 1,
-                    visible = "$bool(path{fuel/atmo/[#]:visible}:init{false})",
-                    text = "$num(path{fuel/atmo/[#]:percent}:init{0}:format{%0.0f})",
-                    pos1 = "(700,40)",
-                    font = "p14",
-                    style = "fuelPercent",
-                    replicate = {
-                        x_count = 4,
-                        x_step = 40
-                    }
-                },
-                {
-                    type = "box",
-                    layer = 1,
-                    style = "fuelBack",
-                    visible = "$bool(path{fuel/space/[#]:visible}:init{false})",
-                    pos1 = "(850,20)",
-                    pos2 = "(890,220)",
-                    replicate = {
-                        x_count = 4,
-                        x_step = 40
-                    }
-                },
-                {
-                    type = "box",
-                    layer = 1,
-                    style = "fuelSpace",
-                    visible = "$bool(path{fuel/space/[#]:visible}:init{false})",
-                    pos1 = "$vec2(path{fuel/space/[#]:factorBar}:init{(850,220)}:percent{(850,20)})",
-                    pos2 = "(890,220)",
-                    replicate = {
-                        x_count = 4,
-                        x_step = 40
-                    }
-                },
-                {
-                    type = "text",
-                    layer = 1,
-                    visible = "$bool(path{fuel/space/[#]:visible}:init{false})",
-                    text = "$num(path{fuel/space/[#]:percent}:init{0}:format{%0.0f})",
-                    pos1 = "(870,40)",
-                    font = "p14",
-                    style = "fuelPercent",
-                    replicate = {
-                        x_count = 4,
-                        x_step = 40
-                    }
-                },
+                }
             }
         },
         floor = {

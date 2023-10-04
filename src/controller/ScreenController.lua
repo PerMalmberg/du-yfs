@@ -352,15 +352,6 @@ function ScreenController.New(flightCore, settings)
                 dataToScreen.Set("floor", floor)
             end)
 
-        pub.RegisterTable("FuelData",
-            ---@param _ string
-            ---@param value {path:string, tank:FuelTankInfo}[]
-            function(_, value)
-                for _, fuelInfo in ipairs(value) do
-                    dataToScreen.Set(fuelInfo.path, fuelInfo.tank)
-                end
-            end)
-
         stream = Stream.New(ScreenDevice.New(screen), s, 1)
 
         while screen do
