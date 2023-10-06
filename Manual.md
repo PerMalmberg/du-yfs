@@ -35,7 +35,7 @@ Please read the entire manual before attempting to perform an installation, ther
   - [Mass Overload](#mass-overload)
   - [Accuracy](#accuracy)
     - [Custom / non-gravity aligned travel vectors](#custom--non-gravity-aligned-travel-vectors)
-    - [A note on non gravity-aligned atmospheric accent/decent and angled flight paths](#a-note-on-non-gravity-aligned-atmospheric-accentdecent-and-angled-flight-paths)
+    - [A note on non gravity-aligned atmospheric ascent/descent and angled flight paths](#a-note-on-non-gravity-aligned-atmospheric-ascentdescent-and-angled-flight-paths)
   - [Shifting gravity wells](#shifting-gravity-wells)
   - [Emergency Controller Unit](#emergency-controller-unit)
   - [Thanks](#thanks)
@@ -571,7 +571,7 @@ The two settings `pathAlignmentAngleLimit` and `pathAlignmentDistanceLimit` cont
 ### Custom / non-gravity aligned travel vectors
 The further the distance is between the reference elevator and any additional one, the harder it is to stay exactly on the desired path, especially during strong (de)acceleration. The script will attempt to bring the elevator back to the path in time for the end position, but if this becomes a problem you can add an additional point in the route to force it back to the path prior to reaching the final point.
 
-### A note on non gravity-aligned atmospheric accent/decent and angled flight paths
+### A note on non gravity-aligned atmospheric ascent/descent and angled flight paths
 
 While it is possible to make routes that are not gravity aligned work, they may be somewhat unreliable. These are the main reasons:
 
