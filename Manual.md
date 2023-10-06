@@ -210,9 +210,9 @@ function localToWorld(localCoord)
 end
 
 function getCoordsOfElement(name)
-    for _, id in ipairs(core.getElementIdList()) do
+    for _, id in ipairs(slot1.getElementIdList()) do
         if slot1.getElementNameById(id) == name then
-            return localToWorld(Vec3(core.getElementPositionById(id)))
+            return localToWorld(Vec3(slot1.getElementPositionById(id)))
         end
     end
     return nil
