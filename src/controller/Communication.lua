@@ -73,24 +73,22 @@ function Communication.New(channel)
 
     if not (rx and tx) then
         log.Error("Emitter or receiver not linked")
-        unit.exit()
-    end
+    else
+        stream = Stream.New(RxTx.New(tx, rx, channel, true), s, 1)
 
-    stream = Stream.New(RxTx.New(tx, rx, channel, true), s, 1)
+        system:onEvent("onUpdate", function()
+            -- Stop sending if we're all done
+            local topic, data = getOutstanding()
+            if topic and data then
+                if not stream.WaitingToSend() then
+                    stream.Write(data)
+                end
 
-    system:onEvent("onUpdate", function()
-        -- Stop sending if we're all done
-        local topic, data = getOutstanding()
-        if topic and data then
-            if not stream.WaitingToSend() then
-                stream.Write(data)
+                stream.Tick()
             end
-
-            stream.Tick()
-        end
-    end)
-
-    log.Info("Communication enabled")
+        end)
+        log.Info("Communication enabled")
+    end
 
     return s
 end
