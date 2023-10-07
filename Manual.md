@@ -523,12 +523,12 @@ Please note that deleting named waypoints do not update routes that reference th
 
 ### Advanced Settings
 
-| Command | Parameters/options | Unit/type | Parameter Optional | Description                                                           |
-| ------- | ------------------ | --------- | ------------------ | --------------------------------------------------------------------- |
-| set     |                    |           |                    |                                                                       |
-|         | -lightp            | number    | Y                  | The proportional value of the yaw/pitch/roll controller. Default: 6.5 |
-|         | -lighti            | number    | Y                  | The integral value of the yaw/pitch/roll controller. Default: 20      |
-|         | -lightd            | number    | Y                  | The derivative value of the yaw/pitch/roll controller. Default: 1600  |
+| Command | Parameters/options | Unit/type | Parameter Optional | Description                                                                                                       |
+| ------- | ------------------ | --------- | ------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| set     |                    |           |                    |                                                                                                                   |
+|         | -lightp            | number    | Y                  | The proportional value of the yaw/pitch/roll controller for constructs with a mass of less than 10T. Default: 6.5 |
+|         | -lighti            | number    | Y                  | The integral value of the yaw/pitch/roll controller for constructs with a mass of less than 10T. Default: 20      |
+|         | -lightd            | number    | Y                  | The derivative value of the yaw/pitch/roll controller for constructs with a mass of less than 10T. Default: 1600  |
 
 > Note: Adjusting the values of the yaw/pitch/roll controller may allow you to get quicker responses, but also induce instability.
 
