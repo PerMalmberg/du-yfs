@@ -6,8 +6,9 @@ require("util/Table")
 ---@module "storage/BufferedDB"
 
 ---@class Settings
----@field New fun(db:BufferedDB)
----@field RegisterCallback fun(key:string, f:fun(any))
+---@field Create fun(db:BufferedDB):Settings
+---@field Instance fun():Settings
+---@field Callback fun(key:string, f:fun(any))
 ---@field Reload fun()
 ---@field Get fun(key:string, default?:any):string|number|table|nil
 ---@field Number fun(key:string, default?:number):number
@@ -21,7 +22,7 @@ Settings.__index = Settings
 ---Creates a new Setting
 ---@param db BufferedDB
 ---@return Settings
-function Settings.New(db)
+function Settings.Create(db)
     if singleton then
         return singleton
     end
@@ -49,16 +50,26 @@ function Settings.New(db)
         rocketFuelTankHandling = { default = 0 },
     }
 
-    local pidValues = yfsConstants.flight.speedPid
+    local speedPid = yfsConstants.flight.speedPid
+    local lightPid = yfsConstants.flight.axis.light
+    local heavyPid = yfsConstants.flight.axis.heavy
     local routeDefaults = yfsConstants.route
     local flightDefaults = yfsConstants.flight
     ---@type {default:string|number|boolean}
     local settings = {
         engineWarmup = { default = 1 },
-        speedp = { default = pidValues.p },
-        speedi = { default = pidValues.i },
-        speedd = { default = pidValues.d },
-        speeda = { default = pidValues.a },
+        speedp = { default = speedPid.p },
+        speedi = { default = speedPid.i },
+        speedd = { default = speedPid.d },
+        speeda = { default = speedPid.a },
+        lightp = { default = lightPid.p },
+        lighti = { default = lightPid.i },
+        lightd = { default = lightPid.d },
+        lighta = { default = lightPid.a },
+        heavyp = { default = heavyPid.p },
+        heavyi = { default = heavyPid.i },
+        heavyd = { default = heavyPid.d },
+        heavya = { default = heavyPid.a },
         autoShutdownFloorDistance = { default = routeDefaults.autoShutdownFloorDistance },
         yawAlignmentThrustLimiter = { default = routeDefaults.yawAlignmentThrustLimiter },
         routeStartDistanceLimit = { default = routeDefaults.routeStartDistanceLimit },
@@ -147,7 +158,7 @@ function Settings.New(db)
 
     ---@param key string The key to get notified of
     ---@param func fun(any) A function with signature function(value)
-    function s.RegisterCallback(key, func)
+    function s.Callback(key, func)
         if not subscribers[key] then
             subscribers[key] = {}
         end
@@ -204,6 +215,15 @@ function Settings.New(db)
     end
 
     singleton = setmetatable(s, Settings)
+    return singleton
+end
+
+---@return Settings
+function Settings.Instance()
+    if not singleton then
+        error("Settings not yet created")
+    end
+
     return singleton
 end
 

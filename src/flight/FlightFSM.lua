@@ -75,17 +75,17 @@ FlightFSM.__index                   = FlightFSM
 ---@return FlightFSM
 function FlightFSM.New(settings, routeController, geo)
     local minimumPathCheckOffset = settings.Number("minimumPathCheckOffset")
-    settings.RegisterCallback("minimumPathCheckOffset", function(number)
+    settings.Callback("minimumPathCheckOffset", function(number)
         minimumPathCheckOffset = number
     end)
 
     local globalMaxSpeed = calc.Kph2Mps(settings.Number("globalMaxSpeed"))
-    settings.RegisterCallback("globalMaxSpeed", function(gMax)
+    settings.Callback("globalMaxSpeed", function(gMax)
         globalMaxSpeed = calc.Kph2Mps(gMax)
     end)
 
-    settings.RegisterCallback("pathAlignmentAngleLimit", Waypoint.SetAlignmentAngleLimit)
-    settings.RegisterCallback("pathAlignmentDistanceLimit", Waypoint.SetAlignmentDistanceLimit)
+    settings.Callback("pathAlignmentAngleLimit", Waypoint.SetAlignmentAngleLimit)
+    settings.Callback("pathAlignmentDistanceLimit", Waypoint.SetAlignmentDistanceLimit)
 
     local warmupTime                = 1
     local lastReadMass              = TotalMass()
@@ -706,27 +706,27 @@ function FlightFSM.New(settings, routeController, geo)
         end
     end
 
-    settings.RegisterCallback("engineWarmup", function(value)
+    settings.Callback("engineWarmup", function(value)
         s.SetEngineWarmupTime(value)
     end)
 
-    settings.RegisterCallback("speedp", function(value)
+    settings.Callback("speedp", function(value)
         speedPid = PID(value, speedPid.i, speedPid.d, speedPid.amortization)
     end)
 
-    settings.RegisterCallback("speedi", function(value)
+    settings.Callback("speedi", function(value)
         speedPid = PID(speedPid.p, value, speedPid.d, speedPid.amortization)
     end)
 
-    settings.RegisterCallback("speedd", function(value)
+    settings.Callback("speedd", function(value)
         speedPid = PID(speedPid.p, speedPid.i, value, speedPid.amortization)
     end)
 
-    settings.RegisterCallback("speeda", function(value)
+    settings.Callback("speeda", function(value)
         speedPid = PID(speedPid.p, speedPid.i, speedPid.d, value)
     end)
 
-    settings.RegisterCallback("yawAlignmentThrustLimiter", function(value)
+    settings.Callback("yawAlignmentThrustLimiter", function(value)
         yawAlignmentThrustLimiter = value
     end)
 

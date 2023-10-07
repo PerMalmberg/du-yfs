@@ -30,6 +30,7 @@ Please read the entire manual before attempting to perform an installation, ther
   - [Key bindings](#key-bindings)
   - [Manual Controls (when player movement is locked)](#manual-controls-when-player-movement-is-locked)
   - [Lua console commands](#lua-console-commands)
+    - [Advanced Settings](#advanced-settings)
   - [Access Control](#access-control)
   - [Geofence](#geofence)
   - [Mass Overload](#mass-overload)
@@ -515,10 +516,22 @@ By default option 1..9 means ALT-key plus keys 1 through 9, configured in the th
 |                           | -globalMaxSpeed                        | number        | Y                  | Sets the global max speed the construct will accelerate to. Default 0, meaning no limit. This overrides any route-specific settings and also applies to manual control.                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | get                       | See `set`                              |               | Y                  | Prints the setting set with the `set` command, don't add the leading `-`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | get-all                   |                                        |               |                    | Prints all current settings. Don't add the "-" before the argument. Example: `get turnAngle`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| reset-settings            |                                        |               |                    | Resets all settings to their defaults.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| reset-settings            |                                        |               |                    | Resets all settings to their defaults. (including those listed in the advanced section)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | set-full-container-boosts |                                        |               |                    | Sets all related talents for containers, atmospheric, space and rocket fuel tanks to level 5                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 Please note that deleting named waypoints do not update routes that reference them. You can create a new one with the same name as the one deleted, but until you do, any route that referenced it will not be usable.
+
+### Advanced Settings
+
+| Command | Parameters/options | Unit/type | Parameter Optional | Description                                                           |
+| ------- | ------------------ | --------- | ------------------ | --------------------------------------------------------------------- |
+| set     |                    |           |                    |                                                                       |
+|         | -lightp            | number    | Y                  | The proportional value of the yaw/pitch/roll controller. Default: 6.5 |
+|         | -lighti            | number    | Y                  | The integral value of the yaw/pitch/roll controller. Default: 20      |
+|         | -lightd            | number    | Y                  | The derivative value of the yaw/pitch/roll controller. Default: 1600  |
+
+> Note: Adjusting the values of the yaw/pitch/roll controller may allow you to get quicker responses, but also induce instability.
+
 
 ## Access Control
 

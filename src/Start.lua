@@ -48,7 +48,7 @@ local function Start(isECU)
 
     local settingsDb = BufferedDB.New(settingLink)
     local routeDb = BufferedDB.New(routeLink)
-    local settings = Settings.New(settingsDb)
+    local settings = Settings.Create(settingsDb)
     local hud ---@type Hud
     local wsad ---@type Wsad
     local commands ---@type ControlCommands
@@ -121,7 +121,7 @@ local function Start(isECU)
             radar.Show(settings.Boolean("showRadarOnStart"))
             radar.Sort(settings.Number("defaultRadarMode"))
 
-            settings.RegisterCallback("defaultRadarMode", function(value)
+            settings.Callback("defaultRadarMode", function(value)
                 radar.Sort(value)
             end)
         end

@@ -84,27 +84,27 @@ function Fuel.New(settings)
         log.Error(t.Name(), t.Error())
     end)
 
-    settings.RegisterCallback("containerProficiency", function(value)
+    settings.Callback("containerProficiency", function(value)
         talents.ContainerProficiency = value
     end)
 
-    settings.RegisterCallback("fuelTankOptimization", function(value)
+    settings.Callback("fuelTankOptimization", function(value)
         talents.FuelTankOptimization = value
     end)
 
-    settings.RegisterCallback("containerOptimization", function(value)
+    settings.Callback("containerOptimization", function(value)
         talents.ContainerOptimization = value
     end)
 
-    settings.RegisterCallback("atmoFuelTankHandling", function(value)
+    settings.Callback("atmoFuelTankHandling", function(value)
         talents.AtmoFuelTankHandling = value
     end)
 
-    settings.RegisterCallback("spaceFuelTankHandling", function(value)
+    settings.Callback("spaceFuelTankHandling", function(value)
         talents.SpaceFuelTankHandling = value
     end)
 
-    settings.RegisterCallback("rocketFuelTankHandling", function(value)
+    settings.Callback("rocketFuelTankHandling", function(value)
         talents.RocketFuelTankHandling = value
     end)
 

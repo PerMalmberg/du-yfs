@@ -52,11 +52,11 @@ function Wsad.New(fsm, flightCore, settings, access)
     ---@cast throttleStep number
     input.SetThrottleStep(throttleStep)
 
-    settings.RegisterCallback("throttleStep", function(step)
+    settings.Callback("throttleStep", function(step)
         input.SetThrottleStep(step / 100)
     end)
 
-    settings.RegisterCallback("dockingMode",
+    settings.Callback("dockingMode",
         ---@param mode number
         function(mode)
             mode = calc.Clamp(mode, 1, 3)
@@ -338,7 +338,7 @@ function Wsad.New(fsm, flightCore, settings, access)
         lockUser()
     end
 
-    settings.RegisterCallback("turnAngle",
+    settings.Callback("turnAngle",
         ---@param angle number
         function(angle)
             turnAngle = angle

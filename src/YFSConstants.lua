@@ -22,6 +22,20 @@ local constants = {
             d = 100,
             a = 0.99
         },
+        axis = {
+            light = {
+                p = 6.5,
+                i = 20,
+                d = 1600,
+                a = 0.1
+            },
+            heavy = {
+                p = 6.5,
+                i = 1,
+                d = 1600,
+                a = 0.1
+            }
+        },
         throttleStep = 10,                   -- percent
         defaultMargin = 0.1,                 -- meter
         defaultStartEndMargin = 0.3,         -- meter

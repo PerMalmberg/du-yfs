@@ -1,10 +1,11 @@
 local Vec3 = require("math/Vec3")
 local vehicle = require("abstraction/Vehicle").New()
 local calc = require("util/Calc")
+local Settings = require("Settings")
 local TotalMass = vehicle.mass.Total
 local nullVec = Vec3.zero
-local yfsConstants = require("YFSConstants")
-local LightConstructMassThreshold = yfsConstants.flight.lightConstructMassThreshold
+local yfsC = require("YFSConstants")
+local LightConstructMassThreshold = yfsC.flight.lightConstructMassThreshold
 local AngVel = vehicle.velocity.localized.Angular
 local AngAcc = vehicle.acceleration.localized.Angular
 local SignLargestAxis = calc.SignLargestAxis
@@ -60,8 +61,27 @@ function AxisControl.New(axis)
     local updateHandlerId = nil
     local targetCoordinate = nil ---@type Vec3|nil
 
-    local lightPid = PID(6.5, 20, 1600, 0.1)
-    local heavyPid = PID(6, 1, 1600, 0.1)
+    -- taylor local lightPid = PID(1, 10, 100, 0.1)
+
+    local set = Settings.Instance()
+    local axisPids = yfsC.flight.axis
+    local lPv = axisPids.light
+    local hPv = axisPids.heavy
+    local lightPid = PID(lPv.p, lPv.i, lPv.d, lPv.a)
+    local heavyPid = PID(hPv.p, hPv.i, hPv.d, hPv.a)
+
+    set.Callback("lightp", function(v)
+        lightPid = PID(v, lightPid.i, lightPid.d, lightPid.amortization)
+    end)
+
+    set.Callback("lighti", function(v)
+        lightPid = PID(lightPid.p, v, lightPid.d, lightPid.amortization)
+    end)
+
+    set.Callback("lightd", function(v)
+        lightPid = PID(lightPid.p, lightPid.i, v, lightPid.amortization)
+    end)
+
     local pubTopic
     local lastReadMass = TotalMass()
 
