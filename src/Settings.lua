@@ -145,7 +145,14 @@ function Settings.Create(db)
         end).AsString().Must()
 
     cmd.Accept("get-all", function(_)
-        for key, v in pairs(settings) do
+        local keys = {} ---@type string[]
+        for key, _ in pairs(settings) do
+            keys[#keys + 1] = key
+        end
+
+        table.sort(keys)
+
+        for _, key in pairs(keys) do
             log.Info(key, ": ", s.Get(key))
         end
     end)

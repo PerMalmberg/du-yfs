@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file. The version
 * Support for not having engines in all directions.
 * Settings for the yaw/pitch/roll controller.
 
+## Changed
+* Command `get-all` now lists settings in alphabetical order.
+
 ### Removed
 * Fuel gauges on the screen element have been removed to save code space (still available on the HUD).
 
