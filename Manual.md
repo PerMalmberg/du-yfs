@@ -294,34 +294,34 @@ Hint: To activate snapping mode, point into empty space, then click middle mouse
 
 ## Key bindings
 
-| Key              | Description                                                         |
-| ---------------- | ------------------------------------------------------------------- |
-| Option 0         | Cycles radar sorting methods (see Lua chat for details)             |
-| Option 0 + Shift | Show/hides radar widget                                             |
-| Option 8 + Shift | Show/hides widgets with diagnostic info as well as the build helper |
-| Option 9 + Shift | Locks/unlocks player movement / enters/exists manual control mode   |
+| Key             | Description                                                         | Lua key binding / Modifier |
+| --------------- | ------------------------------------------------------------------- | -------------------------- |
+| Alt + 0         | Cycles radar sorting methods (see Lua chat for details)             | Option 0                   |
+| Alt + Shift + 0 | Show/hides radar widget                                             | Option 0 / Shift           |
+| Alt + Shift + 8 | Show/hides widgets with diagnostic info as well as the build helper | Option 8 / Shift           |
+| Alt + Shift + 9 | Locks/unlocks player movement / enters/exists manual control mode   | Option 9 / Shift           |
 
 By default option 1..9 means ALT-key plus keys 1 through 9, configured in the the game settings.
 
 ## Manual Controls (when player movement is locked)
 
-| Key (key binding)   | Description                                                               |
-| ------------------- | ------------------------------------------------------------------------- |
-| A (yaw left)        | Turn left                                                                 |
-| S (yaw right)       | Move backwards                                                            |
-| W (pitch down)      | Move forward                                                              |
-| D (pitch up)        | Turn right                                                                |
-| C (descend)         | Move down                                                                 |
-| B (boosters)        | While held down, activates rocket boosters (only while in manual control) |
-| Space (ascend)      | Move  up                                                                  |
-| Alt+A / Q           | Strafe left                                                               |
-| Alt+D / E           | Strafe right                                                              |
-| Mouse scroll wheel  | Increase/decrease throttle/acceleration                                   |
-| Middle mouse button | Toggle forward thrust (if setting `allowForwardToggle` is set)            |
+| Key                 | Description                                                               | Lua key binding / Modifier |
+| ------------------- | ------------------------------------------------------------------------- | -------------------------- |
+| A                   | Turn left                                                                 | yawleft                    |
+| S                   | Move backwards                                                            | yawright                   |
+| W                   | Move forward                                                              | pitchdown                  |
+| D                   | Turn right                                                                | pitchup                    |
+| C                   | Move down                                                                 | descend                    |
+| B                   | While held down, activates rocket boosters (only while in manual control) | boosters                   |
+| Space               | Move  up                                                                  | ascend                     |
+| Alt + A / Q         | Strafe left                                                               | strafeleft, left           |
+| Alt + D / E         | Strafe right                                                              | straferight, right         |
+| Mouse scroll wheel  | Increase/decrease throttle/acceleration                                   |                            |
+| Middle mouse button | Toggle forward thrust (if setting `allowForwardToggle` is set)            |                            |
 
 > Note:
 > Manual control of heavy constructs are much less accurate (especially during vertical movements). Don't expect the same maneuverability as a tiny 1.5t construct.
-> Rocket boosters are automatically turned off whenever brakes activate
+> Rocket boosters are automatically turned off whenever brakes activate.
 
 ## Lua console commands
 
