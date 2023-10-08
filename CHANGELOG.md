@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file. The version
 
 ## Fixed
 * If a communication channel is set, but receiver or emitter aren't linked, an error is now logged instead of terminating the script.
-* Control key once again activates brakes.
+* Control key once again activates brakes while in manual mode.
 
 ### Removed
 * Fuel gauges on the screen element have been removed to save code space (still available on the HUD).

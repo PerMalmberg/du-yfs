@@ -19,7 +19,8 @@ local Current                 = vehicle.position.Current
 local Plane                   = require("math/Plane")
 local max                     = math.max
 local Sign                    = calc.Sign
-local IsFrozen                = vehicle.player.IsFrozen
+local IsFrozen                = player.isFrozen
+local NF                      = function() return not IsFrozen() end
 local Clamp                   = calc.Clamp
 
 ---@class Wsad
@@ -46,6 +47,7 @@ function Wsad.New(fsm, flightCore, settings, access)
     local yawSmoothStop = false
     local yawStopSign = 0
     local plane = Plane.NewByVertialReference()
+    local stopPos = Vec3.zero
     local forwardToggle = false
     local allowForwardToggle = settings.Boolean("allowForwardToggle")
 
@@ -158,7 +160,6 @@ function Wsad.New(fsm, flightCore, settings, access)
         local sw = Stopwatch.New()
         sw.Start()
         local wantsToMove = false
-        local stopPos = Vec3.zero
 
         pub.RegisterBool("ResetWSAD", function(_, _)
             stopPos = Vec3.zero
@@ -305,30 +306,35 @@ function Wsad.New(fsm, flightCore, settings, access)
     input.Register(keys.down, NewIgnoreBoth().OnRepeat(), down)
     input.Register(keys.down, NewIgnoreBoth().OnRelease(), up)
 
+    local function turn(positive)
+        if NF() then return end
+        pointDir = flightCore.Turn(positive and turnAngle or -turnAngle, plane.Up())
+    end
+
     input.Register(keys.yawleft, NewIgnoreBoth().OnRepeat(), function()
-        if not IsFrozen() then return end
-        pointDir = flightCore.Turn(turnAngle, plane.Up())
+        turn(true)
     end)
 
     input.Register(keys.yawright, NewIgnoreBoth().OnRepeat(), function()
-        if not IsFrozen() then return end
-        pointDir = flightCore.Turn(-turnAngle, plane.Up())
+        turn(false)
     end)
 
     input.RegisterMany({ keys.yawleft, keys.yawright }, NewIgnoreBoth().OnRelease(),
         function()
-            if not IsFrozen() then return end
+            if NF() then return end
             yawSmoothStop = true
         end)
 
     local function booster(on)
-        if not IsFrozen() then return end
+        if NF() then return end
         fsm.SetBooster(on)
     end
 
     input.Register(keys.brake, Criteria.New().LCtrl().OnPress(), function()
         forwardToggle = false
         newMovement = true
+        pointDir = plane.Forward()
+        stopPos = Current()
     end)
 
     input.Register(keys.booster, NewIgnoreBoth().OnPress(), function() booster(true) end)
@@ -338,7 +344,7 @@ function Wsad.New(fsm, flightCore, settings, access)
     input.Register(keys.option9, Criteria.New().LShift().OnPress(), toggleUserLock)
 
     input.Register(keys.stopengines, NewIgnoreBoth().OnPress(), function()
-        if not IsFrozen() then return end
+        if NF() then return end
         forwardToggle = not forwardToggle
         newMovement = true
     end)
