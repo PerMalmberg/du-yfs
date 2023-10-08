@@ -20,6 +20,7 @@ local Plane                   = require("math/Plane")
 local max                     = math.max
 local Sign                    = calc.Sign
 local IsFrozen                = vehicle.player.IsFrozen
+local Clamp                   = calc.Clamp
 
 ---@class Wsad
 ---@field New fun(flightcore:FlightCore):Wsad
@@ -45,6 +46,16 @@ function Wsad.New(fsm, flightCore, settings, access)
     local yawSmoothStop = false
     local yawStopSign = 0
     local plane = Plane.NewByVertialReference()
+    local forwardToggle = false
+    local allowForwardToggle = settings.Boolean("allowForwardToggle")
+
+    settings.Callback("allowForwardToggle", function(v)
+        allowForwardToggle = v
+    end)
+
+    local function getForwardToggle()
+        return forwardToggle and allowForwardToggle
+    end
 
 
     input.SetThrottle(1) -- Start at max speed
@@ -115,7 +126,10 @@ function Wsad.New(fsm, flightCore, settings, access)
         -- Put the point 1.5 times the distance we travel per timer interval
         local dist = max(50, Velocity():Len() * interval * 1.5)
 
-        local dir = (plane.Forward() * longitudal + plane.Right() * lateral + plane.Up() * vertical):Normalize()
+        local dir = (plane.Forward() * (getForwardToggle() and 1 or longitudal)
+                + plane.Right() * lateral
+                + plane.Up() * vertical)
+            :Normalize()
 
         if body:IsInAtmo(curr) and vertical == 0 then
             -- As we meassure only periodically, we can't make the threshold too small. 0.2m/s was too small, we can miss that when moving fast.
@@ -150,6 +164,7 @@ function Wsad.New(fsm, flightCore, settings, access)
             stopPos = Vec3.zero
             wantsToMove = false
             pointDir = Vec3.zero
+            forwardToggle = false
         end)
 
         pub.RegisterTable("ForwardDirectionChanged",
@@ -171,13 +186,15 @@ function Wsad.New(fsm, flightCore, settings, access)
                 yawStopSign = Sign(value.speed)
             end)
 
+        monitorHeight()
+
         while true do
             local curr = Current()
             local body = universe.ClosestBody(curr)
 
             local hadNewMovement = newMovement
 
-            wantsToMove = longitudal ~= 0 or vertical ~= 0 or lateral ~= 0
+            wantsToMove = getForwardToggle() or longitudal ~= 0 or vertical ~= 0 or lateral ~= 0
             if not wantsToMove and newMovement then
                 stopPos = Current()
             end
@@ -222,7 +239,10 @@ function Wsad.New(fsm, flightCore, settings, access)
 
     ---@param delta integer
     local function changeVertical(delta)
-        vertical = vertical + delta
+        forwardToggle = false
+
+        vertical = Clamp(vertical + delta, -1, 1)
+
         if vertical == 0 then
             monitorHeight()
         end
@@ -231,107 +251,97 @@ function Wsad.New(fsm, flightCore, settings, access)
 
     ---@param delta integer
     local function changeLongitudal(delta)
+        forwardToggle = false
+
         local previous = longitudal
-        longitudal = longitudal + delta
+        longitudal = Clamp(longitudal + delta, -1, 1)
+
         if previous == 0 and longitudal ~= 0 then
             monitorHeight()
         end
+
         newMovement = true
     end
 
     ---@param delta integer
     local function changeLateral(delta)
+        forwardToggle = false
+
         local previous = lateral
-        lateral = lateral + delta
+        lateral = Clamp(lateral + delta, -1, 1)
+
         if previous == 0 and lateral ~= 0 then
             monitorHeight()
         end
+
         newMovement = true
     end
 
-    input.Register(keys.forward, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
-        changeLongitudal(1)
-    end)
+    local function NewIgnoreBoth()
+        return Criteria.New().IgnoreLCtrl().IgnoreLShift()
+    end
 
-    input.Register(keys.forward, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
-        changeLongitudal(-1)
-    end)
+    local function fwd() changeLongitudal(1) end
+    local function back() changeLongitudal(-1) end
 
-    input.Register(keys.backward, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
-        changeLongitudal(-1)
-    end)
+    input.Register(keys.forward, NewIgnoreBoth().OnRepeat(), fwd)
+    input.Register(keys.forward, NewIgnoreBoth().OnRelease(), back)
+    input.Register(keys.backward, NewIgnoreBoth().OnRepeat(), back)
+    input.Register(keys.backward, NewIgnoreBoth().OnRelease(), fwd)
 
-    input.Register(keys.backward, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
-        changeLongitudal(1)
-    end)
+    local function left() changeLateral(-1) end
+    local function right() changeLateral(1) end
 
-    input.RegisterMany({ keys.strafeleft, keys.left }, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
-        changeLateral(-1)
-    end)
+    input.RegisterMany({ keys.strafeleft, keys.left }, NewIgnoreBoth().OnRepeat(), left)
+    input.RegisterMany({ keys.strafeleft, keys.left }, NewIgnoreBoth().OnRelease(), right)
+    input.RegisterMany({ keys.straferight, keys.right }, NewIgnoreBoth().OnRepeat(), right)
+    input.RegisterMany({ keys.straferight, keys.right }, NewIgnoreBoth().OnRelease(), left)
 
-    input.RegisterMany({ keys.strafeleft, keys.left }, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(),
-        function()
-            changeLateral(1)
-        end)
+    local function up() changeVertical(1) end
+    local function down() changeVertical(-1) end
 
-    input.RegisterMany({ keys.straferight, keys.right }, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(),
-        function()
-            changeLateral(1)
-        end)
+    input.Register(keys.up, NewIgnoreBoth().OnRepeat(), up)
+    input.Register(keys.up, NewIgnoreBoth().OnRelease(), down)
+    input.Register(keys.down, NewIgnoreBoth().OnRepeat(), down)
+    input.Register(keys.down, NewIgnoreBoth().OnRelease(), up)
 
-    input.RegisterMany({ keys.straferight, keys.right }, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(),
-        function()
-            changeLateral(-1)
-        end)
-
-    input.Register(keys.up, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
-        changeVertical(1)
-    end)
-
-    input.Register(keys.up, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
-        changeVertical(-1)
-    end)
-
-    input.Register(keys.down, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
-        changeVertical(-1)
-    end)
-
-    input.Register(keys.down, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
-        changeVertical(1)
-    end)
-
-    input.Register(keys.yawleft, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRepeat(), function()
+    input.Register(keys.yawleft, NewIgnoreBoth().OnRepeat(), function()
         if not IsFrozen() then return end
         pointDir = flightCore.Turn(turnAngle, plane.Up())
     end)
 
-    input.Register(keys.yawright, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRepeat(), function()
+    input.Register(keys.yawright, NewIgnoreBoth().OnRepeat(), function()
         if not IsFrozen() then return end
         pointDir = flightCore.Turn(-turnAngle, plane.Up())
     end)
 
-    input.Register(keys.yawleft, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
+    input.RegisterMany({ keys.yawleft, keys.yawright }, NewIgnoreBoth().OnRelease(),
+        function()
+            if not IsFrozen() then return end
+            yawSmoothStop = true
+        end)
+
+    local function booster(on)
         if not IsFrozen() then return end
-        yawSmoothStop = true
+        fsm.SetBooster(on)
+    end
+
+    input.Register(keys.brake, Criteria.New().LCtrl().OnPress(), function()
+        forwardToggle = false
+        newMovement = true
     end)
 
-    input.Register(keys.yawright, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
-        if not IsFrozen() then return end
-        yawSmoothStop = true
-    end)
-
-    input.Register(keys.booster, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnPress(), function()
-        if not IsFrozen() then return end
-        fsm.SetBooster(true)
-    end)
-
-    input.Register(keys.booster, Criteria.New().IgnoreLCtrl().IgnoreLShift().OnRelease(), function()
-        if not IsFrozen() then return end
-        fsm.SetBooster(false)
-    end)
+    input.Register(keys.booster, NewIgnoreBoth().OnPress(), function() booster(true) end)
+    input.Register(keys.booster, NewIgnoreBoth().OnRelease(), function() booster(false) end)
 
     -- shift + alt + Option9 to switch modes
     input.Register(keys.option9, Criteria.New().LShift().OnPress(), toggleUserLock)
+
+    input.Register(keys.stopengines, NewIgnoreBoth().OnPress(), function()
+        if not IsFrozen() then return end
+        forwardToggle = not forwardToggle
+        newMovement = true
+    end)
 
     if settings.Get("manualControlOnStartup", false) then
         log.Info("Manual control on startup active.")

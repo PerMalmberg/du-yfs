@@ -30,7 +30,7 @@ local constants = {
                 a = 0.1
             },
             heavy = {
-                p = 6.5,
+                p = 6,
                 i = 1,
                 d = 1600,
                 a = 0.1
@@ -49,7 +49,7 @@ local constants = {
     route = {
         routeStartDistanceLimit = 10,  -- meters
         autoShutdownFloorDistance = 5, -- meters
-        yawAlignmentThrustLimiter = 1  -- degrees
+        yawAlignmentThrustLimiter = 3  -- degrees
     },
     widgets = {
         showOnStart = false

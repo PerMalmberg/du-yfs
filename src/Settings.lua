@@ -90,7 +90,8 @@ function Settings.Create(db)
         dockingMode = { default = 1 }, -- 1 = Manual, 2 = Automatic, 3 = Only own constructs,
         globalMaxSpeed = { default = 0 },
         showRadarOnStart = { default = false },
-        defaultRadarMode = { default = 1 }
+        defaultRadarMode = { default = 1 },
+        allowForwardToggle = { default = false },
     }
 
     for k, v in pairs(containerSettings) do
@@ -128,6 +129,28 @@ function Settings.Create(db)
         end
 
         s.Reload()
+    end)
+
+    cmd.Accept("strict-mode", function()
+        local opts = { "allowForwardToggle", "yawAlignmentThrustLimiter", "manualControlOnStartup",
+            "minimumPathCheckOffset" }
+
+        for _, k in ipairs(opts) do
+            db.Put(k, settings[k].default)
+        end
+
+        s.Reload()
+        log.Info("Settings adjusted for strict mode")
+    end)
+
+    cmd.Accept("free-mode", function()
+        db.Put("yawAlignmentThrustLimiter", 360)
+        db.Put("manualControlOnStartup", true)
+        db.Put("minimumPathCheckOffset", 5000)
+        db.Put("allowForwardToggle", true)
+        db.Put("turnAngle", 3)
+        s.Reload()
+        log.Info("Settings adjusted for free mode")
     end)
 
     cmd.Accept("get",

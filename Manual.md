@@ -22,7 +22,6 @@ Please read the entire manual before attempting to perform an installation, ther
   - [Fuel gauges](#fuel-gauges)
   - [Installation as an elevator (ground to space)](#installation-as-an-elevator-ground-to-space)
     - [Automatically aligning and positioning using two elements - recommended procedure](#automatically-aligning-and-positioning-using-two-elements---recommended-procedure)
-    - [Aligning the elevator to your ground construct](#aligning-the-elevator-to-your-ground-construct)
     - [Creating a route](#creating-a-route)
     - [Route editor](#route-editor)
     - [Custom travel vector for additional elevators](#custom-travel-vector-for-additional-elevators)
@@ -232,65 +231,12 @@ local cmd = string.format("position-above -heightMargin 15 -cx %0.14f -cy %0.14f
     center.x, center.y, center.z,
     forward.x, forward.y, forward.z)
 
+slot2.activate()
 slot2.setCenteredText(cmd)
-
 
 unit.exit()
 
 ```
-
-### Aligning the elevator to your ground construct
-
-To get a near-perfect alignment of the elevator to your ground construct, follow these steps.
-
-1. Place a Programming Board on the construct that will contain the dock/cradle/landing pad of the elevator.
-2. Connect a screen to the programming board.
-3. Select the direction you want to align to and paste one of the four code snippets below into `unit -> start`, whichever is appropriate.
-
-    * Align to forward vector
-      ```lua
-      local Vec3 = require("cpml/vec3")
-      local v = Vec3(construct.getWorldOrientationForward())
-      local fmt = "align-to-vector -x %0.14f -y %0.14f -z %0.14f"
-      local s = string.format(fmt, v.x, v.y, v.z)
-      slot1.setCenteredText(s)
-      unit.exit()
-      ```
-    * Align to backwards vector
-      ```lua
-      local Vec3 = require("cpml/vec3")
-      local v = -Vec3(construct.getWorldOrientationForward())
-      local fmt = "align-to-vector -x %0.14f -y %0.14f -z %0.14f"
-      local s = string.format(fmt, v.x, v.y, v.z)
-      slot1.setCenteredText(s)
-      unit.exit()
-      ```
-    * Align to right vector
-      ```lua
-      local Vec3 = require("cpml/vec3")
-      local v = Vec3(construct.getWorldOrientationRight())
-      local fmt = "align-to-vector -x %0.14f -y %0.14f -z %0.14f"
-      local s = string.format(fmt, v.x, v.y, v.z)
-      slot1.setCenteredText(s)
-      unit.exit()
-      ```
-    * Align to left vector
-      ```lua
-      local Vec3 = require("cpml/vec3")
-      local v = -Vec3(construct.getWorldOrientationRight())
-      local fmt = "align-to-vector -x %0.14f -y %0.14f -z %0.14f"
-      local s = string.format(fmt, v.x, v.y, v.z)
-      slot1.setCenteredText(s)
-      unit.exit()
-      ```
-
-1. Start the Programming Board and copy the command from the screen (CTRL-L to to open editor while pointing to the screen).
-   * The command is the part in the `text = ....` line of the screen code. Do not copy the quotation marks.
-2. Start the elevator, enter manual control mode and raise it up slightly using the `move` command. Manual mode is needed to prevent it to shutdown automatically.
-3. Paste the command into Lua-chat and press enter to perform the alignment.
-   * Showing the widgets (`show-widgets 1`) and looking in the "Rotation" widget, under "Axis/Yaw", at the _offset_ value will show 0 when it is aligned.
-4. Once aligned, either hold C or use the `move` command to set it down again.
-5. Turn off the elevator.
 
 ### Creating a route
 
@@ -359,18 +305,19 @@ By default option 1..9 means ALT-key plus keys 1 through 9, configured in the th
 
 ## Manual Controls (when player movement is locked)
 
-| Key (key binding)  | Description                                                               |
-| ------------------ | ------------------------------------------------------------------------- |
-| A (yaw left)       | Turn left                                                                 |
-| S (yaw right)      | Move backwards                                                            |
-| W (pitch down)     | Move forward                                                              |
-| D (pitch up)       | Turn right                                                                |
-| C (descend)        | Move down                                                                 |
-| B (boosters)       | While held down, activates rocket boosters (only while in manual control) |
-| Space (ascend)     | Move  up                                                                  |
-| Alt+A / Q          | Strafe left                                                               |
-| Alt+D / E          | Strafe right                                                              |
-| Mouse scroll wheel | Increase/decrease throttle/acceleration                                   |
+| Key (key binding)   | Description                                                               |
+| ------------------- | ------------------------------------------------------------------------- |
+| A (yaw left)        | Turn left                                                                 |
+| S (yaw right)       | Move backwards                                                            |
+| W (pitch down)      | Move forward                                                              |
+| D (pitch up)        | Turn right                                                                |
+| C (descend)         | Move down                                                                 |
+| B (boosters)        | While held down, activates rocket boosters (only while in manual control) |
+| Space (ascend)      | Move  up                                                                  |
+| Alt+A / Q           | Strafe left                                                               |
+| Alt+D / E           | Strafe right                                                              |
+| Mouse scroll wheel  | Increase/decrease throttle/acceleration                                   |
+| Middle mouse button | Toggle forward thrust (if setting `allowForwardToggle` is set)            |
 
 > Note:
 > Manual control of heavy constructs are much less accurate (especially during vertical movements). Don't expect the same maneuverability as a tiny 1.5t construct.
@@ -514,21 +461,29 @@ By default option 1..9 means ALT-key plus keys 1 through 9, configured in the th
 |                           | -openGateMaxDistance                   | number        | Y                  | The elevator must be closer than this to a point in the route that has gate control activated for gate control to open gates. Default 10m. This is to avoid waiting on gates when activating a route in between two points.                                                                                                                                                                                                                                                                                                                                                                                                               |
 |                           | -dockingMode                           | number (1..3) | Y                  | Sets the docking mode. 1 = Manual (by default use ALT+T/Y dock/undock), 2 = Automatic, 3 = Automatic, but only own constructs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 |                           | -globalMaxSpeed                        | number        | Y                  | Sets the global max speed the construct will accelerate to. Default 0, meaning no limit. This overrides any route-specific settings and also applies to manual control.                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+|                           | -allowForwardToggle                    | boolean       | Y                  | If true, middle mouse button toggles forward thrust. Best to keep disabled on constructs meant to act as elevators. Default false.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | get                       | See `set`                              |               | Y                  | Prints the setting set with the `set` command, don't add the leading `-`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | get-all                   |                                        |               |                    | Prints all current settings. Don't add the "-" before the argument. Example: `get turnAngle`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | reset-settings            |                                        |               |                    | Resets all settings to their defaults. (including those listed in the advanced section)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | set-full-container-boosts |                                        |               |                    | Sets all related talents for containers, atmospheric, space and rocket fuel tanks to level 5                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| strict-mode               |                                        |               |                    | Restores certain settings to their defaults for use as a standard elevator.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| free-mode                 |                                        |               |                    | Adjusts settings for use as a mainly manually controlled construct.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 Please note that deleting named waypoints do not update routes that reference them. You can create a new one with the same name as the one deleted, but until you do, any route that referenced it will not be usable.
 
 ### Advanced Settings
 
-| Command | Parameters/options | Unit/type | Parameter Optional | Description                                                                                                       |
-| ------- | ------------------ | --------- | ------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| set     |                    |           |                    |                                                                                                                   |
-|         | -lightp            | number    | Y                  | The proportional value of the yaw/pitch/roll controller for constructs with a mass of less than 10T. Default: 6.5 |
-|         | -lighti            | number    | Y                  | The integral value of the yaw/pitch/roll controller for constructs with a mass of less than 10T. Default: 20      |
-|         | -lightd            | number    | Y                  | The derivative value of the yaw/pitch/roll controller for constructs with a mass of less than 10T. Default: 1600  |
+| Command | Parameters/options | Unit/type | Parameter Optional | Description                                                                                                             |
+| ------- | ------------------ | --------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| set     |                    |           |                    |                                                                                                                         |
+|         | -lightp            | number    | Y                  | The proportional value of the yaw/pitch/roll controller for constructs with a mass of less than 10T. Default: 6.5       |
+|         | -lighti            | number    | Y                  | The integral value of the yaw/pitch/roll controller for constructs with a mass of less than 10T. Default: 20            |
+|         | -lightd            | number    | Y                  | The derivative value of the yaw/pitch/roll controller for constructs with a mass of less than 10T. Default: 1600        |
+|         | -lighta            | number    | Y                  | The amortization value of the yaw/pitch/roll controller for constructs with a mass of less than 10T. Default: 1600      |
+|         | -heavyp            | number    | Y                  | The proportional value of the yaw/pitch/roll controller for constructs with a mass of more than than 10T. Default: 6.5  |
+|         | -heavyi            | number    | Y                  | The integral value of the yaw/pitch/roll controller for constructs with a mass of more than than 10T. Default: 20       |
+|         | -heavyd            | number    | Y                  | The derivative value of the yaw/pitch/roll controller for constructs with a mass of more than than 10T. Default: 1600   |
+|         | -heavyd            | number    | Y                  | The amortization value of the yaw/pitch/roll controller for constructs with a mass of more than than 10T. Default: 1600 |
 
 > Note: Adjusting the values of the yaw/pitch/roll controller may allow you to get quicker responses, but also induce instability.
 

@@ -76,8 +76,15 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
     function s.RegisterCommonCommands(isECU)
         -- Setup brakes
         if not isECU then
-            input.Register(keys.brake, Criteria.New().OnPress(), function() brakes.Forced(true) end)
-            input.Register(keys.brake, Criteria.New().OnRelease(), function() brakes.Forced(false) end)
+            local function b(on)
+                -- Always allow forced mode to be turned off
+                if player.isFrozen() or not on then
+                    brakes.Forced(on)
+                end
+            end
+
+            input.Register(keys.brake, Criteria.New().OnPress(), function() b(true) end)
+            input.Register(keys.brake, Criteria.New().OnRelease(), function() b(false) end)
         end
 
         cmd.Accept("idle", function(data)

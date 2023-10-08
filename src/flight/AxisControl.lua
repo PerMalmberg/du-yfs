@@ -65,22 +65,20 @@ function AxisControl.New(axis)
 
     local set = Settings.Instance()
     local axisPids = yfsC.flight.axis
-    local lPv = axisPids.light
-    local hPv = axisPids.heavy
-    local lightPid = PID(lPv.p, lPv.i, lPv.d, lPv.a)
-    local heavyPid = PID(hPv.p, hPv.i, hPv.d, hPv.a)
+    local l = axisPids.light
+    local h = axisPids.heavy
 
-    set.Callback("lightp", function(v)
-        lightPid = PID(v, lightPid.i, lightPid.d, lightPid.amortization)
-    end)
+    local lightPid = PID(l.p, l.i, l.d, l.a)
+    local heavyPid = PID(h.p, h.i, h.d, h.a)
+    set.Callback("lightp", function(v) lightPid = PID(v, lightPid.i, lightPid.d, lightPid.amortization) end)
+    set.Callback("lighti", function(v) lightPid = PID(lightPid.p, v, lightPid.d, lightPid.amortization) end)
+    set.Callback("lightd", function(v) lightPid = PID(lightPid.p, lightPid.i, v, lightPid.amortization) end)
+    set.Callback("lighta", function(v) lightPid = PID(lightPid.p, lightPid.i, lightPid.d, v) end)
 
-    set.Callback("lighti", function(v)
-        lightPid = PID(lightPid.p, v, lightPid.d, lightPid.amortization)
-    end)
-
-    set.Callback("lightd", function(v)
-        lightPid = PID(lightPid.p, lightPid.i, v, lightPid.amortization)
-    end)
+    set.Callback("heavyp", function(v) heavyPid = PID(v, heavyPid.i, heavyPid.d, heavyPid.amortization) end)
+    set.Callback("heavyi", function(v) heavyPid = PID(heavyPid.p, v, heavyPid.d, heavyPid.amortization) end)
+    set.Callback("heavyd", function(v) heavyPid = PID(heavyPid.p, heavyPid.i, v, heavyPid.amortization) end)
+    set.Callback("heavya", function(v) heavyPid = PID(heavyPid.p, heavyPid.i, heavyPid.d, v) end)
 
     local pubTopic
     local lastReadMass = TotalMass()

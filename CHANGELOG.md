@@ -7,12 +7,16 @@ All notable changes to this project will be documented in this file. The version
 ### Added
 * Support for not having engines in all directions.
 * Settings for the yaw/pitch/roll controller.
+* Middle mouse button button toggle forward thrust when manual controls are active (if `allowForwardToggle` is true)
+* Commands `strict-mode` and `free-mode` to easily setup the script for the two supported operational modes.
 
 ## Changed
 * Command `get-all` now lists settings in alphabetical order.
+* `yawAlignmentThrustLimiter` now has a default of 3 degrees (was 1).
 
 ## Fixed
 * If a communication channel is set, but receiver or emitter aren't linked, an error is now logged instead of terminating the script.
+* Control key once again activates brakes.
 
 ### Removed
 * Fuel gauges on the screen element have been removed to save code space (still available on the HUD).
