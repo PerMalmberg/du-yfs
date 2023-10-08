@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 1.4.0 - 2023-01-xx
+## 1.4.0 - 2023-10-08
 
 ### Added
 * Support for not having engines in all directions.
