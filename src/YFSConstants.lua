@@ -26,7 +26,7 @@ local constants = {
             light = {
                 p = 6.5,
                 i = 20,
-                d = 1600,
+                d = 1000,
                 a = 0.1
             },
             heavy = {

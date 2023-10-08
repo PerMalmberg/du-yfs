@@ -11,8 +11,10 @@ All notable changes to this project will be documented in this file. The version
 * Commands `strict-mode` and `free-mode` to easily setup the script for the two supported operational modes.
 
 ## Changed
+* Significantly quicker start up sequence. Especially noticeable on manually controlled constructs.
 * Command `get-all` now lists settings in alphabetical order.
 * `yawAlignmentThrustLimiter` now has a default of 3 degrees (was 1).
+* Reduced default derivative value of axis controller from 1600 to 1000 on light constructs to reduce jittering seen by some players.
 
 ## Fixed
 * If a communication channel is set, but receiver or emitter aren't linked, an error is now logged instead of terminating the script.
