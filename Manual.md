@@ -483,7 +483,7 @@ Please note that deleting named waypoints do not update routes that reference th
 |         | -heavyp            | number    | Y                  | The proportional value of the yaw/pitch/roll controller for constructs with a mass of more than than 10T. Default: 6.5  |
 |         | -heavyi            | number    | Y                  | The integral value of the yaw/pitch/roll controller for constructs with a mass of more than than 10T. Default: 20       |
 |         | -heavyd            | number    | Y                  | The derivative value of the yaw/pitch/roll controller for constructs with a mass of more than than 10T. Default: 1600   |
-|         | -heavyd            | number    | Y                  | The amortization value of the yaw/pitch/roll controller for constructs with a mass of more than than 10T. Default: 1600 |
+|         | -heavya            | number    | Y                  | The amortization value of the yaw/pitch/roll controller for constructs with a mass of more than than 10T. Default: 1600 |
 
 > Note: Adjusting the values of the yaw/pitch/roll controller may allow you to get quicker responses, but also induce instability.
 
