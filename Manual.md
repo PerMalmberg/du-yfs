@@ -168,7 +168,7 @@ The receiver *must* be linked on the first slot of the remote controller. If you
 
 In Lua chat, you must run the command `set -commChannel CHANNEL`, replacing `CHANNEL` with the same channel name you used on the programming board on the space/static construct so that they can communicate with each other. Now restart the elevator so that the channel can be applied.  Next, for each point in the route you want the elevator to control the gates, open the route for editing then click to enable gate control using the on-screen UI for the points you want to control gates at. Finish by saving the route.
 
-For example, the most common setup is to have gates/doors only at the space station. If we assume the first point in the route is at the ground, run `route-set-gate-control -atStart false -atEnd true`.
+For example, the most common setup is to have gates/doors only at the space station. If we assume the first point in the route is at the ground and the route consists of two points, run `route-set-pos-option -ix 2 -toggleGate` to toggle the gate control for the second point.
 
 ### Manual switches
 
