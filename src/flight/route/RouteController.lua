@@ -292,7 +292,7 @@ function RouteController.Instance(bufferedDB)
                             local d = distanceFormat(distances[i])
                             return string.format("%0.1f%s", d.value, d.unit)
                         end)(),
-                        activate = string.format("route-activate %s -index %d", floorRouteName, i),
+                        activate = string.format("route-activate '%s' -index %d", floorRouteName, i),
                         index = i
                     }
                 end
