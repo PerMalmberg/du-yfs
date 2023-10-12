@@ -295,33 +295,6 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                 movePoint(ix, ix - 1)
             end).AsNumber().Must()
 
-        cmd.Accept("route-set-all-margins",
-            ---@param data {commandValue:number}
-            function(data)
-                local route = getEditRoute()
-                if route == nil then
-                    return
-                end
-                for _, value in ipairs(route.Points()) do
-                    value.Options().Set(PointOptions.MARGIN, data.commandValue)
-                end
-                log.Info("Margins on all points in route set to ", data.commandValue)
-            end).AsNumber().Must()
-
-        cmd.Accept("route-set-all-max-speeds",
-            ---@param data {commandValue:number}
-            function(data)
-                local route = getEditRoute()
-                if route == nil then
-                    return
-                end
-                local newSpeed = calc.Kph2Mps(data.commandValue)
-                for _, value in ipairs(route.Points()) do
-                    value.Options().Set(PointOptions.MAX_SPEED, newSpeed)
-                end
-                log.Info("Max speeds on all points in route set to ", data.commandValue, "km/h")
-            end).AsNumber().Must()
-
         local cmdSetPosOption = cmd.Accept("route-set-pos-option",
             ---@param data {ix:number, endIx:number, toggleSkippable:boolean, toggleSelectable:boolean, margin:boolean, finalSpeed:number, maxSpeed:number, toggleGate:boolean}
             function(data)
