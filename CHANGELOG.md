@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. The version
 
 ### Fixed
 * When running a route in floor mode, it now adds single quotation marks around the route name so it supports spaces in the name.
+* Fix altitude hold not functioning consistently while in manual control.
 
 ### Removed
 * Command `route-set-all-margins` and `route-set-all-max-speeds` (use `route-set-pos-option`)

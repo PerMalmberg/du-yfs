@@ -109,14 +109,14 @@ function Wsad.New(fsm, flightCore, settings, access)
     end
 
     ---@return number
-    local function getHeight()
+    local function altitude()
         local curr = Current()
         local body = universe.ClosestBody(curr)
         return (curr - body.Geography.Center):Len()
     end
 
     local function monitorHeight()
-        desiredAltitude = getHeight()
+        desiredAltitude = altitude()
         stopVerticalMovement = true
     end
 
@@ -136,14 +136,10 @@ function Wsad.New(fsm, flightCore, settings, access)
         if body:IsInAtmo(curr) and vertical == 0 then
             -- As we meassure only periodically, we can't make the threshold too small. 0.2m/s was too small, we can miss that when moving fast.
             if stopVerticalMovement and Velocity():ProjectOn(-VerticalReferenceVector()):Len() < 0.5 then
-                desiredAltitude = getHeight()
+                desiredAltitude = altitude()
                 stopVerticalMovement = false
             end
 
-            -- When we want to stop vertical movement, we want to keep longitudal engines active so overide target height
-            if stopVerticalMovement then
-                desiredAltitude = getHeight()
-            end
 
             -- Find the direction from body center to forward point and calculate a new point with same
             -- height as the movement started at so that we move along the curvature of the body.
