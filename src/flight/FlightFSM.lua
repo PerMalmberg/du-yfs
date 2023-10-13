@@ -506,6 +506,7 @@ function FlightFSM.New(settings, routeController, geo)
         end
 
         -- Subtract (which adds it since it works against us) the air friction acceleration for thrust.
+        -- Note that air friction causes us to engage thrust on lateral engines in the direction of travel if we're moving sideways at speed, such as when turning a Bug.
         local thrustAcc = -universe:VerticalReferenceVector() * G() - AirFrictionAcceleration()
 
         if abs(yaw.OffsetDegrees()) < yawAlignmentThrustLimiter then
@@ -520,19 +521,19 @@ function FlightFSM.New(settings, routeController, geo)
         -- lateral engines must be adressed with 'lateran AND analog' or a lateral rocket engine
         -- also gets the command.
 
-        local up = finalAcc:ProjectOn(vehicle.orientation.Up())
+        local up = finalAcc:ProjectOn(Up())
         -- Vertical AND analog
         SetEngineCommand("vertical analog", { up:Unpack() }, { 0, 0, 0 }, true, true,
             "airfoil",
             "ground",
             "analog", 0.1)
 
-        local forward = finalAcc:ProjectOn(vehicle.orientation.Forward())
-        local right = finalAcc:ProjectOn(vehicle.orientation.Right())
 
+        local forward = finalAcc:ProjectOn(Forward())
         -- longitudinal AND analog
         SetEngineCommand("longitudinal analog", { forward:Unpack() }, { 0, 0, 0 }, true, true, "", "", "", 0.1)
 
+        local right = finalAcc:ProjectOn(Right())
         -- Lateral AND analog
         SetEngineCommand("lateral analog", { right:Unpack() }, { 0, 0, 0 }, true, true, "", "", "", 0.1)
 
@@ -555,7 +556,7 @@ function FlightFSM.New(settings, routeController, geo)
         local speedLimit = getSpeedLimit(deltaTime, velocity, waypoint, previousWaypoint)
 
         local alignmentToDir = direction:Dot(motionDirection)
-        local wrongDir = Sign(alignmentToDir) < 1 or abs(alignmentToDir) < adjustAngleThreshold
+        local wrongDir = alignmentToDir < 0 or abs(alignmentToDir) < adjustAngleThreshold
 
         local brakeCounter = brakes.Feed(wrongDir and 0 or speedLimit, currentSpeed)
 

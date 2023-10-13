@@ -49,6 +49,7 @@ function Brake.Instance()
     local pidLowSpeed = PID(0.1, 0.0, 1)
     local deceleration = 0
     local maxSeenBrakeAtmoAcc = 0
+    local _100kmph = calc.Kph2Mps(100)
     local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0 } ---@type BrakeData
 
     local s = {
@@ -145,7 +146,7 @@ function Brake.Instance()
         pidLowSpeed:inject(diff)
 
         local brakeValue
-        if currentSpeed > calc.Kph2Mps(100) then
+        if currentSpeed > _100kmph then
             brakeValue = Clamp(pidHighSpeed:get(), 0, 1)
         else
             brakeValue = Clamp(pidLowSpeed:get(), 0, 1)
