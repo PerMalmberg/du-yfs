@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 1.4.1 - 2023-10-xx
+## 1.4.1 - 2023-10-14
 
 ### Fixed
 * When running a route in floor mode, it now adds single quotation marks around the route name so it supports spaces in the name.
