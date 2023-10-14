@@ -565,8 +565,8 @@ function FlightFSM.New(settings, routeController, geo)
 
         -- Only feed speed pid when not going fast enough to avoid accelerating when speed is too high
         if diff >= 0 then
-            -- Feed the pid with 1/10:th to give it a wider working range.
-            speedPid:inject(diff / 10)
+            -- Feed the pid with 1/100:th to give it a wider working range.
+            speedPid:inject(diff / 100)
         else
             speedPid:reset()
         end
