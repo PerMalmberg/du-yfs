@@ -11,7 +11,7 @@ local AdjustmentTracker           = require("flight/AdjustmentTracker")
 local Waypoint                    = require("flight/Waypoint")
 local brakes                      = require("flight/Brakes"):Instance()
 local G                           = vehicle.world.G
-local AirFrictionAcceleration     = vehicle.world.AirFrictionAcceleration
+local AirFrictionAcc              = vehicle.world.AirFrictionAcceleration
 local Sign                        = calc.Sign
 local AngleToDot                  = calc.AngleToDot
 local nullVec                     = Vec3.zero
@@ -23,6 +23,8 @@ local pub                         = require("util/PubSub").Instance()
 local input                       = require("input/Input").Instance()
 local SetEngineCommand            = unit.setEngineCommand
 local SetEngineThrust             = unit.setEngineThrust
+local IsFrozen                    = player.isFrozen
+local InAtmo                      = vehicle.world.IsInAtmo
 
 require("flight/state/Require")
 local CurrentPos                    = vehicle.position.Current
@@ -93,6 +95,7 @@ function FlightFSM.New(settings, routeController, geo)
     local yawAlignmentThrustLimiter = 1
     local boosterActive             = false
     local boosterStateChanged       = false
+    local isFrozen                  = false
 
     local longAdjData               = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
     local latAdjData                = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
@@ -266,7 +269,7 @@ function FlightFSM.New(settings, routeController, geo)
             or vertAdjData.LastDistance() > margin
     end
 
-    local function getAdjustedFrictionSpeed()
+    local function burnSpeed()
         return construct.getFrictionBurnSpeed() * 0.98
     end
 
@@ -311,7 +314,7 @@ function FlightFSM.New(settings, routeController, geo)
 
         --- Don't allow us to burn
         if atmoDensity > 0 then
-            targetSpeed = evaluateNewLimit(targetSpeed, getAdjustedFrictionSpeed(), "Burn speed")
+            targetSpeed = evaluateNewLimit(targetSpeed, burnSpeed(), "Burn speed")
         end
 
         local inDeadZone = firstBody and isWithinDeadZone(pos, firstBody)
@@ -323,7 +326,7 @@ function FlightFSM.New(settings, routeController, geo)
         local availableBrakeDeceleration = brakes.EffectiveBrakeDeceleration()
 
         -- Ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
-        local atmosphericEntrySpeed = getAdjustedFrictionSpeed()
+        local atmosphericEntrySpeed = burnSpeed()
         if willHitAtmo then
             flightData.finalSpeed = atmosphericEntrySpeed
             flightData.finalSpeedDistance = distanceToAtmo
@@ -505,37 +508,32 @@ function FlightFSM.New(settings, routeController, geo)
             return
         end
 
-        -- Subtract (which adds it since it works against us) the air friction acceleration for thrust.
-        -- Note that air friction causes us to engage thrust on lateral engines in the direction of travel if we're moving sideways at speed, such as when turning a Bug.
-        local thrustAcc = -universe:VerticalReferenceVector() * G() - AirFrictionAcceleration()
+        local acc = adjustmentAcc - universe:VerticalReferenceVector() * G() - AirFrictionAcc()
 
         if abs(yaw.OffsetDegrees()) < yawAlignmentThrustLimiter then
-            thrustAcc = thrustAcc +
-                acceleration * input.Throttle() -- throttle also affects brake acceleration using engines
+            acc = acc + acceleration * input.Throttle() -- throttle also affects brake acceleration using engines
         end
-
-        local finalAcc = thrustAcc + adjustmentAcc
 
         -- Make sure that engine tags only include the absolute minimum number of engines as it
         -- is the first command to and engine that takes effect, not the last one. For example,
         -- lateral engines must be adressed with 'lateran AND analog' or a lateral rocket engine
         -- also gets the command.
 
-        local up = finalAcc:ProjectOn(Up())
         -- Vertical AND analog
-        SetEngineCommand("vertical analog", { up:Unpack() }, { 0, 0, 0 }, true, true,
-            "airfoil",
-            "ground",
-            "analog", 0.1)
+        SetEngineCommand("vertical analog", { acc:ProjectOn(Up()):Unpack() }, { 0, 0, 0 }, true, true, "airfoil",
+            "ground", "analog", 0.1)
 
-
-        local forward = finalAcc:ProjectOn(Forward())
         -- longitudinal AND analog
-        SetEngineCommand("longitudinal analog", { forward:Unpack() }, { 0, 0, 0 }, true, true, "", "", "", 0.1)
+        SetEngineCommand("longitudinal analog", { acc:ProjectOn(Forward()):Unpack() }, { 0, 0, 0 }, true, true, "",
+            "", "", 0.1)
 
-        local right = finalAcc:ProjectOn(Right())
+        -- When in manual mode we want to counter lateral drift by the same amount of force as air friction.
+        -- Note the two-multiplier to counter it already being subtracted above
+        local driftComp = AirFrictionAcc():ProjectOn(Right()) * ((isFrozen and InAtmo()) and 2 or 0)
+
         -- Lateral AND analog
-        SetEngineCommand("lateral analog", { right:Unpack() }, { 0, 0, 0 }, true, true, "", "", "", 0.1)
+        SetEngineCommand("lateral analog", { (acc:ProjectOn(Right()) + driftComp):Unpack() }, { 0, 0, 0 }, true,
+            true, "", "", "", 0.1)
 
         if boosterStateChanged then
             boosterStateChanged = false
@@ -699,6 +697,7 @@ function FlightFSM.New(settings, routeController, geo)
             pub.Publish("AdjustmentData", adjustData)
         end
         lastReadMass = TotalMass()
+        isFrozen = IsFrozen()
     end
 
     function s.AtWaypoint(isLastWaypoint, next, previous)
