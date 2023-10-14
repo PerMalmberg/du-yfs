@@ -25,13 +25,9 @@ function Idle.New(fsm)
     local s = {}
 
     local settings = fsm.GetSettings()
-    local enterPos ---@type Vec3
-    local enterForward ---@type Vec3
 
     function s.Enter()
         pub.RegisterTable("FloorMonitor", s.floorMonitor)
-        enterPos = Current()
-        enterForward = Forward()
     end
 
     function s.Leave()
