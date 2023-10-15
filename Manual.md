@@ -1,5 +1,7 @@
 # Yoarii's Flight system
 
+Note: This manual is always for the latest version of the script.
+
 Please read the entire manual before attempting to perform an installation, there are important information throughout that will impact the choices you make.
 
 - [Yoarii's Flight system](#yoariis-flight-system)
