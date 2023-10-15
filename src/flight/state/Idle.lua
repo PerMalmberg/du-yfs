@@ -1,6 +1,6 @@
-local pub = require("util/PubSub").Instance()
-local log = require("debug/Log").Instance()
-
+local s      = require("Singletons")
+local log    = s.log
+local pub    = s.pub
 
 ---@class Idle
 ---@field New fun(fsm:FlightFSM):FlightState

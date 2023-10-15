@@ -2,9 +2,11 @@
 ---@module "element/Telemeter"
 
 require("abstraction/Vehicle")
-local pub         = require("util/PubSub").Instance()
-local log         = require("debug/Log").Instance()
-local gateControl = require("controller/GateControl").Instance()
+local s           = require("Singletons")
+local log         = s.log
+local pub         = s.pub
+local gateControl = s.gateCtrl
+
 local timer       = require("system/Timer").Instance()
 
 

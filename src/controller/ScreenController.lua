@@ -1,20 +1,22 @@
-local Stopwatch = require("system/Stopwatch")
 require("abstraction/Vehicle")
+local s                  = require("Singletons")
+local log                = s.log
+local pub                = s.pub
+local su                 = s.strUtil
+local commandLine        = s.commandLine
+local calc               = s.calc
+
+local Stopwatch          = require("system/Stopwatch")
 local Task               = require("system/Task")
 local ValueTree          = require("util/ValueTree")
 local Vec3               = require("math/Vec3")
 local PointOptions       = require("flight/route/PointOptions")
-local log                = require("debug/Log").Instance()
-local commandLine        = require("commandline/CommandLine").Instance()
-local pub                = require("util/PubSub").Instance()
 local layout             = require("screen/layout_out")
 local Stream             = require("Stream")
 local ScreenDevice       = require("device/ScreenDevice")
-local calc               = require("util/Calc")
 local pagination         = require("util/Pagination")
 local distanceFormat     = require("util/DistanceFormat")
 local massFormat         = require("util/MassFormat")
-local su                 = require("util/StringUtil")
 local max                = math.max
 local min                = math.min
 

@@ -1,10 +1,12 @@
+local s                = require("Singletons")
+local log              = s.log
+local pub              = s.pub
+
 local Container        = require("element/Container")
 local ContainerTalents = require("element/ContainerTalents")
 local Stopwatch        = require("system/Stopwatch")
 local Task             = require("system/Task")
 local Vec2             = require("native/Vec2")
-local log              = require("debug/Log").Instance()
-local pub              = require("util/PubSub").Instance()
 local _                = require("util/Table")
 
 ---@alias FuelTankInfo {name:string, factorBar:Vec2, percent:number, visible:boolean, type:string}

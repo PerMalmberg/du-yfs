@@ -1,3 +1,4 @@
+require("abstraction/Vehicle")
 local calc = require("util/Calc")
 local universe = require("universe/Universe").Instance()
 local nullVec = require("math/Vec3").New()

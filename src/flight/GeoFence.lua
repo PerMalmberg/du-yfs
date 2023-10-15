@@ -1,7 +1,8 @@
 require("abstraction/Vehicle")
+local s          = require("Singletons")
+local log        = s.log
+local universe   = s.universe
 local Vec3       = require("math/Vec3")
-local log        = require("debug/Log").Instance()
-local universe   = require("universe/Universe").Instance()
 
 ---@alias GeoFenceData {centerPos:string, boundary:number, enabled:boolean}
 

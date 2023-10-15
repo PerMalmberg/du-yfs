@@ -1,5 +1,7 @@
-local gateControl = require("controller/GateControl").Instance()
-local log         = require("debug/Log").Instance()
+local s           = require("Singletons")
+local log         = s.log
+local gateControl = s.gateCtrl
+
 local timer       = require("system/Timer").Instance()
 local Waypoint    = require("flight/Waypoint")
 local Stopwatch   = require("system/Stopwatch")

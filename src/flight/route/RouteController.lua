@@ -1,10 +1,12 @@
 require("abstraction/Vehicle")
+local s              = require("Singletons")
+local log            = s.log
+local pub            = s.pub
+local universe       = s.universe
+
 local Point          = require("flight/route/Point")
 local Route          = require("flight/route/Route")
 local Task           = require("system/Task")
-local log            = require("debug/Log").Instance()
-local universe       = require("universe/Universe").Instance()
-local pub            = require("util/PubSub").Instance()
 local PointOptions   = require("flight/route/PointOptions")
 local pagination     = require("util/Pagination")
 local distanceFormat = require("util/DistanceFormat")

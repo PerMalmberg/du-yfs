@@ -1,17 +1,20 @@
 require("abstraction/Vehicle")
+local s            = require("Singletons")
+local log          = s.log
+local gateControl  = s.gateCtrl
+local pub          = s.pub
+local universe     = s.universe
+local calc         = s.calc
+local constants    = s.constants
+local brakes       = s.brakes
+
 local AxisManager  = require("flight/AxisManager")
 local PointOptions = require("flight/route/PointOptions")
 local Stopwatch    = require("system/Stopwatch")
 local Vec3         = require("math/Vec3")
 local Waypoint     = require("flight/Waypoint")
-local calc         = require("util/Calc")
-local constants    = require("YFSConstants")
-local gateControl  = require("controller/GateControl").Instance()
-local pub          = require("util/PubSub").Instance()
-local universe     = require("universe/Universe").Instance()
 local Ternary      = calc.Ternary
 local plane        = require("math/Plane").NewByVertialReference()
-local log          = require("debug/Log").Instance()
 local abs          = math.abs
 require("flight/state/Require")
 
@@ -75,7 +78,6 @@ end
 ---@param flightFSM FlightFSM
 ---@return FlightCore
 function FlightCore.New(routeController, flightFSM)
-    local brakes = require("flight/Brakes").Instance()
     local s = {}
 
     local flushHandlerId = 0

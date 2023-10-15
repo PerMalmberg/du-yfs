@@ -1,7 +1,6 @@
-local log = require("debug/Log").Instance()
-local cmd = require("commandline/CommandLine").Instance()
-local yfsConstants = require("YFSConstants")
-require("util/Table")
+local log        = require("debug/Log").Instance()
+local cmd        = require("commandline/CommandLine").Instance()
+local constants  = require("YFSConstants")
 
 ---@module "storage/BufferedDB"
 
@@ -16,7 +15,7 @@ require("util/Table")
 ---@field String fun(key:string, default?:string):string
 
 local singleton
-local Settings = {}
+local Settings   = {}
 Settings.__index = Settings
 
 ---Creates a new Setting
@@ -50,11 +49,11 @@ function Settings.Create(db)
         rocketFuelTankHandling = { default = 0 },
     }
 
-    local speedPid = yfsConstants.flight.speedPid
-    local lightPid = yfsConstants.flight.axis.light
-    local heavyPid = yfsConstants.flight.axis.heavy
-    local routeDefaults = yfsConstants.route
-    local flightDefaults = yfsConstants.flight
+    local f = constants.flight
+    local speedPid = f.speedPid
+    local lightPid = f.axis.light
+    local heavyPid = f.axis.heavy
+    local routeDefaults = constants.route
     ---@type {default:string|number|boolean}
     local settings = {
         engineWarmup = { default = 1 },
@@ -73,14 +72,14 @@ function Settings.Create(db)
         autoShutdownFloorDistance = { default = routeDefaults.autoShutdownFloorDistance },
         yawAlignmentThrustLimiter = { default = routeDefaults.yawAlignmentThrustLimiter },
         routeStartDistanceLimit = { default = routeDefaults.routeStartDistanceLimit },
-        showWidgetsOnStart = { default = yfsConstants.widgets.showOnStart },
-        throttleStep = { default = yfsConstants.flight.throttleStep },
+        showWidgetsOnStart = { default = constants.widgets.showOnStart },
+        throttleStep = { default = constants.flight.throttleStep },
         manualControlOnStartup = { default = false },
-        turnAngle = { default = yfsConstants.flight.defaultTurnAngle },
-        minimumPathCheckOffset = { default = flightDefaults.minimumPathCheckOffset },
+        turnAngle = { default = constants.flight.defaultTurnAngle },
+        minimumPathCheckOffset = { default = f.minimumPathCheckOffset },
         showFloor = { default = "-" },
-        pathAlignmentAngleLimit = { default = flightDefaults.pathAlignmentAngleLimit },
-        pathAlignmentDistanceLimit = { default = flightDefaults.pathAlignmentDistanceLimit },
+        pathAlignmentAngleLimit = { default = f.pathAlignmentAngleLimit },
+        pathAlignmentDistanceLimit = { default = f.pathAlignmentDistanceLimit },
         pathAlignmentDistanceLimitFromSurface = { default = 0 },
         setWaypointAlongRoute = { default = false },
         commChannel = { default = "" },

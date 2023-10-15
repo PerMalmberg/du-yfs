@@ -1,4 +1,5 @@
-local log = require("debug/Log").Instance()
+local s   = require("Singletons")
+local log = s.log
 
 ---Ensures that the core is linked and returns true if the control unit is an ECU
 ---@return boolean

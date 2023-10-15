@@ -1,22 +1,23 @@
+local s                       = require("Singletons")
+local log                     = s.log
+local universe                = s.universe
+local input                   = s.input
+local pub                     = s.pub
+local gateControl             = s.gateCtrl
+local constants               = s.constants
+local defaultMargin           = constants.flight.defaultMargin
+local calc                    = s.calc
+local keys                    = s.keys
 local Criteria                = require("input/Criteria")
 local Vec3                    = require("math/Vec3")
 local Task                    = require("system/Task")
-local log                     = require("debug/Log").Instance()
-local calc                    = require("util/Calc")
-local universe                = require("universe/Universe").Instance()
-local keys                    = require("input/Keys")
-local constants               = require("YFSConstants")
 local Stopwatch               = require("system/Stopwatch")
-local input                   = require("input/Input").Instance()
-local pub                     = require("util/PubSub").Instance()
-local defaultMargin           = constants.flight.defaultMargin
-local gateControl             = require("controller/GateControl").Instance()
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local Plane                   = require("math/Plane")
 local max                     = math.max
-local Sign                    = calc.Sign
+local Sign                    = s.calc.Sign
 local NF                      = function() return not IsFrozen() end
-local Clamp                   = calc.Clamp
+local Clamp                   = s.calc.Clamp
 
 ---@class Wsad
 ---@field New fun(flightcore:FlightCore):Wsad

@@ -1,5 +1,6 @@
-local log = require("debug/Log").Instance()
-local v = require("version_out")
+local s   = require("Singletons")
+local log = s.log
+local v   = require("version_out")
 
 log.Info(v.APP_NAME)
 log.Info(v.APP_VERSION)

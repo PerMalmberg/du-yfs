@@ -1,6 +1,8 @@
 local env = require("environment")
 env.Prepare()
 
+require("abstraction/Vehicle")
+
 local FlightCore = require("flight/FlightCore")
 local Point = require("flight/route/Point")
 local PointOptions = require("flight/route/PointOptions")

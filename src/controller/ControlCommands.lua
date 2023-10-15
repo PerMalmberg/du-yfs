@@ -2,19 +2,21 @@
 ---@module "input/Input"
 
 require("abstraction/Vehicle")
+local s                       = require("Singletons")
+
 local Criteria                = require("input/Criteria")
 local PointOptions            = require("flight/route/PointOptions")
 local Vec3                    = require("math/Vec3")
 local Waypoint                = require("flight/Waypoint")
-local log                     = require("debug/Log").Instance()
-local brakes                  = require("flight/Brakes").Instance()
-local calc                    = require("util/Calc")
-local universe                = require("universe/Universe").Instance()
-local keys                    = require("input/Keys")
-local pub                     = require("util/PubSub").Instance()
-local constants               = require("YFSConstants")
-local gateCtrl                = require("controller/GateControl").Instance()
-local radar                   = require("element/Radar").Instance()
+local log                     = s.log
+local brakes                  = s.brakes
+local calc                    = s.calc
+local universe                = s.universe
+local keys                    = s.keys
+local pub                     = s.pub
+local constants               = s.constants
+local gateCtrl                = s.gateCtrl
+local radar                   = s.radar
 local VerticalReferenceVector = universe.VerticalReferenceVector
 
 ---@alias PointOptionArguments { commandValue:string, maxspeed:number, margin:number, lockdir:boolean}

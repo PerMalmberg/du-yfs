@@ -1,4 +1,9 @@
-local log              = require("debug/Log").Instance()
+local s                = require("Singletons")
+local pub              = s.pub
+local input            = s.input
+local commandLine      = s.commandLine
+local log              = s.log
+local radar            = s.radar
 local ControlCommands  = require("controller/ControlCommands")
 local RouteController  = require("flight/route/RouteController")
 local BufferedDB       = require("storage/BufferedDB")
@@ -14,12 +19,8 @@ local InfoCentral      = require("info/InfoCentral")
 local Task             = require("system/Task")
 local Wsad             = require("controller/Wsad")
 local floorDetector    = require("controller/FloorDetector").Instance()
-local commandLine      = require("commandline/CommandLine").Instance()
-local pub              = require("util/PubSub").Instance()
-local input            = require("input/Input").Instance()
 local Access           = require("Access")
 local GeoFence         = require("flight/GeoFence")
-local Radar            = require("element/Radar")
 
 ---Main routine that starts the system
 ---@param isECU boolean
@@ -55,7 +56,6 @@ local function Start(isECU)
     local screen ---@type ScreenController
     local fuel ---@type Fuel
     local info ---@type InfoCentral
-    local radar = Radar.Instance()
 
     local followRemote = library.getLinkByName("FollowRemote") ---@type any
 
@@ -76,7 +76,7 @@ local function Start(isECU)
         settingsDb.BeginLoad()
         routeDb.BeginLoad()
 
-        while not settingsDb:IsLoaded() or not routeDb:IsLoaded() do
+        while not settingsDb.IsLoaded() or not routeDb.IsLoaded() do
             coroutine.yield()
         end
 

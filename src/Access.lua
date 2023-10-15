@@ -1,6 +1,6 @@
-local log = require("debug/Log").Instance()
-local su = require("util/StringUtil")
-local _ = require("util/Table")
+local s = require("Singletons")
+local log = s.log
+local su = s.strUtil
 
 ---@alias AdminData table<string, boolean>
 ---@alias ConstructOwner {id:integer, isOrganization:boolean}

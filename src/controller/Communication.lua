@@ -1,4 +1,7 @@
 ---@module "Settings"
+local s = require("Singletons")
+local log = s.log
+local pub = s.pub
 
 local RxTx = require("device/RxTx")
 local Stream = require("Stream")
@@ -6,8 +9,6 @@ local Stream = require("Stream")
 local rx = library.getLinkByClass("ReceiverUnit")
 local tx = library.getLinkByClass("EmitterUnit")
 
-local log = require("debug/Log").Instance()
-local pub = require("util/PubSub").Instance()
 
 ---@class Communication
 ---@field OnData fun(table)
