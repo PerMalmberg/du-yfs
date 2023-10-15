@@ -1,3 +1,4 @@
+require("GlobalTypes")
 local s                       = require("Singletons")
 local log                     = s.log
 local universe                = s.universe
@@ -8,12 +9,7 @@ local constants               = s.constants
 local defaultMargin           = constants.flight.defaultMargin
 local calc                    = s.calc
 local keys                    = s.keys
-local Criteria                = require("input/Criteria")
-local Vec3                    = require("math/Vec3")
-local Task                    = require("system/Task")
-local Stopwatch               = require("system/Stopwatch")
 local VerticalReferenceVector = universe.VerticalReferenceVector
-local Plane                   = require("math/Plane")
 local max                     = math.max
 local Sign                    = s.calc.Sign
 local NF                      = function() return not IsFrozen() end

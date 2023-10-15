@@ -2,12 +2,9 @@
 ---@module "input/Input"
 
 require("abstraction/Vehicle")
+require("GlobalTypes")
 local s                       = require("Singletons")
 
-local Criteria                = require("input/Criteria")
-local PointOptions            = require("flight/route/PointOptions")
-local Vec3                    = require("math/Vec3")
-local Waypoint                = require("flight/Waypoint")
 local log                     = s.log
 local brakes                  = s.brakes
 local calc                    = s.calc

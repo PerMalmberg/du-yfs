@@ -1,5 +1,4 @@
-local Waypoint = require("flight/Waypoint")
-local Plane = require("math/Plane")
+require("GlobalTypes")
 
 ---@class ReturnToPath
 ---@field New fun(fsm:FlightFSM, returnPoint:Vec3):FlightState

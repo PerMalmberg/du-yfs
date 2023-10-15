@@ -1,4 +1,5 @@
 require("abstraction/Vehicle")
+require("GlobalTypes")
 local s                  = require("Singletons")
 local log                = s.log
 local pub                = s.pub
@@ -6,11 +7,7 @@ local su                 = s.strUtil
 local commandLine        = s.commandLine
 local calc               = s.calc
 
-local Stopwatch          = require("system/Stopwatch")
-local Task               = require("system/Task")
 local ValueTree          = require("util/ValueTree")
-local Vec3               = require("math/Vec3")
-local PointOptions       = require("flight/route/PointOptions")
 local layout             = require("screen/layout_out")
 local Stream             = require("Stream")
 local ScreenDevice       = require("device/ScreenDevice")

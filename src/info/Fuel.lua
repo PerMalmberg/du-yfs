@@ -1,10 +1,10 @@
+require("GlobalTypes")
 local s                = require("Singletons")
 local log              = s.log
 local pub              = s.pub
 
 local Container        = require("element/Container")
 local ContainerTalents = require("element/ContainerTalents")
-local Stopwatch        = require("system/Stopwatch")
 local Task             = require("system/Task")
 local Vec2             = require("native/Vec2")
 local _                = require("util/Table")

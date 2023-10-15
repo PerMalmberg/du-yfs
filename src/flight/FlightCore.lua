@@ -1,21 +1,18 @@
 require("abstraction/Vehicle")
-local s            = require("Singletons")
-local log          = s.log
-local gateControl  = s.gateCtrl
-local pub          = s.pub
-local universe     = s.universe
-local calc         = s.calc
-local constants    = s.constants
-local brakes       = s.brakes
+require("GlobalTypes")
+local s           = require("Singletons")
+local log         = s.log
+local gateControl = s.gateCtrl
+local pub         = s.pub
+local universe    = s.universe
+local calc        = s.calc
+local constants   = s.constants
+local brakes      = s.brakes
 
-local AxisManager  = require("flight/AxisManager")
-local PointOptions = require("flight/route/PointOptions")
-local Stopwatch    = require("system/Stopwatch")
-local Vec3         = require("math/Vec3")
-local Waypoint     = require("flight/Waypoint")
-local Ternary      = calc.Ternary
-local plane        = require("math/Plane").NewByVertialReference()
-local abs          = math.abs
+local AxisManager = require("flight/AxisManager")
+local Ternary     = calc.Ternary
+local plane       = Plane.NewByVertialReference()
+local abs         = math.abs
 require("flight/state/Require")
 
 ---@module "flight/route/RouteController"

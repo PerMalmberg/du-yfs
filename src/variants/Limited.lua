@@ -1,6 +1,6 @@
+require("GlobalTypes")
 local log = require("debug/Log").Instance()
 local Lock = require("element/Lock")
-local Task = require("system/Task")
 local v = require("version_out")
 local linked, isECU = require("variants/CoreLinkCheck")()
 

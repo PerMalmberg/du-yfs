@@ -1,3 +1,4 @@
+require("GlobalTypes")
 local s                = require("Singletons")
 local pub              = s.pub
 local input            = s.input
@@ -13,10 +14,8 @@ local FlightCore       = require("flight/FlightCore")
 local ScreenController = require("controller/ScreenController")
 local Communcation     = require("controller/Communication")
 local Settings         = require("Settings")
-local Stopwatch        = require("system/Stopwatch")
 local Hud              = require("hud/Hud")
 local InfoCentral      = require("info/InfoCentral")
-local Task             = require("system/Task")
 local Wsad             = require("controller/Wsad")
 local floorDetector    = require("controller/FloorDetector").Instance()
 local Access           = require("Access")

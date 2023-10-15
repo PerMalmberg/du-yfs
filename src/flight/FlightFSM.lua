@@ -1,4 +1,5 @@
 require("abstraction/Vehicle")
+require("GlobalTypes")
 local s                           = require("Singletons")
 local log                         = s.log
 local universe                    = s.universe
@@ -14,12 +15,10 @@ local LightConstructMassThreshold = yfsConstants.flight.lightConstructMassThresh
 local DefaultMargin               = yfsConstants.flight.defaultMargin
 local AxisManager                 = require("flight/AxisManager")
 local AdjustmentTracker           = require("flight/AdjustmentTracker")
-local Waypoint                    = require("flight/Waypoint")
 local Sign                        = calc.Sign
 local AngleToDot                  = calc.AngleToDot
 local nullVec                     = Vec3.zero
 local engine                      = require("abstraction/Engine").Instance()
-local Stopwatch                   = require("system/Stopwatch")
 local PID                         = require("cpml/pid")
 local Ray                         = require("util/Ray")
 local SetEngineCommand            = unit.setEngineCommand

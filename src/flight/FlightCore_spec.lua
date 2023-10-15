@@ -2,11 +2,9 @@ local env = require("environment")
 env.Prepare()
 
 require("abstraction/Vehicle")
+require("GlobalTypes")
 
 local FlightCore = require("flight/FlightCore")
-local Point = require("flight/route/Point")
-local PointOptions = require("flight/route/PointOptions")
-local Vec3 = require("math/Vec3")
 
 describe("FlightCore #flight", function()
     it("Can create Waypoint from point", function()

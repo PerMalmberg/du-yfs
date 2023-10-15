@@ -1,3 +1,4 @@
+require("GlobalTypes")
 local s              = require("Singletons")
 local log            = s.log
 local pub            = s.pub
@@ -5,9 +6,7 @@ local input          = s.input
 local calc           = s.calc
 
 local Template       = require("Template")
-local Task           = require("system/Task")
 local hudTemplate    = library.embedFile("hud.html")
-local Stopwatch      = require("system/Stopwatch")
 
 local updateInterval = 0.3
 
