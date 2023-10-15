@@ -3,16 +3,18 @@
     When loaded, additional points may be inserted to to create a route that is smooth to fly
     and that doesn't pass through a planetary body. Extra points are not persisted.
 ]]
---
+
+
+require("abstraction/Vehicle")
 local PointOptions = require("flight/route/PointOptions")
-local vehicle      = require("abstraction/Vehicle"):New()
 local calc         = require("util/Calc")
 local log          = require("debug/Log").Instance()
 local universe     = require("universe/Universe").Instance()
 local Point        = require("flight/route/Point")
 local pagination   = require("util/Pagination")
-local Vec3         = require("math/Vec3")
 require("util/Table")
+
+---@module "Vec3"
 
 ---@alias RouteRemainingInfo {Legs:integer, TotalDistance:number}
 
@@ -105,7 +107,7 @@ function Route.New()
     ---Adds the current postion to the route
     ---@return Point
     function s.AddCurrentPos()
-        return s.AddCoordinate(vehicle.position.Current())
+        return s.AddCoordinate(Current())
     end
 
     ---Adds a Point to the route

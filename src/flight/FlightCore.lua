@@ -1,3 +1,4 @@
+require("abstraction/Vehicle")
 local AxisManager  = require("flight/AxisManager")
 local PointOptions = require("flight/route/PointOptions")
 local Stopwatch    = require("system/Stopwatch")
@@ -8,8 +9,6 @@ local constants    = require("YFSConstants")
 local gateControl  = require("controller/GateControl").Instance()
 local pub          = require("util/PubSub").Instance()
 local universe     = require("universe/Universe").Instance()
-local vehicle      = require("abstraction/Vehicle").New()
-local Current      = vehicle.position.Current
 local Ternary      = calc.Ternary
 local plane        = require("math/Plane").NewByVertialReference()
 local log          = require("debug/Log").Instance()
@@ -87,7 +86,7 @@ function FlightCore.New(routeController, flightFSM)
     local routePublishTimer = Stopwatch.New()
 
     local function createDefaultWP()
-        return Waypoint.New(vehicle.position.Current(), 0, 0, defaultMargin, 0)
+        return Waypoint.New(Current(), 0, 0, defaultMargin, 0)
     end
 
     -- Setup start waypoints to prevent nil values
@@ -157,9 +156,9 @@ function FlightCore.New(routeController, flightFSM)
     ---@param axis Vec3
     ---@return Vec3 # The alignment direction
     function s.Turn(degrees, axis)
-        local current = vehicle.position.Current()
+        local current = Current()
         local forwardPointOnPlane = calc.ProjectPointOnPlane(axis, current,
-            current + vehicle.orientation.Forward() * Waypoint.DirectionMargin)
+            current + Forward() * Waypoint.DirectionMargin)
         forwardPointOnPlane = calc.RotateAroundAxis(forwardPointOnPlane, current, degrees, axis)
         local dir = (forwardPointOnPlane - Current()):NormalizeInPlace()
         currentWaypoint.LockYawTo(dir, true)
@@ -171,7 +170,7 @@ function FlightCore.New(routeController, flightFSM)
     ---@param point Vec3
     function s.AlignTo(point)
         if currentWaypoint then
-            local current = vehicle.position.Current()
+            local current = Current()
             local pointOnPlane = calc.ProjectPointOnPlane(-universe.VerticalReferenceVector(), current, point)
             local dir = (pointOnPlane - current):NormalizeInPlace()
             ---QQQ Just (point - curr):NormalizeInPlace() ???

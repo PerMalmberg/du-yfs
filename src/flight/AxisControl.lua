@@ -1,13 +1,10 @@
+require("abstraction/Vehicle")
 local Vec3 = require("math/Vec3")
-local vehicle = require("abstraction/Vehicle").New()
 local calc = require("util/Calc")
 local Settings = require("Settings")
-local TotalMass = vehicle.mass.Total
 local nullVec = Vec3.zero
 local yfsC = require("YFSConstants")
 local LightConstructMassThreshold = yfsC.flight.lightConstructMassThreshold
-local AngVel = vehicle.velocity.localized.Angular
-local AngAcc = vehicle.acceleration.localized.Angular
 local SignLargestAxis = calc.SignLargestAxis
 local SignedRotationAngle = calc.SignedRotationAngle
 local setEngineCommand = unit.setEngineCommand
@@ -89,22 +86,20 @@ function AxisControl.New(axis)
         offset = 0 -- in degrees
     }
 
-    local o = vehicle.orientation
-
     if axis == ControlledAxis.Pitch then
-        reference = o.Forward
-        normal = o.Right
-        localNormal = vehicle.orientation.localized.Right
+        reference = Forward
+        normal = Right
+        localNormal = LocalRight
         pubTopic = "PitchData"
     elseif axis == ControlledAxis.Roll then
-        reference = o.Up
-        normal = o.Forward
-        localNormal = vehicle.orientation.localized.Forward
+        reference = Up
+        normal = Forward
+        localNormal = LocalForward
         pubTopic = "RollData"
     elseif axis == ControlledAxis.Yaw then
-        reference = o.Forward
-        normal = o.Up
-        localNormal = vehicle.orientation.localized.Up
+        reference = Forward
+        normal = Up
+        localNormal = LocalUp
         pubTopic = "YawData"
     end
 
@@ -134,7 +129,7 @@ function AxisControl.New(axis)
     ---Returns the current signed angular velocity, in degrees per seconds.
     ---@return number
     function s.Speed()
-        local vel = AngVel() * rad2deg
+        local vel = LocalAngVel() * rad2deg
         vel = vel * localNormal()
 
         -- The normal vector gives the correct x, y or z axis part of the speed
@@ -143,7 +138,7 @@ function AxisControl.New(axis)
     end
 
     function s.Acceleration()
-        local vel = AngAcc() * rad2deg
+        local vel = LocalAngAcc() * rad2deg
         -- The normal vector gives the correct x, y or z axis part of the acceleration
         return (vel * localNormal()):Len()
     end
@@ -154,7 +149,7 @@ function AxisControl.New(axis)
             -- Positive acceleration turns counter-clockwise
             -- Positive velocity means we're turning counter-clockwise
 
-            local vecToTarget = (targetCoordinate - vehicle.position.Current()):Normalize()
+            local vecToTarget = (targetCoordinate - Current()):Normalize()
             local offset = SignedRotationAngle(normal(), reference(), vecToTarget) * rad2deg
             axisData.offset = offset
 

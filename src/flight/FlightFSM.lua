@@ -1,6 +1,7 @@
+require("abstraction/Vehicle")
 local log                         = require("debug/Log").Instance()
 local Vec3                        = require("math/Vec3")
-local vehicle                     = require("abstraction/Vehicle").New()
+local AirFrictionAcc              = AirFrictionAcceleration
 local universe                    = require("universe/Universe").Instance()
 local calc                        = require("util/Calc")
 local yfsConstants                = require("YFSConstants")
@@ -10,8 +11,6 @@ local AxisManager                 = require("flight/AxisManager")
 local AdjustmentTracker           = require("flight/AdjustmentTracker")
 local Waypoint                    = require("flight/Waypoint")
 local brakes                      = require("flight/Brakes"):Instance()
-local G                           = vehicle.world.G
-local AirFrictionAcc              = vehicle.world.AirFrictionAcceleration
 local Sign                        = calc.Sign
 local AngleToDot                  = calc.AngleToDot
 local nullVec                     = Vec3.zero
@@ -23,16 +22,9 @@ local pub                         = require("util/PubSub").Instance()
 local input                       = require("input/Input").Instance()
 local SetEngineCommand            = unit.setEngineCommand
 local SetEngineThrust             = unit.setEngineThrust
-local IsFrozen                    = player.isFrozen
-local InAtmo                      = vehicle.world.IsInAtmo
 
 require("flight/state/Require")
-local CurrentPos                    = vehicle.position.Current
-local Velocity                      = vehicle.velocity.Movement
-local Acceleration                  = vehicle.acceleration.Movement
-local GravityDirection              = vehicle.world.GravityDirection
-local AtmoDensity                   = vehicle.world.AtmoDensity
-local TotalMass                     = vehicle.mass.Total
+
 local Clamp                         = calc.Clamp
 local abs                           = math.abs
 local min                           = math.min
@@ -42,9 +34,6 @@ local MAX_INT                       = math.maxinteger
 local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
 local brakeDegradeSpeed             = calc.Kph2Mps(360)
 
-local Up                            = vehicle.orientation.Up
-local Forward                       = vehicle.orientation.Forward
-local Right                         = vehicle.orientation.Right
 local deadZoneFactor                = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
 local adjustAngleThreshold          = calc.AngleToDot(45)
 
@@ -195,7 +184,7 @@ function FlightFSM.New(settings, routeController, geo)
     ---@param body Body
     ---@return boolean, Vec3, number
     local function willEnterAtmo(waypoint, body)
-        local pos = CurrentPos()
+        local pos = Current()
         local center = body.Geography.Center
         local intersects, point, dist = calc.LineIntersectSphere(Ray.New(pos, waypoint.DirectionTo()), center,
             body.Atmosphere.Radius)
@@ -238,7 +227,7 @@ function FlightFSM.New(settings, routeController, geo)
         local startDist
         local stopDist
 
-        if vehicle.world.IsInAtmo() then
+        if IsInAtmo() then
             if lastReadMass > LightConstructMassThreshold then
                 startDist = 20
                 stopDist = 0.3
@@ -287,7 +276,7 @@ function FlightFSM.New(settings, routeController, geo)
             waypoint.DistanceTo() - (currentSpeed * deltaTime + 0.5 * Acceleration():Len() * deltaTime * deltaTime))
 
         -- Calculate max speed we may have with available brake force to to reach the final speed.
-        local pos = CurrentPos()
+        local pos = Current()
         local firstBody = universe.CurrentGalaxy():BodiesInPath(Ray.New(pos, velocity:Normalize()))[1]
         local inAtmo = false
         local willLeaveAtmo = false
@@ -529,7 +518,7 @@ function FlightFSM.New(settings, routeController, geo)
 
         -- When in manual mode we want to counter lateral drift by the same amount of force as air friction.
         -- Note the two-multiplier to counter it already being subtracted above
-        local driftComp = AirFrictionAcc():ProjectOn(Right()) * ((isFrozen and InAtmo()) and 2 or 0)
+        local driftComp = AirFrictionAcc():ProjectOn(Right()) * ((isFrozen and IsInAtmo()) and 2 or 0)
 
         -- Lateral AND analog
         SetEngineCommand("lateral analog", { (acc:ProjectOn(Right()) + driftComp):Unpack() }, { 0, 0, 0 }, true,
@@ -613,7 +602,7 @@ function FlightFSM.New(settings, routeController, geo)
         else
             local selectedWP = s.SelectWP()
 
-            local pos = CurrentPos()
+            local pos = Current()
             local nearest = calc.NearestOnLineBetweenPoints(previous.Destination(), selectedWP.Destination(), pos)
 
             currentState.Flush(deltaTime, selectedWP, previous, nearest)
@@ -675,7 +664,7 @@ function FlightFSM.New(settings, routeController, geo)
             koeff = diff / dist
         end
 
-        local travelDist = min(dist, (startPos - CurrentPos()):Len())
+        local travelDist = min(dist, (startPos - Current()):Len())
         local allowedOffset = startMargin + koeff * travelDist
         local toNearest = (nearestPointOnPath - currentPos):Len()
 

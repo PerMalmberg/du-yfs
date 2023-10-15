@@ -1,3 +1,4 @@
+require("abstraction/Vehicle")
 local Point          = require("flight/route/Point")
 local Route          = require("flight/route/Route")
 local Task           = require("system/Task")
@@ -5,11 +6,8 @@ local log            = require("debug/Log").Instance()
 local universe       = require("universe/Universe").Instance()
 local pub            = require("util/PubSub").Instance()
 local PointOptions   = require("flight/route/PointOptions")
-local vehicle        = require("abstraction/Vehicle").New()
 local pagination     = require("util/Pagination")
 local distanceFormat = require("util/DistanceFormat")
-local Current        = vehicle.position.Current
-local Forward        = vehicle.orientation.Forward
 require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}

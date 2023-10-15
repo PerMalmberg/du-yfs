@@ -1,12 +1,12 @@
 ---@module "commandline/CommandLine"
 ---@module "input/Input"
 
+require("abstraction/Vehicle")
 local Criteria                = require("input/Criteria")
 local PointOptions            = require("flight/route/PointOptions")
 local Vec3                    = require("math/Vec3")
 local Waypoint                = require("flight/Waypoint")
 local log                     = require("debug/Log").Instance()
-local vehicle                 = require("abstraction/Vehicle").New()
 local brakes                  = require("flight/Brakes").Instance()
 local calc                    = require("util/Calc")
 local universe                = require("universe/Universe").Instance()
@@ -16,10 +16,6 @@ local constants               = require("YFSConstants")
 local gateCtrl                = require("controller/GateControl").Instance()
 local radar                   = require("element/Radar").Instance()
 local VerticalReferenceVector = universe.VerticalReferenceVector
-local Current                 = vehicle.position.Current
-local Forward                 = vehicle.orientation.Forward
-local Right                   = vehicle.orientation.Right
-local Up                      = vehicle.orientation.Up
 
 ---@alias PointOptionArguments { commandValue:string, maxspeed:number, margin:number, lockdir:boolean}
 
@@ -67,7 +63,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         opt.Set(PointOptions.MARGIN, data.margin)
 
         if data.lockdir then
-            opt.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
+            opt.Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
         end
         return opt
     end
@@ -99,7 +95,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         cmd.Accept("print-pos", function(_)
             log.Info("Current pos:", universe.CreatePos(Current()):AsPosString())
             log.Info("Alignment pos:",
-                universe.CreatePos(Current() + vehicle.orientation.Forward() * Waypoint.DirectionMargin):AsPosString())
+                universe.CreatePos(Current() + Forward() * Waypoint.DirectionMargin):AsPosString())
         end)
 
 
@@ -707,7 +703,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
     function s.RegisterMoveCommands()
         ---@param data {commandValue:string, lockdir:boolean, maxspeed:number, margin:number, u:number, r:number, f:number, forceVerticalUp:boolean}
         local moveFunc = function(data)
-            local target = Current() + vehicle.orientation.Forward() * data.f + vehicle.orientation.Right() * data.r -
+            local target = Current() + Forward() * data.f + Right() * data.r -
                 universe.VerticalReferenceVector() * data.u
 
             executeMove(target, data.lockdir, data.maxspeed, data.margin, data.forceVerticalUp)
@@ -751,10 +747,10 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         local strafeFunc = function(data)
             local route = rc.ActivateTempRoute()
             local point = route.AddCoordinate(Current() +
-                vehicle.orientation.Right() * data.commandValue)
+                Right() * data.commandValue)
             local p = point.Options()
-            p.Set(PointOptions.LOCK_DIRECTION, { vehicle.orientation.Forward():Unpack() })
-            p.Set(PointOptions.MAX_SPEED, data.maxspeed or vehicle.speed.MaxSpeed())
+            p.Set(PointOptions.LOCK_DIRECTION, { Forward():Unpack() })
+            p.Set(PointOptions.MAX_SPEED, data.maxspeed or MaxSpeed())
 
             flightCore.StartFlight()
         end

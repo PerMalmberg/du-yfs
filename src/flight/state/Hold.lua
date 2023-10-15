@@ -1,10 +1,9 @@
 ---@module "flight/state/Travel"
 ---@module "element/Telemeter"
 
+require("abstraction/Vehicle")
 local pub         = require("util/PubSub").Instance()
 local log         = require("debug/Log").Instance()
-local vehicle     = require("abstraction/Vehicle").New()
-local IsFrozen    = vehicle.player.IsFrozen
 local gateControl = require("controller/GateControl").Instance()
 local timer       = require("system/Timer").Instance()
 

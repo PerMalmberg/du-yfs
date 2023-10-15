@@ -1,8 +1,7 @@
+require("abstraction/Vehicle")
 local Vec3       = require("math/Vec3")
 local log        = require("debug/Log").Instance()
 local universe   = require("universe/Universe").Instance()
-local vehicle    = require("abstraction/Vehicle").New()
-local Current    = vehicle.position.Current
 
 ---@alias GeoFenceData {centerPos:string, boundary:number, enabled:boolean}
 

@@ -1,4 +1,5 @@
-local Stopwatch          = require("system/Stopwatch")
+local Stopwatch = require("system/Stopwatch")
+require("abstraction/Vehicle")
 local Task               = require("system/Task")
 local ValueTree          = require("util/ValueTree")
 local Vec3               = require("math/Vec3")
@@ -13,7 +14,6 @@ local calc               = require("util/Calc")
 local pagination         = require("util/Pagination")
 local distanceFormat     = require("util/DistanceFormat")
 local massFormat         = require("util/MassFormat")
-local TotalMass          = require("abstraction/Vehicle").New().mass.Total
 local su                 = require("util/StringUtil")
 local max                = math.max
 local min                = math.min

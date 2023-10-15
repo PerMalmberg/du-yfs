@@ -1,13 +1,12 @@
-local vehicle    = require("abstraction/Vehicle").New()
-local CurrentPos = vehicle.position.Current
+require("abstraction/Vehicle")
 
 ---@class Travel
 ---@field New fun(fsm:FlightFSM):FlightState
 
-local Travel     = {}
-Travel.__index   = Travel
+local Travel   = {}
+Travel.__index = Travel
 
-local name       = "Travel"
+local name     = "Travel"
 
 ---Creates a new Travel state
 ---@param fsm FlightFSM
@@ -28,7 +27,7 @@ function Travel.New(fsm)
     ---@param nearestPointOnPath Vec3
     function s.Flush(deltaTime, next, previous, nearestPointOnPath)
         -- Are we on the the desired path?
-        if not fsm.CheckPathAlignment(CurrentPos(), nearestPointOnPath, previous, next) then
+        if not fsm.CheckPathAlignment(Current(), nearestPointOnPath, previous, next) then
             fsm.SetState(ReturnToPath.New(fsm, nearestPointOnPath))
         end
     end

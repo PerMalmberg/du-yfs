@@ -1,8 +1,6 @@
-local pub     = require("util/PubSub").Instance()
-local log     = require("debug/Log").Instance()
-local vehicle = require("abstraction/Vehicle").New()
-local Current = vehicle.position.Current
-local Forward = vehicle.orientation.Forward
+local pub = require("util/PubSub").Instance()
+local log = require("debug/Log").Instance()
+
 
 ---@class Idle
 ---@field New fun(fsm:FlightFSM):FlightState
@@ -13,10 +11,10 @@ local Forward = vehicle.orientation.Forward
 ---@field Update fun()
 ---@field Name fun():string
 
-local Idle    = {}
-Idle.__index  = Idle
+local Idle   = {}
+Idle.__index = Idle
 
-local name    = "Idle"
+local name   = "Idle"
 
 ---Creates a new Idle state
 ---@param fsm FlightFSM
