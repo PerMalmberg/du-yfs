@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+## 1.4.2 - 2023-10-xx
+
+### Fixed
+* Corrected some broken math that had went unnoticed since pre v1.0.
+
+### Changed
+* Code size reduction
+
 ## 1.4.1 - 2023-10-14
 
 ### Fixed
