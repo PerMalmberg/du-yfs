@@ -16,7 +16,6 @@ local DefaultMargin               = yfsConstants.flight.defaultMargin
 local AxisManager                 = require("flight/AxisManager")
 local AdjustmentTracker           = require("flight/AdjustmentTracker")
 local Sign                        = calc.Sign
-local AngleToDot                  = calc.AngleToDot
 local nullVec                     = Vec3.zero
 local engine                      = require("abstraction/Engine").Instance()
 local PID                         = require("cpml/pid")
@@ -36,7 +35,6 @@ local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
 local brakeDegradeSpeed             = calc.Kph2Mps(360)
 
 local deadZoneFactor                = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
-local adjustAngleThreshold          = calc.AngleToDot(45)
 
 ---@class FlightFSM
 ---@field New fun(settings:Settings):FlightFSM
@@ -391,9 +389,12 @@ function FlightFSM.New(settings, routeController, geo)
 
         if waypoint.FinalSpeed() == 0 then
             targetSpeed = linearApproach(targetSpeed, remainingDistance)
-            local pathAlignment = (waypoint.Destination() - previousWaypoint.Destination()):Normalize():Dot(universe
-                .VerticalReferenceVector())
-            local approachingVertically = abs(pathAlignment) > AngleToDot(5) -- Both up up and down
+
+            local dirBetweenWP = (waypoint.Destination() - previousWaypoint.Destination()):Normalize()
+            local ver = universe.VerticalReferenceVector()
+            -- Both up up and down
+            local approachingVertically = dirBetweenWP:AngleToDeg(ver) < 5 or
+                dirBetweenWP:AngleToDeg(-ver) < 5
 
             -- When approching the final parking position vertically, move extra slow so that there is enough time to adjust sideways.
             if waypoint.IsLastInRoute()
@@ -403,7 +404,6 @@ function FlightFSM.New(settings, routeController, geo)
                 targetSpeed = evaluateNewLimit(targetSpeed, targetSpeed * 0.5, "Adj. apr.")
             end
         end
-
 
         if globalMaxSpeed > 0 then
             targetSpeed = evaluateNewLimit(targetSpeed, globalMaxSpeed, "Global max")
@@ -425,7 +425,7 @@ function FlightFSM.New(settings, routeController, geo)
     ---@return number length
     local function getAdjustmentDataInFuture(axis, currentPos, nextWaypoint, previousWaypoint, t)
         -- Don't make adjustments in the travel direction.
-        if abs(axis:Dot(nextWaypoint:DirectionTo())) < adjustAngleThreshold then
+        if axis:AngleToDeg(nextWaypoint:DirectionTo()) > 45 then
             local posInFuture = currentPos + Velocity() * t + 0.5 * Acceleration() * t * t
             local targetFuture = calc.NearestOnLineBetweenPoints(previousWaypoint.Destination(),
                 nextWaypoint.Destination(),
@@ -543,8 +543,7 @@ function FlightFSM.New(settings, routeController, geo)
 
         local speedLimit = getSpeedLimit(deltaTime, velocity, waypoint, previousWaypoint)
 
-        local alignmentToDir = direction:Dot(motionDirection)
-        local wrongDir = alignmentToDir < 0 or abs(alignmentToDir) < adjustAngleThreshold
+        local wrongDir = direction:AngleToDeg(motionDirection) > 45
 
         local brakeCounter = brakes.Feed(wrongDir and 0 or speedLimit, currentSpeed)
 
