@@ -24,7 +24,7 @@ local spaceEfficiencyFactor = 0.9              -- Reduced from one to counter br
 ---@field AvailableDeceleration fun():number
 ---@field BrakeEfficiency fun(inAtmo:boolean, speed:number):number
 ---@field EffectiveBrakeDeceleration fun():number
----@field Feed fun(targetSpeed:number, currentSpeed:number):Vec3
+---@field Feed fun(desiredDir:Vec3, targetSpeed:number):Vec3
 ---@field Active fun():boolean
 
 local Brake = {}
@@ -41,7 +41,7 @@ function Brake.Instance()
 
     local pidHighSpeed = PID(1, 0, 0.01)
     local pidLowSpeed = PID(0.1, 0.0, 1)
-    local deceleration = 0
+    local deceleration = nullVec
     local maxSeenBrakeAtmoAcc = 0
     local _100kmph = calc.Kph2Mps(100)
     local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0 } ---@type BrakeData
@@ -59,11 +59,12 @@ function Brake.Instance()
         return construct.getMaxBrake() / s.totalMass
     end
 
+    ---@return Vec3
     local function finalDeceleration()
         if s.forced then
             return -Velocity():Normalize() * rawAvailableDeceleration()
         else
-            return -Velocity():Normalize() * deceleration
+            return deceleration
         end
     end
 
@@ -130,21 +131,22 @@ function Brake.Instance()
         return rawAvailableDeceleration()
     end
 
+    ---@param desiredDir Vec3 Direction we want to move in
     ---@param targetSpeed number The desired speed
-    ---@param currentSpeed number The current speed
     ---@return Vec3 The thrust needed to counter the thrust induced by the braking operation
-    function s.Feed(targetSpeed, currentSpeed)
-        local diff = targetSpeed - currentSpeed
-        diff = -diff -- Negate to make PID become positive when we have too high speed.
+    function s.Feed(desiredDir, targetSpeed)
+        local movementDir, currentSpeed = Velocity():NormalizeLen()
+        if desiredDir:AngleToDeg(movementDir) > 45 then
+            targetSpeed = 0
+        end
+
+        local diff = currentSpeed - targetSpeed -- make PID become positive when we have too high speed.
         pidHighSpeed:inject(diff)
         pidLowSpeed:inject(diff)
 
-        local brakeValue
-        if currentSpeed > _100kmph then
-            brakeValue = Clamp(pidHighSpeed:get(), 0, 1)
-        else
-            brakeValue = Clamp(pidLowSpeed:get(), 0, 1)
-        end
+        local pid = currentSpeed > _100kmph and pidHighSpeed or pidLowSpeed
+
+        local brakeValue = Clamp(pid:get(), 0, 1)
 
         if currentSpeed <= targetSpeed then
             pidHighSpeed:reset()
@@ -154,7 +156,7 @@ function Brake.Instance()
 
         brakeData.pid = brakeValue
 
-        deceleration = brakeValue * rawAvailableDeceleration()
+        deceleration = -movementDir * brakeValue * rawAvailableDeceleration()
 
         return brakeCounter()
     end

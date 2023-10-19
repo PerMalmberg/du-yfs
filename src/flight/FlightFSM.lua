@@ -537,15 +537,12 @@ function FlightFSM.New(settings, routeController, geo)
     ---@return Vec3 The acceleration
     local function move(deltaTime, waypoint, previousWaypoint)
         local direction = waypoint.DirectionTo()
-
         local velocity = Velocity()
-        local motionDirection, currentSpeed = velocity:NormalizeLen()
+        local currentSpeed = velocity:Len()
 
         local speedLimit = getSpeedLimit(deltaTime, velocity, waypoint, previousWaypoint)
 
-        local wrongDir = direction:AngleToDeg(motionDirection) > 45
-
-        local brakeCounter = brakes.Feed(wrongDir and 0 or speedLimit, currentSpeed)
+        local brakeCounter = brakes.Feed(direction, speedLimit)
 
         local diff = speedLimit - currentSpeed
         flightData.speedDiff = diff
