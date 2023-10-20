@@ -542,7 +542,7 @@ function FlightFSM.New(settings, routeController, geo)
 
         local speedLimit = getSpeedLimit(deltaTime, velocity, waypoint, previousWaypoint)
 
-        local brakeCounter = brakes.Feed(direction, speedLimit)
+        brakes.Feed(direction, speedLimit)
 
         local diff = speedLimit - currentSpeed
         flightData.speedDiff = diff
@@ -561,11 +561,6 @@ function FlightFSM.New(settings, routeController, geo)
 
         flightData.pid = pidValue
 
-        -- When we move slow, don't use the brake counter as that induces jitter, especially on small crafts and not when in space
-        if currentSpeed < ignoreAtmoBrakeLimitThreshold and AtmoDensity() > 0.09 then
-            brakeCounter = nullVec
-        end
-
         local acceleration
         if waypoint.DistanceTo() <= DefaultMargin then
             -- At this point we let the adjustment code control
@@ -576,7 +571,7 @@ function FlightFSM.New(settings, routeController, geo)
         end
 
         flightData.controlAcc = acceleration:Len()
-        return acceleration + brakeCounter
+        return acceleration
     end
 
     ---Flush method for the FSM
@@ -595,7 +590,7 @@ function FlightFSM.New(settings, routeController, geo)
 
         if currentState.DisablesAllThrust() then
             applyAcceleration(nil, nullVec)
-            brakes.Feed(0, Velocity():Len())
+            brakes.Feed(nullVec, 0)
         else
             local selectedWP = s.SelectWP()
 

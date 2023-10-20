@@ -1,9 +1,7 @@
 require("abstraction/Vehicle")
 local calc = require("util/Calc")
-local universe = require("universe/Universe").Instance()
 local nullVec = require("math/Vec3").New()
 local PID = require("cpml/pid")
-local VerticalReferenceVector = universe.VerticalReferenceVector
 local pub = require("util/PubSub").Instance()
 local Clamp = calc.Clamp
 local max = math.max
@@ -24,7 +22,7 @@ local spaceEfficiencyFactor = 0.9              -- Reduced from one to counter br
 ---@field AvailableDeceleration fun():number
 ---@field BrakeEfficiency fun(inAtmo:boolean, speed:number):number
 ---@field EffectiveBrakeDeceleration fun():number
----@field Feed fun(desiredDir:Vec3, targetSpeed:number):Vec3
+---@field Feed fun(desiredDir:Vec3, targetSpeed:number)
 ---@field Active fun():boolean
 
 local Brake = {}
@@ -79,22 +77,6 @@ function Brake.Instance()
         pub.Publish("BrakeData", brakeData)
     end
 
-    local function brakeCounter()
-        --[[ From NQ Support:
-            "The speed is projected on the horizontal plane of the construct. And we add a brake force in that plane
-            in the opposite direction of that projected speed, which induces a vertical force when the ship has a pitch."
-
-            So to counter this stupidity (why not apply the brake force opposite of the velocity?!) we calculate the resulting
-            brake acceleration on the vertical vector and add that to the thrust vector.
-        ]]
-        local res = nullVec
-        if IsInAtmo() then
-            res = finalDeceleration():ProjectOn(VerticalReferenceVector())
-        end
-
-        return res
-    end
-
     ---Enables/disables forced brakes
     ---@param on boolean
     function s.Forced(on)
@@ -133,7 +115,6 @@ function Brake.Instance()
 
     ---@param desiredDir Vec3 Direction we want to move in
     ---@param targetSpeed number The desired speed
-    ---@return Vec3 The thrust needed to counter the thrust induced by the braking operation
     function s.Feed(desiredDir, targetSpeed)
         local movementDir, currentSpeed = Velocity():NormalizeLen()
         if desiredDir:AngleToDeg(movementDir) > 45 then
@@ -157,8 +138,6 @@ function Brake.Instance()
         brakeData.pid = brakeValue
 
         deceleration = -movementDir * brakeValue * rawAvailableDeceleration()
-
-        return brakeCounter()
     end
 
     function s.Active()
