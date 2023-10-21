@@ -10,7 +10,6 @@ local defaultMargin           = constants.flight.defaultMargin
 local calc                    = s.calc
 local keys                    = s.keys
 local VerticalReferenceVector = universe.VerticalReferenceVector
-local max                     = math.max
 local Sign                    = s.calc.Sign
 local NF                      = function() return not IsFrozen() end
 local Clamp                   = s.calc.Clamp
@@ -113,12 +112,11 @@ function Wsad.New(fsm, flightCore, settings, access)
     end
 
     ---@param body Body
-    ---@param interval number
     ---@return Vec3
-    local function movement(body, interval)
+    local function movement(body)
         local curr = Current()
-        -- Put the point 1.5 times the distance we travel per timer interval
-        local dist = max(50, Velocity():Len() * interval * 1.5)
+        -- Put the point 50 m ahead
+        local dist = 50
 
         local dir = (plane.Forward() * (getForwardToggle() and 1 or longitudal)
                 + plane.Right() * lateral
@@ -200,7 +198,7 @@ function Wsad.New(fsm, flightCore, settings, access)
                         sw.Restart()
 
                         local throttleSpeed = getThrottleSpeed()
-                        local target = movement(body, t)
+                        local target = movement(body)
                         flightCore.GotoTarget(target, pointDir, defaultMargin, throttleSpeed, throttleSpeed, true, true)
                     end
                 else
