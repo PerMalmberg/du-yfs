@@ -113,20 +113,6 @@ function FlightFSM.New(settings, routeController, geo)
         ver = 0
     }
 
-    --- Calculates the max allowed speed we may have while still being able to decelerate to the endSpeed
-    --- Remember to pass in a negative acceleration
-    ---@param acceleration number Available desceleration
-    ---@param distance number Remaining distance to target
-    ---@param endSpeed number Desired speed when reaching target
-    ---@return number
-    local function calcMaxAllowedSpeed(acceleration, distance, endSpeed)
-        -- v^2 = v0^2 + 2a*d
-        -- v0^2 = v^2 - 2a*d
-        -- v0 = sqrt(v^2 - 2ad)
-
-        local v0 = (endSpeed * endSpeed - 2 * acceleration * distance) ^ 0.5
-        return v0
-    end
 
     local currentState ---@type FlightState
     local currentWP ---@type Waypoint
@@ -311,8 +297,6 @@ function FlightFSM.New(settings, routeController, geo)
             remainingDistance = max(remainingDistance, remainingDistance - deadZoneThickness(firstBody))
         end
 
-        local availableBrakeDeceleration = brakes.EffectiveBrakeDeceleration()
-
         -- Ensure slowdown before we hit atmo and assume we're going to fall through the dead zone.
         local atmosphericEntrySpeed = burnSpeed()
         if willHitAtmo then
@@ -321,8 +305,7 @@ function FlightFSM.New(settings, routeController, geo)
 
             -- Are actually intending to enter atmo?
             if distanceToAtmo <= waypoint.DistanceTo() then
-                local entrySpeed = calcMaxAllowedSpeed(availableBrakeDeceleration,
-                    distanceToAtmo, atmosphericEntrySpeed)
+                local entrySpeed = brakes.CalcMaxAllowedSpeed(distanceToAtmo, atmosphericEntrySpeed)
                 targetSpeed = evaluateNewLimit(targetSpeed, entrySpeed, "Atmo entry")
             end
         elseif fallingInDeadZone then
@@ -341,20 +324,18 @@ function FlightFSM.New(settings, routeController, geo)
                 if toBrakePoint > 0 then
                     -- Not yet reached the break point
                     targetSpeed = evaluateNewLimit(targetSpeed,
-                        calcMaxAllowedSpeed(-tenPercent, toBrakePoint, brakeDegradeSpeed),
-                        "Appr. fin.")
+                        brakes.CalcMaxAllowedSpeed(toBrakePoint, brakeDegradeSpeed, -tenPercent), "Appr. fin.")
                     flightData.finalSpeed = brakeDegradeSpeed
                     flightData.finalSpeedDistance = toBrakePoint
                 else
                     -- Within
                     targetSpeed = evaluateNewLimit(targetSpeed,
-                        calcMaxAllowedSpeed(-tenPercent, remainingDistance, endSpeed),
-                        "Final atmo")
+                        brakes.CalcMaxAllowedSpeed(remainingDistance, endSpeed, -tenPercent), "Final atmo")
                 end
             end
         end
 
-        if inAtmo and abs(availableBrakeDeceleration) <= G() then
+        if inAtmo and abs(brakes.EffectiveBrakeDeceleration()) <= G() then
             -- Brakes have become so inefficient at the current altitude or speed they are useless, use linear speed
             -- This state can be seen when entering atmo for example.
             targetSpeed = evaluateNewLimit(targetSpeed, linearSpeed(remainingDistance), "Brake/ineff")
@@ -366,8 +347,7 @@ function FlightFSM.New(settings, routeController, geo)
         elseif inAtmo and willLeaveAtmo then
             -- No need to further reduce
         else
-            local brakeMaxSpeed = calcMaxAllowedSpeed(availableBrakeDeceleration, remainingDistance,
-                waypoint.FinalSpeed())
+            local brakeMaxSpeed = brakes.CalcMaxAllowedSpeed(remainingDistance, waypoint.FinalSpeed())
             targetSpeed = evaluateNewLimit(targetSpeed, brakeMaxSpeed, "Brake")
             flightData.brakeMaxSpeed = brakeMaxSpeed
         end

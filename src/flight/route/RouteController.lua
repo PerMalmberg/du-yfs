@@ -33,7 +33,7 @@ require("util/Table")
 ---@field CurrentEdit fun():Route|nil
 ---@field CurrentEditName fun():string|nil
 ---@field ActivateRoute fun(name:string, destinationWayPointIndex?:number, startMargin?:number, openGateMaxDistance?:number):boolean
----@field ActivateTempRoute fun():Route
+---@field ActivateTempRoute fun(name:string|nil):Route
 ---@field CreateRoute fun(name:string):Route|nil
 ---@field SaveRoute fun():boolean
 ---@field Discard fun()
@@ -548,10 +548,11 @@ function RouteController.Instance(bufferedDB)
     end
 
     ---Activate a temporary, empty, route
+    ---@param name string|nil
     ---@return Route
-    function s.ActivateTempRoute()
+    function s.ActivateTempRoute(name)
         current = Route.New()
-        activeRouteName = "---"
+        activeRouteName = name or "---"
         return current
     end
 

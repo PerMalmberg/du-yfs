@@ -4,7 +4,6 @@
 require("abstraction/Vehicle")
 require("GlobalTypes")
 local s                 = require("Singletons")
-
 local log               = s.log
 local brakes            = s.brakes
 local calc              = s.calc
@@ -14,6 +13,7 @@ local pub               = s.pub
 local constants         = s.constants
 local gateCtrl          = s.gateCtrl
 local radar             = s.radar
+local floor             = s.floorDetector
 local VertRef           = uni.VerticalReferenceVector
 
 ---@alias PointOptionArguments { commandValue:string, maxspeed:number, margin:number, lockdir:boolean}
@@ -110,6 +110,13 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
 
         input.Register(keys.option0, Criteria.New().OnPress(), function()
             radar.NextMethod()
+        end)
+
+        input.Register(keys.gear, Criteria.New().OnPress(), function()
+            if player.isFrozen() then
+                floor.EnableParking(true)
+                flightCore.StartParking((Current() - uni.ClosestBody(Current()).Geography.Center):Len(), "Parking")
+            end
         end)
     end
 
@@ -701,7 +708,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
     function s.RegisterMoveCommands()
         ---@param data {commandValue:string, lockdir:boolean, maxspeed:number, margin:number, u:number, r:number, f:number, forceVerticalUp:boolean}
         local moveFunc = function(data)
-            local target = Current() + Forward() * data.f + Right() * data.r - VertRef * data.u
+            local target = Current() + Forward() * data.f + Right() * data.r - VertRef() * data.u
 
             executeMove(target, data.lockdir, data.maxspeed, data.margin, data.forceVerticalUp)
         end

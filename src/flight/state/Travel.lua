@@ -1,4 +1,8 @@
 require("abstraction/Vehicle")
+local s        = require("Singletons")
+local floor    = s.floorDetector
+local log      = s.log
+local uni      = s.universe
 
 ---@class Travel
 ---@field New fun(fsm:FlightFSM):FlightState
@@ -13,6 +17,7 @@ local name     = "Travel"
 ---@return FlightState
 function Travel.New(fsm)
     local s = {}
+    local rc = fsm.GetRouteController()
 
     function s.Enter()
     end
@@ -33,6 +38,13 @@ function Travel.New(fsm)
     end
 
     function s.Update()
+        if floor.IsParkingEnabled() then
+            local m = floor.Measure()
+            if m.Hit then
+                fsm.GetFlightCore().StartParking(m.Distance, "Settling")
+                floor.EnableParking(false)
+            end
+        end
     end
 
     function s.AtWaypoint(isLastWaypoint, next, previous)

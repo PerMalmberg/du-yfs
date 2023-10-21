@@ -176,13 +176,13 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
                 then
                     -- We're far out from the nearest body, allow aligning topside along path, even upside down
                     selectedRef = pathDirection
-                elseif pathAlignmentAngleLimit > 0 then -- if zero, it means the alignment is disabled
-                    local threshold = calc.AngleToDot(pathAlignmentAngleLimit)
-
-                    local vertDotPath = vertUp:Dot(pathDirection)
-                    if vertDotPath > threshold then      -- If we're more aligned to the path than the threshold, then align to the path
+                elseif pathAlignmentAngleLimit > 0 then           -- if zero, it means the alignment is disabled
+                    local sameDir = vertUp:Dot(pathDirection) > 0 -- Same direction?
+                    if sameDir and vertUp:AngleToDeg(pathDirection) < pathAlignmentAngleLimit then
+                        -- If we're more aligned to the path than the threshold, then align to the path
                         selectedRef = pathDirection
-                    elseif vertDotPath < -threshold then -- Don't flip upside down
+                    elseif not sameDir and vertUp:AngleToDeg(-pathDirection) < pathAlignmentAngleLimit then
+                        -- Don't flip upside down
                         selectedRef = -pathDirection
                     end
                 end

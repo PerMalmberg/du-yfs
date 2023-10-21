@@ -2,10 +2,12 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 1.4.2 - 2023-10-xx
+## 1.5.0 - 2023-10-xx
 
 ### Added
 * New setting `autoBrakeAngle` to control at what angle offset from the intended path brakes automatically engage.
+* Press "G" (Lua binding "gear"), to engage auto parking.
+* New setting `parkMaxSpeed` to set maximum parking speed.
 
 ### Fixed
 * Corrected some broken math that had went unnoticed since pre v1.0.

@@ -18,12 +18,13 @@ local spaceEfficiencyFactor = 0.9              -- Reduced from one to counter br
 ---@field MaxBrakeAcc fun():number
 ---@field GravityInfluencedAvailableDeceleration fun():number
 ---@field MaxSeenGravityInfluencedAvailableAtmoDeceleration fun():number
----@field AvailableDeceleration fun():number
 ---@field BrakeEfficiency fun(inAtmo:boolean, speed:number):number
 ---@field EffectiveBrakeDeceleration fun():number
 ---@field Feed fun(desiredDir:Vec3, targetSpeed:number)
 ---@field Active fun():boolean
 ---@field SetAutoBrakeAngle fun(angle:number)
+---@field CalcMaxAllowedSpeed fun(distance:number, endSpeed:number, availableBrakeDeceleration:number|nil):number
+
 
 local Brake = {}
 Brake.__index = Brake
@@ -109,12 +110,6 @@ function Brake.Instance()
         return max(0, maxSeenBrakeAtmoAcc + influence * dot * G())
     end
 
-    ---Gets the unadjusted available deceleration
-    ---@return number
-    function s.AvailableDeceleration()
-        return rawAvailableDeceleration()
-    end
-
     ---@param desiredDir Vec3 Direction we want to move in
     ---@param targetSpeed number The desired speed
     function s.Feed(desiredDir, targetSpeed)
@@ -164,7 +159,7 @@ function Brake.Instance()
     end
 
     --- Returns the current effective brake deceleration
-    ---@return number
+    ---@return number # The deceleration, a negative value
     function s.EffectiveBrakeDeceleration()
         local currentSpeed = Velocity():Len()
         local inAtmo = IsInAtmo()
@@ -184,6 +179,22 @@ function Brake.Instance()
         end
 
         return availableBrakeDeceleration
+    end
+
+    --- Calculates the max allowed speed we may have while still being able to decelerate to the endSpeed
+    ---@param distance number Remaining distance to target
+    ---@param endSpeed number Desired speed when reaching target
+    ---@param brakeAcc number|nil Brake acceleration, or nil to use the currently effective deceleration. Remember to pass in a negative number.
+    ---@return number
+    function s.CalcMaxAllowedSpeed(distance, endSpeed, brakeAcc)
+        -- v^2 = v0^2 + 2a*d
+        -- v0^2 = v^2 - 2a*d
+        -- v0 = sqrt(v^2 - 2ad)
+
+        brakeAcc = brakeAcc or s.EffectiveBrakeDeceleration()
+
+        local v0 = (endSpeed * endSpeed - 2 * brakeAcc * distance) ^ 0.5
+        return v0
     end
 
     ---Gets the max brake acceleration

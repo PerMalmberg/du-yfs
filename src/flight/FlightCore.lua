@@ -8,11 +8,14 @@ local universe    = s.universe
 local calc        = s.calc
 local constants   = s.constants
 local brakes      = s.brakes
+local floor       = s.floorDetector
+local VertRef     = s.universe.VerticalReferenceVector
 
 local AxisManager = require("flight/AxisManager")
 local Ternary     = calc.Ternary
 local plane       = Plane.NewByVertialReference()
 local abs         = math.abs
+
 require("flight/state/Require")
 
 ---@module "flight/route/RouteController"
@@ -27,8 +30,9 @@ require("flight/state/Require")
 ---@field StopEvents fun()
 ---@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean, pathAlignmentDistanceLimitFromSurface:number):Waypoint
 ---@field GoIdle fun()
----@field GotoTarget fun(target:Vec3, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean, forceVerticalUp:boolean)
+---@field GotoTarget fun(target:Vec3, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean, forceVerticalUp:boolean, routeName:string)
 ---@field WaitForGate fun():boolean
+---@field StartParking fun(distance:number, routeName:string)
 
 local FlightCore = {}
 FlightCore.__index = FlightCore
@@ -125,6 +129,20 @@ function FlightCore.New(routeController, flightFSM)
         return route and gateControl.Enabled() and route.WaitForGate(Current(), settings.Number("openGateMaxDistance"))
     end
 
+    ---@param distance number
+    ---@param routeName string
+    function s.StartParking(distance, routeName)
+        if not floor.Present() then
+            log.Error("No floor detector present")
+            return
+        end
+
+        local c = Current()
+        local target = c + VertRef() * distance
+        pub.Publish("ResetWSAD", true)
+        s.GotoTarget(target, plane.Forward(), 1, calc.Kph2Mps(settings.Number("parkMaxSpeed")), 0, false, true, routeName)
+    end
+
     ---Starts the flight
     function s.StartFlight()
         route = routeController.CurrentRoute()
@@ -204,8 +222,9 @@ function FlightCore.New(routeController, flightFSM)
     ---@param finalSpeed number m/s
     ---@param forceFinalSpeed boolean If true, the construct will not slow down to come to a stop if the point is last in the route (used for manual control)
     ---@param forceVerticalUp boolean If true, forces up to align to vertical up
-    function s.GotoTarget(target, lockDir, margin, maxSpeed, finalSpeed, forceFinalSpeed, forceVerticalUp)
-        local temp = routeController.ActivateTempRoute()
+    ---@param routeName string|nil Name of route
+    function s.GotoTarget(target, lockDir, margin, maxSpeed, finalSpeed, forceFinalSpeed, forceVerticalUp, routeName)
+        local temp = routeController.ActivateTempRoute(routeName)
         local targetPoint = temp.AddCoordinate(target)
         local opt = targetPoint.Options()
         opt.Set(PointOptions.MAX_SPEED, maxSpeed)

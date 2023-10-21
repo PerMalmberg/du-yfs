@@ -5,6 +5,7 @@ local input            = s.input
 local commandLine      = s.commandLine
 local log              = s.log
 local radar            = s.radar
+local floorDetector    = s.floorDetector
 local ControlCommands  = require("controller/ControlCommands")
 local RouteController  = require("flight/route/RouteController")
 local BufferedDB       = require("storage/BufferedDB")
@@ -17,7 +18,6 @@ local Settings         = require("Settings")
 local Hud              = require("hud/Hud")
 local InfoCentral      = require("info/InfoCentral")
 local Wsad             = require("controller/Wsad")
-local floorDetector    = require("controller/FloorDetector").Instance()
 local Access           = require("Access")
 local GeoFence         = require("flight/GeoFence")
 
