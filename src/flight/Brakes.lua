@@ -6,7 +6,6 @@ local pub = require("util/PubSub").Instance()
 local Clamp = calc.Clamp
 local max = math.max
 
-
 local atmoBrakeCutoffSpeed = calc.Kph2Mps(360) -- Speed limit under which atmospheric brakes become less effective (down to 10m/s [36km/h] where they give 0.1 of max)
 local atmoBrakeEfficiencyFactor = 0.9          -- Kept at 0.9
 local spaceEfficiencyFactor = 0.9              -- Reduced from one to counter brake PID not reacting immediately, thus inducing a delay and subsequent overshoot.
@@ -24,6 +23,7 @@ local spaceEfficiencyFactor = 0.9              -- Reduced from one to counter br
 ---@field EffectiveBrakeDeceleration fun():number
 ---@field Feed fun(desiredDir:Vec3, targetSpeed:number)
 ---@field Active fun():boolean
+---@field SetAutoBrakeAngle fun(angle:number)
 
 local Brake = {}
 Brake.__index = Brake
@@ -42,7 +42,8 @@ function Brake.Instance()
     local deceleration = nullVec
     local maxSeenBrakeAtmoAcc = 0
     local _100kmph = calc.Kph2Mps(100)
-    local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0 } ---@type BrakeData
+    local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0, setAutoBrakeAngle = 0, autoBrakeAngle = 0 } ---@type BrakeData
+    local autoBrakeAngle = 45
 
     local s = {
         engaged = false,
@@ -74,6 +75,7 @@ function Brake.Instance()
         if IsInAtmo() then
             maxSeenBrakeAtmoAcc = max(raw, maxSeenBrakeAtmoAcc)
         end
+        brakeData.setAutoBrakeAngle = autoBrakeAngle
         pub.Publish("BrakeData", brakeData)
     end
 
@@ -117,7 +119,8 @@ function Brake.Instance()
     ---@param targetSpeed number The desired speed
     function s.Feed(desiredDir, targetSpeed)
         local movementDir, currentSpeed = Velocity():NormalizeLen()
-        if desiredDir:AngleToDeg(movementDir) > 45 then
+        brakeData.autoBrakeAngle = desiredDir:AngleToDeg(movementDir)
+        if brakeData.autoBrakeAngle > autoBrakeAngle then
             targetSpeed = 0
         end
 
@@ -187,6 +190,12 @@ function Brake.Instance()
     ---@return number
     function s.MaxBrakeAcc()
         return rawAvailableDeceleration()
+    end
+
+    ---Sets the auto brake angle
+    ---@param angle number
+    function s.SetAutoBrakeAngle(angle)
+        autoBrakeAngle = angle
     end
 
     instance = setmetatable(s, Brake)

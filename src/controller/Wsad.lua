@@ -226,44 +226,34 @@ function Wsad.New(fsm, flightCore, settings, access)
         end
     end)
 
-    ---@param delta integer
-    local function changeVertical(delta)
+    local function change(value, delta)
         forwardToggle = false
 
-        vertical = Clamp(vertical + delta, -1, 1)
+        local prev = value
+        value = Clamp(value + delta, -1, 1)
 
-        if vertical == 0 then
+        if value == 0 then
             monitorHeight()
         end
-        newMovement = true
+
+        newMovement = value ~= prev
+
+        return value
+    end
+
+    ---@param delta integer
+    local function changeVertical(delta)
+        vertical = change(vertical, delta)
     end
 
     ---@param delta integer
     local function changeLongitudal(delta)
-        forwardToggle = false
-
-        local previous = longitudal
-        longitudal = Clamp(longitudal + delta, -1, 1)
-
-        if previous == 0 and longitudal ~= 0 then
-            monitorHeight()
-        end
-
-        newMovement = true
+        longitudal = change(longitudal, delta)
     end
 
     ---@param delta integer
     local function changeLateral(delta)
-        forwardToggle = false
-
-        local previous = lateral
-        lateral = Clamp(lateral + delta, -1, 1)
-
-        if previous == 0 and lateral ~= 0 then
-            monitorHeight()
-        end
-
-        newMovement = true
+        lateral = change(lateral, delta)
     end
 
     local function NewIgnoreBoth()

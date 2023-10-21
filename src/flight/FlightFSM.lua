@@ -25,16 +25,15 @@ local SetEngineThrust             = unit.setEngineThrust
 
 require("flight/state/Require")
 
-local Clamp                         = calc.Clamp
-local abs                           = math.abs
-local min                           = math.min
-local max                           = math.max
-local MAX_INT                       = math.maxinteger
+local Clamp             = calc.Clamp
+local abs               = math.abs
+local min               = math.min
+local max               = math.max
+local MAX_INT           = math.maxinteger
 
-local ignoreAtmoBrakeLimitThreshold = calc.Kph2Mps(3)
-local brakeDegradeSpeed             = calc.Kph2Mps(360)
+local brakeDegradeSpeed = calc.Kph2Mps(360)
 
-local deadZoneFactor                = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
+local deadZoneFactor    = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
 
 ---@class FlightFSM
 ---@field New fun(settings:Settings):FlightFSM
@@ -55,8 +54,8 @@ local deadZoneFactor                = 0.8 -- Consider the inner edge of the dead
 ---@field ToggleBoster fun()
 ---@field SetBooster fun(activate:boolean)
 
-local FlightFSM                     = {}
-FlightFSM.__index                   = FlightFSM
+local FlightFSM         = {}
+FlightFSM.__index       = FlightFSM
 
 ---Creates a new FligtFSM
 ---@param settings Settings
@@ -76,6 +75,7 @@ function FlightFSM.New(settings, routeController, geo)
 
     settings.Callback("pathAlignmentAngleLimit", Waypoint.SetAlignmentAngleLimit)
     settings.Callback("pathAlignmentDistanceLimit", Waypoint.SetAlignmentDistanceLimit)
+    settings.Callback("autoBrakeAngle", brakes.SetAutoBrakeAngle)
 
     local warmupTime                = 1
     local lastReadMass              = TotalMass()
@@ -505,11 +505,14 @@ function FlightFSM.New(settings, routeController, geo)
         end
 
         -- Make sure that engine tags only include the absolute minimum number of engines as it
-        -- is the first command to and engine that takes effect, not the last one. For example,
+        -- is the first command to the engine that takes effect, not the last one. For example,
         -- lateral engines must be adressed with 'lateran AND analog' or a lateral rocket engine
         -- also gets the command.
 
-        -- Vertical AND analog
+        -- You can mix space (AND) and comma (OR), AND groups will be evaluated first so you can do
+        -- "A B, C D", meaning (A and B) or (C and D)
+
+        -- Vertical AND analog.
         SetEngineCommand("vertical analog", { acc:ProjectOn(Up()):Unpack() }, { 0, 0, 0 }, true, true, "airfoil",
             "ground", "analog", 0.1)
 

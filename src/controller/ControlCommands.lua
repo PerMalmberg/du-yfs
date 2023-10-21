@@ -78,8 +78,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                 end
             end
 
-            input.Register(keys.brake, Criteria.New().OnPress(), function() b(true) end)
-            input.Register(keys.brake, Criteria.New().OnRelease(), function() b(false) end)
+            input.Register(keys.brake, Criteria.New().LCtrl().OnPress(), function() b(true) end)
+            input.Register(keys.brake, Criteria.New().LCtrl().OnRelease(), function() b(false) end)
         end
 
         cmd.Accept("idle", function(data)

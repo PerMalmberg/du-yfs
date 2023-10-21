@@ -98,6 +98,7 @@ function InfoCentral.Instance()
             brakeInfo.wMaxDeceleration = p.CreateValue("Max deceleration", "m/s2")
             brakeInfo.wCurrentDec = p.CreateValue("Brake dec.", "m/s2")
             brakeInfo.wPid = p.CreateValue("Pid")
+            brakeInfo.wAutoBrakeAngle = p.CreateValue("Auto brake angle")
         elseif brakeInfo.panel and not brakeInfo.visible then
             sharedPanel.Close("Brake")
             brakeInfo.panel = nil
@@ -107,6 +108,7 @@ function InfoCentral.Instance()
             brakeInfo.wMaxDeceleration.Set(calc.Round(value.maxDeceleration, 2))
             brakeInfo.wCurrentDec.Set(calc.Round(value.currentDeceleration, 2))
             brakeInfo.wPid.Set(calc.Round(value.pid, 4))
+            brakeInfo.wAutoBrakeAngle.Set(format("%.1f/%.1f", value.autoBrakeAngle, value.setAutoBrakeAngle))
         end
     end)
 

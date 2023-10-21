@@ -4,8 +4,12 @@ All notable changes to this project will be documented in this file. The version
 
 ## 1.4.2 - 2023-10-xx
 
+### Added
+* New setting `autoBrakeAngle` to control at what angle offset from the intended path brakes automatically engage.
+
 ### Fixed
 * Corrected some broken math that had went unnoticed since pre v1.0.
+* Fixed manual movement quirks introduced in 1.4.1. Oops!
 
 ### Changed
 * Code size reduction
