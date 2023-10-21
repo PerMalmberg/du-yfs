@@ -3,18 +3,18 @@
 
 require("abstraction/Vehicle")
 require("GlobalTypes")
-local s                       = require("Singletons")
+local s                 = require("Singletons")
 
-local log                     = s.log
-local brakes                  = s.brakes
-local calc                    = s.calc
-local universe                = s.universe
-local keys                    = s.keys
-local pub                     = s.pub
-local constants               = s.constants
-local gateCtrl                = s.gateCtrl
-local radar                   = s.radar
-local VerticalReferenceVector = universe.VerticalReferenceVector
+local log               = s.log
+local brakes            = s.brakes
+local calc              = s.calc
+local uni               = s.universe
+local keys              = s.keys
+local pub               = s.pub
+local constants         = s.constants
+local gateCtrl          = s.gateCtrl
+local radar             = s.radar
+local VertRef           = uni.VerticalReferenceVector
 
 ---@alias PointOptionArguments { commandValue:string, maxspeed:number, margin:number, lockdir:boolean}
 
@@ -24,8 +24,8 @@ local VerticalReferenceVector = universe.VerticalReferenceVector
 ---@field RegisterRouteCommands fun()
 ---@field RegisterMoveCommands fun()
 
-local ControlCommands         = {}
-ControlCommands.__index       = ControlCommands
+local ControlCommands   = {}
+ControlCommands.__index = ControlCommands
 
 ---Creates a new RouteModeController
 ---@param input Input
@@ -82,21 +82,20 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             input.Register(keys.brake, Criteria.New().LCtrl().OnRelease(), function() b(false) end)
         end
 
-        cmd.Accept("idle", function(data)
+        cmd.Accept("idle", function()
             log.Info("Going idle!")
             flightCore.GoIdle()
         end)
 
-        cmd.Accept("hold", function(data)
+        cmd.Accept("hold", function()
             holdPosition()
         end)
 
         cmd.Accept("print-pos", function(_)
-            log.Info("Current pos:", universe.CreatePos(Current()):AsPosString())
+            log.Info("Current pos:", uni.CreatePos(Current()):AsPosString())
             log.Info("Alignment pos:",
-                universe.CreatePos(Current() + Forward() * Waypoint.DirectionMargin):AsPosString())
+                uni.CreatePos(Current() + Forward() * Waypoint.DirectionMargin):AsPosString())
         end)
-
 
         local lastWidget = settings.Boolean("showWidgetsOnStart", false)
 
@@ -403,7 +402,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                     log.Error("No name provided")
                 end
 
-                local pos = universe.CreatePos(Current()).AsPosString()
+                local pos = uni.CreatePos(Current()).AsPosString()
                 rc.StoreWaypoint(data.name, pos)
             end).AsEmpty()
         saveCurrAs.Option("name").AsString()
@@ -412,7 +411,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         cmd.Accept("pos-save-as",
             ---@param data {commandValue:string, pos:string}
             function(data)
-                local p = universe.ParsePosition(data.pos)
+                local p = uni.ParsePosition(data.pos)
                 if p then
                     if rc.StoreWaypoint(data.commandValue, p.AsPosString()) then
                         log.Info("Current position saved as ", data.commandValue)
@@ -446,8 +445,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         local alongGrav = cmd.Accept("pos-create-along-gravity",
             ---@param data {commandValue:string, u:number}
             function(data)
-                local pos = Current() - universe.VerticalReferenceVector() * data.u
-                local posStr = universe.CreatePos(pos).AsPosString()
+                local pos = Current() - VertRef() * data.u
+                local posStr = uni.CreatePos(pos).AsPosString()
                 if rc.StoreWaypoint(data.commandValue, posStr) then
                     log.Info("Stored postion ", posStr, " as ", data.commandValue)
                 end
@@ -464,7 +463,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                     log.Error("Must provide atleast one direction distance")
                 else
                     local pos = Current() + Forward() * f + Right() * r + Up() * u
-                    local posStr = universe.CreatePos(pos).AsPosString()
+                    local posStr = uni.CreatePos(pos).AsPosString()
                     if rc.StoreWaypoint(data.commandValue, posStr) then
                         log.Info("Stored postion ", posStr, " as ", data.commandValue)
                     end
@@ -484,7 +483,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                     log.Error("Must provide atleast one direction distance")
                 else
                     local pos = Current() + Forward() * f + Right() * r + Up() * u
-                    local posStr = universe.CreatePos(pos).AsPosString()
+                    local posStr = uni.CreatePos(pos).AsPosString()
                     log.Info("Position is at: ", posStr)
                 end
             end)
@@ -512,7 +511,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                 local dir ---type @Vec3
 
                 if partCount == 0 then
-                    dir = -universe.VerticalReferenceVector()
+                    dir = -VertRef()
                 elseif partCount ~= 3 then
                     log.Error("Either none or all three vector components must be provided")
                     return
@@ -529,9 +528,9 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
 
                     local targetPos = Current() + dir * data.distance
 
-                    local startBody = universe.ClosestBody(Current())
+                    local startBody = uni.ClosestBody(Current())
                     local startInAtmo = startBody:IsInAtmo(Current())
-                    local bodyClosestToEnd = universe.ClosestBody(targetPos)
+                    local bodyClosestToEnd = uni.ClosestBody(targetPos)
                     local endInAtmo = bodyClosestToEnd:IsInAtmo(targetPos)
 
                     if data.followGravInAtmo then
@@ -544,10 +543,10 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                             return
                         elseif startInAtmo and not endInAtmo then
                             local pointInSpace = Current() -
-                                VerticalReferenceVector() * startBody:DistanceToAtmoEdge(Current())
+                                VertRef() * startBody:DistanceToAtmoEdge(Current())
                             -- Add a precentage of the distance between target and atmosphere edge
                             local diff = (pointInSpace - targetPos):Len() * 0.05
-                            pointInSpace = pointInSpace - VerticalReferenceVector() * diff
+                            pointInSpace = pointInSpace - VertRef() * diff
                             local extra = route.AddCoordinate(pointInSpace)
                             extra.Options().Set(PointOptions.LOCK_DIRECTION, Forward())
                             extra.Options().Set(PointOptions.MARGIN, data.extraPointMargin)
@@ -582,7 +581,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         end
 
         cmd.Accept("print-vertical-up", function(_)
-            log.Info(formatVecParts(-universe.VerticalReferenceVector()))
+            log.Info(formatVecParts(-VertRef()))
         end)
 
         local sub = cmd.Accept("sub-pos",
@@ -590,7 +589,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             function(data)
                 local sub
                 if data.sub then
-                    local subPos = universe.ParsePosition(data.sub)
+                    local subPos = uni.ParsePosition(data.sub)
                     if not subPos then
                         return
                     end
@@ -601,7 +600,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                     sub = Current()
                 end
 
-                local pos = universe.ParsePosition(data.commandValue)
+                local pos = uni.ParsePosition(data.commandValue)
                 if pos then
                     local diff = pos.Coordinates() - sub
                     local dir, dist = diff:NormalizeLen()
@@ -613,8 +612,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         local closestOnLine = cmd.Accept("closest-on-line",
             ---@param data {a:string, b:string}
             function(data)
-                local p1 = universe.ParsePosition(data.a)
-                local p2 = universe.ParsePosition(data.b)
+                local p1 = uni.ParsePosition(data.a)
+                local p2 = uni.ParsePosition(data.b)
 
                 if not (p1 and p2) then
                     return
@@ -622,7 +621,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
 
                 local p = calc.NearestPointOnLine(p1.Coordinates(),
                     (p1.Coordinates() - p2:Coordinates()):NormalizeInPlace(), Current())
-                local closest = universe.CreatePos(p)
+                local closest = uni.CreatePos(p)
                 log.Info("Closest point on the line passing through a and b is at ", closest.AsPosString())
             end)
         closestOnLine.Option("a").AsString().Must()
@@ -641,8 +640,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                     log.Error("Only one point in route, can't make a parallel point from that.")
                 end
 
-                local second = universe.ParsePosition(points[2].Pos()):Coordinates()
-                local first = universe.ParsePosition(points[1].Pos()):Coordinates()
+                local second = uni.ParsePosition(points[2].Pos()):Coordinates()
+                local first = uni.ParsePosition(points[1].Pos()):Coordinates()
                 local diff = second - first
 
                 local dir, dist = diff:NormalizeLen()
@@ -663,9 +662,9 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         local target
         local point = rc.LoadWaypoint(userInput)
         if point then
-            target = { pos = point.Pos(), coord = universe.ParsePosition(point.Pos()).Coordinates() }
+            target = { pos = point.Pos(), coord = uni.ParsePosition(point.Pos()).Coordinates() }
         else
-            local pos = universe.ParsePosition(userInput)
+            local pos = uni.ParsePosition(userInput)
             if pos then
                 target = { pos = pos.AsPosString(), coord = pos.Coordinates() }
             end
@@ -696,14 +695,13 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         gateCtrl.Enable(false)
         flightCore.GotoTarget(target, lockToDir, margin, maxSpeed, 0, false, forceVerticalUp)
         pub.Publish("ResetWSAD", true)
-        log.Info("Moving to ", universe.CreatePos(target).AsPosString())
+        log.Info("Moving to ", uni.CreatePos(target).AsPosString())
     end
 
     function s.RegisterMoveCommands()
         ---@param data {commandValue:string, lockdir:boolean, maxspeed:number, margin:number, u:number, r:number, f:number, forceVerticalUp:boolean}
         local moveFunc = function(data)
-            local target = Current() + Forward() * data.f + Right() * data.r -
-                universe.VerticalReferenceVector() * data.u
+            local target = Current() + Forward() * data.f + Right() * data.r - VertRef * data.u
 
             executeMove(target, data.lockdir, data.maxspeed, data.margin, data.forceVerticalUp)
         end
@@ -773,7 +771,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             function(data)
                 local target = getPos(data.commandValue)
                 if target then
-                    local pos = universe.ParsePosition(target.pos)
+                    local pos = uni.ParsePosition(target.pos)
                     alignTo(pos)
                 end
             end).AsString().Must()
@@ -781,7 +779,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         local alignToVector = cmd.Accept("align-to-vector",
             ---@param data {x:number, y:number, z:number}
             function(data)
-                local pos = universe.CreatePos(Current() + Vec3.New(data.x, data.y, data.z))
+                local pos = uni.CreatePos(Current() + Vec3.New(data.x, data.y, data.z))
                 alignTo(pos)
             end)
 
@@ -801,8 +799,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             function(data)
                 local center = Vec3.New(data.cx, data.cy, data.cz)
                 local forward = Vec3.New(data.fx, data.fy, data.fz)
-                log.Info("Positioning above ", universe.CreatePos(center).AsPosString(), ", with forward direction to ",
-                    universe.CreatePos(forward).AsPosString())
+                log.Info("Positioning above ", uni.CreatePos(center).AsPosString(), ", with forward direction to ",
+                    uni.CreatePos(forward).AsPosString())
 
                 --[[
 
@@ -816,8 +814,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
 
                 local r = rc.ActivateTempRoute()
                 r.AddCurrentPos()
-                r.AddCoordinate(Current() - VerticalReferenceVector() * data.heightMargin)
-                local upAtCenter = (center - universe.ClosestBody(center).Geography.Center):Normalize()
+                r.AddCoordinate(Current() - VertRef() * data.heightMargin)
+                local upAtCenter = (center - uni.ClosestBody(center).Geography.Center):Normalize()
                 forward = calc.ProjectPointOnPlane(upAtCenter, center, forward) -- Project on same plane as center
                 local dir = (forward - center):Normalize()
                 r.AddCoordinate(center + upAtCenter * data.heightMargin).Options().Set(PointOptions.LOCK_DIRECTION, dir)
