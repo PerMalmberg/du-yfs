@@ -7,9 +7,10 @@ local Vec3              = require("math/Vec3")
 ---@field Measure fun():TelemeterResult
 ---@field Present fun():boolean
 ---@field MaxDist fun():number
----@field EnableParking fun(on:boolean)
 ---@field IsWithinShutdownDistance fun():boolean
 ---@field IsParkingEnabled fun():boolean
+---@field ReturningHome fun()
+---@field IsReturningHome fun():boolean
 
 local FloorDetector     = {}
 FloorDetector.__index   = FloorDetector
@@ -52,15 +53,6 @@ function FloorDetector.Instance()
     ---@return number #Max distance or 0
     function inst.MaxDist()
         return tele and tele.MaxDistance() or 0
-    end
-
-    ---@param v boolean
-    function inst.EnableParking(v)
-        enabled = v
-    end
-
-    function inst.IsParkingEnabled()
-        return enabled
     end
 
     return setmetatable(inst, FloorDetector)

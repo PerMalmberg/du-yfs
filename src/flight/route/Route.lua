@@ -34,7 +34,7 @@ require("util/Table")
 ---@field Next fun():Point|nil
 ---@field Peek fun():Point|nil
 ---@field LastPointReached fun():boolean
----@field AdjustRouteBasedOnTarget fun(startPos:Vec3, targetIndex:number, openGateMaxDistance:number)
+---@field AdjustRouteBasedOnTarget fun(startPos:Vec3, targetIndex:number, gateControlDistance:number)
 ---@field FindClosestLeg fun(coordinate:Vec3):number,number
 ---@field FindClosestPositionAlongRoute fun(coord:Vec3):Vec3
 ---@field RemovePoint fun(ix:number):boolean
@@ -43,6 +43,8 @@ require("util/Table")
 ---@field GetPointPage fun(page:integer, perPage:integer):Point[]
 ---@field GetPageCount fun(perPage:integer):integer
 ---@field WaitForGate fun(current:Vec3, margin:number):boolean
+---@field HasTag fun(t:string):boolean
+---@field AddTag fun(t:string)
 local Route = {}
 Route.__index = Route
 
@@ -53,6 +55,7 @@ function Route.New()
 
     local points = {} ---@type Point[]
     local nextPointIx = 1
+    local tags = {} ---@type table<string, boolean>
 
     ---@param ix number
     ---@return Vec3
@@ -182,21 +185,19 @@ function Route.New()
 
     ---Finds the closest point on the route
     ---@param probeCoord Vec3
-    ---@return Point
-    function s.FindClosestPoint(probeCoord)
-        local closest = points[1]
-        local closestDist = probeCoord:Dist(coordsFromPoint(1))
+    ---@param margin number
+    ---@return Point[]
+    function s.FindPointsWithin(probeCoord, margin)
+        local found = {} ---@type Point[]
 
-        for i = 2, #points, 1 do
-            local next = coordsFromPoint(i)
-            local distToNext = probeCoord:Dist(next)
-            if distToNext < closestDist then
-                closest = points[i]
-                closestDist = distToNext
+        for i, p in ipairs(points) do
+            local coords = coordsFromPoint(i)
+            if probeCoord:Dist(coords) <= margin then
+                found[#found + 1] = p
             end
         end
 
-        return closest
+        return found
     end
 
     ---@param coordinate Vec3
@@ -257,12 +258,12 @@ function Route.New()
 
     ---Replaces a point in the route, keping options from original point
     ---@param currentPos Vec3 Current position
-    ---@param openGateMaxDistance number
-    local function replaceStartPoint(currentPos, openGateMaxDistance)
+    ---@param gateControlDistance number
+    local function replaceStartPoint(currentPos, gateControlDistance)
         local nearestPos = s.FindClosestPositionAlongRoute(currentPos)
         local opt = points[1].Options().Clone()
         opt.Set(PointOptions.GATE,
-            opt.Get(PointOptions.GATE, false) and coordsFromPoint(1):Dist(currentPos) < openGateMaxDistance)
+            opt.Get(PointOptions.GATE, false) and coordsFromPoint(1):Dist(currentPos) < gateControlDistance)
 
         -- Also take direction of the next point, so that when moving to the path we orient in the direction we're going to travel.
         opt.Set(PointOptions.LOCK_DIRECTION, points[2].Options().Get(PointOptions.LOCK_DIRECTION))
@@ -273,8 +274,8 @@ function Route.New()
     ---Adjust the route so that it will be traveled in the correct direction.
     ---@param startPos Vec3
     ---@param targetIndex number
-    ---@param openGateMaxDistance number
-    function s.AdjustRouteBasedOnTarget(startPos, targetIndex, openGateMaxDistance)
+    ---@param gateControlDistance number
+    function s.AdjustRouteBasedOnTarget(startPos, targetIndex, gateControlDistance)
         -- Determine if we are before or after the target point
         local legStartIx, legEndIx = s.FindClosestLeg(startPos)
 
@@ -292,7 +293,7 @@ function Route.New()
             reverse()
         end
 
-        replaceStartPoint(startPos, openGateMaxDistance)
+        replaceStartPoint(startPos, gateControlDistance)
 
         log.Info("Route adjusted (", adjChar, ": ", orgCount, " -> ", #points, ")")
     end
@@ -356,17 +357,33 @@ function Route.New()
         return pagination.GetPageCount(s.Points(), perPage)
     end
 
-    ---Determines if we should wait for gates to open at the current position.
+    ---Determines if we should wait for gates at the current position.
     ---@param current Vec3
     ---@param margin number
     ---@return boolean
     function s.WaitForGate(current, margin)
-        -- Find the closest point
-        local closest = s.FindClosestPoint(current)
-        local pointPos = universe.ParsePosition(closest:Pos()):Coordinates()
+        -- Find the points within margin
+        local closest = s.FindPointsWithin(current, margin)
 
-        -- If the point has gate option set and it is within the distance margin then we should wait for the gate.
-        return closest.Options().Get(PointOptions.GATE, false) and current:Dist(pointPos) <= margin
+        -- If any point has gate option set then we should wait for the gate.
+        for _, p in ipairs(closest) do
+            if p.Options().Get(PointOptions.GATE, false) then
+                return true
+            end
+        end
+
+        return false
+    end
+
+    ---@param t string
+    function s.AddTag(t)
+        tags[t] = true
+    end
+
+    ---@param t string
+    ---@return boolean
+    function s.HasTag(t)
+        return tags[t] ~= nil
     end
 
     return setmetatable(s, Route)

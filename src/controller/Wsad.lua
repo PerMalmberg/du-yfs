@@ -10,6 +10,7 @@ local defaultMargin           = constants.flight.defaultMargin
 local calc                    = s.calc
 local keys                    = s.keys
 local floor                   = s.floorDetector
+local gateCtrl                = s.gateCtrl
 local VerticalReferenceVector = universe.VerticalReferenceVector
 local Sign                    = s.calc.Sign
 local NF                      = function() return not IsFrozen() end
@@ -236,7 +237,7 @@ function Wsad.New(fsm, flightCore, settings, access)
         end
 
         newMovement = value ~= prev
-        floor.EnableParking(false)
+        gateControl.Enable(false)
 
         return value
     end

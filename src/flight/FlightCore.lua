@@ -9,6 +9,7 @@ local calc        = s.calc
 local constants   = s.constants
 local brakes      = s.brakes
 local floor       = s.floorDetector
+local gateCtrl    = s.gateCtrl
 local VertRef     = s.universe.VerticalReferenceVector
 
 local AxisManager = require("flight/AxisManager")
@@ -126,7 +127,7 @@ function FlightCore.New(routeController, flightFSM)
     end
 
     function s.WaitForGate()
-        return route and gateControl.Enabled() and route.WaitForGate(Current(), settings.Number("openGateMaxDistance"))
+        return route and gateControl.Enabled() and route.WaitForGate(Current(), settings.Number("gateControlDistance"))
     end
 
     ---@param distance number
@@ -137,11 +138,11 @@ function FlightCore.New(routeController, flightFSM)
             return
         end
 
-        floor.EnableParking(true)
-        local c = Current()
-        local target = c + VertRef() * distance
+        gateCtrl.Enable(true)
+        local target = Current() + VertRef() * distance
         pub.Publish("ResetWSAD", true)
         s.GotoTarget(target, plane.Forward(), 1, calc.Kph2Mps(settings.Number("parkMaxSpeed")), 0, false, true, routeName)
+        routeController.CurrentRoute().AddTag("RegularParkingTag")
     end
 
     ---Starts the flight

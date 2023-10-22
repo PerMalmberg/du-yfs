@@ -6,8 +6,8 @@ local s           = require("Singletons")
 local log         = s.log
 local pub         = s.pub
 local gateControl = s.gateCtrl
-
-local timer       = require("system/Timer").Instance()
+local timer       = s.timer
+local calc        = s.calc
 
 
 ---@class Hold
@@ -31,6 +31,7 @@ function Hold.New(fsm)
     local s = {}
     local isLastWaypoint = false
     local settings = fsm.GetSettings()
+    local rc = fsm.GetRouteController()
 
     local function waitForGatesToClose()
         if fsm.GetFlightCore().WaitForGate() then
@@ -78,10 +79,19 @@ function Hold.New(fsm)
     ---@param topic string
     ---@param hit TelemeterResult
     function s.floorMonitor(topic, hit)
-        if not IsFrozen()
+        local r = rc.CurrentRoute()
+        local hasTag = true
+
+        if r then
+            hasTag = r.HasTag("ReturnTag") or r.HasTag("RegularParkingTag")
+        end
+
+        if (not IsFrozen() or hasTag) -- hasTag overrides frozen
+            and hasTag
             and isLastWaypoint
             and hit.Hit
-            and hit.Distance <= settings.Get("autoShutdownFloorDistance") then
+            and hit.Distance <= settings.Get("autoShutdownFloorDistance")
+        then
             log.Info("Floor detected at last waypoint, going idle.")
             fsm.SetState(Idle.New(fsm))
             waitForGatesToClose()
