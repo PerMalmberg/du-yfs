@@ -13,7 +13,6 @@ local pub               = s.pub
 local constants         = s.constants
 local gateCtrl          = s.gateCtrl
 local radar             = s.radar
-local floor             = s.floorDetector
 local VertRef           = uni.VerticalReferenceVector
 
 ---@alias PointOptionArguments { commandValue:string, maxspeed:number, margin:number, lockdir:boolean}
@@ -114,7 +113,6 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
 
         input.Register(keys.gear, Criteria.New().OnPress(), function()
             if player.isFrozen() then
-                floor.EnableParking(true)
                 flightCore.StartParking((Current() - uni.ClosestBody(Current()).Geography.Center):Len(), "Parking")
             end
         end)

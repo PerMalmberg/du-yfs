@@ -30,7 +30,7 @@ require("flight/state/Require")
 ---@field StopEvents fun()
 ---@field CreateWPFromPoint fun(p:Point, lastInRoute:boolean, pathAlignmentDistanceLimitFromSurface:number):Waypoint
 ---@field GoIdle fun()
----@field GotoTarget fun(target:Vec3, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean, forceVerticalUp:boolean, routeName:string)
+---@field GotoTarget fun(target:Vec3, lockdir:Vec3, margin:number, maxSpeed:number, finalSpeed:number, ignoreLastInRoute:boolean, forceVerticalUp:boolean, routeName:string|nil)
 ---@field WaitForGate fun():boolean
 ---@field StartParking fun(distance:number, routeName:string)
 
@@ -137,6 +137,7 @@ function FlightCore.New(routeController, flightFSM)
             return
         end
 
+        floor.EnableParking(true)
         local c = Current()
         local target = c + VertRef() * distance
         pub.Publish("ResetWSAD", true)
