@@ -116,6 +116,37 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                 flightCore.StartParking((Current() - uni.ClosestBody(Current()).Geography.Center):Len(), "Parking")
             end
         end)
+
+        local tmpPark = "Tmp G"
+        input.Register(keys.gear, Criteria.New().LCtrl().LShift().OnPress(), function()
+            rc.StoreWaypoint(tmpPark, uni.CreatePos(Current()).AsPosString())
+            log.Info("Stored current pos as ", tmpPark)
+        end)
+
+        input.Register(keys.gear, Criteria.New().LShift().OnPress(), function()
+            ---@param p Point
+            local setOpt = function(p)
+                p.Options().Set(PointOptions.MARGIN, settings.Number("parkMargin"))
+            end
+
+            local parkMargin = settings.Number("parkHeightMargin")
+            local wp = rc.LoadWaypoint(tmpPark)
+            if wp then
+                local target = uni.ParsePosition(wp.Pos())
+                if target then
+                    local targetCoordinate = target.Coordinates()
+                    local b = uni.ClosestBody(targetCoordinate)
+                    local center = b.Geography.Center
+                    local vertAtTarget, heightAtTarget = (targetCoordinate - center):NormalizeLen()
+
+                    local r = rc.ActivateTempRoute(tmpPark)
+                    setOpt(r.AddCoordinate(center - VertRef() * (heightAtTarget + parkMargin)))
+                    setOpt(r.AddCoordinate(targetCoordinate + vertAtTarget * parkMargin))
+                    setOpt(r.AddCoordinate(targetCoordinate))
+                    flightCore.StartFlight()
+                end
+            end
+        end)
     end
 
     ---Get the route being edited

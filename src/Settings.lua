@@ -92,7 +92,9 @@ function Settings.Create(db)
         defaultRadarMode = { default = 1 },
         allowForwardToggle = { default = false },
         autoBrakeAngle = { default = 45 },
-        parkMaxSpeed = { default = 50 }
+        parkMaxSpeed = { default = 50 },
+        parkMargin = { default = 5 },
+        parkHeightMargin = { default = 50 }
     }
 
     for k, v in pairs(containerSettings) do

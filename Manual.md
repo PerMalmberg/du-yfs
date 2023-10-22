@@ -20,7 +20,7 @@ Please read the entire manual before attempting to perform an installation, ther
   - [Integrations](#integrations)
     - [Gate control](#gate-control)
       - [Elevator side](#elevator-side)
-    - [Manual switches](#manual-switches)
+    - [Controlling switches](#controlling-switches)
   - [Fuel gauges](#fuel-gauges)
   - [Installation as an elevator (ground to space)](#installation-as-an-elevator-ground-to-space)
     - [Automatically aligning and positioning using two elements - recommended procedure](#automatically-aligning-and-positioning-using-two-elements---recommended-procedure)
@@ -32,6 +32,7 @@ Please read the entire manual before attempting to perform an installation, ther
   - [Manual Controls (when player movement is locked)](#manual-controls-when-player-movement-is-locked)
   - [Lua console commands](#lua-console-commands)
     - [Advanced Settings](#advanced-settings)
+  - [Parking](#parking)
   - [Access Control](#access-control)
   - [Geofence](#geofence)
   - [Mass Overload](#mass-overload)
@@ -172,7 +173,7 @@ In Lua chat, you must run the command `set -commChannel CHANNEL`, replacing `CHA
 
 For example, the most common setup is to have gates/doors only at the space station. If we assume the first point in the route is at the ground and the route consists of two points, run `route-set-pos-option -ix 2 -toggleGate` to toggle the gate control for the second point.
 
-### Manual switches
+### Controlling switches
 
 If linked to the remote controller, the script can control two Manual Switches, depending on their names:
 
@@ -316,6 +317,8 @@ By default option 1..9 means ALT-key plus keys 1 through 9, configured in the th
 | C                   | Move down                                                                 | descend                    |
 | B                   | While held down, activates rocket boosters (only while in manual control) | boosters                   |
 | G                   | Engage parking                                                            | gear                       |
+| CTRL + SHIFT + G    | Save current position as "Tmp. G" for easy return.                        | gear                       |
+| SHIFT + G           | Return to the "Tmp G" position                                            | gear                       |
 | Space               | Move  up                                                                  | ascend                     |
 | Alt + A / Q         | Strafe left                                                               | strafeleft, left           |
 | Alt + D / E         | Strafe right                                                              | straferight, right         |
@@ -490,6 +493,17 @@ Please note that deleting named waypoints do not update routes that reference th
 
 > Note: Adjusting the values of the yaw/pitch/roll controller may allow you to get quicker responses, but also induce instability.
 
+## Parking
+
+The parking feature works as follows:
+
+When pressing G, the construct will move downward vertically in reference to the current gravity vector at the configured speed. When the telemeter detects something below (max range is 100m), a new waypoint is created and it will move to that position.
+
+Pressing `CTRL + SHIFT + G`. the current position is saved as "Tmp G".
+
+Pressing `SHIFT + G` activates an auto-return feature that will take you vertically from your current pos, then moves in over the "Tmp G" position then move down to the position. An extra height as set by the `parkHeightMargin` setting is added as an extra margin.
+
+> The auto return feature is meant to work in somewhat close vicinity of the saved position, don't attempt to use it from the other side of the planet etc.
 
 ## Access Control
 
