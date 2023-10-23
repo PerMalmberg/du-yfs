@@ -115,7 +115,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         end)
 
         input.Register(keys.gear, Criteria.New().OnPress(), function()
-            if player.isFrozen() then
+            if IsFrozen() then
                 flightCore.StartParking((Current() - uni.ClosestBody(Current()).Geography.Center):Len(), "Parking")
             end
         end)
@@ -141,15 +141,17 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         end
 
         input.Register(keys.gear, Criteria.New().LCtrl().LShift().OnPress(), function()
+            if not IsFrozen() then return end
+
             -- Park Pos
             local c = Current()
 
             -- Point above/below park pos
-            local g2 = c + plane.Up() * settings.Number("parkVerDist")
+            local g2 = c + plane.Up() * settings.Number("parkVertDist")
 
             -- Entry point
             local g3 = c + plane.Forward() * settings.Number("parkForwardDist") +
-                plane.Up() * settings.Number("parkVerDist")
+                plane.Up() * settings.Number("parkVertDist")
 
             local returnData = {
                 g1 = { c:Unpack() },
@@ -168,6 +170,8 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         end)
 
         input.Register(keys.gear, Criteria.New().LShift().OnPress(), function()
+            if not IsFrozen() then return end
+
             local d = routeDb.Get("returnData", {})
             ---@cast d ReturnData
 

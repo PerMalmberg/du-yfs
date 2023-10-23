@@ -94,8 +94,8 @@ function Settings.Create(db)
         autoBrakeAngle = { default = 45 },
         parkMaxSpeed = { default = 50 },
         parkMargin = { default = 0.5 },
-        parkVerDist = { default = 50 },
-        parkForwardDist = { default = 10 },
+        parkVertDist = { default = 0 },
+        parkForwardDist = { default = 0 },
         parkUseGates = { default = false }
     }
 
