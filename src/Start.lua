@@ -108,7 +108,7 @@ local function Start(isECU)
         end
 
         fuel = Fuel.New(settings)
-        commands = ControlCommands.New(input, commandLine, fc, settings, screen, access)
+        commands = ControlCommands.New(input, commandLine, fc, settings, screen, access, routeDb)
 
         info = InfoCentral.Instance()
         hud = Hud.New()

@@ -17,6 +17,7 @@ local VertRef           = uni.VerticalReferenceVector
 local plane             = Plane.NewByVertialReference()
 
 ---@alias PointOptionArguments { commandValue:string, maxspeed:number, margin:number, lockdir:boolean}
+---@alias ReturnData { g1:number[], g2:number[], g3:number[], fwd:number[] }
 
 ---@class ControlCommands
 ---@field New fun(input:Input, cmd:Command, flightCore:FlightCore)
@@ -34,8 +35,9 @@ ControlCommands.__index = ControlCommands
 ---@param settings Settings
 ---@param screenCtrl ScreenController
 ---@param access Access
+---@param routeDb BufferedDB
 ---@return ControlCommands
-function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, access)
+function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, access, routeDb)
     local s = {}
 
     local rc = flightCore.GetRouteController()
@@ -139,17 +141,24 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         end
 
         input.Register(keys.gear, Criteria.New().LCtrl().LShift().OnPress(), function()
+            -- Park Pos
             local c = Current()
-            rc.StoreWaypoint("__G1", uni.CreatePos(c).AsPosString())
 
+            -- Point above/below park pos
             local g2 = c + plane.Up() * settings.Number("parkVerDist")
-            rc.StoreWaypoint("__G2", uni.CreatePos(g2).AsPosString())
 
-            local fwdDist = settings.Number("parkForwardDist")
-            fwdDist = math.abs(fwdDist) > 0.2 and fwdDist or 0.2
-            local g3 = c + plane.Forward() * fwdDist +
+            -- Entry point
+            local g3 = c + plane.Forward() * settings.Number("parkForwardDist") +
                 plane.Up() * settings.Number("parkVerDist")
-            rc.StoreWaypoint("__G3", uni.CreatePos(g3).AsPosString())
+
+            local returnData = {
+                g1 = { c:Unpack() },
+                g2 = { g2:Unpack() },
+                g3 = { g3:Unpack() },
+                fwd = { plane.Forward():Unpack() }
+            }
+
+            routeDb.Put("returnData", returnData)
 
             local r = rc.ActivateTempRoute("Undock")
             setParkOpt(r.AddCoordinate(c), true, plane.Forward()) -- Point to open gates
@@ -159,28 +168,21 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         end)
 
         input.Register(keys.gear, Criteria.New().LShift().OnPress(), function()
-            local g1 = rc.LoadWaypoint("__G1")
-            local g2 = rc.LoadWaypoint("__G2")
-            local g3 = rc.LoadWaypoint("__G3")
+            local d = routeDb.Get("returnData", {})
+            ---@cast d ReturnData
 
-            if g1 and g2 and g3 then
-                local g1t = uni.ParsePosition(g1.Pos())
-                local g2t = uni.ParsePosition(g2.Pos())
-                local g3t = uni.ParsePosition(g3.Pos())
+            local g1 = Vec3.New(d.g1)
+            local g2 = Vec3.New(d.g2)
+            local g3 = Vec3.New(d.g3)
+            local fwd = Vec3.New(d.fwd)
 
-                if g1t and g2t and g3t then
-                    local r = rc.ActivateTempRoute("Returning")
-                    setParkOpt(r.AddCoordinate(g3t.Coordinates()), false)
-                    local a = calc.ProjectPointOnPlane(plane.Up(), g1t.Coordinates(), g3t.Coordinates())
-
-                    --- QQQ distance between these two needs to be enough to overcome rounding errors, store separate direction.
-                    --- Also store it all as a single value in the route DB.
-                    local lockDir = (a - g1t.Coordinates()):Normalize()
-                    setParkOpt(r.AddCoordinate(g2t.Coordinates()), false, lockDir)                            -- Point above/below park pos
-                    -- Move backwards to make return to actual start position
-                    setParkOpt(r.AddCoordinate(g1t.Coordinates()), settings.Boolean("parkUseGates"), lockDir) -- Park Pos
-                    startReturnRoute(r)
-                end
+            if not (g1:IsZero() and g2:IsZero() and g3:IsZero() and fwd:IsZero()) then
+                local r = rc.ActivateTempRoute("Returning")
+                setParkOpt(r.AddCoordinate(g3), false)
+                setParkOpt(r.AddCoordinate(g2), false, fwd)
+                -- Move backwards to make return to actual start position
+                setParkOpt(r.AddCoordinate(g1), settings.Boolean("parkUseGates"), fwd)
+                startReturnRoute(r)
             end
         end)
     end
