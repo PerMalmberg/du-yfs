@@ -136,25 +136,34 @@ function Settings.Create(db)
         s.Reload()
     end)
 
-    cmd.Accept("strict-mode", function()
-        local opts = { "allowForwardToggle", "yawAlignmentThrustLimiter", "manualControlOnStartup",
-            "minimumPathCheckOffset" }
 
-        for _, k in ipairs(opts) do
-            db.Put(k, settings[k].default)
+    local modeSettings = {
+        allowForwardToggle = true,
+        manualControlOnStartup = true,
+        minimumPathCheckOffset = 5000,
+        turnAngle = 3,
+        yawAlignmentThrustLimiter = 360,
+        pathAlignmentDistanceLimitFromSurface = 0
+    }
+
+    local function setModeOpts(useDefault)
+        for k, v in pairs(modeSettings) do
+            if useDefault then
+                v = settings[k].default
+            end
+            db.Put(k, v)
+            log.Info("Set ", k, " to ", v)
         end
-
         s.Reload()
+    end
+
+    cmd.Accept("strict-mode", function()
+        setModeOpts(true)
         log.Info("Settings adjusted for strict mode")
     end)
 
     cmd.Accept("free-mode", function()
-        db.Put("yawAlignmentThrustLimiter", 360)
-        db.Put("manualControlOnStartup", true)
-        db.Put("minimumPathCheckOffset", 5000)
-        db.Put("allowForwardToggle", true)
-        db.Put("turnAngle", 3)
-        s.Reload()
+        setModeOpts(false)
         log.Info("Settings adjusted for free mode")
     end)
 

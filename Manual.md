@@ -32,6 +32,7 @@ Please read the entire manual before attempting to perform an installation, ther
   - [Manual Controls (when player movement is locked)](#manual-controls-when-player-movement-is-locked)
   - [Lua console commands](#lua-console-commands)
     - [Advanced Settings](#advanced-settings)
+    - [Free and strict mode](#free-and-strict-mode)
   - [Parking](#parking)
     - [Autopark/undock](#autoparkundock)
   - [Access Control](#access-control)
@@ -475,8 +476,8 @@ By default option 1..9 means ALT-key plus keys 1 through 9, configured in the th
 | get-all                   |                                        |               |                    | Prints all current settings. Don't add the "-" before the argument. Example: `get turnAngle`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | reset-settings            |                                        |               |                    | Resets all settings to their defaults. (including those listed in the advanced section)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | set-full-container-boosts |                                        |               |                    | Sets all related talents for containers, atmospheric, space and rocket fuel tanks to level 5                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| strict-mode               |                                        |               |                    | Restores certain settings to their defaults for use as a standard elevator.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| free-mode                 |                                        |               |                    | Adjusts settings for use as a mainly manually controlled construct.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| strict-mode               |                                        |               |                    | Restores the settings to their defaults for use as a standard elevator. See table below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| free-mode                 |                                        |               |                    | Adjusts settings for use as a mainly manually controlled construct. See table below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 Please note that deleting named waypoints do not update routes that reference them. You can create a new one with the same name as the one deleted, but until you do, any route that referenced it will not be usable.
 
@@ -495,6 +496,19 @@ Please note that deleting named waypoints do not update routes that reference th
 |         | -heavya            | number    | Y                  | The amortization value of the yaw/pitch/roll controller for constructs with a mass of more than than 10T. Default: 1600 |
 
 > Note: Adjusting the values of the yaw/pitch/roll controller may allow you to get quicker responses, but also induce instability.
+
+### Free and strict mode
+
+The free-mode and strict-mode commands adjusts settings as follows:
+
+| Setting                               | free-mode | strict-mode   |
+| ------------------------------------- | --------- | ------------- |
+| allowForwardToggle                    | true      | default value |
+| yawAlignmentThrustLimiter             | 360       | default value |
+| manualControlOnStartup                | true      | default value |
+| minimumPathCheckOffset                | 5000      | default value |
+| pathAlignmentDistanceLimitFromSurface | 0         | default value |
+| turnAngle                             | 3         | default value |
 
 ## Parking
 
