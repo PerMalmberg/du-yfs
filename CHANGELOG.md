@@ -8,12 +8,12 @@ All notable changes to this project will be documented in this file. The version
 * New setting `autoBrakeAngle` to control at what angle offset from the intended path brakes automatically engage.
 * Press "G" (Lua binding "gear"), to engage auto parking.
   * New setting `parkMaxSpeed` to set maximum parking speed.
-* Auto-dock/undock
-* Press `CTRL + SHIFT + G` to perform an undocking operation.
-  * New setting `parkMargin` to control the margin of the parking route.
-  * New setting `parkVertDist` to control how much to move vertically during the undocking.
-  * New setting `parkForwardDist` to control how much forward to move during the undocking.
-* Press `SHIFT + G` to automatically return to a saved parking position and run the undocking procedure in reverse.
+* Auto-dock/undock (EXPERIMENTAL)
+  * Press `CTRL + SHIFT + G` to perform an undocking operation.
+    * New setting `parkMargin` to control the margin of the parking route.
+    * New setting `parkVertDist` to control how much to move vertically during the undocking.
+    * New setting `parkForwardDist` to control how much forward to move during the undocking.
+  * Press `SHIFT + G` to automatically return to a saved parking position and run the undocking procedure in reverse.
 
 ### Fixed
 * Corrected some broken math that had went unnoticed since pre v1.0.

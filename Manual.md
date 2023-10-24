@@ -33,6 +33,7 @@ Please read the entire manual before attempting to perform an installation, ther
   - [Lua console commands](#lua-console-commands)
     - [Advanced Settings](#advanced-settings)
   - [Parking](#parking)
+    - [Autopark/undock](#autoparkundock)
   - [Access Control](#access-control)
   - [Geofence](#geofence)
   - [Mass Overload](#mass-overload)
@@ -500,6 +501,10 @@ Please note that deleting named waypoints do not update routes that reference th
 The parking feature works as follows:
 
 When pressing G, the construct will move downward vertically in reference to the current gravity vector at the configured speed. When the telemeter detects something below (max range is 100m), a new waypoint is created and it will move to that position.
+
+### Autopark/undock
+
+> Note: This feature is EXPERIMENTAL
 
 Pressing `CTRL + SHIFT + G` creates a three-point route, from the current position, with the mid point `parkVertDist` meters vertically and the final point at `parkForwardDist` in front of that. It then travels the route, stopping at the final point.
 
