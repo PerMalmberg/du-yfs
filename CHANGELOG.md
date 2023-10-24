@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file. The version
 
 ### Changed
 * Code size reduction
+* If a key that can't be loaded exist on a data bank, the script will now log that and continue loading remaining keys instead of showing the red "script error" message in the control unit widget.
 
 ## 1.4.1 - 2023-10-14
 
