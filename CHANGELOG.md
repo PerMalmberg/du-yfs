@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file. The version
     * New setting `parkMargin` to control the margin of the parking route.
     * New setting `parkVertDist` to control how much to move vertically during the undocking.
     * New setting `parkForwardDist` to control how much forward to move during the undocking.
+  * New setting `parkUseGates` to control if gates should be controlled during the auto-dock/park operation.
   * Press `SHIFT + G` to automatically return to a saved parking position and run the undocking procedure in reverse.
 
 ### Fixed

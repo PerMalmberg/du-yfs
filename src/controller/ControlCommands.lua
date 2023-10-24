@@ -163,7 +163,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             routeDb.Put("returnData", returnData)
 
             local r = rc.ActivateTempRoute("Undock")
-            setParkOpt(r.AddCoordinate(c), true, plane.Forward()) -- Point to open gates
+            setParkOpt(r.AddCoordinate(c), settings.Boolean("parkUseGates"), plane.Forward()) -- Point to open gates
             setParkOpt(r.AddCoordinate(g2), false, plane.Forward())
             setParkOpt(r.AddCoordinate(g3), false)
             startReturnRoute(r)
