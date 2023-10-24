@@ -14,8 +14,10 @@ local constants         = s.constants
 local gateCtrl          = s.gateCtrl
 local radar             = s.radar
 local VertRef           = uni.VerticalReferenceVector
+local plane             = Plane.NewByVertialReference()
 
 ---@alias PointOptionArguments { commandValue:string, maxspeed:number, margin:number, lockdir:boolean}
+---@alias ReturnData { g1:number[], g2:number[], g3:number[], fwd:number[] }
 
 ---@class ControlCommands
 ---@field New fun(input:Input, cmd:Command, flightCore:FlightCore)
@@ -33,8 +35,9 @@ ControlCommands.__index = ControlCommands
 ---@param settings Settings
 ---@param screenCtrl ScreenController
 ---@param access Access
+---@param routeDb BufferedDB
 ---@return ControlCommands
-function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, access)
+function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, access, routeDb)
     local s = {}
 
     local rc = flightCore.GetRouteController()
@@ -112,39 +115,78 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         end)
 
         input.Register(keys.gear, Criteria.New().OnPress(), function()
-            if player.isFrozen() then
+            if IsFrozen() then
                 flightCore.StartParking((Current() - uni.ClosestBody(Current()).Geography.Center):Len(), "Parking")
             end
         end)
 
-        local tmpPark = "Tmp G"
+        ---@param p Point
+        ---@param gate boolean
+        ---@param direction Vec3|nil
+        local setParkOpt = function(p, gate, direction)
+            local opt = p.Options()
+            opt.Set(PointOptions.MARGIN, settings.Number("parkMargin"))
+            opt.Set(PointOptions.GATE, gate)
+            if direction then
+                opt.Set(PointOptions.LOCK_DIRECTION, { direction:Unpack() })
+            end
+        end
+
+        ---@param r Route
+        local function startReturnRoute(r)
+            r.AddTag("ReturnTag")
+            gateCtrl.Enable(true)
+            pub.Publish("ResetWSAD", true)
+            flightCore.StartFlight()
+        end
+
         input.Register(keys.gear, Criteria.New().LCtrl().LShift().OnPress(), function()
-            rc.StoreWaypoint(tmpPark, uni.CreatePos(Current()).AsPosString())
-            log.Info("Stored current pos as ", tmpPark)
+            if not IsFrozen() then return end
+
+            -- Park Pos
+            local c = Current()
+
+            -- Point above/below park pos
+            local g2 = c + plane.Up() * settings.Number("parkVertDist")
+
+            -- Entry point
+            local g3 = c + plane.Forward() * settings.Number("parkForwardDist") +
+                plane.Up() * settings.Number("parkVertDist")
+
+            local returnData = {
+                g1 = { c:Unpack() },
+                g2 = { g2:Unpack() },
+                g3 = { g3:Unpack() },
+                fwd = { plane.Forward():Unpack() }
+            }
+
+            routeDb.Put("returnData", returnData)
+
+            local r = rc.ActivateTempRoute("Undock")
+            setParkOpt(r.AddCoordinate(c), true, plane.Forward()) -- Point to open gates
+            setParkOpt(r.AddCoordinate(g2), false, plane.Forward())
+            setParkOpt(r.AddCoordinate(g3), false)
+            startReturnRoute(r)
         end)
 
         input.Register(keys.gear, Criteria.New().LShift().OnPress(), function()
-            ---@param p Point
-            local setOpt = function(p)
-                p.Options().Set(PointOptions.MARGIN, settings.Number("parkMargin"))
-            end
+            if not IsFrozen() then return end
 
-            local parkMargin = settings.Number("parkHeightMargin")
-            local wp = rc.LoadWaypoint(tmpPark)
-            if wp then
-                local target = uni.ParsePosition(wp.Pos())
-                if target then
-                    local targetCoordinate = target.Coordinates()
-                    local b = uni.ClosestBody(targetCoordinate)
-                    local center = b.Geography.Center
-                    local vertAtTarget, heightAtTarget = (targetCoordinate - center):NormalizeLen()
+            local d = routeDb.Get("returnData", {})
+            ---@cast d ReturnData
 
-                    local r = rc.ActivateTempRoute(tmpPark)
-                    setOpt(r.AddCoordinate(center - VertRef() * (heightAtTarget + parkMargin)))
-                    setOpt(r.AddCoordinate(targetCoordinate + vertAtTarget * parkMargin))
-                    setOpt(r.AddCoordinate(targetCoordinate))
-                    flightCore.StartFlight()
-                end
+            local g1 = Vec3.New(d.g1)
+            local g2 = Vec3.New(d.g2)
+            local g3 = Vec3.New(d.g3)
+            local fwd = Vec3.New(d.fwd)
+
+            if not (g1:IsZero() and g2:IsZero() and g3:IsZero() and fwd:IsZero()) then
+                local r = rc.ActivateTempRoute("Returning")
+                setParkOpt(r.AddCoordinate(g3), false)
+                setParkOpt(r.AddCoordinate(g2), false, fwd)
+                -- Move backwards to make return to actual start position
+                setParkOpt(r.AddCoordinate(g1), settings.Boolean("parkUseGates"), fwd)
+                startReturnRoute(r)
             end
         end)
     end
@@ -230,7 +272,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
 
                 if rc.ActivateRoute(data.commandValue, data.index,
                         settings.Number("routeStartDistanceLimit"),
-                        settings.Number("openGateMaxDistance")) then
+                        settings.Number("gateControlDistance")) then
                     gateCtrl.Enable(true)
                     flightCore.StartFlight()
                     pub.Publish("ResetWSAD", true)

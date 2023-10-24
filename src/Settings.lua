@@ -85,7 +85,7 @@ function Settings.Create(db)
         commChannel = { default = "" },
         shutdownDelayForGate = { default = 2 },
         openGateWaitDelay = { default = 3 },
-        openGateMaxDistance = { default = 10 },
+        gateControlDistance = { default = routeDefaults.gateControlDistance },
         dockingMode = { default = 1 }, -- 1 = Manual, 2 = Automatic, 3 = Only own constructs,
         globalMaxSpeed = { default = 0 },
         showRadarOnStart = { default = false },
@@ -93,8 +93,10 @@ function Settings.Create(db)
         allowForwardToggle = { default = false },
         autoBrakeAngle = { default = 45 },
         parkMaxSpeed = { default = 50 },
-        parkMargin = { default = 5 },
-        parkHeightMargin = { default = 50 }
+        parkMargin = { default = 0.5 },
+        parkVertDist = { default = 0 },
+        parkForwardDist = { default = 0 },
+        parkUseGates = { default = false }
     }
 
     for k, v in pairs(containerSettings) do

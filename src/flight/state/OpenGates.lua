@@ -2,8 +2,7 @@ require("GlobalTypes")
 local s           = require("Singletons")
 local log         = s.log
 local gateControl = s.gateCtrl
-
-local timer       = require("system/Timer").Instance()
+local timer       = s.timer
 
 ---@class OpenGates
 ---@field New fun(fsm:FlightFSM, holdPoint:Vec3, holdDir:Vec3):FlightState

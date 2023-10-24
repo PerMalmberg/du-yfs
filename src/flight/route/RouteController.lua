@@ -4,6 +4,7 @@ local s              = require("Singletons")
 local log            = s.log
 local pub            = s.pub
 local universe       = s.universe
+local constants      = s.constants
 
 local Route          = require("flight/route/Route")
 local pagination     = require("util/Pagination")
@@ -32,7 +33,7 @@ require("util/Table")
 ---@field CurrentRoute fun():Route|nil
 ---@field CurrentEdit fun():Route|nil
 ---@field CurrentEditName fun():string|nil
----@field ActivateRoute fun(name:string, destinationWayPointIndex?:number, startMargin?:number, openGateMaxDistance?:number):boolean
+---@field ActivateRoute fun(name:string, destinationWayPointIndex?:number, startMargin?:number, gateControlDistance?:number):boolean
 ---@field ActivateTempRoute fun(name:string|nil):Route
 ---@field CreateRoute fun(name:string):Route|nil
 ---@field SaveRoute fun():boolean
@@ -513,11 +514,11 @@ function RouteController.Instance(bufferedDB)
     ---@param name string
     ---@param destinationWayPointIndex? number The index of the waypoint we wish to move to. 0 means the last one in the route. This always counts in the original order of the route.
     ---@param startMargin? number The route will only be activated if within this distance.
-    ---@param openGateMaxDistance? number Gate control will only be activated if this close to a controlled point in the route
+    ---@param gateControlDistance? number Gate control will only be activated if this close to a controlled point in the route
     ---@return boolean
-    function s.ActivateRoute(name, destinationWayPointIndex, startMargin, openGateMaxDistance)
+    function s.ActivateRoute(name, destinationWayPointIndex, startMargin, gateControlDistance)
         startMargin = startMargin or 0
-        openGateMaxDistance = openGateMaxDistance or 10
+        gateControlDistance = gateControlDistance or constants.route.gateControlDistance
         local candidate = s.doBasicCheckesOnActivation(name, destinationWayPointIndex or 1)
 
         if candidate == nil then
@@ -526,7 +527,7 @@ function RouteController.Instance(bufferedDB)
 
         local currentPos = Current()
         destinationWayPointIndex = destinationWayPointIndex or #candidate.Points()
-        candidate.AdjustRouteBasedOnTarget(currentPos, destinationWayPointIndex, openGateMaxDistance)
+        candidate.AdjustRouteBasedOnTarget(currentPos, destinationWayPointIndex, gateControlDistance)
 
         -- Check we're close enough to the closest point
         local closestPosInRoute = candidate.FindClosestPositionAlongRoute(currentPos)

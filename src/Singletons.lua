@@ -11,7 +11,8 @@ local s = {
     keys          = require("input/Keys"),
     gateCtrl      = require("controller/GateControl").Instance(),
     radar         = require("element/Radar").Instance(),
-    floorDetector = require("controller/FloorDetector").Instance()
+    floorDetector = require("controller/FloorDetector").Instance(),
+    timer         = require("system/Timer").Instance()
 }
 
 return s
