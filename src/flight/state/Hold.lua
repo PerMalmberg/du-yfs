@@ -87,7 +87,6 @@ function Hold.New(fsm)
         end
 
         if (not IsFrozen() or hasTag) -- hasTag overrides frozen
-            and hasTag
             and isLastWaypoint
             and hit.Hit
             and hit.Distance <= settings.Get("autoShutdownFloorDistance")
