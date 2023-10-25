@@ -319,8 +319,8 @@ By default option 1..9 means ALT-key plus keys 1 through 9, configured in the th
 | C                   | Move down                                                                 | descend                    |
 | B                   | While held down, activates rocket boosters (only while in manual control) | boosters                   |
 | G                   | Engage parking                                                            | gear                       |
-| CTRL + SHIFT + G    | Save current position as "Tmp. G" for easy return.                        | gear                       |
-| SHIFT + G           | Return to the "Tmp G" position                                            | gear                       |
+| CTRL + SHIFT + G    | Save current position perform an undock procedure.  (EXPERIMENTAL)        | gear                       |
+| SHIFT + G           | Perform an auto-dock procedure (EXPERIMENTAL)                             | gear                       |
 | Space               | Move  up                                                                  | ascend                     |
 | Alt + A / Q         | Strafe left                                                               | strafeleft, left           |
 | Alt + D / E         | Strafe right                                                              | straferight, right         |
