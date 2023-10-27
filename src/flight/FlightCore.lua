@@ -16,6 +16,7 @@ local AxisManager = require("flight/AxisManager")
 local Ternary     = calc.Ternary
 local plane       = Plane.NewByVertialReference()
 local abs         = math.abs
+local delta       = Stopwatch.New()
 
 require("flight/state/Require")
 
@@ -276,8 +277,16 @@ function FlightCore.New(routeController, flightFSM)
     function s.fcFlush()
         local status, err, _ = xpcall(
             function()
+                local deltaTime = 0
+                if not delta.IsRunning() then
+                    delta.Start()
+                end
+
+                deltaTime = delta.Elapsed()
+                delta.Restart()
+
                 if currentWaypoint and route then
-                    flightFSM.FsmFlush(currentWaypoint, previousWaypoint)
+                    flightFSM.FsmFlush(deltaTime, currentWaypoint, previousWaypoint)
 
                     -- The FSM can set a temporary waypoint so we must honor that
                     local selectedWp = flightFSM.SelectWP()
@@ -305,7 +314,7 @@ function FlightCore.New(routeController, flightFSM)
                 end
 
                 if not flightFSM.DisablesAllThrust() then
-                    axes.Flush()
+                    axes.Flush(deltaTime)
                 end
 
                 brakes:BrakeFlush()

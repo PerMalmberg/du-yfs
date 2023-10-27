@@ -4,7 +4,7 @@ local AxisControl = require("flight/AxisControl")
 ---@field Pitch fun():AxisControl
 ---@field Yaw fun():AxisControl
 ---@field Roll fun():AxisControl
----@field Flush fun()
+---@field Flush fun(deltaTime:number)
 ---@field ReceiveEvents fun()
 ---@field StopEvents fun()
 ---@field SetYawTarget fun(target:Vec3?)
@@ -52,15 +52,16 @@ function AxisManager.Instance()
         if target then roll.SetTarget(target) else roll.Disable() end
     end
 
-    function s.Flush()
+    ---@param deltaTime number
+    function s.Flush(deltaTime)
         -- Enabling this causes an uninteded roll when making hard turns.
         --if abs(yaw.OffsetDegrees()) > 20 then
         --roll.Disable()
         --end
 
-        pitch.AxisFlush()
-        roll.AxisFlush()
-        yaw.AxisFlush()
+        pitch.AxisFlush(deltaTime)
+        roll.AxisFlush(deltaTime)
+        yaw.AxisFlush(deltaTime)
 
         -- Can call apply on any of the axes, it doesn't matter
         yaw.Apply()

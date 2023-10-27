@@ -37,7 +37,7 @@ local deadZoneFactor    = 0.8 -- Consider the inner edge of the dead zone where 
 
 ---@class FlightFSM
 ---@field New fun(settings:Settings):FlightFSM
----@field FsmFlush fun(next:Waypoint, previous:Waypoint)
+---@field FsmFlush fun(deltaTime:number, next:Waypoint, previous:Waypoint)
 ---@field SetState fun(newState:FlightState)
 ---@field SetEngineWarmupTime fun(t50:number)
 ---@field CheckPathAlignment fun(currentPos:Vec3, nearestPointOnPath:Vec3, previousWaypoint:Waypoint, nextWaypoint:Waypoint)
@@ -117,9 +117,6 @@ function FlightFSM.New(settings, routeController, geo)
     local currentState ---@type FlightState
     local currentWP ---@type Waypoint
     local temporaryWaypoint ---@type Waypoint|nil
-
-    local delta = Stopwatch.New()
-
     local pidValues = yfsConstants.flight.speedPid
     local speedPid = PID(pidValues.p, pidValues.i, pidValues.d, pidValues.a)
 
@@ -558,17 +555,10 @@ function FlightFSM.New(settings, routeController, geo)
     end
 
     ---Flush method for the FSM
+    ---@param deltaTime number
     ---@param next Waypoint
     ---@param previous Waypoint
-    function s.FsmFlush(next, previous)
-        local deltaTime = 0
-        if delta.IsRunning() then
-            deltaTime = delta.Elapsed()
-            delta.Restart()
-        else
-            delta.Start()
-        end
-
+    function s.FsmFlush(deltaTime, next, previous)
         currentWP = next
 
         if currentState.DisablesAllThrust() then

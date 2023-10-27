@@ -36,7 +36,7 @@ finalAcceleration[ControlledAxis.Yaw] = nullVec
 ---@field Disable fun()
 ---@field Speed fun():number
 ---@field Acceleration fun():number
----@field AxisFlush fun()
+---@field AxisFlush fun(deltaTime:number)
 ---@field Update fun()
 ---@field SetTarget fun(target:Vec3)
 ---@field OffsetDegrees fun():number
@@ -144,7 +144,8 @@ function AxisControl.New(axis)
         return (vel * localNormal()):Len()
     end
 
-    function s.AxisFlush()
+    ---@param deltaTime number
+    function s.AxisFlush(deltaTime)
         if targetCoordinate ~= nil then
             -- Positive offset means we're right of target, clock-wise
             -- Positive acceleration turns counter-clockwise
