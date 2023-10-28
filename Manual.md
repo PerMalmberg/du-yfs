@@ -137,7 +137,7 @@ Elements needed on the space/static construct:
 * 1x OR operator
 * 1x 2-Counter
 * 2x Manual Switch
-* Any number of gates/doors
+* Any number of gates/doors. At least four medium sliding doors if you're setting up a space dock.
 
 Link the following elements on the ground/space construct as follows. You *must* link the element in the order below. Names in [square brackets] identify different elements of the same type, make sure to link to/from the correct one.
 
