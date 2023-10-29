@@ -243,7 +243,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
             dir = Forward()
         end
 
-        return Current() + dir:ProjectOnPlane(vertUp) * directionMargin
+        return Current() + (dir * directionMargin):ProjectOnPlane(vertUp)
     end
 
     return setmetatable(s, Waypoint)
