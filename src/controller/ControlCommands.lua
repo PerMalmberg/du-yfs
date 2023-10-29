@@ -491,9 +491,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             function(data)
                 local p = uni.ParsePosition(data.pos)
                 if p then
-                    if rc.StoreWaypoint(data.commandValue, p.AsPosString()) then
-                        log.Info("Current position saved as ", data.commandValue)
-                    end
+                    rc.StoreWaypoint(data.commandValue, p.AsPosString())
                 end
             end).AsString().Must().Option("pos").AsString().Must()
 
