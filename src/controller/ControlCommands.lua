@@ -466,7 +466,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             end).AsNumber()
 
         local saveCurrAs = cmd.Accept("pos-save-current-as",
-            ---@param data {name:string, auto:boolean}
+            ---@param data {commandValue:string, auto:boolean}
             function(data)
                 if data.auto then
                     local new = rc.FirstFreeWPName()
@@ -475,15 +475,13 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                         return
                     end
 
-                    data.name = new
-                elseif not data.name then
+                    data.commandValue = new
+                elseif not data.commandValue then
                     log.Error("No name provided")
                 end
 
-                local pos = uni.CreatePos(Current()).AsPosString()
-                rc.StoreWaypoint(data.name, pos)
+                rc.StoreWaypoint(data.commandValue, uni.CreatePos(Current()).AsPosString())
             end).AsEmpty()
-        saveCurrAs.Option("name").AsString()
         saveCurrAs.Option("auto").AsEmptyBoolean()
 
         cmd.Accept("pos-save-as",
@@ -908,6 +906,13 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
         posAbove.Option("fy").AsNumber().Must()
         posAbove.Option("fz").AsNumber().Must()
     end
+
+    settings.Callback("dockingMode",
+        ---@param mode number
+        function(mode)
+            mode = calc.Clamp(mode, 1, 3)
+            construct.setDockingMode(mode)
+        end)
 
     return setmetatable(s, ControlCommands)
 end

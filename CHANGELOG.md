@@ -2,10 +2,14 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-### 1.5.1 - 2023-10-xx
+### 1.5.1 - 2023-11-04
+
+### Changed
+* `pos-save-current-as` no longer requires the `-name` parameter and instead just takes a single argument as the name.
 
 ### Fixed
 * No longer prints double messages when storing current position as a waypoint.
+* Docking mode now applies properly on startup.
 
 ## 1.5.0 - 2023-10-27
 

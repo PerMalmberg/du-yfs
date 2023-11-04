@@ -86,8 +86,10 @@ local function Start(isECU)
         local fsm = FlightFSM.New(settings, rc, GeoFence.New(settingsDb, commandLine))
         local fc = FlightCore.New(rc, fsm)
         fsm.SetFlightCore(fc)
+        commands = ControlCommands.New(input, commandLine, fc, settings, screen, access, routeDb)
 
         settings.Reload()
+        -- After this point settings are loaded so any registered callback will not be called.
         fc.ReceiveEvents()
 
         local floor = floorDetector.Measure()
@@ -108,7 +110,6 @@ local function Start(isECU)
         end
 
         fuel = Fuel.New(settings)
-        commands = ControlCommands.New(input, commandLine, fc, settings, screen, access, routeDb)
 
         info = InfoCentral.Instance()
         hud = Hud.New()
