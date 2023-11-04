@@ -614,5 +614,4 @@ Special thanks goes out to these players:
 * Vargen - for our endless discussions and a fountain of ideas.
 * Zcrewball - for doing the industry supplying an endless number of sacrificial elements.
 * De Overheid - Helping out with the visual design.
-* Emma Roid, 2Bitter, Petra25, AceMan - for feedback
-
+* Emma Roid, 2Bitter, Petra25, AceMan, Tobitege - for feedback
