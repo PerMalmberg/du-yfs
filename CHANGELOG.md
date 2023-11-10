@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. The version
 
 ### 1.5.2 - 2023-11-10
 * Change thrust vector math to ensure sideways engines don't result in near-zero thrust in main thrust direction.
+  * NOTE: This may result in less exact
+* Adjusted default values for yaw/pitch/roll PIDs to reduce over shoots on small constructs. Tto reset yours to new defaults, either run `reset-settings` or set them manually to 10/0/800 using the `set -light[p|i|d]` command)
+* Adjusted turn angle to 8 degrees for manual control. To set yours, run `free-mode`.
 
 ### 1.5.1 - 2023-11-04
 
@@ -41,7 +44,7 @@ All notable changes to this project will be documented in this file. The version
 ### Fixed
 * When running a route in floor mode, it now adds single quotation marks around the route name so it supports spaces in the name.
 * Fix altitude hold not functioning consistently while in manual control.
-* When in manual mode and in atmosphere, lateral engines now work to counter lateral drift.
+* When in manual control and in atmosphere, lateral engines now work to counter lateral drift.
 
 ### Removed
 * Command `route-set-all-margins` and `route-set-all-max-speeds` (use `route-set-pos-option`)
@@ -62,7 +65,7 @@ All notable changes to this project will be documented in this file. The version
 
 ### Fixed
 * If a communication channel is set, but receiver or emitter aren't linked, an error is now logged instead of terminating the script.
-* Control key once again activates brakes while in manual mode.
+* Control key once again activates brakes while in manual control.
 
 ### Removed
 * Fuel gauges on the screen element have been removed to save code space (still available on the HUD).
@@ -117,7 +120,7 @@ All notable changes to this project will be documented in this file. The version
   * `openGateMaxDistance` for setting the max distance to a gate control enabled point; further distances causes gates not to be opened on route activation.
   * `setWaypointAlongRoute` which, if enabled, makes the waypoint to be set for the next point in the route.
   * `dockingMode` to control how the construct docks to other constructs of larger core size.
-  * `globalMaxSpeed` to set a global max speed. This overrides any route-specific settings and also applies to manual mode.
+  * `globalMaxSpeed` to set a global max speed. This overrides any route-specific settings and also applies to manual control.
 * Commands `move` and `goto` now have a new option `-forceVerticalUp` (default true) that allows you to opt in to aligning to the path by setting this to false.
 * Manual control now also accepts Q and E keys for strafing left/right, in addition to the existing ALT+A and ALT+E. (Assuming default key bindings)
 * New commands
@@ -138,7 +141,7 @@ All notable changes to this project will be documented in this file. The version
 * Formatting of a few log messages
 * Sped up fuel gauges so they show quicker, mostly noticeable on constructs with many elements.
 * When holding position, always align up-side along vertical up, i.e. away from the gravity well.
-* In manual mode, the throttle now properly adjusts the applied acceleration.
+* In manual control, the throttle now properly adjusts the applied acceleration.
 
 ### Changed
 * Command `route-set-pos-option` now takes a range of indexes, which allows setting options on multiple points at the same time. Use `-ix`and `-endIx` to specify start and end index.
@@ -269,7 +272,7 @@ All notable changes to this project will be documented in this file. The version
 
 ### Fixed
 * Activating a route while still in movement as the result of manual control input no longer results in the route being aborted once the first point is reached.
-* Activating manual control after running a route no longer causes the construct to turn to the last direction used in manual mode before route activation.
+* Activating manual control after running a route no longer causes the construct to turn to the last direction used in manual control before route activation.
 
 ## 0.0.25 - 2023-04-28
 * Added variant for Y-Lift M3 0T XS Beetle v1.0

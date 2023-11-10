@@ -141,7 +141,7 @@ function Settings.Create(db)
         allowForwardToggle = true,
         manualControlOnStartup = true,
         minimumPathCheckOffset = 5000,
-        turnAngle = 3,
+        turnAngle = 8,
         yawAlignmentThrustLimiter = 360,
         pathAlignmentDistanceLimitFromSurface = 0
     }
