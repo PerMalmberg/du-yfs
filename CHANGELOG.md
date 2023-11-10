@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+### 1.5.2 - 2023-11-10
+* Change thrust vector math to ensure sideways engines don't result in near-zero thrust in main thrust direction.
+
 ### 1.5.1 - 2023-11-04
 
 ### Changed
