@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file. The version
 ### 1.5.2 - 2023-11-10
 * Change thrust vector math to ensure sideways engines don't result in near-zero thrust in main thrust direction.
   * NOTE: This may result in less exact
-* Adjusted default values for yaw/pitch/roll PIDs to reduce over shoots on small constructs. Tto reset yours to new defaults, either run `reset-settings` or set them manually to 10/0/800 using the `set -light[p|i|d]` command)
+* Adjusted default values for yaw/pitch/roll PIDs to reduce over shoots on small constructs. To reset yours to new defaults, either run `reset-settings` or set them manually to 10/0/800 using the `set -light[p|i|d]` command)
 * Adjusted turn angle to 8 degrees for manual control. To set yours, run `free-mode`.
 
 ### 1.5.1 - 2023-11-04
