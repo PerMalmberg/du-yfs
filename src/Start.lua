@@ -86,6 +86,12 @@ local function Start(isECU)
         local fsm = FlightFSM.New(settings, rc, GeoFence.New(settingsDb, commandLine))
         local fc = FlightCore.New(rc, fsm)
         fsm.SetFlightCore(fc)
+
+        if not isECU then
+            screen = ScreenController.New(fc, settings)
+            wsad = Wsad.New(fsm, fc, settings, access)
+        end
+
         commands = ControlCommands.New(input, commandLine, fc, settings, screen, access, routeDb)
 
         settings.Reload()
@@ -102,11 +108,6 @@ local function Start(isECU)
             unit.exit()
         else
             fsm.SetState(Idle.New(fsm))
-        end
-
-        if not isECU then
-            screen = ScreenController.New(fc, settings)
-            wsad = Wsad.New(fsm, fc, settings, access)
         end
 
         fuel = Fuel.New(settings)
