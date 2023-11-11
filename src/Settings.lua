@@ -71,6 +71,8 @@ function Settings.Create(db)
         heavya = { default = heavyPid.a },
         autoShutdownFloorDistance = { default = routeDefaults.autoShutdownFloorDistance },
         yawAlignmentThrustLimiter = { default = routeDefaults.yawAlignmentThrustLimiter },
+        pitchAlignmentThrustLimiter = { default = routeDefaults.pitchAlignmentThrustLimiter },
+        rollAlignmentThrustLimiter = { default = routeDefaults.rollAlignmentThrustLimiter },
         routeStartDistanceLimit = { default = routeDefaults.routeStartDistanceLimit },
         showWidgetsOnStart = { default = constants.widgets.showOnStart },
         throttleStep = { default = constants.flight.throttleStep },

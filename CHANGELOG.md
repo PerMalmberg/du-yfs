@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+### 1.5.4 - 2023-11-12
+
+#### Fixed
+* The change made in 1.5.2 for thrust, while doing what it should, turned out to cause other issues with certain paths, especially when doing the "flip maneuver" when approaching a planet, whereby engines pushed the construct of the path. To improve on this change, `pitchAlignmentThrustLimiter` and `rollAlignmentThrustLimiter` settings have been added to prevent engines from firing if not properly aligned.
+
 ### 1.5.3 - 2023-11-11
 
 ### Fixed

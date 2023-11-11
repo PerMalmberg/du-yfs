@@ -77,20 +77,25 @@ function FlightFSM.New(settings, routeController, geo)
     settings.Callback("pathAlignmentDistanceLimit", Waypoint.SetAlignmentDistanceLimit)
     settings.Callback("autoBrakeAngle", brakes.SetAutoBrakeAngle)
 
-    local warmupTime                = 1
-    local lastReadMass              = TotalMass()
-    local yaw                       = AxisManager.Instance().Yaw()
-    local yawAlignmentThrustLimiter = 1
-    local boosterActive             = false
-    local boosterStateChanged       = false
-    local isFrozen                  = false
+    local warmupTime                  = 1
+    local lastReadMass                = TotalMass()
+    local axisMgr                     = AxisManager.Instance()
+    local yaw                         = axisMgr.Yaw()
+    local roll                        = axisMgr.Roll()
+    local pitch                       = axisMgr.Pitch()
+    local yawAlignmentThrustLimiter   = 1
+    local rollAlignmentThrustLimiter  = 1
+    local pitchAlignmentThrustLimiter = 1
+    local boosterActive               = false
+    local boosterStateChanged         = false
+    local isFrozen                    = false
 
-    local longAdjData               = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
-    local latAdjData                = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
-    local vertAdjData               = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
+    local longAdjData                 = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
+    local latAdjData                  = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
+    local vertAdjData                 = AdjustmentTracker.New(lastReadMass < LightConstructMassThreshold)
 
     ---@type FlightData
-    local flightData                = {
+    local flightData                  = {
         targetSpeed = 0,
         targetSpeedReason = "",
         finalSpeed = 0,
@@ -107,7 +112,7 @@ function FlightFSM.New(settings, routeController, geo)
         absSpeed = 0
     }
 
-    local adjustData                = {
+    local adjustData                  = {
         long = 0,
         lat = 0,
         ver = 0
@@ -477,7 +482,9 @@ function FlightFSM.New(settings, routeController, geo)
 
         local acc = adjustmentAcc - universe:VerticalReferenceVector() * G() - AirFrictionAcc()
 
-        if abs(yaw.OffsetDegrees()) < yawAlignmentThrustLimiter then
+        if abs(yaw.OffsetDegrees()) < yawAlignmentThrustLimiter
+            and abs(pitch.OffsetDegrees()) < pitchAlignmentThrustLimiter
+            and abs(roll.OffsetDegrees()) < rollAlignmentThrustLimiter then
             acc = acc + acceleration * input.Throttle() -- throttle also affects brake acceleration using engines
         end
 
@@ -682,6 +689,14 @@ function FlightFSM.New(settings, routeController, geo)
 
     settings.Callback("yawAlignmentThrustLimiter", function(value)
         yawAlignmentThrustLimiter = value
+    end)
+
+    settings.Callback("pitchAlignmentThrustLimiter", function(value)
+        pitchAlignmentThrustLimiter = value
+    end)
+
+    settings.Callback("rollAlignmentThrustLimiter", function(value)
+        rollAlignmentThrustLimiter = value
     end)
 
     ---@return Settings
