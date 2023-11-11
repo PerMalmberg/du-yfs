@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
+### 1.5.3 - 2023-11-11
+
+### Fixed
+  * Squashed bug that caused "Waypoints" button on route screen as well as the `floor` command not to function.
+
 ### 1.5.2 - 2023-11-10
 * Change thrust vector math to ensure sideways engines don't result in near-zero thrust in main thrust direction.
   * NOTE: This may result in less exact
