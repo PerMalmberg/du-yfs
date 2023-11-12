@@ -41,7 +41,7 @@ local deadZoneFactor    = 0.8 -- Consider the inner edge of the dead zone where 
 ---@field SetState fun(newState:FlightState)
 ---@field SetEngineWarmupTime fun(t50:number)
 ---@field CheckPathAlignment fun(currentPos:Vec3, nearestPointOnPath:Vec3, previousWaypoint:Waypoint, nextWaypoint:Waypoint)
----@field SetTemporaryWaypoint fun(wp:Waypoint|nil)
+---@field SetTemporaryWaypoint fun(wpNext:Waypoint|nil)
 ---@field Update fun()
 ---@field AtWaypoint fun(isLastWaypoint:boolean, next:Waypoint, previous:Waypoint)
 ---@field GetSettings fun():Settings
@@ -50,7 +50,7 @@ local deadZoneFactor    = 0.8 -- Consider the inner edge of the dead zone where 
 ---@field GetFlightCore fun():FlightCore
 ---@field DisablesAllThrust fun():boolean
 ---@field PreventNextWp fun():boolean
----@field SelectWP fun():Waypoint
+---@field SelectWP fun(orgNext:Waypoint):Waypoint, boolean
 ---@field ToggleBoster fun()
 ---@field SetBooster fun(activate:boolean)
 
@@ -120,7 +120,6 @@ function FlightFSM.New(settings, routeController, geo)
 
 
     local currentState ---@type FlightState
-    local currentWP ---@type Waypoint
     local temporaryWaypoint ---@type Waypoint|nil
     local pidValues = yfsConstants.flight.speedPid
     local speedPid = PID(pidValues.p, pidValues.i, pidValues.d, pidValues.a)
@@ -137,9 +136,15 @@ function FlightFSM.New(settings, routeController, geo)
     end
 
     ---Selects the waypoint to go to
+    ---@param orgNext Waypoint
     ---@return Waypoint
-    function s.SelectWP()
-        return temporaryWaypoint and temporaryWaypoint or currentWP
+    ---@return boolean
+    function s.SelectWP(orgNext)
+        if temporaryWaypoint then
+            return temporaryWaypoint, true
+        end
+
+        return orgNext, false
     end
 
     ---Calculates the width of the dead zone
@@ -566,25 +571,21 @@ function FlightFSM.New(settings, routeController, geo)
     ---@param next Waypoint
     ---@param previous Waypoint
     function s.FsmFlush(deltaTime, next, previous)
-        currentWP = next
-
         if currentState.DisablesAllThrust() then
             applyAcceleration(nil, nullVec)
             brakes.Feed(nullVec, 0)
         else
-            local selectedWP = s.SelectWP()
-
             local pos = Current()
-            local nearest = calc.NearestOnLineBetweenPoints(previous.Destination(), selectedWP.Destination(), pos)
+            local nearest = calc.NearestOnLineBetweenPoints(previous.Destination(), next.Destination(), pos)
 
-            currentState.Flush(deltaTime, selectedWP, previous, nearest)
+            currentState.Flush(deltaTime, next, previous, nearest)
 
             if brakes.Active() then
                 s.SetBooster(false)
             end
 
-            local acceleration = move(deltaTime, selectedWP, previous)
-            local adjustmentAcc = adjustForDeviation(pos, selectedWP, previous)
+            local acceleration = move(deltaTime, next, previous)
+            local adjustmentAcc = adjustForDeviation(pos, next, previous)
 
             applyAcceleration(acceleration, adjustmentAcc)
         end
@@ -644,9 +645,9 @@ function FlightFSM.New(settings, routeController, geo)
     end
 
     ---Sets a temporary waypoint, or removes the current one
-    ---@param waypoint Waypoint|nil
-    function s.SetTemporaryWaypoint(waypoint)
-        temporaryWaypoint = waypoint
+    ---@param wp Waypoint|nil
+    function s.SetTemporaryWaypoint(wp)
+        temporaryWaypoint = wp
     end
 
     function s.Update()

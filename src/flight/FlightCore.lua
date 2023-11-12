@@ -286,22 +286,29 @@ function FlightCore.New(routeController, flightFSM)
                 delta.Restart()
 
                 if currentWaypoint and route then
-                    flightFSM.FsmFlush(deltaTime, currentWaypoint, previousWaypoint)
+                    -- A state can set temporary waypoints so we switch before calling the FSM (and the states) so
+                    -- that from this point eveything works with the same WPs without having to know to switch.
+                    local prevWP = previousWaypoint
+                    local nextWP, switched = flightFSM.SelectWP(currentWaypoint)
 
-                    -- The FSM can set a temporary waypoint so we must honor that
-                    local selectedWp = flightFSM.SelectWP()
+                    if switched then
+                        prevWP = Waypoint.New(Current(), 0, 0, currentWaypoint.Margin(),
+                            currentWaypoint.PathAlignmentDistanceLimitFromSurface())
+                    end
 
-                    axes.SetYawTarget(selectedWp.Yaw(previousWaypoint))
-                    axes.SetPitchTarget(selectedWp.Pitch(previousWaypoint))
-                    axes.SetRollTarget(selectedWp.Roll(previousWaypoint))
+                    flightFSM.FsmFlush(deltaTime, nextWP, prevWP)
 
-                    if selectedWp.WithinMargin(WPReachMode.ENTRY) then
-                        flightFSM.AtWaypoint(route.LastPointReached(), selectedWp, previousWaypoint)
+                    axes.SetYawTarget(nextWP.Yaw(prevWP))
+                    axes.SetPitchTarget(nextWP.Pitch(prevWP))
+                    axes.SetRollTarget(nextWP.Roll(prevWP))
+
+                    if nextWP.WithinMargin(WPReachMode.ENTRY) then
+                        flightFSM.AtWaypoint(route.LastPointReached(), nextWP, prevWP)
 
                         -- Lock direction when WP is reached, but don't override existing locks, such as is in place when strafing.
-                        local lockDir = (selectedWp.Destination() - previousWaypoint.Destination())
+                        local lockDir = (nextWP.Destination() - prevWP.Destination())
                             :NormalizeInPlace()
-                        selectedWp.LockYawTo(lockDir, false)
+                        nextWP.LockYawTo(lockDir, false)
 
                         if not flightFSM.PreventNextWp() then
                             -- Switch to next waypoint

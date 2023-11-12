@@ -34,6 +34,7 @@ WPReachMode    = {
 ---@field Yaw fun(prev:Waypoint):Vec3|nil
 ---@field LockedYawDirection fun():Vec3|nil
 ---@field ForceUpAlongVerticalRef fun()
+---@field PathAlignmentDistanceLimitFromSurface fun():number
 
 
 local Waypoint = {}
@@ -133,6 +134,10 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
 
     function s.IsLastInRoute()
         return lastInRoute
+    end
+
+    function s.PathAlignmentDistanceLimitFromSurface()
+        return pathAlignmentDistanceLimitFromSurface
     end
 
     ---Locks the yaw direction to the given direction

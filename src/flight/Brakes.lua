@@ -3,6 +3,7 @@ local calc = require("util/Calc")
 local nullVec = require("math/Vec3").New()
 local PID = require("cpml/pid")
 local pub = require("util/PubSub").Instance()
+local autoBrakeTimer = require("system/Stopwatch").New()
 local Clamp = calc.Clamp
 local max = math.max
 
@@ -116,6 +117,12 @@ function Brake.Instance()
         local movementDir, currentSpeed = Velocity():NormalizeLen()
         brakeData.autoBrakeAngle = desiredDir:AngleToDeg(movementDir)
         if brakeData.autoBrakeAngle > autoBrakeAngle then
+            autoBrakeTimer.Start()
+        else
+            autoBrakeTimer.Reset()
+        end
+
+        if autoBrakeTimer.Elapsed() > 1 then
             targetSpeed = 0
         end
 
