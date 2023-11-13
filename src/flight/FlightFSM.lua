@@ -76,6 +76,7 @@ function FlightFSM.New(settings, routeController, geo)
     settings.Callback("pathAlignmentAngleLimit", Waypoint.SetAlignmentAngleLimit)
     settings.Callback("pathAlignmentDistanceLimit", Waypoint.SetAlignmentDistanceLimit)
     settings.Callback("autoBrakeAngle", brakes.SetAutoBrakeAngle)
+    settings.Callback("autoBrakeDelay", brakes.SetAutoBrakeDelay)
 
     local warmupTime                  = 1
     local lastReadMass                = TotalMass()
@@ -449,8 +450,7 @@ function FlightFSM.New(settings, routeController, geo)
             end
         else
             local mul = Clamp(data.Feed(distanceNow), 0, 1)
-            acc = directionNow * mul *
-                engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionNow)
+            acc = directionNow * mul * engine.GetAvailableThrust(false, directionNow)
         end
 
         return acc, distanceNow, Sign(directionNow:Dot(axis))
@@ -558,8 +558,7 @@ function FlightFSM.New(settings, routeController, geo)
             -- At this point we let the adjustment code control
             acceleration = Vec3.zero
         else
-            acceleration = direction * pidValue *
-                engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction)
+            acceleration = direction * pidValue * engine.GetAvailableThrust(not isFrozen, direction)
         end
 
         flightData.controlAcc = acceleration:Len()

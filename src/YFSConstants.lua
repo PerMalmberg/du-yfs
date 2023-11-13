@@ -50,8 +50,8 @@ local constants = {
         routeStartDistanceLimit = 10,    -- meters
         autoShutdownFloorDistance = 5,   -- meters
         yawAlignmentThrustLimiter = 3,   -- degrees
-        pitchAlignmentThrustLimiter = 3, -- degrees
-        rollAlignmentThrustLimiter = 3,  -- degrees
+        pitchAlignmentThrustLimiter = 5, -- degrees
+        rollAlignmentThrustLimiter = 5,  -- degrees
         gateControlDistance = 5          -- meters
     },
     widgets = {
