@@ -2,10 +2,14 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-### 1.5.4 - 2023-11-12
+### 1.6.0 - 2023-11-xx
 
 #### Fixed
 * The change made in 1.5.2 for thrust, while doing what it should, turned out to cause other issues with certain paths, especially when doing the "flip maneuver" when approaching a planet, whereby engines pushed the construct of the path. To improve on this change, `pitchAlignmentThrustLimiter` and `rollAlignmentThrustLimiter` settings have been added to prevent engines from firing if not properly aligned.
+* A major refactor of the thrust control was made to handle certain directional transitions along a route. As a result of this a bug was found and fixed that prevented full use of downward facing engines.
+
+### Added
+* A new setting `autoBrakeDelay` has been added as a means to adjust how fast the brakes activate when moving at an angle of `autoBrakeAngle` from the acceleration vector. The default value is 1, intended for construct using "strict mode" and if your construct mainly is controlled manually, you'll want to run the `free-mode` command, or set this new setting to 0, to retain the same behavior of the brakes as before the update.
 
 ### 1.5.3 - 2023-11-11
 
