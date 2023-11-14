@@ -76,6 +76,7 @@ function FlightFSM.New(settings, routeController, geo)
     settings.Callback("pathAlignmentAngleLimit", Waypoint.SetAlignmentAngleLimit)
     settings.Callback("pathAlignmentDistanceLimit", Waypoint.SetAlignmentDistanceLimit)
     settings.Callback("autoBrakeAngle", brakes.SetAutoBrakeAngle)
+    settings.Callback("autoBrakeDelay", brakes.SetAutoBrakeDelay)
 
     local warmupTime                  = 1
     local lastReadMass                = TotalMass()
@@ -449,8 +450,7 @@ function FlightFSM.New(settings, routeController, geo)
             end
         else
             local mul = Clamp(data.Feed(distanceNow), 0, 1)
-            acc = directionNow * mul *
-                engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(directionNow)
+            acc = directionNow * mul * engine.GetAvailableThrust(false, directionNow)
         end
 
         return acc, distanceNow, Sign(directionNow:Dot(axis))
@@ -485,6 +485,7 @@ function FlightFSM.New(settings, routeController, geo)
             return
         end
 
+        -- Counter gravity pull and air friction
         local acc = adjustmentAcc - universe:VerticalReferenceVector() * G() - AirFrictionAcc()
 
         if abs(yaw.OffsetDegrees()) < yawAlignmentThrustLimiter
@@ -526,15 +527,14 @@ function FlightFSM.New(settings, routeController, geo)
     ---@param deltaTime number The time since last Flush
     ---@param waypoint Waypoint The next waypoint
     ---@param previousWaypoint Waypoint The next waypoint
-    ---@return Vec3 The acceleration
+    ---@return Vec3 #The acceleration
+    ---@return number #The speed limit
     local function move(deltaTime, waypoint, previousWaypoint)
         local direction = waypoint.DirectionTo()
         local velocity = Velocity()
         local currentSpeed = velocity:Len()
 
         local speedLimit = getSpeedLimit(deltaTime, velocity, waypoint, previousWaypoint)
-
-        brakes.Feed(direction, speedLimit)
 
         local diff = speedLimit - currentSpeed
         flightData.speedDiff = diff
@@ -558,12 +558,11 @@ function FlightFSM.New(settings, routeController, geo)
             -- At this point we let the adjustment code control
             acceleration = Vec3.zero
         else
-            acceleration = direction * pidValue *
-                engine:GetMaxPossibleAccelerationInWorldDirectionForPathFollow(direction)
+            acceleration = direction * pidValue * engine.GetAvailableThrust(not isFrozen, direction)
         end
 
         flightData.controlAcc = acceleration:Len()
-        return acceleration
+        return acceleration, speedLimit
     end
 
     ---Flush method for the FSM
@@ -584,8 +583,11 @@ function FlightFSM.New(settings, routeController, geo)
                 s.SetBooster(false)
             end
 
-            local acceleration = move(deltaTime, next, previous)
+            local acceleration, speedLimit = move(deltaTime, next, previous)
             local adjustmentAcc = adjustForDeviation(pos, next, previous)
+
+            -- Feed the break the accelreation vector, not the direction to the waypoint.
+            brakes.Feed((acceleration + adjustmentAcc):Normalize(), speedLimit)
 
             applyAcceleration(acceleration, adjustmentAcc)
         end

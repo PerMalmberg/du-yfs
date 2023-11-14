@@ -24,6 +24,7 @@ local spaceEfficiencyFactor = 0.9              -- Reduced from one to counter br
 ---@field Feed fun(desiredDir:Vec3, targetSpeed:number)
 ---@field Active fun():boolean
 ---@field SetAutoBrakeAngle fun(angle:number)
+---@field SetAutoBrakeDelay fun(delay:number)
 ---@field CalcMaxAllowedSpeed fun(distance:number, endSpeed:number, availableBrakeDeceleration:number|nil):number
 
 
@@ -46,6 +47,7 @@ function Brake.Instance()
     local _100kmph = calc.Kph2Mps(100)
     local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0, setAutoBrakeAngle = 0, autoBrakeAngle = 0 } ---@type BrakeData
     local autoBrakeAngle = 45
+    local autoBrakeDelay = 1
 
     local s = {
         engaged = false,
@@ -122,7 +124,7 @@ function Brake.Instance()
             autoBrakeTimer.Reset()
         end
 
-        if autoBrakeTimer.Elapsed() > 1 then
+        if autoBrakeTimer.Elapsed() > autoBrakeDelay then
             targetSpeed = 0
         end
 
@@ -214,6 +216,12 @@ function Brake.Instance()
     ---@param angle number
     function s.SetAutoBrakeAngle(angle)
         autoBrakeAngle = angle
+    end
+
+    ---Sets the auto brake angle
+    ---@param delay number
+    function s.SetAutoBrakeDelay(delay)
+        autoBrakeDelay = delay
     end
 
     instance = setmetatable(s, Brake)

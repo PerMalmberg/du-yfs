@@ -70,6 +70,7 @@ function Settings.Create(db)
         heavyd = { default = heavyPid.d },
         heavya = { default = heavyPid.a },
         autoShutdownFloorDistance = { default = routeDefaults.autoShutdownFloorDistance },
+        autoBrakeDelay = { default = 1 },
         yawAlignmentThrustLimiter = { default = routeDefaults.yawAlignmentThrustLimiter },
         pitchAlignmentThrustLimiter = { default = routeDefaults.pitchAlignmentThrustLimiter },
         rollAlignmentThrustLimiter = { default = routeDefaults.rollAlignmentThrustLimiter },
@@ -139,7 +140,8 @@ function Settings.Create(db)
     end)
 
 
-    local modeSettings = {
+    local freeModeSettings = {
+        autoBrakeDelay = 0,
         allowForwardToggle = true,
         manualControlOnStartup = true,
         minimumPathCheckOffset = 5000,
@@ -149,7 +151,7 @@ function Settings.Create(db)
     }
 
     local function setModeOpts(useDefault)
-        for k, v in pairs(modeSettings) do
+        for k, v in pairs(freeModeSettings) do
             if useDefault then
                 v = settings[k].default
             end
