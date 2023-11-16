@@ -313,15 +313,15 @@ By default option 1..9 means ALT-key plus keys 1 through 9, configured in the th
 | Key                 | Description                                                               | Lua key binding / Modifier |
 | ------------------- | ------------------------------------------------------------------------- | -------------------------- |
 | A                   | Turn left                                                                 | yawleft                    |
-| S                   | Move backwards                                                            | yawright                   |
-| W                   | Move forward                                                              | pitchdown                  |
-| D                   | Turn right                                                                | pitchup                    |
-| C                   | Move down                                                                 | descend                    |
+| D                   | Turn right                                                                | yawright                   |
+| W                   | Move forward                                                              | forward                    |
+| S                   | Move backwards                                                            | backward                   |
+| C                   | Move down                                                                 | down                       |
 | B                   | While held down, activates rocket boosters (only while in manual control) | boosters                   |
 | G                   | Engage parking                                                            | gear                       |
 | CTRL + SHIFT + G    | Save current position perform an undock procedure.  (EXPERIMENTAL)        | gear                       |
 | SHIFT + G           | Perform an auto-dock procedure (EXPERIMENTAL)                             | gear                       |
-| Space               | Move  up                                                                  | ascend                     |
+| Space               | Move  up                                                                  | up                         |
 | Alt + A / Q         | Strafe left                                                               | strafeleft, left           |
 | Alt + D / E         | Strafe right                                                              | straferight, right         |
 | Mouse scroll wheel  | Increase/decrease throttle/acceleration                                   |                            |
