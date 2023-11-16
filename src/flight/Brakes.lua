@@ -21,7 +21,7 @@ local spaceEfficiencyFactor = 0.9              -- Reduced from one to counter br
 ---@field MaxSeenGravityInfluencedAvailableAtmoDeceleration fun():number
 ---@field BrakeEfficiency fun(inAtmo:boolean, speed:number):number
 ---@field EffectiveBrakeDeceleration fun():number
----@field Feed fun(desiredDir:Vec3, targetSpeed:number)
+---@field Feed fun(accelerationDir:Vec3, targetSpeed:number)
 ---@field Active fun():boolean
 ---@field SetAutoBrakeAngle fun(angle:number)
 ---@field SetAutoBrakeDelay fun(delay:number)
@@ -113,11 +113,11 @@ function Brake.Instance()
         return max(0, maxSeenBrakeAtmoAcc + influence * dot * G())
     end
 
-    ---@param desiredDir Vec3 Direction we want to move in
+    ---@param accelerationDir Vec3 Direction we want to move in
     ---@param targetSpeed number The desired speed
-    function s.Feed(desiredDir, targetSpeed)
+    function s.Feed(accelerationDir, targetSpeed)
         local movementDir, currentSpeed = Velocity():NormalizeLen()
-        brakeData.autoBrakeAngle = desiredDir:AngleToDeg(movementDir)
+        brakeData.autoBrakeAngle = accelerationDir:AngleToDeg(movementDir)
         if brakeData.autoBrakeAngle > autoBrakeAngle then
             autoBrakeTimer.Start()
         else
