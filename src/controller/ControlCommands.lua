@@ -466,7 +466,7 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
             end).AsNumber()
 
         local saveCurrAs = cmd.Accept("pos-save-current-as",
-            ---@param data {commandValue:string, auto:boolean}
+            ---@param data {name:string, auto:boolean}
             function(data)
                 if data.auto then
                     local new = rc.FirstFreeWPName()
@@ -475,13 +475,18 @@ function ControlCommands.New(input, cmd, flightCore, settings, screenCtrl, acces
                         return
                     end
 
-                    data.commandValue = new
-                elseif not data.commandValue then
+                    data.name = new
+                elseif not data.name then
                     log.Error("No name provided")
+                    return
                 end
 
-                rc.StoreWaypoint(data.commandValue, uni.CreatePos(Current()).AsPosString())
+                local pos = uni.CreatePos(Current()).AsPosString()
+                if rc.StoreWaypoint(data.name, pos) then
+                    log.Info("Current position saved as ", data.name)
+                end
             end).AsEmpty()
+        saveCurrAs.Option("name").AsString()
         saveCurrAs.Option("auto").AsEmptyBoolean()
 
         cmd.Accept("pos-save-as",

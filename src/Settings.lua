@@ -147,6 +147,8 @@ function Settings.Create(db)
         minimumPathCheckOffset = 5000,
         turnAngle = 8,
         yawAlignmentThrustLimiter = 360,
+        pitchAlignmentThrustLimiter = 360,
+        rollAlignmentThrustLimiter = 360,
         pathAlignmentDistanceLimitFromSurface = 0
     }
 

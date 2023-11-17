@@ -572,7 +572,7 @@ function FlightFSM.New(settings, routeController, geo)
     function s.FsmFlush(deltaTime, next, previous)
         if currentState.DisablesAllThrust() then
             applyAcceleration(nil, nullVec)
-            brakes.Feed(nullVec, 0)
+            brakes.Feed(nullVec, nullVec, 0)
         else
             local pos = Current()
             local nearest = calc.NearestOnLineBetweenPoints(previous.Destination(), next.Destination(), pos)
@@ -586,8 +586,8 @@ function FlightFSM.New(settings, routeController, geo)
             local acceleration, speedLimit = move(deltaTime, next, previous)
             local adjustmentAcc = adjustForDeviation(pos, next, previous)
 
-            -- Feed the break the accelreation vector, not the direction to the waypoint.
-            brakes.Feed((acceleration + adjustmentAcc):Normalize(), speedLimit)
+            -- Feed the break the acceleration vector only, not including the adjustments - we might not be accelerating at all but still adjusting for gravity pull.
+            brakes.Feed(next.DirectionTo(), acceleration:Normalize(), speedLimit)
 
             applyAcceleration(acceleration, adjustmentAcc)
         end

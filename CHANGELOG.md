@@ -4,25 +4,30 @@ All notable changes to this project will be documented in this file. The version
 
 ### 1.6.0 - 2023-11-17
 
-#### Fixed
+> NOTE: If your construct mainly is controlled manually, you'll want to run the `free-mode` command after updating to this version, or set the new settings manually to make the construct function as it did previously.
+
+### Fixed
 * The change made in 1.5.2 for thrust, while doing what it should, turned out to cause other issues with certain paths, especially when doing the "flip maneuver" when approaching a planet, whereby engines pushed the construct of the path. To improve on this change, `pitchAlignmentThrustLimiter` and `rollAlignmentThrustLimiter` settings have been added to prevent engines from firing if not properly aligned.
 * A major refactor of the thrust control was made to handle certain directional transitions along a route. As a result of this a bug was found and fixed that prevented full use of downward facing engines.
+* `pos-save-current-as` now functions again, but had to bring back the -name parameter since the command parser doesn't support optional non-parameters.
 
 ### Added
-* A new setting `autoBrakeDelay` has been added as a means to adjust how fast the brakes activate when moving at an angle of `autoBrakeAngle` from the acceleration vector. The default value is 1, intended for construct using "strict mode" and if your construct mainly is controlled manually, you'll want to run the `free-mode` command, or set this new setting to 0, to retain the same behavior of the brakes as before the update.
+* A new setting `autoBrakeDelay` (used in conjunction with `autoBrakeAngle`) has been added as a means to adjust how fast the brakes activate when moving at and angle to the intended path or acceleration vector. The default value is 1, intended for construct using "strict mode".
 
-### 1.5.3 - 2023-11-11
+## 1.5.3 - 2023-11-11
 
 ### Fixed
   * Squashed bug that caused "Waypoints" button on route screen as well as the `floor` command not to function.
 
-### 1.5.2 - 2023-11-10
+## 1.5.2 - 2023-11-10
+
+### Changed
 * Change thrust vector math to ensure sideways engines don't result in near-zero thrust in main thrust direction.
   * NOTE: This may result in less exact
 * Adjusted default values for yaw/pitch/roll PIDs to reduce over shoots on small constructs. To reset yours to new defaults, either run `reset-settings` or set them manually to 10/0/800 using the `set -light[p|i|d]` command)
 * Adjusted turn angle to 8 degrees for manual control. To set yours, run `free-mode`.
 
-### 1.5.1 - 2023-11-04
+## 1.5.1 - 2023-11-04
 
 ### Changed
 * `pos-save-current-as` no longer requires the `-name` parameter and instead just takes a single argument as the name.
