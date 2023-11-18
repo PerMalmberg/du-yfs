@@ -86,6 +86,24 @@
         }
       }
     },
+    "variants/Y-Lift M9 0T XS Bumblebee": {
+      "name": "variants/Y-Lift M9 0T XS Bumblebee",
+      "type": "control",
+      "slots": {
+        "receiver": {
+          "name": "receiver",
+          "type": "receiver"
+        },
+        "spaceRadar": {
+          "name": "spaceRadar",
+          "type": "radar"
+        },
+        "atmoRadar": {
+          "name": "atmoRadar",
+          "type": "radar"
+        }
+      }
+    },
     "screen/screen": {
       "name": "screen/screen",
       "type": "screen",
