@@ -2,7 +2,7 @@
   "cli": {
     "fmtVersion": 3
   },
-  "name": "Flight Core",
+  "name": "YFS",
   "description": "Flight Core",
   "sourcePath": "src",
   "outputPath": "out",
