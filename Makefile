@@ -3,19 +3,19 @@ CLEAN_COV=if [ -e luacov.report.out ]; then rm luacov.report.out; fi; if [ -e lu
 PWD=$(shell pwd)
 
 LUA_PATH := ./src/?.lua
-LUA_PATH := $(LUA_PATH);$(PWD)/external/du-libs/src/?.lua
-LUA_PATH := $(LUA_PATH);$(PWD)/external/du-render/src/?.lua
-LUA_PATH := $(LUA_PATH);$(PWD)/external/du-render/external/du-stream/src/?.lua
-LUA_PATH := $(LUA_PATH);$(PWD)/external/du-render/external/du-stream/external/du-serializer/?.lua
-LUA_PATH := $(LUA_PATH);$(PWD)/external/SmartTemplateLibrary/src/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/e/lib/src/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/e/render/src/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/e/render/external/du-stream/src/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/e/render/external/du-stream/external/du-serializer/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/e/STL/src/?.lua
 
-LUA_PATH_TEST := $(LUA_PATH);$(PWD)/external/du-libs/src/builtin/du_provided/?.lua
-LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-libs/external/du-unit-testing/src/?.lua
-LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-libs/external/du-unit-testing/src/mocks/?.lua
-LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-libs/external/du-unit-testing/external/du-luac/lua/?.lua
-LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-libs/external/du-unit-testing/external/du-lua-examples/?.lua
-LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-libs/external/du-unit-testing/external/du-lua-examples/api-mockup/?.lua
-LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/external/du-libs/external/du-unit-testing/external/du-lua-examples/api-mockup/utils/?.lua
+LUA_PATH_TEST := $(LUA_PATH);$(PWD)/e/lib/src/builtin/du_provided/?.lua
+LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/e/lib/external/du-unit-testing/src/?.lua
+LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/e/lib/external/du-unit-testing/src/mocks/?.lua
+LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/e/lib/external/du-unit-testing/external/du-luac/lua/?.lua
+LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/e/lib/external/du-unit-testing/external/du-lua-examples/?.lua
+LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/e/lib/external/du-unit-testing/external/du-lua-examples/api-mockup/?.lua
+LUA_PATH_TEST := $(LUA_PATH_TEST);$(PWD)/e/lib/external/du-unit-testing/external/du-lua-examples/api-mockup/utils/?.lua
 
 
 all: release

@@ -8,9 +8,9 @@
   "outputPath": "out",
   "libs": [
     {
-      "id": "du-libs",
+      "id": "libs",
       "type": "project",
-      "path": "external/du-libs"
+      "path": "e/libs"
     }
   ],
   "builds": {

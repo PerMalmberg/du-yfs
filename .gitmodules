@@ -1,9 +1,9 @@
 [submodule "external/du-libs"]
-	path = external/du-libs
+	path = e/lib
 	url = git@github.com:PerMalmberg/du-libs.git
 [submodule "external/du-render"]
-	path = external/du-render
+	path = e/render
 	url = git@github.com:PerMalmberg/du-render.git
 [submodule "external/SmartTemplateLibrary"]
-	path = external/SmartTemplateLibrary
+	path = e/STL
 	url = git@github.com:PerMalmberg/SmartTemplateLibrary.git
