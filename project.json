@@ -10,7 +10,7 @@
     {
       "id": "libs",
       "type": "project",
-      "path": "e/libs"
+      "path": "e/lib"
     }
   ],
   "builds": {
