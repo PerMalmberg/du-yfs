@@ -5,8 +5,8 @@ PWD=$(shell pwd)
 LUA_PATH := ./src/?.lua
 LUA_PATH := $(LUA_PATH);$(PWD)/e/lib/src/?.lua
 LUA_PATH := $(LUA_PATH);$(PWD)/e/render/src/?.lua
-LUA_PATH := $(LUA_PATH);$(PWD)/e/render/external/du-stream/src/?.lua
-LUA_PATH := $(LUA_PATH);$(PWD)/e/render/external/du-stream/external/du-serializer/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/e/render/e/stream/src/?.lua
+LUA_PATH := $(LUA_PATH);$(PWD)/e/render/e/stream/e/serializer/?.lua
 LUA_PATH := $(LUA_PATH);$(PWD)/e/STL/src/?.lua
 
 LUA_PATH_TEST := $(LUA_PATH);$(PWD)/e/lib/src/builtin/du_provided/?.lua
