@@ -1,6 +1,6 @@
-local log        = require("debug/Log").Instance()
-local cmd        = require("commandline/CommandLine").Instance()
-local constants  = require("YFSConstants")
+local log, cmd, constants = require("debug/Log").Instance(),
+    require("commandline/CommandLine").Instance(),
+    require("YFSConstants")
 
 ---@module "storage/BufferedDB"
 
@@ -15,8 +15,8 @@ local constants  = require("YFSConstants")
 ---@field String fun(key:string, default?:string):string
 
 local singleton
-local Settings   = {}
-Settings.__index = Settings
+local Settings            = {}
+Settings.__index          = Settings
 
 ---Creates a new Setting
 ---@param db BufferedDB

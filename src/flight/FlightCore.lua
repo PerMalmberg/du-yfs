@@ -1,22 +1,12 @@
 require("abstraction/Vehicle")
 require("GlobalTypes")
-local s           = require("Singletons")
-local log         = s.log
-local gateControl = s.gateCtrl
-local pub         = s.pub
-local universe    = s.universe
-local calc        = s.calc
-local constants   = s.constants
-local brakes      = s.brakes
-local floor       = s.floorDetector
-local gateCtrl    = s.gateCtrl
-local VertRef     = s.universe.VerticalReferenceVector
+local s                                                               = require("Singletons")
+local log, gateControl, pub, universe, calc, constants, brakes, floor = s.log, s.gateCtrl, s.pub, s.universe, s.calc,
+    s.constants, s.brakes, s.floorDetector
+local VertRef                                                         = s.universe.VerticalReferenceVector
 
-local AxisManager = require("flight/AxisManager")
-local Ternary     = calc.Ternary
-local plane       = Plane.NewByVertialReference()
-local abs         = math.abs
-local delta       = Stopwatch.New()
+local AxisManager, Ternary, plane, abs, delta                         = require("flight/AxisManager"), calc.Ternary,
+    Plane.NewByVertialReference(), math.abs, Stopwatch.New()
 
 require("flight/state/Require")
 
@@ -139,7 +129,7 @@ function FlightCore.New(routeController, flightFSM)
             return
         end
 
-        gateCtrl.Enable(true)
+        gateControl.Enable(true)
         local target = Current() + VertRef() * distance
         pub.Publish("ResetWSAD", true)
         s.GotoTarget(target, plane.Forward(), 1, calc.Kph2Mps(settings.Number("parkMaxSpeed")), 0, false, true, routeName)

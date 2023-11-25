@@ -1,25 +1,14 @@
 require("GlobalTypes")
-local s                = require("Singletons")
-local pub              = s.pub
-local input            = s.input
-local commandLine      = s.commandLine
-local log              = s.log
-local radar            = s.radar
-local floorDetector    = s.floorDetector
-local ControlCommands  = require("controller/ControlCommands")
-local RouteController  = require("flight/route/RouteController")
-local BufferedDB       = require("storage/BufferedDB")
-local Fuel             = require("info/Fuel")
-local FlightFSM        = require("flight/FlightFSM")
-local FlightCore       = require("flight/FlightCore")
-local ScreenController = require("controller/ScreenController")
-local Communcation     = require("controller/Communication")
-local Settings         = require("Settings")
-local Hud              = require("hud/Hud")
-local InfoCentral      = require("info/InfoCentral")
-local Wsad             = require("controller/Wsad")
-local Access           = require("Access")
-local GeoFence         = require("flight/GeoFence")
+local s = require("Singletons")
+
+local pub, input, commandLine, log, radar, floorDetector = s.pub, s.input, s.commandLine, s.log, s.radar,
+    s.floorDetector
+local ControlCommands, RouteController, BufferedDB, Fuel, FlightFSM, FlightCore, ScreenController, Communcation, Settings, Hud, InfoCentral, Wsad, Access, GeoFence =
+    require("controller/ControlCommands"),
+    require("flight/route/RouteController"), require("storage/BufferedDB"), require("info/Fuel"),
+    require("flight/FlightFSM"), require("flight/FlightCore"), require("controller/ScreenController"),
+    require("controller/Communication"), require("Settings"), require("hud/Hud"), require("info/InfoCentral"),
+    require("controller/Wsad"), require("Access"), require("flight/GeoFence")
 
 ---Main routine that starts the system
 ---@param isECU boolean

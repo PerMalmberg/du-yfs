@@ -1,13 +1,11 @@
 require("abstraction/Vehicle")
-local s        = require("Singletons")
-local calc     = s.calc
-local universe = s.universe
-local Ternary  = calc.Ternary
-local max      = math.max
-local abs      = math.abs
+local s              = require("Singletons")
+local calc, universe = s.calc, s.universe
+local Ternary        = calc.Ternary
+local max, abs       = math.max, math.abs
 
 ---@enum WPReachMode
-WPReachMode    = {
+WPReachMode          = {
     ENTRY = 1,
     EXIT = 2
 }

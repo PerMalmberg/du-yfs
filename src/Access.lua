@@ -1,6 +1,5 @@
 local s = require("Singletons")
-local log = s.log
-local su = s.strUtil
+local log, su = s.log, s.strUtil
 
 ---@alias AdminData table<string, boolean>
 ---@alias ConstructOwner {id:integer, isOrganization:boolean}
@@ -24,10 +23,7 @@ function Access.New(db, cmdLine)
     if instance then return instance end
 
     local s = {}
-    local ROUTES = "allowedRoutes"
-    local MANUAL = "allowManualControl"
-    local ORG_ADMIN = "orgAdmin"
-    local ADMIN = "adminList"
+    local ROUTES, MANUAL, ORG_ADMIN, ADMIN = "allowedRoutes", "allowManualControl", "orgAdmin", "adminList"
 
     ---@return ConstructOwner
     local function getOwner()
@@ -62,8 +58,7 @@ function Access.New(db, cmdLine)
     end
 
     local function isInAdminList()
-        local name = player.getName()
-        local admins = db.Get(ADMIN, {})
+        local name, admins = player.getName(), db.Get(ADMIN, {})
         ---@cast admins AdminData
         for k, _ in pairs(admins) do
             if k == name then

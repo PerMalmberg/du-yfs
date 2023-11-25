@@ -1,26 +1,20 @@
 require("GlobalTypes")
-local s                       = require("Singletons")
-local log                     = s.log
-local universe                = s.universe
-local input                   = s.input
-local pub                     = s.pub
-local gateControl             = s.gateCtrl
-local constants               = s.constants
-local defaultMargin           = constants.flight.defaultMargin
-local calc                    = s.calc
-local keys                    = s.keys
-local floor                   = s.floorDetector
-local gateCtrl                = s.gateCtrl
-local VerticalReferenceVector = universe.VerticalReferenceVector
-local Sign                    = s.calc.Sign
-local NF                      = function() return not IsFrozen() end
-local Clamp                   = s.calc.Clamp
+local s                                = require("Singletons")
+local log, universe, input, pub, gateControl,
+constants, calc, keys, floor, gateCtrl =
+    s.log, s.universe, s.input, s.pub, s.gateCtrl, s.constants, s.calc, s.keys, s.floorDetector, s.gateCtrl
+local VerticalReferenceVector          = universe.VerticalReferenceVector
+local Sign                             = calc.Sign
+local NF                               = function() return not IsFrozen() end
+local Clamp                            = calc.Clamp
+
+local defaultMargin                    = constants.flight.defaultMargin
 
 ---@class Wsad
 ---@field New fun(flightcore:FlightCore):Wsad
 
-local Wsad                    = {}
-Wsad.__index                  = Wsad
+local Wsad                             = {}
+Wsad.__index                           = Wsad
 
 ---@param fsm FlightFSM
 ---@param flightCore FlightCore

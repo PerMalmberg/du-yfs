@@ -1,16 +1,14 @@
 require("abstraction/Vehicle")
-local s          = require("Singletons")
-local log        = s.log
-local universe   = s.universe
-local Vec3       = require("math/Vec3")
+local s                   = require("Singletons")
+local log, universe, Vec3 = s.log, s.universe, require("math/Vec3")
 
 ---@alias GeoFenceData {centerPos:string, boundary:number, enabled:boolean}
 
 ---@class GeoFence
 ---@field Limited fun(travelDir:Vec3):boolean
 
-local GeoFence   = {}
-GeoFence.__index = GeoFence
+local GeoFence            = {}
+GeoFence.__index          = GeoFence
 
 ---@param db BufferedDB
 ---@param cmdLine CommandLine

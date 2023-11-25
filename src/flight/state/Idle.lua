@@ -1,6 +1,5 @@
-local s      = require("Singletons")
-local log    = s.log
-local pub    = s.pub
+local s        = require("Singletons")
+local log, pub = s.log, s.pub
 
 ---@class Idle
 ---@field New fun(fsm:FlightFSM):FlightState
@@ -11,10 +10,10 @@ local pub    = s.pub
 ---@field Update fun()
 ---@field Name fun():string
 
-local Idle   = {}
-Idle.__index = Idle
+local Idle     = {}
+Idle.__index   = Idle
 
-local name   = "Idle"
+local name     = "Idle"
 
 ---Creates a new Idle state
 ---@param fsm FlightFSM

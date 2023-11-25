@@ -1,22 +1,17 @@
 require("GlobalTypes")
-local s              = require("Singletons")
-local log            = s.log
-local pub            = s.pub
-local input          = s.input
-local calc           = s.calc
+local s                               = require("Singletons")
+local log, pub, input, calc, Template = s.log, s.pub, s.input, s.calc, require("Template")
+local hudTemplate                     = library.embedFile("hud.html")
 
-local Template       = require("Template")
-local hudTemplate    = library.embedFile("hud.html")
-
-local updateInterval = 0.3
+local updateInterval                  = 0.3
 
 ---@alias HudData {speed:number, maxSpeed:number}
 
 ---@class Hud
 ---@field New fun():Hud
 
-local Hud            = {}
-Hud.__index          = Hud
+local Hud                             = {}
+Hud.__index                           = Hud
 
 
 ---@return Hud

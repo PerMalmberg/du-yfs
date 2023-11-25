@@ -1,9 +1,6 @@
 require("abstraction/Vehicle")
-local calc = require("util/Calc")
-local nullVec = require("math/Vec3").New()
-local PID = require("cpml/pid")
-local pub = require("util/PubSub").Instance()
-local autoBrakeTimer = require("system/Stopwatch").New()
+local calc, nullVec, PID, pub, autoBrakeTimer = require("util/Calc"), require("math/Vec3").New(), require("cpml/pid"),
+    require("util/PubSub").Instance(), require("system/Stopwatch").New()
 local Clamp = calc.Clamp
 local max = math.max
 

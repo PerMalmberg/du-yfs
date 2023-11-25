@@ -1,27 +1,18 @@
 require("abstraction/Vehicle")
 require("GlobalTypes")
-local s                  = require("Singletons")
-local log                = s.log
-local pub                = s.pub
-local su                 = s.strUtil
-local commandLine        = s.commandLine
-local calc               = s.calc
+local s                                                                                         = require("Singletons")
+local log, pub, su, commandLine, calc                                                           = s.log, s.pub, s
+    .strUtil, s.commandLine, s.calc
 
-local ValueTree          = require("util/ValueTree")
-local layout             = require("screen/layout_out")
-local Stream             = require("Stream")
-local ScreenDevice       = require("device/ScreenDevice")
-local pagination         = require("util/Pagination")
-local distanceFormat     = require("util/DistanceFormat")
-local massFormat         = require("util/MassFormat")
-local max                = math.max
-local min                = math.min
+local ValueTree, layout, Stream, ScreenDevice, pagination, distanceFormat, massFormat, max, min =
+    require("util/ValueTree"), require("screen/layout_out"), require("Stream"), require("device/ScreenDevice"),
+    require("util/Pagination"), require("util/DistanceFormat"), require("util/MassFormat"), math.max, math.min
 
 ---@class ScreenController
 ---@field ActivateFloorMode fun(string):boolean
 
-local ScreenController   = {}
-ScreenController.__index = ScreenController
+local ScreenController                                                                          = {}
+ScreenController.__index                                                                        = ScreenController
 
 ---@param flightCore FlightCore
 ---@param settings Settings

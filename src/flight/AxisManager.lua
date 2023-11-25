@@ -21,9 +21,8 @@ function AxisManager.Instance()
 
     local s = {}
 
-    local pitch = AxisControl.New(ControlledAxis.Pitch)
-    local roll = AxisControl.New(ControlledAxis.Roll)
-    local yaw = AxisControl.New(ControlledAxis.Yaw)
+    local pitch, roll, yaw = AxisControl.New(ControlledAxis.Pitch), AxisControl.New(ControlledAxis.Roll),
+        AxisControl.New(ControlledAxis.Yaw)
 
     function s.ReceiveEvents()
         pitch.ReceiveEvents()

@@ -1,16 +1,14 @@
 require("GlobalTypes")
-local s           = require("Singletons")
-local log         = s.log
-local gateControl = s.gateCtrl
-local timer       = s.timer
+local s                      = require("Singletons")
+local log, gateControl, time = s.log, s.gateCtrl, s.timer
 
 ---@class OpenGates
 ---@field New fun(fsm:FlightFSM, holdPoint:Vec3, holdDir:Vec3):FlightState
 
-local OpenGates   = {}
-OpenGates.__index = OpenGates
+local OpenGates              = {}
+OpenGates.__index            = OpenGates
 
-local name        = "OpenGates"
+local name                   = "OpenGates"
 
 ---Creates a new OpenGates state
 ---@param fsm FlightFSM

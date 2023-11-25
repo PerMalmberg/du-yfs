@@ -3,18 +3,11 @@
 
 require("abstraction/Vehicle")
 require("GlobalTypes")
-local s                 = require("Singletons")
-local log               = s.log
-local brakes            = s.brakes
-local calc              = s.calc
-local uni               = s.universe
-local keys              = s.keys
-local pub               = s.pub
-local constants         = s.constants
-local gateCtrl          = s.gateCtrl
-local radar             = s.radar
-local VertRef           = uni.VerticalReferenceVector
-local plane             = Plane.NewByVertialReference()
+local s                                                             = require("Singletons")
+local log, brakes, calc, uni, keys, pub, constants, gateCtrl, radar = s.log, s.brakes, s.calc, s.universe, s.keys, s.pub,
+    s.constants, s.gateCtrl, s.radar
+local VertRef, plane                                                = uni.VerticalReferenceVector,
+    Plane.NewByVertialReference()
 
 ---@alias PointOptionArguments { commandValue:string, maxspeed:number, margin:number, lockdir:boolean}
 ---@alias ReturnData { g1:number[], g2:number[], g3:number[], fwd:number[] }
@@ -25,8 +18,8 @@ local plane             = Plane.NewByVertialReference()
 ---@field RegisterRouteCommands fun()
 ---@field RegisterMoveCommands fun()
 
-local ControlCommands   = {}
-ControlCommands.__index = ControlCommands
+local ControlCommands                                               = {}
+ControlCommands.__index                                             = ControlCommands
 
 ---Creates a new RouteModeController
 ---@param input Input

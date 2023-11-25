@@ -7,12 +7,8 @@
 
 require("abstraction/Vehicle")
 require("GlobalTypes")
-local s          = require("Singletons")
-local log        = s.log
-local universe   = s.universe
-local calc       = s.calc
-
-local pagination = require("util/Pagination")
+local s                               = require("Singletons")
+local log, universe, calc, pagination = s.log, s.universe, s.calc, require("util/Pagination")
 require("util/Table")
 
 ---@module "Vec3"

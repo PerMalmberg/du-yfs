@@ -1,19 +1,12 @@
 require("abstraction/Vehicle")
 local s = require("Singletons")
-local yfsC = s.constants
-local pub = s.pub
-local calc = s.calc
+local yfsC, pub, calc, Vec3 = s.constants, s.pub, s.calc, require("math/Vec3")
+local SignLargestAxis, SignedRotationAngle, setEngineCommand, LightConstructMassThreshold, PID, nullVec =
+    calc.SignLargestAxis,
+    calc.SignedRotationAngle,
+    unit.setEngineCommand, yfsC.flight.lightConstructMassThreshold, require("cpml/pid"), Vec3.zero
 
-local Vec3 = require("math/Vec3")
-local nullVec = Vec3.zero
-local LightConstructMassThreshold = yfsC.flight.lightConstructMassThreshold
-local SignLargestAxis = calc.SignLargestAxis
-local SignedRotationAngle = calc.SignedRotationAngle
-local setEngineCommand = unit.setEngineCommand
-local PID = require("cpml/pid")
-
-local rad2deg = 180 / math.pi
-local deg2rad = math.pi / 180
+local rad2deg, deg2rad = 180 / math.pi, math.pi / 180
 
 local control = {}
 control.__index = control
@@ -61,8 +54,7 @@ function AxisControl.New(axis)
 
     -- taylor local lightPid = PID(1, 10, 100, 0.1)
 
-    local set = require("Settings").Instance()
-    local axisPids = yfsC.flight.axis
+    local set, axisPids = require("Settings").Instance(), yfsC.flight.axis
     local l = axisPids.light
     local h = axisPids.heavy
 

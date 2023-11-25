@@ -1,13 +1,6 @@
 ---@module "Settings"
-local s = require("Singletons")
-local log = s.log
-local pub = s.pub
-
-local RxTx = require("device/RxTx")
-local Stream = require("Stream")
-
-local rx = library.getLinkByClass("ReceiverUnit")
-local tx = library.getLinkByClass("EmitterUnit")
+local si, RxTx, Stream = require("Singletons"), require("device/RxTx"), require("Stream")
+local log, pub, rx, tx = si.log, si.pub, library.getLinkByClass("ReceiverUnit"), library.getLinkByClass("EmitterUnit")
 
 
 ---@class Communication

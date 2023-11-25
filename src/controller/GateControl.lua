@@ -1,6 +1,5 @@
-local pub           = require("util/PubSub").Instance()
-local log           = require("debug/Log").Instance()
-local Stopwatch     = require("system/Stopwatch")
+local pub, log, Stopwatch = require("util/PubSub").Instance(), require("debug/Log").Instance(),
+    require("system/Stopwatch")
 
 ---@class GateControl
 ---@field Instance fun():GateControl
@@ -9,8 +8,8 @@ local Stopwatch     = require("system/Stopwatch")
 ---@field Enabled fun():boolean
 ---@field Enable fun(on:boolean)
 
-local GateControl   = {}
-GateControl.__index = {}
+local GateControl         = {}
+GateControl.__index       = {}
 
 local instance
 

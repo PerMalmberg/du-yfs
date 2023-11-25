@@ -122,5 +122,10 @@
       "compress": true
     }
   },
-  "internalPaths": []
+  "internalPaths": [
+    "autoconf/",
+    "cpml/",
+    "pl/",
+    "utils/event"
+  ]
 }

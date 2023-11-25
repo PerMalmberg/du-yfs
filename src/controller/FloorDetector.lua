@@ -1,6 +1,4 @@
-local Telemeter         = require("element/Telemeter")
-local log               = require("debug/Log").Instance()
-local Vec3              = require("math/Vec3")
+local Telemeter, log, Vec3 = require("element/Telemeter"), require("debug/Log").Instance(), require("math/Vec3")
 
 ---@class FloorDetector
 ---@field Instance fun():FloorDetector
@@ -12,11 +10,11 @@ local Vec3              = require("math/Vec3")
 ---@field ReturningHome fun()
 ---@field IsReturningHome fun():boolean
 
-local FloorDetector     = {}
-FloorDetector.__index   = FloorDetector
+local FloorDetector        = {}
+FloorDetector.__index      = FloorDetector
 
 local inst
-local floorDetectorName = "FloorDetector"
+local floorDetectorName    = "FloorDetector"
 
 ---@return FloorDetector
 function FloorDetector.Instance()

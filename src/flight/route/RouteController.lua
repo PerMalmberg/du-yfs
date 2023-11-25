@@ -1,14 +1,10 @@
 require("abstraction/Vehicle")
 require("GlobalTypes")
-local s              = require("Singletons")
-local log            = s.log
-local pub            = s.pub
-local universe       = s.universe
-local constants      = s.constants
+local s                                 = require("Singletons")
+local log, pub, universe, constants     = s.log, s.pub, s.universe, s.constants
 
-local Route          = require("flight/route/Route")
-local pagination     = require("util/Pagination")
-local distanceFormat = require("util/DistanceFormat")
+local Route, pagination, distanceFormat = require("flight/route/Route"), require("util/Pagination"),
+    require("util/DistanceFormat")
 require("util/Table")
 
 ---@alias NamedWaypoint {name:string, point:Point}

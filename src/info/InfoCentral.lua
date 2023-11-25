@@ -1,15 +1,12 @@
-local s             = require("Singletons")
-local pub           = s.pub
-local calc          = s.calc
-local sharedPanel   = require("panel/SharedPanel").Instance()
-local format        = string.format
+local s                              = require("Singletons")
+local pub, calc, sharedPanel, format = s.pub, s.calc, require("panel/SharedPanel").Instance(), string.format
 
 ---@class InfoCentral
 ---@field Instance fun():InfoCentral
 ---@field SetBrake fun(data:BrakeData)
 
-local InfoCentral   = {}
-InfoCentral.__index = InfoCentral
+local InfoCentral                    = {}
+InfoCentral.__index                  = InfoCentral
 local instance
 
 function InfoCentral.Instance()

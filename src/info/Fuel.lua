@@ -1,21 +1,18 @@
 require("GlobalTypes")
-local s                = require("Singletons")
-local log              = s.log
-local pub              = s.pub
+local s                                       = require("Singletons")
+local log, pub                                = s.log, s.pub
 
-local Container        = require("element/Container")
-local ContainerTalents = require("element/ContainerTalents")
-local Task             = require("system/Task")
-local Vec2             = require("native/Vec2")
-local _                = require("util/Table")
+local Container, ContainerTalents, Task, Vec2 = require("element/Container"), require("element/ContainerTalents"),
+    require("system/Task"), require("native/Vec2")
+require("util/Table")
 
 ---@alias FuelTankInfo {name:string, factorBar:Vec2, percent:number, visible:boolean, type:string}
 
 ---@class Fuel
 ---@field Instance fun():Fuel
 
-local Fuel             = {}
-Fuel.__index           = Fuel
+local Fuel   = {}
+Fuel.__index = Fuel
 local instance
 
 ---@param settings Settings

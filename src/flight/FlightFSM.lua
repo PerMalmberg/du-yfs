@@ -1,27 +1,19 @@
 require("abstraction/Vehicle")
 require("GlobalTypes")
-local s                           = require("Singletons")
-local log                         = s.log
-local universe                    = s.universe
-local calc                        = s.calc
-local yfsConstants                = s.constants
-local pub                         = s.pub
-local input                       = s.input
-local brakes                      = s.brakes
 
-local Vec3                        = require("math/Vec3")
-local AirFrictionAcc              = AirFrictionAcceleration
-local LightConstructMassThreshold = yfsConstants.flight.lightConstructMassThreshold
-local DefaultMargin               = yfsConstants.flight.defaultMargin
-local AxisManager                 = require("flight/AxisManager")
-local AdjustmentTracker           = require("flight/AdjustmentTracker")
-local Sign                        = calc.Sign
-local nullVec                     = Vec3.zero
-local engine                      = require("abstraction/Engine").Instance()
-local PID                         = require("cpml/pid")
-local Ray                         = require("util/Ray")
-local SetEngineCommand            = unit.setEngineCommand
-local SetEngineThrust             = unit.setEngineThrust
+local Vec3, AxisManager, AdjustmentTracker, engine, PID, Ray, s                                                    =
+    require("math/Vec3"), require("flight/AxisManager"), require("flight/AdjustmentTracker"),
+    require("abstraction/Engine").Instance(), require("cpml/pid"),
+    require("util/Ray"), require("Singletons")
+local log, universe, calc, yfsConstants, pub, input, brakes                                                        = s
+    .log, s.universe, s.calc, s.constants, s.pub,
+    s.input,
+    s.brakes
+
+local AirFrictionAcc, LightConstructMassThreshold, DefaultMargin, Sign, nullVec, SetEngineCommand, SetEngineThrust =
+    AirFrictionAcceleration,
+    yfsConstants.flight.lightConstructMassThreshold, yfsConstants.flight.defaultMargin, calc.Sign, Vec3.zero,
+    unit.setEngineCommand, unit.setEngineThrust
 
 require("flight/state/Require")
 

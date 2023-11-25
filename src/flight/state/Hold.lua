@@ -2,12 +2,8 @@
 ---@module "element/Telemeter"
 
 require("abstraction/Vehicle")
-local s           = require("Singletons")
-local log         = s.log
-local pub         = s.pub
-local gateControl = s.gateCtrl
-local timer       = s.timer
-local calc        = s.calc
+local s                            = require("Singletons")
+local log, pub, gateControl, timer = s.log, s.pub, s.gateCtrl, s.timer
 
 
 ---@class Hold
