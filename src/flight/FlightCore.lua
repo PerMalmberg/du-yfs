@@ -288,6 +288,7 @@ function FlightCore.New(routeController, flightFSM)
 
                     flightFSM.FsmFlush(deltaTime, nextWP, prevWP)
 
+                    nextWP.PreCalc(prevWP)
                     axes.SetYawTarget(nextWP.Yaw(prevWP))
                     axes.SetPitchTarget(nextWP.Pitch(prevWP))
                     axes.SetRollTarget(nextWP.Roll(prevWP))

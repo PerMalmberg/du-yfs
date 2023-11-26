@@ -17,7 +17,6 @@ WPReachMode          = {
 ---@field DirectionTo fun():Vec3
 ---@field DistanceTo fun():number
 ---@field FinalSpeed fun():number
----@field GetVerticalUpReference fun(prev:Waypoint):Vec3
 ---@field IsLastInRoute fun():boolean
 ---@field IsYawLocked fun():boolean
 ---@field LockYawTo fun(direction:Vec3|nil, forced:boolean?)
@@ -33,6 +32,7 @@ WPReachMode          = {
 ---@field LockedYawDirection fun():Vec3|nil
 ---@field ForceUpAlongVerticalRef fun()
 ---@field PathAlignmentDistanceLimitFromSurface fun():number
+---@field PreCalc fun(prev:Waypoint)
 
 
 local Waypoint = {}
@@ -74,6 +74,50 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
     local lastInRoute = false
     local yawLockDir = nil ---@type Vec3|nil
     local forceUpAlongVerticalRef = false
+    local verticalUp = Vec3.zero
+
+    ---Gets the vertical up reference to use
+    ---@param prev Waypoint Previous waypoint
+    ---@return Vec3
+    local function getVerticalUpReference(prev)
+        -- When next waypoint is nearly aligned with -gravity, use the line between them as the vertical reference instead to make following the path more exact.
+        local vertUp = -universe.VerticalReferenceVector()
+
+        if forceUpAlongVerticalRef then
+            return vertUp
+        end
+
+        local selectedRef = vertUp
+
+        local dest = s.Destination()
+        local pathDirection = (dest - prev.Destination()):Normalize()
+        local body = universe.ClosestBody(Current())
+        local distanceToSurface = body.DistanceToHighestPossibleSurface(Current())
+        local awayFromWaypoints = s.DistanceTo() > pathAlignmentDistanceLimit and
+            prev.DistanceTo() > pathAlignmentDistanceLimit
+
+        if awayFromWaypoints then
+            local farOut = pathAlignmentDistanceLimitFromSurface > 0
+                and distanceToSurface > pathAlignmentDistanceLimitFromSurface
+
+            if farOut then
+                -- We're far out from the nearest body, allow aligning topside along path, even upside down
+                selectedRef = pathDirection
+            elseif pathAlignmentAngleLimit > 0 then           -- if zero, it means the alignment is disabled
+                local sameDir = vertUp:Dot(pathDirection) > 0 -- Same direction?
+                if sameDir and vertUp:AngleToDeg(pathDirection) < pathAlignmentAngleLimit then
+                    -- If we're more aligned to the path than the threshold, then align to the path
+                    selectedRef = pathDirection
+                elseif not sameDir and vertUp:AngleToDeg(-pathDirection) < pathAlignmentAngleLimit then
+                    -- Don't flip upside down
+                    selectedRef = -pathDirection
+                end
+            end
+        end
+
+
+        return selectedRef
+    end
 
     ---Gets the destination
     ---@return Vec3
@@ -156,43 +200,9 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
         return yawLockDir
     end
 
-    ---Gets the vertical up reference to use
-    ---@param prev Waypoint Previous waypoint
-    ---@return Vec3
-    function s.GetVerticalUpReference(prev)
-        -- When next waypoint is nearly aligned with -gravity, use the line between them as the vertical reference instead to make following the path more exact.
-        local vertUp = -universe.VerticalReferenceVector()
-
-        local selectedRef = vertUp
-
-        if not forceUpAlongVerticalRef then
-            local dest = s.Destination()
-            local pathDirection = (dest - prev.Destination()):Normalize()
-            local body = universe.ClosestBody(Current())
-            local distanceToSurface = body.DistanceToHighestPossibleSurface(Current())
-            local awayFromWaypoints = s.DistanceTo() > pathAlignmentDistanceLimit and
-                prev.DistanceTo() > pathAlignmentDistanceLimit
-
-            if awayFromWaypoints then
-                if pathAlignmentDistanceLimitFromSurface > 0
-                    and distanceToSurface > pathAlignmentDistanceLimitFromSurface
-                then
-                    -- We're far out from the nearest body, allow aligning topside along path, even upside down
-                    selectedRef = pathDirection
-                elseif pathAlignmentAngleLimit > 0 then           -- if zero, it means the alignment is disabled
-                    local sameDir = vertUp:Dot(pathDirection) > 0 -- Same direction?
-                    if sameDir and vertUp:AngleToDeg(pathDirection) < pathAlignmentAngleLimit then
-                        -- If we're more aligned to the path than the threshold, then align to the path
-                        selectedRef = pathDirection
-                    elseif not sameDir and vertUp:AngleToDeg(-pathDirection) < pathAlignmentAngleLimit then
-                        -- Don't flip upside down
-                        selectedRef = -pathDirection
-                    end
-                end
-            end
-        end
-
-        return selectedRef
+    ---@param prev Waypoint
+    function s.PreCalc(prev)
+        verticalUp = getVerticalUpReference(prev)
     end
 
     function s.ForceUpAlongVerticalRef()
@@ -202,13 +212,13 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
     ---@param prev Waypoint
     ---@return Vec3
     local function rollTopsideAwayFromVerticalReference(prev)
-        return Current() + s.GetVerticalUpReference(prev) * directionMargin
+        return Current() + verticalUp * directionMargin
     end
 
     ---@param prev Waypoint
     local function pitchKeepOrtogonalToVerticalRef(prev)
         local target = Current() + Forward() * directionMargin
-        return calc.ProjectPointOnPlane(s.GetVerticalUpReference(prev), Current(), target)
+        return calc.ProjectPointOnPlane(verticalUp, Current(), target)
     end
 
     ---@param prev Waypoint
@@ -238,15 +248,13 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
             dir:NormalizeInPlace()
         end
 
-        local vertUp = s.GetVerticalUpReference(prev)
-
         -- To prevent spinning, lock yaw if we're aligning to vertical up
-        if not yawLockDir and abs(dir:Dot(vertUp)) > 0.9 then
+        if not yawLockDir and abs(dir:Dot(verticalUp)) > 0.9 then
             s.LockYawTo(Forward(), false)
             dir = Forward()
         end
 
-        return Current() + (dir * directionMargin):ProjectOnPlane(vertUp)
+        return Current() + (dir * directionMargin):ProjectOnPlane(verticalUp)
     end
 
     return setmetatable(s, Waypoint)
