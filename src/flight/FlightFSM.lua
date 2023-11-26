@@ -67,6 +67,8 @@ function FlightFSM.New(settings, routeController, geo)
 
     settings.Callback("pathAlignmentAngleLimit", Waypoint.SetAlignmentAngleLimit)
     settings.Callback("pathAlignmentDistanceLimit", Waypoint.SetAlignmentDistanceLimit)
+    settings.Callback("pitchAlignmentThrustLimiter", Waypoint.SetPitchAlignmentThrustLimiter)
+    settings.Callback("autoPitch", Waypoint.SetAutoPitch)
     settings.Callback("autoBrakeAngle", brakes.SetAutoBrakeAngle)
     settings.Callback("autoBrakeDelay", brakes.SetAutoBrakeDelay)
 

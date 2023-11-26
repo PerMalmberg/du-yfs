@@ -74,6 +74,7 @@ function Settings.Create(db)
         yawAlignmentThrustLimiter = { default = routeDefaults.yawAlignmentThrustLimiter },
         pitchAlignmentThrustLimiter = { default = routeDefaults.pitchAlignmentThrustLimiter },
         rollAlignmentThrustLimiter = { default = routeDefaults.rollAlignmentThrustLimiter },
+        autoPitch = { default = false },
         routeStartDistanceLimit = { default = routeDefaults.routeStartDistanceLimit },
         showWidgetsOnStart = { default = constants.widgets.showOnStart },
         throttleStep = { default = constants.flight.throttleStep },
@@ -149,7 +150,8 @@ function Settings.Create(db)
         yawAlignmentThrustLimiter = 360,
         pitchAlignmentThrustLimiter = 360,
         rollAlignmentThrustLimiter = 360,
-        pathAlignmentDistanceLimitFromSurface = 0
+        pathAlignmentDistanceLimitFromSurface = 0,
+        autoPitch = true
     }
 
     local function setModeOpts(useDefault)
