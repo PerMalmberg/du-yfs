@@ -1,11 +1,10 @@
 require("abstraction/Vehicle")
-local s              = require("Singletons")
-local calc, universe = s.calc, s.universe
-local Ternary        = calc.Ternary
-local max, abs       = math.max, math.abs
+local s                 = require("Singletons")
+local calc, universe    = s.calc, s.universe
+local Ternary, max, abs = calc.Ternary, math.max, math.abs
 
 ---@enum WPReachMode
-WPReachMode          = {
+WPReachMode             = {
     ENTRY = 1,
     EXIT = 2
 }
@@ -217,8 +216,9 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
 
     ---@param prev Waypoint
     local function pitchKeepOrtogonalToVerticalRef(prev)
-        local target = Current() + Forward() * directionMargin
-        return calc.ProjectPointOnPlane(verticalUp, Current(), target)
+        local forward = verticalUp:Cross(Right())
+        local right = forward:Cross(verticalUp)
+        return calc.ProjectPointOnPlane(right, Current(), Current() + forward * directionMargin)
     end
 
     ---@param prev Waypoint
@@ -254,7 +254,7 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
             dir = Forward()
         end
 
-        return Current() + (dir * directionMargin):ProjectOnPlane(verticalUp)
+        return calc.ProjectPointOnPlane(verticalUp, Current(), Current() + dir * directionMargin)
     end
 
     return setmetatable(s, Waypoint)
