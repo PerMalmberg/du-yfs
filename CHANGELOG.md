@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file. The version
 ### Added
 * New setting `autoPitch` which, if true, enables automatic pitch when moving forward and up/down. Enabled by using command `free-mode` or by setting it manually. Intended for constructs mainly controlled using manual controls.
 
+### Fixed
+* Corrected a thrust calculation error regarding path adjustments that became evident when using only hovers as lift.
+
 ### 1.6.0 - 2023-11-17
 
 > NOTE: If your construct mainly is controlled manually, you'll want to run the `free-mode` command after updating to this version, or set the new settings manually to make the construct function as it did previously.
