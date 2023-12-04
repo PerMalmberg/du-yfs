@@ -108,7 +108,7 @@ function AxisControl.New(axis)
     ---@param target Vec3
     function s.SetTarget(target)
         if target == nil then
-            s:Disable()
+            s.Disable()
         else
             targetCoordinate = target
         end

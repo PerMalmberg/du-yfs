@@ -1,6 +1,6 @@
 require("GlobalTypes")
-local s                               = require("Singletons")
-local log, pub, input, calc, Template = s.log, s.pub, s.input, s.calc, require("Template")
+local si                              = require("Singletons")
+local log, pub, input, calc, Template = si.log, si.pub, si.input, si.calc, require("Template")
 local hudTemplate                     = library.embedFile("hud.html")
 
 local updateInterval                  = 0.3
@@ -12,7 +12,6 @@ local updateInterval                  = 0.3
 
 local Hud                             = {}
 Hud.__index                           = Hud
-
 
 ---@return Hud
 function Hud.New()
