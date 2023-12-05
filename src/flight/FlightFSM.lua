@@ -17,15 +17,16 @@ local AirFrictionAcc, LightConstructMassThreshold, DefaultMargin, Sign, nullVec,
 
 require("flight/state/Require")
 
-local Clamp             = calc.Clamp
-local abs               = math.abs
-local min               = math.min
-local max               = math.max
-local MAX_INT           = math.maxinteger
+local Clamp               = calc.Clamp
+local abs                 = math.abs
+local min                 = math.min
+local max                 = math.max
+local MAX_INT             = math.maxinteger
+local adjustmentThreshold = calc.AngleToDot(45)
 
-local brakeDegradeSpeed = calc.Kph2Mps(360)
+local brakeDegradeSpeed   = calc.Kph2Mps(360)
 
-local deadZoneFactor    = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
+local deadZoneFactor      = 0.8 -- Consider the inner edge of the dead zone where we can't brake to start at this percentage of the atmosphere.
 
 ---@class FlightFSM
 ---@field New fun(settings:Settings):FlightFSM
@@ -46,8 +47,8 @@ local deadZoneFactor    = 0.8 -- Consider the inner edge of the dead zone where 
 ---@field ToggleBoster fun()
 ---@field SetBooster fun(activate:boolean)
 
-local FlightFSM         = {}
-FlightFSM.__index       = FlightFSM
+local FlightFSM           = {}
+FlightFSM.__index         = FlightFSM
 
 ---Creates a new FligtFSM
 ---@param settings Settings
@@ -67,6 +68,8 @@ function FlightFSM.New(settings, routeController, geo)
 
     settings.Callback("pathAlignmentAngleLimit", Waypoint.SetAlignmentAngleLimit)
     settings.Callback("pathAlignmentDistanceLimit", Waypoint.SetAlignmentDistanceLimit)
+    settings.Callback("pitchAlignmentThrustLimiter", Waypoint.SetPitchAlignmentThrustLimiter)
+    settings.Callback("autoPitch", Waypoint.SetAutoPitch)
     settings.Callback("autoBrakeAngle", brakes.SetAutoBrakeAngle)
     settings.Callback("autoBrakeDelay", brakes.SetAutoBrakeDelay)
 
@@ -405,7 +408,7 @@ function FlightFSM.New(settings, routeController, geo)
     ---@return number length
     local function getAdjustmentDataInFuture(axis, currentPos, nextWaypoint, previousWaypoint, t)
         -- Don't make adjustments in the travel direction.
-        if axis:AngleToDeg(nextWaypoint:DirectionTo()) > 45 then
+        if abs(axis:Dot(nextWaypoint:DirectionTo())) < adjustmentThreshold then
             local posInFuture = currentPos + Velocity() * t + 0.5 * Acceleration() * t * t
             local targetFuture = calc.NearestOnLineBetweenPoints(previousWaypoint.Destination(),
                 nextWaypoint.Destination(),

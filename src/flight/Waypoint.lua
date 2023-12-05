@@ -1,11 +1,11 @@
 require("abstraction/Vehicle")
-local s              = require("Singletons")
-local calc, universe = s.calc, s.universe
-local Ternary        = calc.Ternary
-local max, abs       = math.max, math.abs
+local si                                = require("Singletons")
+local Plane                             = require("math/Plane")
+local calc, universe                    = si.calc, si.universe
+local Ternary, max, abs, BetweenOrEqual = calc.Ternary, math.max, math.abs, calc.BetweenOrEqual
 
 ---@enum WPReachMode
-WPReachMode          = {
+WPReachMode                             = {
     ENTRY = 1,
     EXIT = 2
 }
@@ -26,6 +26,7 @@ WPReachMode          = {
 ---@field Roll fun(prev:Waypoint):Vec3|nil
 ---@field SetAlignmentAngleLimit fun(limit:number)
 ---@field SetAlignmentDistanceLimit fun(limit:number)
+---@field SetPitchAlignmentThrustLimiter fun(angle:number)
 ---@field SetLastInRoute fun(lastInRoute:boolean)
 ---@field WithinMargin fun(mode:WPReachMode):boolean
 ---@field Yaw fun(prev:Waypoint):Vec3|nil
@@ -33,6 +34,7 @@ WPReachMode          = {
 ---@field ForceUpAlongVerticalRef fun()
 ---@field PathAlignmentDistanceLimitFromSurface fun():number
 ---@field PreCalc fun(prev:Waypoint)
+---@field SetAutoPitch fun(enabled:boolean)
 
 
 local Waypoint = {}
@@ -42,8 +44,8 @@ Waypoint.__index = Waypoint
 -- we don't get the point behind us and start turning around and also reduces oscilliating yaw.
 local directionMargin = 1000
 Waypoint.DirectionMargin = directionMargin
-local pathAlignmentAngleLimit = 0
-local pathAlignmentDistanceLimit = 0
+local pathAlignmentAngleLimit, pathAlignmentDistanceLimit, pitchAlignmentThrustLimiter, autoPitch, gravPlane =
+    0, 0, 0, false, Plane.NewByVertialReference()
 
 ---@param angle number
 function Waypoint.SetAlignmentAngleLimit(angle)
@@ -55,6 +57,14 @@ function Waypoint.SetAlignmentDistanceLimit(distance)
     pathAlignmentDistanceLimit = max(0, distance)
 end
 
+function Waypoint.SetPitchAlignmentThrustLimiter(angle)
+    pitchAlignmentThrustLimiter = angle
+end
+
+function Waypoint.SetAutoPitch(enable)
+    autoPitch = enable
+end
+
 ---Creates a new Waypoint
 ---@param destination Vec3 The destination
 ---@param finalSpeed number The final speed to reach when at the waypoint (0 if stopping is intended).
@@ -63,34 +73,28 @@ end
 ---@param pathAlignmentDistanceLimitFromSurface number The minimum distance to the closest body where the construct will align topside along the path
 ---@return Waypoint
 function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDistanceLimitFromSurface)
-    local s = {
-        destination = destination,
-        finalSpeed = finalSpeed,
-        maxSpeed = Ternary(finalSpeed > maxSpeed and maxSpeed > 0, finalSpeed, maxSpeed), ---@type number -- Guard against bad settings.
-        margin = margin,
-        lastPointInRoute = false,
-    }
-
-    local lastInRoute = false
+    maxSpeed = Ternary(finalSpeed > maxSpeed and maxSpeed > 0, finalSpeed, maxSpeed) -- Guard against bad settings.
     local yawLockDir = nil ---@type Vec3|nil
-    local forceUpAlongVerticalRef = false
-    local verticalUp = Vec3.zero
+    local lastInRoute, forceUpAlongVerticalRef, currentUp, useAutoPitch = false, false, Vec3.zero, autoPitch
+    local upPlane = Plane.New(function()
+        return currentUp
+    end)
+    local s = {}
 
     ---Gets the vertical up reference to use
     ---@param prev Waypoint Previous waypoint
     ---@return Vec3
-    local function getVerticalUpReference(prev)
+    local function getCurrentUp(prev)
         -- When next waypoint is nearly aligned with -gravity, use the line between them as the vertical reference instead to make following the path more exact.
-        local vertUp = -universe.VerticalReferenceVector()
+        local gravUp = gravPlane.Up()
 
         if forceUpAlongVerticalRef then
-            return vertUp
+            return gravUp
         end
 
-        local selectedRef = vertUp
+        local selectedRef = gravUp
 
-        local dest = s.Destination()
-        local pathDirection = (dest - prev.Destination()):Normalize()
+        local pathDirection = (destination - prev.Destination()):Normalize()
         local body = universe.ClosestBody(Current())
         local distanceToSurface = body.DistanceToHighestPossibleSurface(Current())
         local awayFromWaypoints = s.DistanceTo() > pathAlignmentDistanceLimit and
@@ -103,12 +107,14 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
             if farOut then
                 -- We're far out from the nearest body, allow aligning topside along path, even upside down
                 selectedRef = pathDirection
+                -- Disable auto pitch when tilting along the path
+                useAutoPitch = false
             elseif pathAlignmentAngleLimit > 0 then           -- if zero, it means the alignment is disabled
-                local sameDir = vertUp:Dot(pathDirection) > 0 -- Same direction?
-                if sameDir and vertUp:AngleToDeg(pathDirection) < pathAlignmentAngleLimit then
+                local sameDir = gravUp:Dot(pathDirection) > 0 -- Same direction?
+                if sameDir and gravUp:AngleToDeg(pathDirection) < pathAlignmentAngleLimit then
                     -- If we're more aligned to the path than the threshold, then align to the path
                     selectedRef = pathDirection
-                elseif not sameDir and vertUp:AngleToDeg(-pathDirection) < pathAlignmentAngleLimit then
+                elseif not sameDir and gravUp:AngleToDeg(-pathDirection) < pathAlignmentAngleLimit then
                     -- Don't flip upside down
                     selectedRef = -pathDirection
                 end
@@ -122,32 +128,32 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
     ---Gets the destination
     ---@return Vec3
     function s.Destination()
-        return s.destination
+        return destination
     end
 
     ---Gets the final speed for the waypoint
     ---@return number
     function s.FinalSpeed()
-        return s.finalSpeed
+        return finalSpeed
     end
 
     ---Gets the max speed for the waypoint
     ---@return number
     function s.MaxSpeed()
-        return s.maxSpeed
+        return maxSpeed
     end
 
     ---Gets the margin for the waypoint
     ---@return number
     function s.Margin()
-        return s.margin
+        return margin
     end
 
     ---Indicates if the waypoint has been reached.
     ---@param mode WPReachMode
     ---@return boolean
     function s.WithinMargin(mode)
-        local m = s.margin
+        local m = margin
 
         if mode == WPReachMode.ENTRY then
             if m > 1 then
@@ -161,13 +167,13 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
     ---Gets the distance to the waypoint
     ---@return number
     function s.DistanceTo()
-        return (s.destination - Current()):Len()
+        return (destination - Current()):Len()
     end
 
     ---Gets the direction to the waypoint
     ---@return Vec3
     function s.DirectionTo()
-        return (s.destination - Current()):NormalizeInPlace()
+        return (destination - Current()):NormalizeInPlace()
     end
 
     function s.SetLastInRoute(last)
@@ -202,35 +208,42 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
 
     ---@param prev Waypoint
     function s.PreCalc(prev)
-        verticalUp = getVerticalUpReference(prev)
+        currentUp = getCurrentUp(prev)
     end
 
     function s.ForceUpAlongVerticalRef()
         forceUpAlongVerticalRef = true
     end
 
-    ---@param prev Waypoint
-    ---@return Vec3
-    local function rollTopsideAwayFromVerticalReference(prev)
-        return Current() + verticalUp * directionMargin
-    end
-
-    ---@param prev Waypoint
-    local function pitchKeepOrtogonalToVerticalRef(prev)
-        local target = Current() + Forward() * directionMargin
-        return calc.ProjectPointOnPlane(verticalUp, Current(), target)
+    local function pitchKeepOrtogonalToUp()
+        return calc.ProjectPointOnPlane(upPlane.Right(), Current(), Current() + upPlane.Forward() * directionMargin)
     end
 
     ---@param prev Waypoint
     ---@return Vec3|nil
     function s.Roll(prev)
-        return rollTopsideAwayFromVerticalReference(prev)
+        return calc.ProjectPointOnPlane(upPlane.Forward(), Current(), Current() + upPlane.Up() * directionMargin)
     end
 
     ---@param prev Waypoint
     ---@return Vec3|nil
     function s.Pitch(prev)
-        return pitchKeepOrtogonalToVerticalRef(prev)
+        if useAutoPitch then
+            local moveDir, forward = Velocity():Normalize(), upPlane.Forward()
+
+            if s.DistanceTo() > 10 and Velocity():Len() > calc.Kph2Mps(50)
+                and moveDir:AngleToDeg(s.DirectionTo()) <= calc.Clamp(pitchAlignmentThrustLimiter * 10, pitchAlignmentThrustLimiter, 45) --
+                -- Not going vertically
+                and BetweenOrEqual(gravPlane.Up():AngleToDeg(s.DirectionTo()), 15, 180 - 15)
+                -- Not reversing or strafing
+                and BetweenOrEqual(forward:AngleToDeg(s.DirectionTo()), 0, 75)
+            then
+                local target = Current() + moveDir * directionMargin
+                return calc.ProjectPointOnPlane(upPlane.Right(), Current(), target)
+            end
+        end
+
+        return pitchKeepOrtogonalToUp()
     end
 
     ---@param prev Waypoint
@@ -249,12 +262,12 @@ function Waypoint.New(destination, finalSpeed, maxSpeed, margin, pathAlignmentDi
         end
 
         -- To prevent spinning, lock yaw if we're aligning to vertical up
-        if not yawLockDir and abs(dir:Dot(verticalUp)) > 0.9 then
+        if not yawLockDir and abs(dir:Dot(currentUp)) > 0.9 then
             s.LockYawTo(Forward(), false)
             dir = Forward()
         end
 
-        return Current() + (dir * directionMargin):ProjectOnPlane(verticalUp)
+        return calc.ProjectPointOnPlane(currentUp, Current(), Current() + dir * directionMargin)
     end
 
     return setmetatable(s, Waypoint)

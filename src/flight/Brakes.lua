@@ -68,7 +68,7 @@ function Brake.Instance()
         end
     end
 
-    function s:BrakeUpdate()
+    function s.BrakeUpdate()
         s.totalMass = TotalMass()
         local raw = rawAvailableDeceleration()
         brakeData.maxDeceleration = raw

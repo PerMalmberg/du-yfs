@@ -137,7 +137,10 @@ Elements needed on the space/static construct:
 * 1x OR operator
 * 1x 2-Counter
 * 2x Manual Switch
-* Any number of gates/doors. At least four medium sliding doors if you're setting up a space dock.
+* Any number of gates/doors. At least four medium sliding doors if you're setting up a space dock for anything but a very small elevator.
+
+> Note:
+> * Doors must be mounted such that they open (i.e. are out of the way of the elevator) when the button that controls them is lit.
 
 Link the following elements on the ground/space construct as follows. You *must* link the element in the order below. Names in [square brackets] identify different elements of the same type, make sure to link to/from the correct one.
 
@@ -328,6 +331,8 @@ By default option 1..9 means ALT-key plus keys 1 through 9, configured in the th
 | Middle mouse button | Toggle forward thrust (if setting `allowForwardToggle` is set)            |                            |
 
 > Note:
+> For smaller constructs, `autoPitch` may be something that you want to enable so that the construct tilts when moving forward and up/down.
+>
 > Manual control of heavy constructs are much less accurate (especially during vertical movements). Don't expect the same maneuverability as a tiny 1.5t construct.
 > Rocket boosters are automatically turned off whenever brakes activate.
 
@@ -443,6 +448,7 @@ By default option 1..9 means ALT-key plus keys 1 through 9, configured in the th
 | set                       |                                        |               |                    | Sets the specified setting to the specified value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 |                           | -autoBrakeAngle                        | number        | Y                  | Sets the movement angle offset from the intended path at which the brakes auto engage. Can be used to make brakes engage earlier when turning in manual control. Default 45.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 |                           | -autoBrakeDelay                        | number        | Y                  | Sets the delay before the brakes are applied as per `autoBrakeAngle`. Default 1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+|                           | -autoPitch                             | boolean       | Y                  | If true, enables automatic pitch for forward movements. Intended for constructs mainly controlled using manual control. Default false.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 |                           | -allowForwardToggle                    | boolean       | Y                  | If true, middle mouse button toggles forward thrust. Best to keep disabled on constructs meant to act as elevators. Default false.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 |                           | -autoShutdownFloorDistance             | number        | Y                  | Sets the distance at which the system shuts down while in Hold-state, as measured by the 'FloorDetector' telemeter                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 |                           | -atmoFuelTankHandling                  | integer       | Y                  | Sets the atmospheric fuel tank handling talent level, 1-5                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -507,6 +513,7 @@ The free-mode and strict-mode commands adjusts settings as follows:
 | Setting                               | free-mode | strict-mode   |
 | ------------------------------------- | --------- | ------------- |
 | autoBrakeDelay                        | 0         | default value |
+| autoPitch                             | true      | default value |
 | allowForwardToggle                    | true      | default value |
 | yawAlignmentThrustLimiter             | 360       | default value |
 | pitchAlignmentThrustLimiter           | 360       | default value |

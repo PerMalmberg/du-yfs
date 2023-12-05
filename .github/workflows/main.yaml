@@ -13,7 +13,7 @@ jobs:
     - name: Install tools
       run: |
         set -e -o pipefail
-        ./external/du-libs/external/du-unit-testing/install_tools.sh
+        ./e/lib/external/du-unit-testing/install_tools.sh
         ./install_tools.sh
     - name: Run CI Tests
       run: |
