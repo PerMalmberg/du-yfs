@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-### 1.7.0 - 2023-11-xx
+### 1.7.0 - 2023-12-05
 
 ### Added
 * New setting `autoPitch` which, if true, enables automatic pitch when moving forward and up/down. Enabled by using command `free-mode` or by setting it manually. Intended for constructs mainly controlled using manual controls.
