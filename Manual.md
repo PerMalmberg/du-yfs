@@ -331,6 +331,8 @@ By default option 1..9 means ALT-key plus keys 1 through 9, configured in the th
 | Middle mouse button | Toggle forward thrust (if setting `allowForwardToggle` is set)            |                            |
 
 > Note:
+> For smaller constructs, `autoPitch` may be something that you want to enable so that the construct tilts when moving forward and up/down.
+>
 > Manual control of heavy constructs are much less accurate (especially during vertical movements). Don't expect the same maneuverability as a tiny 1.5t construct.
 > Rocket boosters are automatically turned off whenever brakes activate.
 
