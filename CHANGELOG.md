@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-### 1.7.0 - 2023-12-08
+## 1.7.1 - 2023-12-xx
+
+### Changed
+* Did some adjustments relating to small movements on larger constructs where it could end up in a state where brakes engaged while trying to accelerate from 0 speed.
+* Adjusted margin used when returning to path after slipping of it. It now uses the `minimumPathCheckOffset` as the margin.
+
+## 1.7.0 - 2023-12-08
 
 ### Added
 * New setting `autoPitch` which, if true, enables automatic pitch when moving forward and up/down. Enabled by using command `free-mode` or by setting it manually. Intended for constructs mainly controlled using manual controls.
@@ -10,7 +16,7 @@ All notable changes to this project will be documented in this file. The version
 ### Fixed
 * Corrected a thrust calculation error regarding path adjustments that became evident when using only hovers as lift.
 
-### 1.6.0 - 2023-11-17
+## 1.6.0 - 2023-11-17
 
 > NOTE: If your construct mainly is controlled manually, you'll want to run the `free-mode` command after updating to this version, or set the new settings manually to make the construct function as it did previously.
 

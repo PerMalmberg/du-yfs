@@ -45,6 +45,7 @@ function Brake.Instance()
     local brakeData = { maxDeceleration = 0, currentDeceleration = 0, pid = 0, setAutoBrakeAngle = 0, autoBrakeAngle = 0 } ---@type BrakeData
     local autoBrakeAngle = 45
     local autoBrakeDelay = 1
+    local _1kmph = calc.Kph2Mps(1)
 
     local s = {
         engaged = false,
@@ -115,17 +116,18 @@ function Brake.Instance()
     ---@param targetSpeed number The desired speed
     function s.Feed(desiredMovementDir, accelerationDir, targetSpeed)
         local movementDir, currentSpeed = Velocity():NormalizeLen()
+        local angle = 0
 
         -- Prefer acceleration over desired movement dir
-        if not accelerationDir:IsZero() then
-            brakeData.autoBrakeAngle = accelerationDir:AngleToDeg(movementDir)
-        elseif not desiredMovementDir:IsZero() then
-            brakeData.autoBrakeAngle = desiredMovementDir:AngleToDeg(movementDir)
-        else
-            brakeData.autoBrakeAngle = 0
+        if currentSpeed > _1kmph then
+            if not accelerationDir:IsZero() then
+                angle = accelerationDir:AngleToDeg(movementDir)
+            elseif not desiredMovementDir:IsZero() then
+                angle = desiredMovementDir:AngleToDeg(movementDir)
+            end
         end
 
-        if brakeData.autoBrakeAngle > autoBrakeAngle then
+        if angle > autoBrakeAngle then
             autoBrakeTimer.Start()
         else
             autoBrakeTimer.Reset()
@@ -150,6 +152,7 @@ function Brake.Instance()
         end
 
         brakeData.pid = brakeValue
+        brakeData.autoBrakeAngle = angle
 
         deceleration = -movementDir * brakeValue * rawAvailableDeceleration()
     end
