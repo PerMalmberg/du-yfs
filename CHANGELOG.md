@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. The version number refers to the version printed in Lua chat for the control unit/ECU, not the one displayed on the screen in offline mode.
 
-## 1.7.1 - 2023-12-xx
+## 1.7.1 - 2023-12-10
 
 ### Changed
 * Did some adjustments relating to small movements on larger constructs where it could end up in a state where brakes engaged while trying to accelerate from 0 speed.
