@@ -1,0 +1,6 @@
+local limited = require("variants/Limited").New()
+limited.AddLimit(EngineType.ATMO, EngineSize.M, 1)
+limited.AddLimit(EngineType.ATMO, EngineSize.XS, 4)
+limited.AddLimit(EngineType.SPACE, EngineSize.S, 4)
+limited.AddLimit(EngineType.SPACE, EngineSize.XS, 5)
+limited.Start()

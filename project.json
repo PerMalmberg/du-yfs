@@ -104,6 +104,24 @@
         }
       }
     },
+    "variants/Y-Lift M10 0T XS Two-face": {
+      "name": "variants/Y-Lift M10 0T XS Two-face",
+      "type": "control",
+      "slots": {
+        "receiver": {
+          "name": "receiver",
+          "type": "receiver"
+        },
+        "spaceRadar": {
+          "name": "spaceRadar",
+          "type": "radar"
+        },
+        "atmoRadar": {
+          "name": "atmoRadar",
+          "type": "radar"
+        }
+      }
+    },
     "screen/screen": {
       "name": "screen/screen",
       "type": "screen",
