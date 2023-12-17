@@ -5,8 +5,8 @@
         "src/?.lua"
     ],
     "Lua.workspace.library": [
-        "e/lib/",
-        "e/render",
+        "e/lib/src",
+        "e/render/src",
         "${3rd}/luassert/library",
         "${3rd}/busted/library"
     ]

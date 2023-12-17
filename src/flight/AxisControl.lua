@@ -1,27 +1,31 @@
 require("abstraction/Vehicle")
-local s = require("Singletons")
-local yfsC, pub, calc, Vec3 = s.constants, s.pub, s.calc, require("math/Vec3")
-local SignLargestAxis, SignedRotationAngle, setEngineCommand, LightConstructMassThreshold, PID, nullVec =
+local si, Vec3, PID                     = require("Singletons"), require("math/Vec3"), require("cpml/pid")
+local yfsC, pub, calc                   = si.constants, si.pub, si.calc
+
+local SignLargestAxis, SignedRotationAngle, setEngineCommand,
+LightConstructMassThreshold, nullVec    =
     calc.SignLargestAxis,
     calc.SignedRotationAngle,
-    unit.setEngineCommand, yfsC.flight.lightConstructMassThreshold, require("cpml/pid"), Vec3.zero
+    unit.setEngineCommand,
+    yfsC.flight.lightConstructMassThreshold,
+    Vec3.zero
 
-local rad2deg, deg2rad = 180 / math.pi, math.pi / 180
+local rad2deg                           = 180 / math.pi
 
-local control = {}
-control.__index = control
+local control                           = {}
+control.__index                         = control
 
 ---@enum ControlledAxis
-ControlledAxis = {
+ControlledAxis                          = {
     Pitch = 1,
     Roll = 2,
     Yaw = 3,
 }
 
-local finalAcceleration = {} ---@type Vec3[]
+local finalAcceleration                 = {} ---@type Vec3[]
 finalAcceleration[ControlledAxis.Pitch] = nullVec
-finalAcceleration[ControlledAxis.Roll] = nullVec
-finalAcceleration[ControlledAxis.Yaw] = nullVec
+finalAcceleration[ControlledAxis.Roll]  = nullVec
+finalAcceleration[ControlledAxis.Yaw]   = nullVec
 
 ---@class AxisControl
 ---@field ReceiveEvents fun()
@@ -35,8 +39,8 @@ finalAcceleration[ControlledAxis.Yaw] = nullVec
 ---@field OffsetDegrees fun():number
 ---@field Apply fun()
 
-local AxisControl = {}
-AxisControl.__index = AxisControl
+local AxisControl                       = {}
+AxisControl.__index                     = AxisControl
 
 
 ---Creates a new AxisControl
@@ -138,14 +142,14 @@ function AxisControl.New(axis)
 
     ---@param deltaTime number
     function s.AxisFlush(deltaTime)
-        if targetCoordinate ~= nil then
+        if targetCoordinate then
             -- Positive offset means we're right of target, clock-wise
             -- Positive acceleration turns counter-clockwise
             -- Positive velocity means we're turning counter-clockwise
 
             local vecToTarget = (targetCoordinate - Current()):Normalize()
-            local offset = SignedRotationAngle(normal(), reference(), vecToTarget) * rad2deg
-            axisData.offset = offset
+            local offset = SignedRotationAngle(normal(), reference(), vecToTarget)
+            axisData.offset = offset * rad2deg
 
             lightPid:inject(offset)
             heavyPid:inject(offset)
@@ -157,7 +161,7 @@ function AxisControl.New(axis)
                 v = lightPid:get()
             end
 
-            finalAcceleration[axis] = normal() * v * deg2rad
+            finalAcceleration[axis] = normal() * v
         end
     end
 
