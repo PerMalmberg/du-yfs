@@ -3,6 +3,8 @@
 > [!IMPORTANT]
 > I have quit playing Dual Universe and will not return. I will not update the script further. This repository and those brought in via Git-submodules are made public so that someone else may continue the development and so that if NovaQuark brakes the Lua API, the script can be fixed without my involvement.
 
+A few instruction videos are [available on YouTube](https://www.youtube.com/watch?v=gDaXm42OJmo&list=PLNj_pQmPa0eNftLUKVsyRskK9hMI--1fw).
+
 Note: This manual is always for the latest version of the script.
 
 Please read the entire manual before attempting to perform an installation, there are important information throughout that will impact the choices you make.
